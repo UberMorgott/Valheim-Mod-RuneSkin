@@ -23,7 +23,12 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 
 ## Later
 
-- Menu entry hover colour stays vanilla orange (text colour animated by vanilla; not traced yet)
-- Decoration layers: glass fill under frame_panel, frame_panel_glow, leather corners, header_plaque (need child graphics)
-- Knot art `knot` missing in bundle (knots stay vanilla, reported degraded)
 - Settings family; Compendium entry to MorgottTweaks before AugaSkin retires
+
+## M0 completion (2026-10-21)
+
+- [x] Panel stack (glass, frame, glow, corners, plaque) on Menu + tooltip (PanelDecor)
+- [x] Knot art added (art pipeline), degraded 0
+- [x] Menu entry hover: Button Transition.Animation + Animator -> MenuEntryStyle (ColorTint on label, knots on hover/select)
+- [x] Final run tools\out\20261021-143820: Menu styled=92 degraded=0 unknown=0; tooltip styled=9 degraded=0 unknown=0; offSafeArea=0
+- [ ] Tooltip text touches the frame rail on box-padded-0 tooltips (Epic Loot content has no inner padding): add content inset
