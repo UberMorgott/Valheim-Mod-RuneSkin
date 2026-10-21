@@ -31,6 +31,14 @@ namespace RuneSkin.InventoryScreen
 
         public static InventorySkin Instance { get; private set; }
 
+        // Crafting column box of the current layout (canvas units, top-left origin; empty before the first layout).
+        public Box CraftingBox => _layout != null && InventoryGui.IsVisible() ? _layout.Crafting : default;
+
+        public float SkinScaleValue => _input.SkinScale;
+
+        // Centre column box (canvas units; empty before the first layout).
+        public Box CenterBox => _layout != null && InventoryGui.IsVisible() ? _layout.Center : default;
+
         private InventoryGui _gui;
         private RectTransform _canvas;
         private Canvas _rootCanvas;
@@ -299,7 +307,7 @@ namespace RuneSkin.InventoryScreen
                     // Grid cells are Buttons too (InventoryElement.m_button): they keep their slot.cell role.
                     if (b.targetGraphic && !b.GetComponentInParent<InventoryElement>(true)) ctx.Role(b.targetGraphic, "action.button", "backpack panel action button");
             // The crafting panel is not ours until M3.
-            if (_gui.m_crafting) ctx.Exclude(_gui.m_crafting, "crafting panel: placed by RuneSkin, styled by the other skin until M3");
+            if (_gui.m_crafting) ctx.Exclude(_gui.m_crafting, "crafting panel: its own root (family Crafting) or the other skin's");
             return ctx;
         }
 
@@ -614,7 +622,8 @@ namespace RuneSkin.InventoryScreen
 
             // Crafting: position only (look = other skin until M3); scaled down, never up, to stay in its column.
             // Width fit (scaled down, never up), height = the column: one bottom edge with dock and centre.
-            if (_gui.m_crafting && _gui.m_crafting.gameObject.activeSelf) Geo.PlaceFitWidth(_canvas, _gui.m_crafting, o.Crafting);
+            // With family Crafting owned, CraftingScreen.CraftingSkin lays the column out on this box itself.
+            if (_gui.m_crafting && _gui.m_crafting.gameObject.activeSelf && !CraftingScreen.CraftingSkin.Instance) Geo.PlaceFitWidth(_canvas, _gui.m_crafting, o.Crafting);
 
             // Player panel actions in the footer, right of the stats, left of the trash plate.
             Bar(_gui.m_player, PanelKind.Player, Player.m_localPlayer.GetInventory(), null, null, FooterActionBox());

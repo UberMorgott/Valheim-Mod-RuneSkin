@@ -16,10 +16,18 @@ namespace RuneSkin.Ownership
         public const string Hud = "Hud";
 
         // Inventory screen layout A (M2): InventoryGui player panel (doll, grid, footer), container / backpack dock,
-        // info header, grid cell templates. Crafting, skills/texts/trophies and dialogs stay with the other skin until M3.
+        // info header, grid cell templates. Skills/texts/trophies and dialogs stay with the other skin.
         public const string Inventory = "Inventory";
 
-        public static readonly string[] Known = { Menu, Tooltips, Hud, Inventory };
+        // Crafting column (M3): InventoryGui.m_crafting subtree (station header, mode tabs, CraftingFilter row, recipe
+        // list, detail, requirements, craft / repair buttons). Needs Inventory (layout A places the column).
+        public const string Crafting = "Crafting";
+
+        // Skills dialog and trophies panel (M3, skills-a / trophies-a): right-hand panels of layout A. Need Inventory.
+        public const string Skills = "Skills";
+        public const string Trophies = "Trophies";
+
+        public static readonly string[] Known = { Menu, Tooltips, Hud, Inventory, Crafting, Skills, Trophies };
 
         private static readonly HashSet<string> Owned = new HashSet<string>();
         public static bool Frozen { get; private set; }

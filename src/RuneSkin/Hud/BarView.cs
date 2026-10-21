@@ -168,6 +168,9 @@ namespace RuneSkin.PlayerHud
             bottom = ThemeTokens.GetFloat(key + ".bottom", 0f) * toRef;
         }
 
+        // Right-aligned values keep clear of the frame's end cap (Codex band review: numbers lost in the caps).
+        private static float ValueInset => ThemeTokens.GetFloat("size.hud.value.inset", 4f);
+
         public float EdgeTop { get; }
         public float EdgeBottom { get; }
 
@@ -235,7 +238,7 @@ namespace RuneSkin.PlayerHud
             if (_overlay) PlaceOverlay();
             var nr = _number.rectTransform;
             nr.anchoredPosition = new Vector2(_insetL, _insetB);
-            nr.sizeDelta = new Vector2(_main ? l : l - 4f, _h);
+            nr.sizeDelta = new Vector2(_main ? l : l - ValueInset, _h);
             var ar = _aux.rectTransform;
             ar.anchoredPosition = new Vector2(_insetL + 4f, _insetB);
             ar.sizeDelta = new Vector2(Mathf.Max(0f, l - 8f), _h);
@@ -308,7 +311,7 @@ namespace RuneSkin.PlayerHud
                 if (_lock.gameObject.activeSelf != lockOn) _lock.gameObject.SetActive(lockOn);
                 // The number ends before the locked segment (never over the hatch or the lock rune).
                 // Main value: centred in the filled part (mockup), never narrower than the text itself.
-                var nw = _main && !reserve ? Mathf.Clamp(fillW, Mathf.Min(l, _number.preferredWidth + 24f), l) : Mathf.Max(0f, (reserve ? rs : l) - 4f);
+                var nw = _main && !reserve ? Mathf.Clamp(fillW, Mathf.Min(l, _number.preferredWidth + 24f), l) : Mathf.Max(0f, (reserve ? rs : l) - ValueInset);
                 var nr = _number.rectTransform;
                 if (Mathf.Abs(nr.sizeDelta.x - nw) > 0.5f) nr.sizeDelta = new Vector2(nw, _h);
             }

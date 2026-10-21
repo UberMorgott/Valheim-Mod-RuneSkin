@@ -70,6 +70,9 @@ namespace RuneSkin.PlayerHud
             // edges parallel with an even gap (HudMath.DiamondStep), every cell on whole physical pixels.
             // Step of whole physical px (lossy scale = physical px per unit on the overlay HUD canvas): every socket
             // lands on the same sub-pixel phase and the diamonds rasterise identically.
+            // Icon inset: the stacked HUD keeps the checkerboard's 22%; the band's larger sockets show the food bigger
+            // (mockup layout-a2: the dish fills the diamond).
+            var inset = cell * (zigzag ? 0.22f : ThemeTokens.GetFloat("share.hud.band.food.icon.inset", 0.15f));
             var step = HudMath.Snap(zigzag ? HudMath.DiamondStep(cell, gap) : cell + gap, Root.lossyScale.y);
             Count = n;
             Width = n == 0 ? 0f : (n - 1) * step + cell;
@@ -91,6 +94,8 @@ namespace RuneSkin.PlayerHud
                 HudMath.DiamondCell(i, step, out var cx, out var cy);
                 var pos = new Vector2(cx, zigzag ? cy : 0f);
                 if (s.Root.anchoredPosition != pos) s.Root.anchoredPosition = pos;
+                var ir = s.Icon.rectTransform;
+                if (Mathf.Abs(ir.offsetMin.x - inset) > 0.01f) { ir.offsetMin = new Vector2(inset, inset); ir.offsetMax = new Vector2(-inset, -inset); }
                 var gem = i >= extraFrom;
                 if (gem != s.Gem)
                 {

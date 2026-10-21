@@ -18,3 +18,7 @@ m_percentigeDamageModifiers = "m_percentigeDamageModifiers"
 # Vanilla field InventoryElement.m_equiped (assembly_valheim InventoryElement.cs:18), also named in art notes.
 m_equiped = "m_equiped"
 equiped = "equiped"
+# Vanilla crafting panel child name InventoryGui.m_crafting/Decription (VNEI and RecipeChains find it by that path).
+Decription = "Decription"
+# Vanilla field InventoryGui.m_recipeDecription (assembly_valheim InventoryGui.cs:117).
+m_recipeDecription = "m_recipeDecription"

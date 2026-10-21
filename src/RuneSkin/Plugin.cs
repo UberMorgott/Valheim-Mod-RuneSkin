@@ -22,7 +22,7 @@ namespace RuneSkin
     [BepInProcess("valheim.exe")]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Version = "0.3.3";
+        public const string Version = "0.4.0";
 
         public static ManualLogSource Log { get; private set; }
         public static ConfigEntry<float> SkinScale { get; private set; }
@@ -32,7 +32,7 @@ namespace RuneSkin
         public static ConfigEntry<KeyboardShortcut> StatusListKey { get; private set; }
         public static ConfigEntry<string> StatusListButton { get; private set; }
 
-        private static ConfigEntry<bool> _ownMenu, _ownTooltips, _ownHud, _ownInventory, _requireAssets;
+        private static ConfigEntry<bool> _ownMenu, _ownTooltips, _ownHud, _ownInventory, _ownCrafting, _ownSkills, _ownTrophies, _requireAssets;
         private Harmony _harmony;
 
         private void Awake()
@@ -46,6 +46,12 @@ namespace RuneSkin
                 "RuneSkin draws the player HUD (bars, food, status effects, hotbar placement). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
             _ownInventory = Config.Bind("Ownership", "Inventory", true,
                 "RuneSkin lays out the inventory screen (layout A: doll, grid, chest / backpack dock, crafting placement). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownCrafting = Config.Bind("Ownership", "Crafting", true,
+                "RuneSkin styles and lays out the crafting column (station header, tabs, recipe list, detail, requirements). Needs Inventory. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownSkills = Config.Bind("Ownership", "Skills", true,
+                "RuneSkin styles and lays out the skills dialog (needs Inventory). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownTrophies = Config.Bind("Ownership", "Trophies", true,
+                "RuneSkin styles and lays out the trophies panel (needs Inventory). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
             HudScale = Config.Bind("Hud", "Scale", 1f, new ConfigDescription(
                 "HUD cluster scale on top of the game's UI scale (fonts never go below the readable floor).",
                 new AcceptableValueRange<float>(0.75f, 1.5f)));
@@ -74,6 +80,10 @@ namespace RuneSkin
                 [OwnershipRegistry.Tooltips] = _ownTooltips.Value,
                 [OwnershipRegistry.Hud] = _ownHud.Value,
                 [OwnershipRegistry.Inventory] = _ownInventory.Value,
+                // The crafting column lives inside layout A: without Inventory it stays with the other skin.
+                [OwnershipRegistry.Crafting] = _ownCrafting.Value && _ownInventory.Value,
+                [OwnershipRegistry.Skills] = _ownSkills.Value && _ownInventory.Value,
+                [OwnershipRegistry.Trophies] = _ownTrophies.Value && _ownInventory.Value,
             }, _requireAssets.Value);
 
             ApiHost = new Host();
@@ -87,6 +97,9 @@ namespace RuneSkin
             if (OwnershipRegistry.IsOwned(OwnershipRegistry.Tooltips)) _harmony.PatchAll(typeof(TooltipAdapter));
             if (OwnershipRegistry.IsOwned(OwnershipRegistry.Hud)) _harmony.PatchAll(typeof(PlayerHud.HudAdapter));
             if (OwnershipRegistry.IsOwned(OwnershipRegistry.Inventory)) _harmony.PatchAll(typeof(InventoryScreen.InventoryAdapter));
+            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Inventory) && OwnershipRegistry.IsOwned(OwnershipRegistry.Crafting)) _harmony.PatchAll(typeof(CraftingScreen.CraftingAdapter));
+            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Inventory) && OwnershipRegistry.IsOwned(OwnershipRegistry.Skills)) _harmony.PatchAll(typeof(InfoScreens.SkillsAdapter));
+            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Inventory) && OwnershipRegistry.IsOwned(OwnershipRegistry.Trophies)) _harmony.PatchAll(typeof(InfoScreens.TrophiesAdapter));
             Log.LogInfo($"[RuneSkin] {Version} ready (API v{Skin.ApiVersion})");
         }
 

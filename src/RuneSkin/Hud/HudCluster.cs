@@ -501,8 +501,9 @@ namespace RuneSkin.PlayerHud
             var foodK = bandCell / Mathf.Max(1f, ThemeTokens.GetFloat("size.hud.food.cell", 56f));
             SetScale(_food.Root, foodK);
             _food.Update(p, 0f, zigzag: false);
-            var gs = _gp.Visible ? bandCell : 0f;
-            SetScale(_gp.Root, bandCell / Mathf.Max(1f, _gp.Size));
+            // The round GP socket reads lighter than the diamonds at the same box: a little larger (Codex band review).
+            var gs = _gp.Visible ? bandCell * ThemeTokens.GetFloat("share.hud.band.gp", 1.12f) : 0f;
+            SetScale(_gp.Root, bandCell * ThemeTokens.GetFloat("share.hud.band.gp", 1.12f) / Mathf.Max(1f, _gp.Size));
             var x = foodPad;
             var foodX = x;
             x += _food.Width * foodK;
@@ -537,7 +538,7 @@ namespace RuneSkin.PlayerHud
             // Left block: sockets bottom-aligned above the timers and the frame pad.
             var rowY = o + band.LeftY + timerDrop + foodPad;
             _food.Root.anchoredPosition = new Vector2(ox + foodX, rowY);
-            if (_gp.Visible) _gp.Root.anchoredPosition = new Vector2(ox + gpX, rowY);
+            if (_gp.Visible) _gp.Root.anchoredPosition = new Vector2(ox + gpX, rowY + (bandCell - gs) / 2f);
             var totalH = band.Height + 2f * o;
             if (!_bandPanel.gameObject.activeSelf) _bandPanel.gameObject.SetActive(true);
             _bandPanel.anchoredPosition = Vector2.zero;
