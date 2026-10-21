@@ -49,6 +49,9 @@ namespace RuneSkin.Restyle
                 if (mark.Internal) Object.Destroy(mark.gameObject);
                 else Object.Destroy(mark);
             }
+            foreach (var extra in root.GetComponentsInChildren<IRevertible>(true))
+                if (extra is Component c && !UnderNestedRoot(c.transform, root))
+                    extra.Revert();
             foreach (var scale in root.GetComponentsInChildren<ScaleMark>(true))
                 if (!UnderNestedRoot(scale.transform, root))
                     Responsive.ResponsiveContext.RevertScale(scale);
@@ -63,7 +66,10 @@ namespace RuneSkin.Restyle
             if (mark && mark.Internal)
             {
                 if (mark.ThemeRevision != ThemeTokens.Revision)
+                {
                     mark.Outcome = Apply(g, mark, ThemeTokens.Role(mark.Role)) ? Outcome.Styled : Outcome.Degraded;
+                    if (g.GetComponentInParent<PanelDecor>(true)) g.enabled = mark.Outcome == Outcome.Styled;
+                }
                 return new Classification { Role = mark.Role, Outcome = mark.Outcome, Reason = mark.Reason };
             }
             var original = mark ? mark.OriginalSprite : g is Image img && img.sprite ? img.sprite.name : null;

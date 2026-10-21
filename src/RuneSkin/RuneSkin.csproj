@@ -54,6 +54,10 @@
       <HintPath>$(ValheimManagedDir)\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="UnityEngine.AnimationModule">
+      <HintPath>$(ValheimManagedDir)\UnityEngine.AnimationModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="UnityEngine.AssetBundleModule">
       <HintPath>$(ValheimManagedDir)\UnityEngine.AssetBundleModule.dll</HintPath>
       <Private>false</Private>

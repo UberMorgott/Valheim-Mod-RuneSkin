@@ -51,7 +51,11 @@ namespace RuneSkin.Screens
             Image box = null;
             for (var t = text ? text.parent : null; t && !box; t = t == root ? null : t.parent)
                 if (t.TryGetComponent<Image>(out var img) && (img.sprite || img.GetComponent<SkinMark>())) box = img;
-            if (box) ctx.Role(box, "tooltip.box", "image framing the tooltip texts");
+            if (box)
+            {
+                ctx.Role(box, "tooltip.box", "image framing the tooltip texts");
+                PanelDecor.Ensure(box.rectTransform, "size.tooltip.panel.pad", glass: false, plaque: false); // box = the glass
+            }
             else if (text && text.TryGetComponent<TMP_Text>(out var bare)) TooltipFrame.Ensure(bare);
             return ctx;
         }
@@ -87,7 +91,7 @@ namespace RuneSkin.Screens
             image.enabled = false;
             var mark = go.AddComponent<SkinMark>();
             mark.Internal = true;
-            mark.Role = "tooltip.box";
+            mark.Role = "tooltip.bare";
             mark.Reason = "RuneSkin frame for a box-less tooltip";
             mark.BoundInstance = go.GetInstanceID();
             mark.ThemeRevision = -1; // applied by the root pass

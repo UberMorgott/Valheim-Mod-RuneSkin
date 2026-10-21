@@ -15,7 +15,8 @@
     { "token": "color.state.hover", "value": "#52E0F0FF" },
     { "token": "color.state.pressed", "value": "#3FB7C6FF" },
     { "token": "color.state.selected", "value": "#52E0F0FF" },
-    { "token": "color.state.disabled", "value": "#7B7F80FF" }
+    { "token": "color.state.disabled", "value": "#7B7F80FF" },
+    { "token": "color.glow", "value": "#52E0F0CC" }
   ],
   "sprites": [
     { "token": "sprite.frame.panel", "asset": "frame_panel" },
@@ -27,7 +28,13 @@
     { "token": "sprite.frame.tooltip", "asset": "tooltip_frame" },
     { "token": "sprite.fill.glass", "asset": "fill_glass" },
     { "token": "sprite.divider", "asset": "divider" },
-    { "token": "sprite.ornament.knot", "asset": "knot" }
+    { "token": "sprite.ornament.knot", "asset": "knot" },
+    { "token": "sprite.frame.panel.glow", "asset": "frame_panel_glow" },
+    { "token": "sprite.corner.tl", "asset": "frame_panel_corner_tl" },
+    { "token": "sprite.corner.tr", "asset": "frame_panel_corner_tr" },
+    { "token": "sprite.corner.bl", "asset": "frame_panel_corner_bl" },
+    { "token": "sprite.corner.br", "asset": "frame_panel_corner_br" },
+    { "token": "sprite.plaque.header", "asset": "header_plaque" }
   ],
   "fonts": [
     { "token": "font.display", "asset": "RuneSkin-Display Cormorant-Bold SDF" },
@@ -35,6 +42,11 @@
   ],
   "floats": [
     { "token": "size.tooltip.padding", "value": 12 },
+    { "token": "size.tooltip.panel.pad", "value": 10 },
+    { "token": "size.panel.pad", "value": 36 },
+    { "token": "size.panel.glass.inset", "value": 11.5 },
+    { "token": "size.plaque.width", "value": 160 },
+    { "token": "size.plaque.height", "value": 36 },
     { "token": "size.text.header.min", "value": 28 },
     { "token": "floor.text.body.px", "value": 16 },
     { "token": "floor.text.number.px", "value": 14 }
@@ -54,7 +66,16 @@
       "stateSelected": "color.state.selected", "stateDisabled": "color.state.disabled" },
     { "role": "text.header", "font": "font.display", "textColor": "color.text.header" },
     { "role": "text.body", "font": "font.body", "textColor": "color.text.body" },
-    { "role": "tooltip.box", "sprite": "sprite.frame.tooltip", "color": "color.frame", "imageType": "Sliced", "fillCenter": "true" },
+    { "role": "tooltip.box", "sprite": "sprite.fill.glass", "color": "color.glass", "imageType": "Sliced", "fillCenter": "true" },
+    { "role": "tooltip.bare", "sprite": "sprite.frame.tooltip", "color": "color.frame", "imageType": "Sliced", "fillCenter": "true" },
+    { "role": "decor.glass", "sprite": "sprite.fill.glass", "color": "color.glass", "imageType": "Sliced", "fillCenter": "true" },
+    { "role": "decor.frame", "sprite": "sprite.frame.panel", "color": "color.frame", "imageType": "Tiled", "fillCenter": "false" },
+    { "role": "decor.glow", "sprite": "sprite.frame.panel.glow", "color": "color.glow", "imageType": "Tiled", "fillCenter": "false" },
+    { "role": "decor.corner.tl", "sprite": "sprite.corner.tl", "color": "color.frame", "imageType": "Simple" },
+    { "role": "decor.corner.tr", "sprite": "sprite.corner.tr", "color": "color.frame", "imageType": "Simple" },
+    { "role": "decor.corner.bl", "sprite": "sprite.corner.bl", "color": "color.frame", "imageType": "Simple" },
+    { "role": "decor.corner.br", "sprite": "sprite.corner.br", "color": "color.frame", "imageType": "Simple" },
+    { "role": "decor.plaque", "sprite": "sprite.plaque.header", "color": "color.frame", "imageType": "Tiled", "fillCenter": "true" },
     { "role": "tooltip.topic", "font": "font.display", "textColor": "color.text.header" },
     { "role": "tooltip.text", "font": "font.body", "textColor": "color.text.body" },
     { "role": "content" },
@@ -79,6 +100,6 @@
   ],
   "families": [
     { "family": "Menu", "requires": [ "sprite.frame.panel", "sprite.button.normal", "font.display", "font.body" ] },
-    { "family": "Tooltips", "requires": [ "sprite.frame.tooltip", "font.display", "font.body" ] }
+    { "family": "Tooltips", "requires": [ "sprite.fill.glass", "sprite.frame.panel", "font.display", "font.body" ] }
   ]
 }

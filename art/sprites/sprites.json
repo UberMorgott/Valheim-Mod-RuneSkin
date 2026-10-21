@@ -351,6 +351,28 @@
       "fillCenter": true,
       "token": "plaque.header",
       "notes": "text field = recessed centre; ends carry knots"
+    },
+    {
+      "name": "knot",
+      "file": "knot.png",
+      "size": [
+        64,
+        32
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "ornament.knot",
+      "notes": "menu-entry ornament (vanilla BraidKnotMedium slot), symmetric, native aspect; shown on hover"
     }
   ]
 }

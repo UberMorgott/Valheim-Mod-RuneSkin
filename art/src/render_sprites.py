@@ -479,6 +479,34 @@ def render_plaque():
     return finish(out_rgb, out_a)
 
 
+# ---------------------------------------------------------------- menu-entry knot
+def render_knot(Wd=64, Ht=32):
+    """Small carved stone knot beside menu entries (vanilla BraidKnotMedium slot): a raised diamond with a nested
+    carved diamond and rune glow, flanked by two small studs; symmetric, so left and right entries share it."""
+    x, y = grid(Wd, Ht)
+    cx, cy = Wd / 2, Ht / 2
+    dd = (np.abs(x - cx) + np.abs(y - cy)) / math.sqrt(2)
+    body = dd < 10.5
+    h = 5.5 * sstep((10.5 - dd) / 2.2)
+    inner = diamond_dist(x, y, cx, cy, 5.2)
+    h -= 1.6 * groove(inner, 0.9) * body
+    smask = body.astype(float)
+    for kx in (cx - 19.0, cx + 19.0):
+        ds = (np.abs(x - kx) + np.abs(y - cy)) / math.sqrt(2)
+        st = ds < 4.6
+        h = np.where(st, 3.6 * sstep((4.6 - ds) / 1.5), h)
+        smask = np.maximum(smask, st)
+    nz = detail("stone", Wd * SS, h.shape, 61)
+    h += 0.12 * nz * smask
+    alb = np.broadcast_to(rgb(PALETTE["stone_block"]), h.shape + (3,)) * (1 + 0.08 * nz)[..., None]
+    col, _ = shade(h, alb)
+    sh = drop_shadow(smask, 0.8, 1.2, 1.2, 0.5)
+    out_rgb, out_a = over(col, smask, np.zeros_like(col), sh * (1 - smask))
+    g_rgb, g_a = glow_layer(groove(inner, 0.6) * body, rgb(PALETTE["rune_glow"]), 0.6, 0.35, 0.15)
+    out_rgb, out_a = over(g_rgb, g_a, out_rgb, out_a)
+    return finish(out_rgb, out_a)
+
+
 # ---------------------------------------------------------------- manifest + main
 def entry(name, img, border, token, image_type, fill_center=True, notes=""):
     l, b, r, t = border
@@ -532,6 +560,10 @@ def main():
     sprites["header_plaque"] = pl
     entries.append(entry("header_plaque", pl, (PL["border_x"], PL["border_y"], PL["border_x"], PL["border_y"]),
                          "plaque.header", "Tiled", True, "text field = recessed centre; ends carry knots"))
+    kn = render_knot()
+    sprites["knot"] = kn
+    entries.append(entry("knot", kn, (0, 0, 0, 0), "ornament.knot", "Simple", True,
+                         "menu-entry ornament (vanilla BraidKnotMedium slot), symmetric, native aspect; shown on hover"))
     for n, im in sprites.items():
         im.save(OUT / f"{n}.png", optimize=True)
     manifest = {"version": 1, "authoredScale": 2, "pixelsPerUnit": 200,

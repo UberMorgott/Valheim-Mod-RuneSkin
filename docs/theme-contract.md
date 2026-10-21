@@ -26,11 +26,11 @@ Sprites are 2x art (PPU 200), SpriteAtlas `RuneSkin`; TMP materials are switched
 | `sprite.frame.tooltip` | `tooltip_frame` | tooltip frame, Sliced |
 | `sprite.fill.glass` | `fill_glass` | dark glass backdrop, Sliced |
 | `sprite.divider` | `divider` | horizontal divider, Sliced |
-| `sprite.ornament.knot` | `knot` | menu entry ornament (not in the bundle yet: knots stay vanilla, reported as degraded) |
+| `sprite.ornament.knot` | `knot` | menu entry ornament, shown on hover/selection |
 | `font.display` | `RuneSkin-Display Cormorant-Bold SDF` | headers, menu entries, button labels |
 | `font.body` | `RuneSkin-Body PTSans-Regular SDF` | body text, tooltips |
 
-Not used yet (need decoration children, M1): `frame_panel_glow`, `frame_panel_corner_*`, `header_plaque`.
+Panel stack (`Restyle\PanelDecor.cs`, children behind the host): `decor.glass` (`fill_glass`, inset `size.panel.glass.inset`), `decor.frame` (`frame_panel`), `decor.glow` (`frame_panel_glow`, `color.glow`), `decor.corner.*` (`frame_panel_corner_*`, native size), `decor.plaque` (`header_plaque`, Menu only).
 
 Families need their tokens before RuneSkin takes them (asset preflight, `families` in the theme):
 `Menu` = frame.panel, button.normal, font.display, font.body; `Tooltips` = frame.tooltip, font.display, font.body.

@@ -35,6 +35,13 @@ namespace RuneSkin.Screens
         {
             if (!menu) return;
             var root = menu.transform;
+            if (menu.menuEntriesParent)
+            {
+                // Entry states via their owning components (MenuEntryStyle), then the panel stack behind the entries.
+                foreach (var button in menu.menuEntriesParent.GetComponentsInChildren<Button>(true))
+                    MenuEntryStyle.Ensure(button, button.GetComponentInChildren<TMP_Text>(true));
+                PanelDecor.Ensure(menu.menuEntriesParent, "size.panel.pad", glass: true, plaque: true);
+            }
             ScreenRegistry.Register(root, () => Context(menu));
             ScreenRegistry.Restyle(root);
             // SkinScale on the dialogs' content roots, never on the canvas (GuiScaler owns scaleFactor).
