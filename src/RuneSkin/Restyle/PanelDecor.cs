@@ -24,34 +24,61 @@ namespace RuneSkin.Restyle
         {
             if (!host) return null;
             var existing = host.Find(ChildName);
-            if (existing && existing.TryGetComponent<PanelDecor>(out var decor)) return decor;
+            if (existing && existing.TryGetComponent<PanelDecor>(out var decor))
+            {
+                if (decor.Revision != ThemeTokens.Revision) decor.Layout(); // theme reload: geometry tokens again
+                return decor;
+            }
 
             var go = new GameObject(ChildName, typeof(RectTransform));
             var rect = (RectTransform)go.transform;
             rect.SetParent(host, false);
             rect.SetAsFirstSibling(); // behind the host's own content
-            var pad = ThemeTokens.GetFloat(padToken, 0f);
-            Stretch(rect, -pad);
             go.AddComponent<LayoutElement>().ignoreLayout = true; // hosts may be layout groups (tooltip content)
             decor = go.AddComponent<PanelDecor>();
-
-            var inset = ThemeTokens.GetFloat("size.panel.glass.inset", 0f);
-            if (glass) Stretch(Add(rect, "Glass", "decor.glass"), inset);
-            Stretch(Add(rect, "Frame", "decor.frame"), 0f);
-            Stretch(Add(rect, "Glow", "decor.glow"), 0f);
-            Corner(Add(rect, "CornerTL", "decor.corner.tl"), new Vector2(0f, 1f));
-            Corner(Add(rect, "CornerTR", "decor.corner.tr"), new Vector2(1f, 1f));
-            Corner(Add(rect, "CornerBL", "decor.corner.bl"), new Vector2(0f, 0f));
-            Corner(Add(rect, "CornerBR", "decor.corner.br"), new Vector2(1f, 0f));
-            if (plaque)
+            decor.PadToken = padToken;
+            if (glass) decor._glass = Add(rect, "Glass", "decor.glass");
+            Add(rect, "Frame", "decor.frame");
+            Add(rect, "Glow", "decor.glow");
+            decor._corners = new[]
             {
-                var p = Add(rect, "Plaque", "decor.plaque");
-                p.anchorMin = p.anchorMax = new Vector2(0.5f, 1f); // centred on the top edge
-                p.pivot = new Vector2(0.5f, 0.5f);
-                p.anchoredPosition = Vector2.zero;
-                p.sizeDelta = new Vector2(ThemeTokens.GetFloat("size.plaque.width", 0f), ThemeTokens.GetFloat("size.plaque.height", 0f));
-            }
+                Add(rect, "CornerTL", "decor.corner.tl"), Add(rect, "CornerTR", "decor.corner.tr"),
+                Add(rect, "CornerBL", "decor.corner.bl"), Add(rect, "CornerBR", "decor.corner.br")
+            };
+            if (plaque) decor._plaque = Add(rect, "Plaque", "decor.plaque");
+            decor.Layout();
             return decor;
+        }
+
+        public string PadToken;
+        public int Revision = -1;
+        private RectTransform _glass, _plaque;
+        private RectTransform[] _corners;
+        private bool _fitted;
+
+        // Geometry from tokens (pad, glass inset, plaque size, corner native sizes); re-run on theme reload.
+        private void Layout()
+        {
+            Revision = ThemeTokens.Revision;
+            var self = (RectTransform)transform;
+            if (!_fitted) Stretch(self, -ThemeTokens.GetFloat(PadToken, 0f));
+            foreach (Transform child in self)
+                if (child is RectTransform r && r != _plaque && (_corners == null || System.Array.IndexOf(_corners, r) < 0))
+                    Stretch(r, r == _glass ? ThemeTokens.GetFloat("size.panel.glass.inset", 0f) : 0f);
+            if (_corners != null)
+            {
+                Corner(_corners[0], new Vector2(0f, 1f));
+                Corner(_corners[1], new Vector2(1f, 1f));
+                Corner(_corners[2], new Vector2(0f, 0f));
+                Corner(_corners[3], new Vector2(1f, 0f));
+            }
+            if (_plaque)
+            {
+                _plaque.anchorMin = _plaque.anchorMax = new Vector2(0.5f, 1f); // centred on the top edge
+                _plaque.pivot = new Vector2(0.5f, 0.5f);
+                _plaque.anchoredPosition = Vector2.zero;
+                _plaque.sizeDelta = new Vector2(ThemeTokens.GetFloat("size.plaque.width", 0f), ThemeTokens.GetFloat("size.plaque.height", 0f));
+            }
         }
 
         private static readonly Vector3[] Corners = new Vector3[4];
@@ -79,6 +106,7 @@ namespace RuneSkin.Restyle
                 }
             }
             if (min.x > max.x) return;
+            _fitted = true;
             var pad = ThemeTokens.GetFloat(padToken, 0f);
             min -= new Vector2(pad, pad);
             max += new Vector2(pad, pad);

@@ -22,7 +22,7 @@ namespace RuneSkin.Screens
         public Graphic OrigTarget;
         public Graphic[] Knots;
         public Color[] KnotColors;
-        private bool _hover, _selected;
+        private bool _hover, _selected, _reverting;
 
         public static void Ensure(Button button, TMP_Text label)
         {
@@ -63,6 +63,7 @@ namespace RuneSkin.Screens
 
         private void OnDisable()
         {
+            if (_reverting) return; // Destroy(this) below disables first: keep the restored knot alpha
             _hover = _selected = false;
             Show(false, true);
         }
@@ -77,6 +78,7 @@ namespace RuneSkin.Screens
 
         public void Revert()
         {
+            _reverting = true;
             if (Button)
             {
                 if (Button.transition == Selectable.Transition.ColorTint) Button.transition = OrigTransition;

@@ -99,7 +99,7 @@
     { "match": "mail", "role": "content" }
   ],
   "families": [
-    { "family": "Menu", "requires": [ "sprite.frame.panel", "sprite.button.normal", "font.display", "font.body" ] },
-    { "family": "Tooltips", "requires": [ "sprite.fill.glass", "sprite.frame.panel", "font.display", "font.body" ] }
+    { "family": "Menu", "requires": [ "sprite.frame.panel", "sprite.fill.glass", "sprite.button.normal", "font.display", "font.body" ] },
+    { "family": "Tooltips", "requires": [ "sprite.fill.glass", "sprite.frame.panel", "sprite.frame.tooltip", "font.display", "font.body" ] }
   ]
 }
