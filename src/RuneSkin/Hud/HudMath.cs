@@ -189,6 +189,38 @@ namespace RuneSkin.PlayerHud
             return f;
         }
 
+        // ---- inventory band profile (inventory-layout.md §4/§9, user call 2026-10-21) --------------------------
+        //
+        // While the inventory is open the cluster re-lays out into one wide short band under the column block
+        // (layout-a2.png bottom): left block = food row + guardian power + quick slots, the bars to its right (one
+        // equal outer length = the rest of the band), and one status row under both (buffs under the left block,
+        // debuffs under the bars). Origin = band bottom-left, y up, reference px.
+        public struct Band
+        {
+            public bool Fits;        // false: bars would fall under minBar -> keep the stacked profile
+            public float BarsX;      // left edge of the bar stack
+            public float BarOuter;   // outer width of every bar / rail
+            public float StatusH;    // status row (both strips) incl. pads and the gap above it
+            public float BodyH;      // tallest of left block and bar stack
+            public float LeftY;      // bottom of the left block (vertically centred on the body)
+            public float BarsY;      // bottom of the bar stack (vertically centred on the body)
+            public float Height;     // whole band
+        }
+
+        public static Band BandLayout(float bandW, float leftW, float leftH, float barsH, float statusH, float gap, float minBar, float maxBar)
+        {
+            var b = new Band { StatusH = Math.Max(0f, statusH), BarsX = Math.Max(0f, leftW) + Math.Max(0f, gap) };
+            var outer = bandW - b.BarsX;
+            if (maxBar > 0f) outer = Math.Min(outer, maxBar);
+            b.BarOuter = Math.Max(0f, outer);
+            b.Fits = bandW > 0f && !float.IsInfinity(bandW) && b.BarOuter >= minBar;
+            b.BodyH = Math.Max(Math.Max(0f, leftH), Math.Max(0f, barsH));
+            b.LeftY = b.StatusH + (b.BodyH - Math.Max(0f, leftH)) / 2f;
+            b.BarsY = b.StatusH + (b.BodyH - Math.Max(0f, barsH)) / 2f;
+            b.Height = b.StatusH + b.BodyH;
+            return b;
+        }
+
         // ---- scale and safe box (hud-resource-states §4) ---------------------------------------------------------
 
         // Physical px per reference px of the HUD cluster. guiFactor = min(W/1920, H/1080) x GuiScale (the canvas

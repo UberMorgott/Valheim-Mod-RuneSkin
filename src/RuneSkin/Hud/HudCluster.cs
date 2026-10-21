@@ -3,6 +3,7 @@ using RuneSkin.Api;
 using RuneSkin.API;
 using RuneSkin.Diagnostics;
 using RuneSkin.Responsive;
+using RuneSkin.Restyle;
 using RuneSkin.Theme;
 using UnityEngine;
 using UnityEngine.UI;
@@ -25,7 +26,7 @@ namespace RuneSkin.PlayerHud
         private HudArt _art;
         private RectTransform _root;
         private BarView _es, _health, _stamina, _adrenaline, _eitr;
-        private RectTransform _plaque;
+        private RectTransform _plaque, _bandPanel;
         private TMPro.TMP_Text _plaqueText;
         private string _plaqueShown;
         private FoodRow _food;
@@ -91,6 +92,10 @@ namespace RuneSkin.PlayerHud
             _themeRevision = ThemeTokens.Revision;
             _childrenOn = true;
             _plaqueShown = null;
+            // Band housing first: behind every view (inventory band profile only).
+            _bandPanel = HudArt.Rect("BandPanel", _root);
+            PanelDecor.Ensure(_bandPanel, "size.panel.glass.inset", glass: true, plaque: false);
+            _bandPanel.gameObject.SetActive(false);
             _strip = new StatusStrip(_art, _root, true, "StatusStrip");
             _buffs = new StatusStrip(_art, _root, false, "BuffStrip");
             _gp = new GuardianSocket(_art, _root);
@@ -245,8 +250,9 @@ namespace RuneSkin.PlayerHud
 
         private void Sample(Player p, float dt)
         {
-            // One outer width for every main bar (mockup hud-status-b; the max is the number, not the length).
-            var outerW = ThemeTokens.GetFloat("size.hud.bar.outer", 438f);
+            // One outer width for every main bar (mockup hud-status-b; the max is the number, not the length). The
+            // inventory band profile stretches them to the rest of the band (last frame's band layout, stable while open).
+            var outerW = _bandActive && _bandBarOuter > 0f ? _bandBarOuter : ThemeTokens.GetFloat("size.hud.bar.outer", 438f);
 
             // Energy shield (mod pool): rail above health, or the main bar while it carries the player.
             var esOn = Providers.TryResource(ResourcePools.EnergyShield, p, true, out var es) && es.Max > 0f;
@@ -395,8 +401,181 @@ namespace RuneSkin.PlayerHud
                 ThemeTokens.GetFloat("ratio.hud.ultrawide", 2.2f), out x, out w);
         }
 
+        // ---- inventory band profile -----------------------------------------------------------------------------
+
+        private bool _bandWanted, _bandActive;
+        private float _bandLeftPx, _bandRightPx, _bandBarOuter;
+        private int _bandQuickSlots;
+
+        // InventorySkin (on each inventory layout change): the column block spans [leftPx, rightPx] screen pixels;
+        // the cluster lays out as one band under it while the inventory is open. Same views, second layout profile.
+        public void SetBand(float leftPx, float rightPx, int quickSlots)
+        {
+            _bandWanted = rightPx > leftPx;
+            _bandLeftPx = leftPx;
+            _bandRightPx = rightPx;
+            _bandQuickSlots = Mathf.Max(0, quickSlots);
+        }
+
+        // Inventory closed: back to the stacked cluster (M1 profile).
+        public void ClearBand() => _bandWanted = false;
+
+        public bool BandActive => _bandActive && _childrenOn && isActiveAndEnabled;
+
+        public bool BandWanted => _bandWanted;
+
+        // Bars bottom-up rail to rail (HudMath.StackStep, whole physical pixels) from y0. place = false measures only.
+        // Returns the stack height (bottom of the lowest frame to the top of the highest).
+        private float StackBars(Player p, float x, float y0, float gap, float barW, bool place)
+        {
+            var pxPerUnit = _root.lossyScale.y;
+            var stacked = false;
+            float y = y0, prevY = y0, prevH = 0f, prevEdge = 0f;
+            void One(RectTransform rt, float height, float edgeBottom, float edgeTop)
+            {
+                if (stacked) y = prevY + HudMath.StackStep(prevH, prevEdge, edgeBottom, gap);
+                y = HudMath.Snap(y, pxPerUnit);
+                if (place) rt.anchoredPosition = new Vector2(x, y);
+                stacked = true;
+                prevY = y;
+                prevH = height;
+                prevEdge = edgeTop;
+            }
+            if (_eitr.Root.gameObject.activeSelf) One(_eitr.Root, _eitr.Height, _eitr.EdgeBottom, _eitr.EdgeTop);
+            if (_plaque.gameObject.activeSelf)
+            {
+                var h = _health.Height;
+                if (place) _plaque.sizeDelta = new Vector2(Mathf.Max(120f, barW * ThemeTokens.GetFloat("share.hud.plaque", 0.34f)), h);
+                One(_plaque, h, 0f, 0f);
+            }
+            if (_adrenaline.Root.gameObject.activeSelf || p.GetMaxAdrenaline() > 0f)
+                One(_adrenaline.Root, _adrenaline.Height, _adrenaline.EdgeBottom, _adrenaline.EdgeTop);
+            One(_stamina.Root, _stamina.Height, _stamina.EdgeBottom, _stamina.EdgeTop);
+            One(_health.Root, _health.Height, _health.EdgeBottom, _health.EdgeTop);
+            if (_es.Root.gameObject.activeSelf) One(_es.Root, _es.Height, _es.EdgeBottom, _es.EdgeTop);
+            return prevY + prevH - y0;
+        }
+
+
+        // Band under the inventory column block (layout-a2.png): [food | GP | quick] [bars], status row below
+        // (buffs under the left block, debuffs under the bars, one row each, "+N"). Its height never depends on the
+        // effect count, so the columns above it never jump. False = does not fit, the caller keeps the stack.
+        private bool ArrangeBand(Player p)
+        {
+            var gap = ThemeTokens.GetFloat("size.hud.gap", 5f);
+            var statusPad = ThemeTokens.GetFloat("size.hud.status.pad", 6f);
+            var cell = ThemeTokens.GetFloat("size.hud.status.cell", 42f);
+            var rowH = cell + ThemeTokens.GetFloat("size.hud.status.gap", 4f);
+            var foodPad = ThemeTokens.GetFloat("size.hud.food.pad", 8f);
+            var foodGap = ThemeTokens.GetFloat("size.hud.food.gap", 6f) * 2f;
+            var blockGap = ThemeTokens.GetFloat("size.hud.band.gap", 16f);
+            var safe = ResponsiveContext.SafeArea;
+            // Scale: the canvas / HUD scale with the font floors, no share-of-screen shrink (the band width is given).
+            var s = HudMath.ClusterScale(ResponsiveContext.GuiFactor, Plugin.HudScale?.Value ?? 1f, 0f, 0f, 0f, 0f, 0f, 0f,
+                ThemeTokens.GetFloat("size.hud.font.number", 16f), ThemeTokens.GetFloat("floor.text.number.px", 14f),
+                ThemeTokens.GetFloat("size.hud.font.timer", 13f), ThemeTokens.GetFloat("floor.text.timer.px", 12f));
+            if (!(s > 0f)) return false;
+            // Shared housing (Codex M2 review: one module): a panel stack (glass + carved frame + corner caps) over the
+            // whole band; the stack reaches size.panel.glass.inset beyond its host, the content keeps the cap keep-out.
+            var framePad = ThemeTokens.GetFloat("size.panel.glass.inset", 0f);
+            var decor = PanelDecor.Ensure(_bandPanel, "size.panel.glass.inset", glass: true, plaque: false);
+            // Host = the band box, so the stack (reaching framePad beyond the host) lines up with the column panels'
+            // stacks above it. Content: pad above / below, and past the corner caps at both ends (a cap reaches
+            // CapWidth - framePad into the host, PanelDecor.CapWidth), so nothing runs under one whatever its height.
+            var pad = ThemeTokens.GetFloat("size.hud.band.pad", 12f);
+            var ox = Mathf.Max(pad, decor ? decor.CapWidth() - framePad : 0f);
+            var o = pad;
+            var outerW = (_bandRightPx - _bandLeftPx) / s;
+            var bandW = outerW - 2f * ox;
+
+            _gp.Update(p);
+            _strip.ExcludeHash = _buffs.ExcludeHash = _gp.Visible ? _gp.ActiveHash : 0;
+            if (_fed) { _strip.Feed(_hudEffects); _buffs.Feed(_hudEffects); }
+
+            // Left block widths: food row (group frame reaches foodPad around it), GP socket, EAQS quick block.
+            _food.Update(p, 0f);
+            var x = foodPad;
+            var foodX = x;
+            x += _food.Width;
+            var gs = _gp.Visible ? _gp.Size : 0f;
+            var gpX = x + foodGap;
+            if (_gp.Visible) x = gpX + gs;
+            var quickX = x + foodGap;
+            var quickW = QuickWidth();
+            if (quickW > 0f) x = quickX + quickW;
+            var leftW = x + foodPad;
+            var leftH = _food.TimerDrop + foodPad + Mathf.Max(_food.Height, gs) + foodPad;
+
+            var barsH = StackBars(p, 0f, 0f, gap, _health.Width, false);
+            var statusH = 2f * statusPad + rowH + gap;
+            var band = HudMath.BandLayout(bandW, leftW, leftH, barsH, statusH, blockGap,
+                ThemeTokens.GetFloat("size.hud.band.bar.min", 280f), 0f);
+            if (!band.Fits) return false;
+            _bandBarOuter = band.BarOuter;
+
+            // Status row: one row per strip, top edge at statusPad + rowH (strips lay out downwards from their root).
+            var stripTop = statusPad + rowH;
+            _buffs.Arrange(Mathf.Max(cell, leftW - 2f * statusPad), rowH);
+            _buffs.Root.anchoredPosition = new Vector2(ox + statusPad, o + stripTop);
+            _strip.Arrange(Mathf.Max(cell, band.BarOuter - 2f * statusPad), rowH);
+            _strip.Root.anchoredPosition = new Vector2(ox + band.BarsX + statusPad, o + stripTop);
+
+            // Bars right of the left block.
+            StackBars(p, ox + band.BarsX, o + band.BarsY, gap, _health.Width, true);
+
+            // Left block: food sockets (bottom of the lowest socket above the timers and the frame pad).
+            var foodY = o + band.LeftY + _food.TimerDrop + foodPad;
+            var rowMid = foodY + Mathf.Max(_food.Height, gs) / 2f;
+            _food.Root.anchoredPosition = new Vector2(ox + foodX, rowMid - _food.Height / 2f);
+            if (_gp.Visible) _gp.Root.anchoredPosition = new Vector2(ox + gpX, rowMid - gs / 2f);
+            var totalH = band.Height + 2f * o;
+            if (!_bandPanel.gameObject.activeSelf) _bandPanel.gameObject.SetActive(true);
+            _bandPanel.anchoredPosition = Vector2.zero;
+            _bandPanel.sizeDelta = new Vector2(Mathf.Max(0f, outerW), Mathf.Max(0f, totalH));
+
+            var margin = ThemeTokens.GetFloat("size.hud.margin", 24f) * s;
+            var bottom = safe.y + margin;
+            PlaceAtScreen(_root, new Vector2(_bandLeftPx, bottom), s);
+            // The frame reaches framePad above the band box: the columns' gap starts above it.
+            _reservedTop = bottom + (totalH + framePad) * s;
+
+            var quickAnchor = _root.TransformPoint(new Vector3(ox + quickX, rowMid - QuickHeight() / 2f, 0f));
+            QuickAnchor = quickAnchor;
+            HasQuickAnchor = true;
+            PlaceBlock(QuickBar(), quickAnchor, false);
+            return true;
+        }
+
+        // EAQS quick block in reference px: measured from its visible rects, else (no element built yet) the slot
+        // count x HotkeyBar.m_elementSpace (HotkeyBar.cs:110 lays slot i at i * m_elementSpace).
+        private float QuickWidth()
+        {
+            var perRef = _root.lossyScale.x;
+            var quick = QuickBar();
+            if (!quick || !(perRef > 0f)) return 0f;
+            if (Bounds(quick, out var min, out var max)) return (max.x - min.x) / perRef;
+            if (_bandQuickSlots <= 0 || !quick.TryGetComponent<HotkeyBar>(out var hb)) return 0f;
+            var size = hb.m_elementPrefab && hb.m_elementPrefab.transform is RectTransform pr ? pr.rect.width : hb.m_elementSpace;
+            var local = (_bandQuickSlots - 1) * hb.m_elementSpace + size;
+            return quick.TransformVector(new Vector3(local, 0f, 0f)).magnitude / perRef;
+        }
+
+        private float QuickHeight()
+        {
+            var perRef = _root.lossyScale.y;
+            var quick = QuickBar();
+            if (!quick || !(perRef > 0f)) return 0f;
+            if (Bounds(quick, out var min, out var max)) return (max.y - min.y) / perRef;
+            if (!quick.TryGetComponent<HotkeyBar>(out var hb) || !hb.m_elementPrefab || !(hb.m_elementPrefab.transform is RectTransform pr)) return 0f;
+            return quick.TransformVector(new Vector3(0f, pr.rect.height, 0f)).magnitude / perRef;
+        }
+
         private void ArrangeAndPlace(Player p)
         {
+            // Stacked profile below writes x = 0 for every view it places, so leaving the band needs no reset.
+            _bandActive = _bandWanted && InventoryGui.IsVisible() && ArrangeBand(p);
+            if (_bandActive) return;
+            if (_bandPanel.gameObject.activeSelf) _bandPanel.gameObject.SetActive(false);
             var gap = ThemeTokens.GetFloat("size.hud.gap", 5f);
             var barW = Mathf.Max(_health.Width, Mathf.Max(_stamina.Width, _eitr.Root.gameObject.activeSelf ? _eitr.Width : 0f));
             if (_es.Root.gameObject.activeSelf) barW = Mathf.Max(barW, _es.Width);

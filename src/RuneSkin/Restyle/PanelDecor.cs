@@ -143,6 +143,17 @@ namespace RuneSkin.Restyle
         // keep-out (theme "clear.<asset>", PanelMath.CapInset) minus how far the stack reaches beyond the host.
         public float ContentInset() => _fitted ? 0f : CapClearance(ThemeTokens.GetFloat(PadToken, 0f));
 
+        // Widest corner cap (native size, host units): content further than this from the left / right edge never
+        // runs under a cap whatever its height (wide short hosts such as the HUD band use it instead of ContentInset).
+        public float CapWidth()
+        {
+            var w = 0f;
+            if (_corners == null) return w;
+            foreach (var corner in _corners)
+                if (corner && corner.TryGetComponent<Image>(out var image) && image.enabled && image.sprite) w = Mathf.Max(w, corner.rect.width);
+            return w;
+        }
+
         private float CapClearance(float pad)
         {
             var inset = 0f;

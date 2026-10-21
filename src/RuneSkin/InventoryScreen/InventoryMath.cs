@@ -49,6 +49,13 @@ namespace RuneSkin.InventoryScreen
         // Fallback HUD band when the HUD cluster top is not known (InventoryInput.HudTop).
         public float HudBand = 210f;
         public float HeaderH = 88f, FooterH = 48f, PanelHeaderH = 56f, PanelPad = 20f;
+        // Space the centre gives back before any cell shrinks (Codex M2: reclaim header / gaps first).
+        public float HeaderMinH = 104f, InnerGapMin = 4f;
+        // Corner-cap keep-out of the dock panels (PanelDecor.ContentInset -> PanelMath.CapInset, canvas units, set
+        // live): the glyph action row sits at least this far from the bottom and right edges.
+        public float PanelCapInset;
+        // Carved silhouette box between storage cells and mirrors: portrait, width = height x aspect (layout-a2.png).
+        public float DollFigureAspect = 0.66f;
         public float GridCell = 64f, GridGap = 8f, HotbarHeaderH = 30f;
         public float ContainerCell = 56f, ContainerGap = 6f;
         public float DollCell = 48f, DollGap = 8f, DollPad = 8f, DollColumns = 3f, DollMirrorGap = 24f, DollMinRows = 2f;
@@ -102,6 +109,15 @@ namespace RuneSkin.InventoryScreen
         // Dock too short for one row of each: backpack not docked beside the chest.
         public bool BackpackFolded;
         public float MinCell;
+        // Inner gap of the centre column after the reclaim (header | doll | grid | footer).
+        public float InnerGap;
+    }
+
+    // Doll row geometry (layout-a2.png): storage cells | portrait silhouette | mirror column, centred as one group.
+    public struct DollStrip
+    {
+        public float StorageX, MirrorX;
+        public Box Figure;
     }
 
     public static class InventoryMath
@@ -191,23 +207,37 @@ namespace RuneSkin.InventoryScreen
             var c = o.Center;
             var gap = t.InnerGap * k;
             var pad = t.PanelPad * k;
-            o.Header = new Box(c.X, c.Y, c.W, t.HeaderH * k);
             var footerH = t.FooterH * k;
-            o.Footer = new Box(c.X, c.Bottom - footerH, c.W, footerH);
-
-            // Doll and grid share the height between header and footer (header | doll | grid | footer). Both pitches
-            // shrink by one factor from their tokens until every doll row and grid row fits, never below the physical
-            // floor; past that the doll keeps DollMinRows rows and the grid scrolls.
             var dollPad = t.DollPad * k;
             var dollRows = DollRows(i, t);
             var hotbarH = t.HotbarHeaderH * k;
-            var avail = Math.Max(0f, c.H - o.Header.H - footerH - 3f * gap);
             var gridMaxPitch = t.GridCell * k + t.GridGap * k;
             var dollMaxPitch = Math.Max(t.DollCell * k, o.MinCell) + t.DollGap * k;
             var gridMinPitch = o.MinCell + t.GridGap * k;
             var dollMinPitch = o.MinCell + t.DollGap * k;
             var fixedH = hotbarH + 2f * pad + (dollRows > 0 ? 2f * dollPad : 0f);
             var wantH = i.GridH * gridMaxPitch + dollRows * dollMaxPitch;
+
+            // Short column: the header (name + tab row) and the inner gaps give their spare height back first,
+            // down to their minimums; only then do the cells shrink (Codex M2 review: cells too small).
+            var headerH = t.HeaderH * k;
+            var excess = headerH + footerH + 3f * gap + fixedH + wantH - c.H;
+            if (excess > 0f)
+            {
+                var dh = Math.Min(excess, Math.Max(0f, headerH - t.HeaderMinH * k));
+                headerH -= dh;
+                excess -= dh;
+                var dg = Math.Min(excess / 3f, Math.Max(0f, gap - t.InnerGapMin * k));
+                if (dg > 0f) gap -= dg;
+            }
+            o.Header = new Box(c.X, c.Y, c.W, headerH);
+            o.Footer = new Box(c.X, c.Bottom - footerH, c.W, footerH);
+            o.InnerGap = gap;
+
+            // Doll and grid share the height between header and footer (header | doll | grid | footer). Both pitches
+            // shrink by one factor from their tokens until every doll row and grid row fits, never below the physical
+            // floor; past that the doll keeps DollMinRows rows and the grid scrolls.
+            var avail = Math.Max(0f, c.H - o.Header.H - footerH - 3f * gap);
             var f = wantH > 0f ? Clamp((avail - fixedH) / wantH, 0f, 1f) : 1f;
             var gridPitch = Math.Max(gridMinPitch, gridMaxPitch * f);
             var dollPitch = Math.Max(dollMinPitch, dollMaxPitch * f);
@@ -236,6 +266,35 @@ namespace RuneSkin.InventoryScreen
             o.DollCells = d;
         }
 
+        // Left / right edge of the column block (dock, centre, crafting): the HUD band spans exactly this width.
+        public static void BlockEdges(InventoryLayout o, out float left, out float right)
+        {
+            left = float.MaxValue;
+            right = float.MinValue;
+            foreach (var b in new[] { o.Dock, o.Center, o.Crafting })
+            {
+                if (b.IsEmpty) continue;
+                left = Math.Min(left, b.X);
+                right = Math.Max(right, b.Right);
+            }
+            if (left > right) left = right = 0f;
+        }
+
+        // Storage grid, silhouette and mirrors inside the doll box: the silhouette is a portrait box (height = the
+        // doll rows, width = height x aspect, never wider than the room left), the whole group centred.
+        public static DollStrip Strip(Box box, DollFit d, float cellGap, float mirrorGap, float aspect)
+        {
+            var storageW = Math.Max(0f, d.StorageColumns * d.Pitch - cellGap);
+            var figH = Math.Max(0f, Math.Min(box.H, Math.Max(3, d.Rows) * d.Pitch - cellGap));
+            var room = Math.Max(0f, box.W - storageW - d.Cell - 2f * mirrorGap);
+            var figW = Math.Min(room, figH * Math.Max(0f, aspect));
+            var total = storageW + 2f * mirrorGap + figW + d.Cell;
+            var x = box.X + Math.Max(0f, (box.W - total) / 2f);
+            var s = new DollStrip { StorageX = x, Figure = new Box(x + storageW + mirrorGap, box.Y, figW, figH) };
+            s.MirrorX = s.Figure.Right + mirrorGap;
+            return s;
+        }
+
         private static int DollRows(InventoryInput i, InventoryTokens t)
         {
             var cols = Math.Max(1, (int)t.DollColumns);
@@ -247,8 +306,8 @@ namespace RuneSkin.InventoryScreen
             var dock = o.Dock;
             var gap = t.Gap * k;
             // Container panels: title row on top, glyph action row at the bottom (layout-a2.png "Взять всё").
-            var headerH = (t.PanelHeaderH + t.PanelActionsH) * k;
             var pad = t.PanelPad * k;
+            var headerH = (t.PanelHeaderH + t.PanelActionsH) * k + ActionLift(t, k);
             var hasChest = i.ChestW > 0 && i.ChestH > 0;
             var hasPack = i.BackpackW > 0 && i.BackpackH > 0;
             GridFit chest = default, pack = default;
@@ -314,6 +373,30 @@ namespace RuneSkin.InventoryScreen
                 o.Backpack = new Box(dock.X, y, dock.W, packH);
                 o.BackpackGrid = Refit(pack, packH, headerH, pad);
             }
+        }
+
+        // How far the action row rises above its default spot (pad / 2 above the panel bottom) to clear the cap.
+        public static float ActionLift(InventoryTokens t, float k) => Math.Max(0f, t.PanelCapInset - t.PanelPad * k / 2f);
+
+        // Action row of a dock panel: right-aligned, at least the cap keep-out from the bottom and right edges.
+        public static Box ActionRow(Box panel, InventoryTokens t, float k)
+        {
+            var pad = t.PanelPad * k;
+            var h = t.PanelActionsH * k;
+            var right = Math.Max(pad, t.PanelCapInset);
+            var bottom = Math.Max(pad / 2f, t.PanelCapInset);
+            return new Box(panel.X + pad, panel.Bottom - bottom - h, Math.Max(0f, panel.W - pad - right), h);
+        }
+
+        // Grid view of a dock panel: under the title row, top-aligned, as tall as its visible rows (InventoryGrid
+        // centres its root in the view, so a taller view would push short grids down), never into the action row.
+        public static Box ContainerGridView(Box panel, GridFit fit, InventoryTokens t, float k)
+        {
+            var pad = t.PanelPad * k;
+            var top = panel.Y + t.PanelHeaderH * k + pad;
+            var maxH = Math.Max(0f, ActionRow(panel, t, k).Y - pad / 2f - top); // = Fit's inner height
+            var h = fit.ScrollV || !(fit.Pitch > 0f) ? maxH : Math.Min(maxH, fit.VisibleRows * fit.Pitch);
+            return new Box(panel.X + pad, top, Math.Max(0f, panel.W - 2f * pad), h);
         }
 
         private static float MinPanelH(int rows, float pitch, float headerH, float pad) =>

@@ -37,6 +37,9 @@ namespace RuneSkin.InventoryScreen
             cell.Link = Layer(rt, "Link", "slot.link", false, -3f);
             cell.Link.enabled = false;
             cell.Glyph = Layer(rt, "Glyph", glyphRole, false, 8f);
+            // Engraving, not an icon: the empty-cell glyph reads smaller than an item (Codex M2 review).
+            var gs = ThemeTokens.GetFloat("share.inv.glyph.scale", 0.82f);
+            cell.Glyph.rectTransform.localScale = new Vector3(gs, gs, 1f);
             var icon = new GameObject("Icon", typeof(RectTransform)).AddComponent<Image>();
             Stretch(icon.rectTransform, rt, 6f);
             icon.preserveAspect = true;

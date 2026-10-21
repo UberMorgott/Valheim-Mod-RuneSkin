@@ -144,6 +144,7 @@ namespace RuneSkin.InventoryScreen
             t.ContainerCell = F("size.inv.container.cell", t.ContainerCell); t.ContainerGap = F("size.inv.container.gap", t.ContainerGap);
             t.DollCell = F("size.inv.doll.cell", t.DollCell); t.DollGap = F("size.inv.doll.gap", t.DollGap);
             t.DollColumns = F("size.inv.doll.columns", t.DollColumns); t.DollPad = F("size.inv.doll.pad", t.DollPad); t.DollMirrorGap = F("size.inv.doll.mirror.gap", t.DollMirrorGap);
+            t.DollFigureAspect = F("share.inv.doll.figure", t.DollFigureAspect); t.HeaderMinH = F("size.inv.header.min", t.HeaderMinH); t.InnerGapMin = F("size.inv.inner.gap.min", t.InnerGapMin);
             t.ScrollbarW = F("size.inv.scrollbar", t.ScrollbarW); t.MinCellPhysPx = F("floor.cell.px", t.MinCellPhysPx);
         }
 
@@ -295,7 +296,8 @@ namespace RuneSkin.InventoryScreen
                 if (b && b.targetGraphic) ctx.Role(b.targetGraphic, "action.button", "vanilla Take all / Stack all as glyph action (InventoryGui.cs:408-409)");
             if (_packPanel)
                 foreach (var b in _packPanel.GetComponentsInChildren<Button>(true))
-                    if (b.targetGraphic) ctx.Role(b.targetGraphic, "action.button", "backpack panel action button");
+                    // Grid cells are Buttons too (InventoryElement.m_button): they keep their slot.cell role.
+                    if (b.targetGraphic && !b.GetComponentInParent<InventoryElement>(true)) ctx.Role(b.targetGraphic, "action.button", "backpack panel action button");
             // The crafting panel is not ours until M3.
             if (_gui.m_crafting) ctx.Exclude(_gui.m_crafting, "crafting panel: placed by RuneSkin, styled by the other skin until M3");
             return ctx;
@@ -329,6 +331,7 @@ namespace RuneSkin.InventoryScreen
             if (!InventoryGui.IsVisible() || !_canvas || !Player.m_localPlayer)
             {
                 RestoreQuickBar();
+                ClearBand();
                 return;
             }
             FindBackpack();
@@ -337,6 +340,12 @@ namespace RuneSkin.InventoryScreen
             {
                 _layoutHash = hash;
                 Compute();
+            }
+            else
+            {
+                // Reopened with an unchanged layout (band cleared on hide): ask for the band again.
+                var cluster = PlayerHud.HudCluster.Instance;
+                if (cluster && !cluster.BandWanted) RequestBand(_rootCanvas.scaleFactor > 0f ? _rootCanvas.scaleFactor : 1f);
             }
             _frameReady = true;
             UpdateMirrors();
@@ -372,6 +381,7 @@ namespace RuneSkin.InventoryScreen
         public void OnHide()
         {
             RestoreQuickBar();
+            ClearBand();
             if (_focus) _focus.gameObject.SetActive(false);
         }
 
@@ -480,12 +490,41 @@ namespace RuneSkin.InventoryScreen
             i.DollMirrors = 3;
             i.HudTop = HudTopLogical(scale);
             ReadTokens();
+            _tokens.PanelCapInset = CapKeepOut(_chestHost);
             _layout = InventoryMath.Compute(i, _tokens);
+            RequestBand(scale);
             _entriesRevision = -1; // rebuild doll order
             _logPlacement = 3;
             Plugin.Log.LogInfo($"[RuneSkin] inventory layout {_layout.Mode}: dock {_layout.Dock} centre {_layout.Center} crafting {_layout.Crafting} " +
                                $"grid {_layout.Player} chest {_layout.ChestGrid} backpack {_layout.BackpackGrid} doll {_layout.DollCells.Rows}r/{_layout.DollCells.VisibleRows}v" +
                                (_layout.DockOverflow ? " dock overflow" : ""));
+        }
+
+        // HUD band profile (inventory-layout.md section 4/9, user call 2026-10-21): the HUD cluster re-lays out as one
+        // wide band under the column block, aligned to its left / right edges. Its height comes back as the HUD top
+        // (InputHash), so the next layout gives the columns the height the band freed.
+        private void RequestBand(float scale)
+        {
+            var cluster = PlayerHud.HudCluster.Instance;
+            if (!cluster || _layout == null) return;
+            InventoryMath.BlockEdges(_layout, out var left, out var right);
+            var quick = 0;
+            foreach (var s in _eaqs) if (s.Kind == EaqsBridge.Kind.Quick) quick++;
+            cluster.SetBand(left * scale, right * scale, quick);
+        }
+
+        // Corner-cap keep-out of a dock host's panel stack (PanelDecor.ContentInset, host units) in canvas units.
+        private float CapKeepOut(RectTransform host)
+        {
+            var stack = host ? host.Find(PanelDecor.ChildName) : null;
+            if (!stack || !stack.TryGetComponent<PanelDecor>(out var decor)) return 0f;
+            return decor.ContentInset() * host.lossyScale.x / Mathf.Max(Geo.WorldPerUnit(_canvas), 1e-6f);
+        }
+
+        private static void ClearBand()
+        {
+            var cluster = PlayerHud.HudCluster.Instance;
+            if (cluster) cluster.ClearBand();
         }
 
         // ---------------------------------------------------------------- panels
@@ -601,14 +640,34 @@ namespace RuneSkin.InventoryScreen
                 if (child.gameObject.activeSelf && child.GetComponent<Selectable>()) tabs++;
             if (tabs == 0) return;
             var gap = _tokens.Gap / 2f;
-            var size = Mathf.Min(box.H - nameH - gap, (box.W - (tabs - 1) * gap) / tabs);
-            var x = box.X + (box.W - (tabs * size + (tabs - 1) * gap)) / 2f;
+            // Tab row under the name (layout-a2.png): tabs as tall as the row, a little wider than tall, never past
+            // the row width; each tab's background and icon are sized with it (the vanilla Background child keeps a
+            // fixed 104 px rect otherwise and ran over the name plaque, Codex M2 review).
+            var h = Mathf.Max(0f, box.H - nameH - gap);
+            var w = Mathf.Min(h * ThemeTokens.GetFloat("share.inv.tab.aspect", 1.25f), (box.W - (tabs - 1) * gap) / tabs);
+            h = Mathf.Min(h, w);
+            var x = box.X + (box.W - (tabs * w + (tabs - 1) * gap)) / 2f;
             var y = box.Y + nameH + gap;
             foreach (Transform child in info)
             {
                 if (!child.gameObject.activeSelf || !child.GetComponent<Selectable>()) continue;
-                Geo.Place(_canvas, (RectTransform)child, new Box(x, y, size, size));
-                x += size + gap;
+                Tab((RectTransform)child, new Box(x, y, w, h));
+                x += w + gap;
+            }
+        }
+
+        // One info tab on its box: the button, its Background child over the whole box, the icon (Icon / Image /
+        // Checked) in a centred square inset of it.
+        private void Tab(RectTransform tab, Box b)
+        {
+            Geo.Place(_canvas, tab, b);
+            var side = Mathf.Min(b.W, b.H) * (1f - 2f * ThemeTokens.GetFloat("share.inv.tab.icon.inset", 0.16f));
+            var icon = new Box(b.X + (b.W - side) / 2f, b.Y + (b.H - side) / 2f, side, side);
+            foreach (Transform c in tab)
+            {
+                if (!(c is RectTransform rt) || !c.gameObject.activeSelf || !c.GetComponent<Graphic>()) continue;
+                if (c.name == "Background") Geo.Place(_canvas, rt, b);
+                else if (c.name == "Icon" || c.name == "Image" || c.name == "Checked") Geo.Place(_canvas, rt, icon);
             }
         }
 
@@ -729,12 +788,12 @@ namespace RuneSkin.InventoryScreen
             var pad = _tokens.PanelPad * k;
             var headerH = _tokens.PanelHeaderH * k;
             Geo.Place(_canvas, panel, box);
-            var actionsH = _tokens.PanelActionsH * k;
             var header = new Box(box.X + pad, box.Y + pad / 2f, box.W - 2f * pad, headerH - pad / 2f);
-            if (grid) Geo.Place(_canvas, (RectTransform)grid.transform, new Box(box.X + pad, box.Y + headerH + pad, box.W - 2f * pad, box.H - headerH - actionsH - 2f * pad));
+            // Grid top-aligned under the title (view = visible rows), glyph actions in their own row at the bottom,
+            // right-aligned, clear of the bottom-right corner cap (InventoryMath.ActionRow); the title keeps the header width.
+            if (grid) Geo.Place(_canvas, (RectTransform)grid.transform, InventoryMath.ContainerGridView(box, fit, _tokens, k));
             if (grid) Want(grid, fit.Pitch, fit.Cell);
-            // Glyph actions in their own row at the panel bottom, right-aligned; the title keeps the header width.
-            Bar(panel, kind, inventory, takeAll, stackAll, new Box(box.X + pad, box.Bottom - pad / 2f - actionsH, box.W - 2f * pad, actionsH));
+            Bar(panel, kind, inventory, takeAll, stackAll, InventoryMath.ActionRow(box, _tokens, k));
             var weightPlate = DirectChild(panel, weight);
             var right = header.Right;
             if (weightPlate)
@@ -1017,8 +1076,10 @@ namespace RuneSkin.InventoryScreen
             var d = _layout.DollCells;
             var box = Inset(_layout.Doll, _tokens.DollPad * _input.SkinScale, _tokens.DollPad * _input.SkinScale);
             var cols = d.StorageColumns;
-            // Storage grid left, mirrors column right, carved silhouette between (layout-a2.png).
-            var x0 = box.X;
+            // Storage grid left, portrait silhouette, mirrors column right of it, centred as one group (layout-a2.png).
+            var k = _input.SkinScale;
+            var strip = InventoryMath.Strip(box, d, _tokens.DollGap * k, _tokens.DollMirrorGap * k, _tokens.DollFigureAspect);
+            var x0 = strip.StorageX;
             var visible = Mathf.Max(1, d.VisibleRows);
             _dollScroll = Mathf.Clamp(_dollScroll, 0, Mathf.Max(0, d.Rows - visible));
             var native = grid.m_elementPrefab ? ((RectTransform)grid.m_elementPrefab.transform).rect.width : d.Cell;
@@ -1058,9 +1119,8 @@ namespace RuneSkin.InventoryScreen
                     PlaceOwnCell(entry.Cell, cx, cy, d.Cell, shown);
                 }
             }
-            var mx = Mathf.Max(x0 + cols * d.Pitch - _tokens.DollGap + _tokens.DollMirrorGap, box.Right - d.Cell);
-            var figureX = x0 + cols * d.Pitch - _tokens.DollGap + _tokens.DollMirrorGap;
-            var figure = new Box(figureX, box.Y, Mathf.Max(0f, mx - _tokens.DollMirrorGap - figureX), Mathf.Min(box.H, Mathf.Max(3, d.Rows) * d.Pitch - _tokens.DollGap));
+            var mx = strip.MirrorX;
+            var figure = strip.Figure;
             if (_backdrop) Show(_backdrop, figure.W >= d.Cell ? figure : default);
             if (_silhouette) Show(_silhouette, figure.W >= d.Cell ? Inset(figure, 8f, 8f) : default);
             // Mirrors scroll with the doll rows (never over the grid when fewer rows fit).
@@ -1111,6 +1171,9 @@ namespace RuneSkin.InventoryScreen
                 rt.pivot = icon.pivot;
                 rt.anchoredPosition = icon.anchoredPosition;
                 rt.sizeDelta = icon.sizeDelta;
+                // Engraving, not an icon: smaller than an item picture (Codex M2 review).
+                var gs = ThemeTokens.GetFloat("share.inv.glyph.scale", 0.82f);
+                rt.localScale = new Vector3(gs, gs, 1f);
                 image.raycastTarget = false;
                 image.preserveAspect = true;
                 var role = "glyph.slot." + (type ?? "generic");
