@@ -23,7 +23,7 @@ namespace RuneSkin.API
         /// Version of the installed API surface (a property, not a const, so you read the installed value at runtime).
         /// Bumped on every public change; check it before using newer members.
         /// </summary>
-        public static int ApiVersion => 1;
+        public static int ApiVersion => 2;
 
         private static IHost _host;
         private static int _mainThread = -1;
@@ -37,8 +37,8 @@ namespace RuneSkin.API
 
         /// <summary>
         /// Whether the running RuneSkin renders a capability. Known names: "root.restyle", "bind", "invalidate",
-        /// "theme.read", "ownership" (M0); "panel.dock", "slot.render", "effect.render", "resource.render",
-        /// "panel.action" (later milestones, false in M0).
+        /// "theme.read", "ownership" (M0); "effect.render", "resource.render", "capacity.render" (M1, true while
+        /// RuneSkin owns the HUD); "panel.dock", "slot.render", "panel.action" (later milestones).
         /// </summary>
         public static bool Supports(string capability) => _host != null && capability != null && _host.Supports(capability);
 
@@ -103,7 +103,7 @@ namespace RuneSkin.API
             return Track(h => h.RegisterSlot(owner, copy));
         }
 
-        /// <summary>Registers how a status effect is presented. Recorded in M0, rendered in M1.</summary>
+        /// <summary>Registers how a status effect is presented (overrides the automatic classification).</summary>
         public static IDisposable RegisterStatusEffect(string owner, StatusEffectDescriptor descriptor)
         {
             CheckOwner(owner);
@@ -113,8 +113,9 @@ namespace RuneSkin.API
         }
 
         /// <summary>
-        /// Registers a provider for a resource pool (e.g. "energyshield"). Provisional, recorded in M0, rendered in
-        /// M1. The provider runs on the main thread; exceptions disable it after repeated faults.
+        /// Registers a provider for a resource pool (<see cref="ResourcePools"/>). Called once per frame for the local
+        /// player on the main thread while the HUD is shown; the latest registration of a pool wins. Exceptions disable
+        /// it after 3 faults (the extension is hidden, never stale).
         /// </summary>
         public static IDisposable RegisterResourceProvider(string owner, string pool, Func<Player, ResourceState> provider)
         {
@@ -122,6 +123,18 @@ namespace RuneSkin.API
             if (string.IsNullOrEmpty(pool)) throw new ArgumentNullException(nameof(pool));
             if (provider == null) throw new ArgumentNullException(nameof(provider));
             return Track(h => h.RegisterResourceProvider(owner, pool, provider));
+        }
+
+        /// <summary>
+        /// Registers the live size of a variable HUD list (ApiVersion 2). Known lists: "food" (food sockets, vanilla 3).
+        /// Same call and fault rules as <see cref="RegisterResourceProvider"/>.
+        /// </summary>
+        public static IDisposable RegisterCapacityProvider(string owner, string list, Func<Player, CapacityState> provider)
+        {
+            CheckOwner(owner);
+            if (string.IsNullOrEmpty(list)) throw new ArgumentNullException(nameof(list));
+            if (provider == null) throw new ArgumentNullException(nameof(provider));
+            return Track(h => h.RegisterCapacityProvider(owner, list, provider));
         }
 
         /// <summary>Registers an inventory panel action button. Recorded in M0, rendered in M2.</summary>
@@ -218,6 +231,8 @@ namespace RuneSkin.API
             Channels = d.Channels,
             ColorToken = d.ColorToken,
             Priority = d.Priority,
+            Harmful = d.Harmful,
+            Bar = d.Bar,
             NoForecast = d.NoForecast,
             PendingDamage = d.PendingDamage,
             Timer = d.Timer
@@ -277,6 +292,7 @@ namespace RuneSkin.API
         IDisposable RegisterSlot(string owner, SlotDescriptor descriptor);
         IDisposable RegisterStatusEffect(string owner, StatusEffectDescriptor descriptor);
         IDisposable RegisterResourceProvider(string owner, string pool, Func<Player, ResourceState> provider);
+        IDisposable RegisterCapacityProvider(string owner, string list, Func<Player, CapacityState> provider);
         IDisposable RegisterPanelAction(string owner, PanelActionDescriptor descriptor);
         bool TryGetColor(string token, out Color color);
         bool TryGetSprite(string token, out Sprite sprite);

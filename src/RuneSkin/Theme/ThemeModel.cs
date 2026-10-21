@@ -32,6 +32,9 @@ namespace RuneSkin.Theme
     {
         public string token;
         public string asset;
+        // Sprites only: token used while this asset is not in the bundle (art not delivered yet). The use is listed
+        // in diagnostics as a fallback, so it never hides missing art.
+        public string fallback;
     }
 
     [Serializable]

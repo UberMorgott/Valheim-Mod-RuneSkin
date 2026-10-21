@@ -55,6 +55,9 @@ namespace RuneSkin.Screens
             {
                 ctx.Role(box, "tooltip.box", "image framing the tooltip texts");
                 PanelDecor.Ensure(box.rectTransform, "size.tooltip.panel.pad", glass: false, plaque: false); // box = the glass
+                // The frame lies on the box edge: content laid out inside the box needs the inset (Epic Loot's
+                // InventoryTooltip content has padding 0). Boxes without a LayoutGroup keep their own text margins.
+                ContentInset.Ensure(box.rectTransform, "size.tooltip.content.inset");
             }
             else if (text && text.TryGetComponent<TMP_Text>(out var bare)) TooltipFrame.Ensure(bare);
             return ctx;

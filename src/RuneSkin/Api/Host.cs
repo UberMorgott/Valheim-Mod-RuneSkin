@@ -68,7 +68,11 @@ namespace RuneSkin.Api
 
         public bool IsOwned(string family) => OwnershipRegistry.IsOwned(family);
 
-        public bool Supports(string capability) => Capabilities.Contains(capability);
+        // HUD rendering capabilities exist only while RuneSkin owns the HUD family.
+        private static readonly HashSet<string> HudCapabilities = new HashSet<string> { "effect.render", "resource.render", "capacity.render" };
+
+        public bool Supports(string capability) =>
+            Capabilities.Contains(capability) || (HudCapabilities.Contains(capability) && OwnershipRegistry.IsOwned(OwnershipRegistry.Hud));
 
         public IDisposable RegisterRoot(string owner, Transform root, string screenId)
         {
@@ -132,10 +136,14 @@ namespace RuneSkin.Api
 
         public IDisposable RegisterSlot(string owner, SlotDescriptor descriptor) => Record(owner, "slot", descriptor);
 
-        public IDisposable RegisterStatusEffect(string owner, StatusEffectDescriptor descriptor) => Record(owner, "effect", descriptor);
+        public IDisposable RegisterStatusEffect(string owner, StatusEffectDescriptor descriptor) =>
+            new Handle(Providers.AddEffect(owner, descriptor));
 
         public IDisposable RegisterResourceProvider(string owner, string pool, Func<Player, ResourceState> provider) =>
-            Record(owner, "resource:" + pool, provider);
+            new Handle(Providers.AddResource(owner, pool, provider));
+
+        public IDisposable RegisterCapacityProvider(string owner, string list, Func<Player, CapacityState> provider) =>
+            new Handle(Providers.AddCapacity(owner, list, provider));
 
         public IDisposable RegisterPanelAction(string owner, PanelActionDescriptor descriptor) => Record(owner, "action", descriptor);
 
@@ -150,7 +158,7 @@ namespace RuneSkin.Api
         {
             var entry = new KeyValuePair<string, object>(owner + "|" + kind, payload);
             Records.Add(entry);
-            Plugin.Log.LogInfo($"[RuneSkin] api {kind} from {owner}: accepted, not rendered in M0");
+            Plugin.Log.LogInfo($"[RuneSkin] api {kind} from {owner}: accepted, not rendered yet");
             return new Handle(() => Records.Remove(entry));
         }
 

@@ -33,6 +33,12 @@ namespace RuneSkin.Theme
                 if (string.IsNullOrEmpty(s.asset)) errors.Add($"sprite '{s.token}': asset missing");
                 spriteTokens.Add(s.token);
             }
+            foreach (var s in f.sprites ?? new AssetEntry[0])
+            {
+                if (string.IsNullOrEmpty(s.fallback)) continue;
+                if (!spriteTokens.Contains(s.fallback)) errors.Add($"sprite '{s.token}': fallback token '{s.fallback}' undefined");
+                else if (s.fallback == s.token) errors.Add($"sprite '{s.token}': falls back to itself");
+            }
             var fontTokens = new HashSet<string>();
             foreach (var s in f.fonts ?? new AssetEntry[0])
             {

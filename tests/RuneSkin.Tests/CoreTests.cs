@@ -120,6 +120,7 @@ namespace RuneSkin.Tests
             public IDisposable RegisterSlot(string owner, SlotDescriptor d) => Rec("slot:" + d.Id);
             public IDisposable RegisterStatusEffect(string owner, StatusEffectDescriptor d) => Rec("effect:" + d.Hash);
             public IDisposable RegisterResourceProvider(string owner, string pool, Func<Player, ResourceState> p) => Rec("resource:" + pool);
+            public IDisposable RegisterCapacityProvider(string owner, string list, Func<Player, CapacityState> p) => Rec("capacity:" + list);
             public IDisposable RegisterPanelAction(string owner, PanelActionDescriptor d) => Rec("action:" + d.Id);
             public bool TryGetColor(string token, out Color color) { color = Color.white; return true; }
             public bool TryGetSprite(string token, out Sprite sprite) { sprite = null; return false; }

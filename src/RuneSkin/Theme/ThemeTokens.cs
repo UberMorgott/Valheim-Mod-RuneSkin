@@ -58,6 +58,16 @@ namespace RuneSkin.Theme
         private static readonly Dictionary<string, ResolvedRole> Roles = new Dictionary<string, ResolvedRole>();
         private static readonly List<SpriteRole> SpriteRoleList = new List<SpriteRole>();
         private static readonly Dictionary<string, string[]> Families = new Dictionary<string, string[]>();
+        // Sprite tokens drawn with their fallback (art missing): token -> reason. Read by diagnostics.
+        public static readonly Dictionary<string, string> FallbackTokens = new Dictionary<string, string>();
+
+        public static bool IsFallback(string token) => token != null && FallbackTokens.ContainsKey(token);
+
+        public static Color GetColor(string token, Color fallback) => token != null && Colors.TryGetValue(token, out var c) ? c : fallback;
+
+        public static Sprite GetSprite(string token) => token != null && Sprites.TryGetValue(token, out var s) && s ? s : null;
+
+        public static TMP_FontAsset GetFont(string token) => token != null && Fonts.TryGetValue(token, out var f) && f ? f : null;
 
         private static AssetBundle _bundle;
         private static readonly Dictionary<string, Sprite> BundleSprites = new Dictionary<string, Sprite>();
@@ -262,12 +272,27 @@ namespace RuneSkin.Theme
             Colors.Clear(); Sprites.Clear(); Fonts.Clear(); Floats.Clear(); Roles.Clear(); SpriteRoleList.Clear(); Families.Clear();
             foreach (var c in f.colors ?? new ColorEntry[0])
                 if (HexColor.TryParse(c.value, out var color)) Colors[c.token] = color;
+            FallbackTokens.Clear();
             foreach (var s in f.sprites ?? new AssetEntry[0])
             {
                 BundleSprites.TryGetValue(s.asset, out var sprite);
-                if (!sprite && BundleLoaded) Diagnostics.SkinDiagnostics.Theme($"sprite '{s.token}': asset '{s.asset}' not in bundle");
+                if (!sprite && BundleLoaded && string.IsNullOrEmpty(s.fallback))
+                    Diagnostics.SkinDiagnostics.Theme($"sprite '{s.token}': asset '{s.asset}' not in bundle");
                 Sprites[s.token] = sprite;
             }
+            // Fallbacks resolve after every asset (one level: a fallback token's own asset, never a chain).
+            foreach (var s in f.sprites ?? new AssetEntry[0])
+            {
+                if (Sprites[s.token] || string.IsNullOrEmpty(s.fallback)) continue;
+                if (Sprites.TryGetValue(s.fallback, out var fb) && fb)
+                {
+                    Sprites[s.token] = fb;
+                    FallbackTokens[s.token] = $"asset '{s.asset}' not in bundle, using '{s.fallback}'";
+                }
+                else Diagnostics.SkinDiagnostics.Theme($"sprite '{s.token}': asset '{s.asset}' and fallback '{s.fallback}' missing");
+            }
+            foreach (var p in FallbackTokens)
+                Diagnostics.SkinDiagnostics.Theme($"sprite '{p.Key}': {p.Value}");
             foreach (var s in f.fonts ?? new AssetEntry[0])
             {
                 BundleFonts.TryGetValue(s.asset, out var font);

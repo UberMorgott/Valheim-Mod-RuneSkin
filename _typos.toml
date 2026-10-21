@@ -12,3 +12,6 @@ BraidLineHorisontalMedium = "BraidLineHorisontalMedium"
 # art/src/render_sprites.py (art worker): short math names, not words: iy = row index, dout = output directory.
 iy = "iy"
 dout = "dout"
+# Vanilla field names (assembly_valheim Game.m_localDamgeTakenRate, SE_Stats.m_percentigeDamageModifiers).
+m_localDamgeTakenRate = "m_localDamgeTakenRate"
+m_percentigeDamageModifiers = "m_percentigeDamageModifiers"

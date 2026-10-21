@@ -28,6 +28,9 @@
     <Compile Include="..\..\src\RuneSkin\Theme\ThemeModel.cs" Link="Linked\ThemeModel.cs" />
     <Compile Include="..\..\src\RuneSkin\Theme\ThemeSchema.cs" Link="Linked\ThemeSchema.cs" />
     <Compile Include="..\..\src\RuneSkin\Theme\ThemeJson.cs" Link="Linked\ThemeJson.cs" />
+    <Compile Include="..\..\src\RuneSkin\Hud\HudMath.cs" Link="Linked\HudMath.cs" />
+    <Compile Include="..\..\src\RuneSkin\Hud\EffectTaxonomy.cs" Link="Linked\EffectTaxonomy.cs" />
+    <Compile Include="..\..\src\RuneSkin\Hud\ResourceCheck.cs" Link="Linked\ResourceCheck.cs" />
     <EmbeddedResource Include="..\..\src\RuneSkin\Theme\default-theme.json" LogicalName="RuneSkin.default-theme.json" />
   </ItemGroup>
 

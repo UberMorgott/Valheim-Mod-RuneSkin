@@ -12,8 +12,10 @@ namespace RuneSkin.Ownership
     {
         public const string Menu = "Menu";
         public const string Tooltips = "Tooltips";
+        // Player HUD cluster: health / stamina / eitr / adrenaline bars, food, status effects, hotbar placement.
+        public const string Hud = "Hud";
 
-        public static readonly string[] Known = { Menu, Tooltips };
+        public static readonly string[] Known = { Menu, Tooltips, Hud };
 
         private static readonly HashSet<string> Owned = new HashSet<string>();
         public static bool Frozen { get; private set; }

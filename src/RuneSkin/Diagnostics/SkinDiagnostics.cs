@@ -105,10 +105,11 @@ namespace RuneSkin.Diagnostics
                     foreach (var text in report.Root.GetComponentsInChildren<TMP_Text>(false))
                     {
                         var px = PhysicalSize(text);
-                        if (px > 0f && px < floor && !string.IsNullOrEmpty(text.text))
+                        var min = text.TryGetComponent<RuneSkin.PlayerHud.TextFloor>(out var own) ? own.Px : floor;
+                        if (px > 0f && px < min - 0.05f && !string.IsNullOrEmpty(text.text))
                         {
                             belowFloor++;
-                            sb.AppendLine($"FLOOR    {PathOf(text.transform, report.Root)} {px:0.0}px < {floor}px");
+                            sb.AppendLine($"FLOOR    {PathOf(text.transform, report.Root)} {px:0.0}px < {min}px");
                         }
                     }
                     var corners = new Vector3[4];

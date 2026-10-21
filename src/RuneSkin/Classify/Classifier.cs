@@ -79,8 +79,8 @@ namespace RuneSkin.Classify
         private static Classification? Semantics(Graphic g, string originalSprite, ScreenContext ctx)
         {
             // GuiBar caches its fill colour in Awake and restores it (GuiBar.cs:32-38, ResetColor :140); mods tint fills.
-            var bar = g.GetComponentInParent<GuiBar>(true);
-            if (bar && bar.m_bar && bar.m_bar.gameObject == g.gameObject)
+            var guiBar = g.GetComponentInParent<GuiBar>(true);
+            if (guiBar && guiBar.m_bar && guiBar.m_bar.gameObject == g.gameObject)
                 return Classification.Of("content", "GuiBar fill (colour cache, GuiBar.cs:32-38)");
 
             if (g is Image image)
@@ -104,8 +104,17 @@ namespace RuneSkin.Classify
                     return Classification.Of("skip", "ScrollRect.viewport (clip area)");
                 if (g.GetComponent<ScrollRect>())
                     return Classification.Of("skip", "ScrollRect hit area");
-                if (g.GetComponentInParent<Scrollbar>(true))
-                    return Classification.Of("content", "scrollbar graphic (scrollbar art: M1)");
+                // Scrollbar: the handle is the Selectable's targetGraphic (state sprites via SpriteSwap), the track is
+                // the Image on the Scrollbar's own object; anything else inside (arrows, mod decor) stays content.
+                var bar = g.GetComponentInParent<Scrollbar>(true);
+                if (bar)
+                {
+                    if (bar.targetGraphic == g || (bar.handleRect && bar.handleRect == g.rectTransform))
+                        return Classification.Of("scrollbar.handle", "Scrollbar.targetGraphic / handleRect");
+                    if (bar.gameObject == g.gameObject)
+                        return Classification.Of("scrollbar.track", "Image on the Scrollbar object");
+                    return Classification.Of("content", "other graphic inside a Scrollbar");
+                }
                 if (!image.sprite && string.IsNullOrEmpty(originalSprite) && Stretches(image.rectTransform))
                     return Classification.Of("scrim", "sprite-less full-stretch image (screen dim)");
                 return null;

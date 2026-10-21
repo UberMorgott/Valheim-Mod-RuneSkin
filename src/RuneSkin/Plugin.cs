@@ -22,13 +22,17 @@ namespace RuneSkin
     [BepInProcess("valheim.exe")]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Version = "0.1.0";
+        public const string Version = "0.2.0";
 
         public static ManualLogSource Log { get; private set; }
         public static ConfigEntry<float> SkinScale { get; private set; }
         public static Host ApiHost { get; private set; }
+        public static ConfigEntry<float> HudScale { get; private set; }
+        public static ConfigEntry<bool> UltrawideBox { get; private set; }
+        public static ConfigEntry<KeyboardShortcut> StatusListKey { get; private set; }
+        public static ConfigEntry<string> StatusListButton { get; private set; }
 
-        private static ConfigEntry<bool> _ownMenu, _ownTooltips, _requireAssets;
+        private static ConfigEntry<bool> _ownMenu, _ownTooltips, _ownHud, _requireAssets;
         private Harmony _harmony;
 
         private void Awake()
@@ -38,6 +42,17 @@ namespace RuneSkin
                 "RuneSkin styles the pause menu. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
             _ownTooltips = Config.Bind("Ownership", "Tooltips", true,
                 "RuneSkin styles tooltips. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+            _ownHud = Config.Bind("Ownership", "Hud", true,
+                "RuneSkin draws the player HUD (bars, food, status effects, hotbar placement). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            HudScale = Config.Bind("Hud", "Scale", 1f, new ConfigDescription(
+                "HUD cluster scale on top of the game's UI scale (fonts never go below the readable floor).",
+                new AcceptableValueRange<float>(0.75f, 1.5f)));
+            UltrawideBox = Config.Bind("Hud", "UltrawideBox", true,
+                "On 21:9 and wider screens the HUD corners are those of a centred 16:9 box (off = true screen corners).");
+            StatusListKey = Config.Bind("Hud", "StatusListKey", new KeyboardShortcut(UnityEngine.KeyCode.F7),
+                "Opens / closes the full list of status effects when the strip shows a +N cell.");
+            StatusListButton = Config.Bind("Hud", "StatusListGamepadButton", "JoyDPadDown",
+                "Gamepad: this ZInput button while JoyAltKeys is held opens / closes the full status list. Empty = none.");
             _requireAssets = Config.Bind("Ownership", "RequireAssets", true,
                 "Take a family only when its theme assets loaded (otherwise the other skin keeps it). Off = take it anyway (development before the art bundle exists).");
             SkinScale = Config.Bind("Layout", "SkinScale", 1f, new ConfigDescription(
@@ -55,6 +70,7 @@ namespace RuneSkin
             {
                 [OwnershipRegistry.Menu] = _ownMenu.Value,
                 [OwnershipRegistry.Tooltips] = _ownTooltips.Value,
+                [OwnershipRegistry.Hud] = _ownHud.Value,
             }, _requireAssets.Value);
 
             ApiHost = new Host();
@@ -66,6 +82,7 @@ namespace RuneSkin
             _harmony.PatchAll(typeof(ConsoleCommands));
             if (OwnershipRegistry.IsOwned(OwnershipRegistry.Menu)) _harmony.PatchAll(typeof(MenuAdapter));
             if (OwnershipRegistry.IsOwned(OwnershipRegistry.Tooltips)) _harmony.PatchAll(typeof(TooltipAdapter));
+            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Hud)) _harmony.PatchAll(typeof(PlayerHud.HudAdapter));
             Log.LogInfo($"[RuneSkin] {Version} ready (API v{Skin.ApiVersion})");
         }
 
@@ -78,7 +95,11 @@ namespace RuneSkin
         }
 
         // Diagnostics entry for tools (AutotestDriver calls it by reflection): writes BepInEx\RuneSkin\diag\<screen>.txt.
-        public static string[] DiagDump(string screen) => SkinDiagnostics.Dump(string.IsNullOrEmpty(screen) ? null : screen).ToArray();
+        public static string[] DiagDump(string screen)
+        {
+            PlayerHud.HudCluster.Instance?.Record();
+            return SkinDiagnostics.Dump(string.IsNullOrEmpty(screen) ? null : screen).ToArray();
+        }
     }
 
     // Console: runeskin_diag [screen] (dump), runeskin_reload (theme). Registered with the vanilla terminal.

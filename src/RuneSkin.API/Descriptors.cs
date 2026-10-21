@@ -62,8 +62,8 @@ namespace RuneSkin.API
     }
 
     /// <summary>
-    /// How RuneSkin presents a status effect. Copied when registered. Rendering arrives in M1
-    /// (<c>Skin.Supports("effect.render")</c>).
+    /// How RuneSkin presents a status effect, overriding its automatic classification. Copied when registered.
+    /// Rendered since M1 (<c>Skin.Supports("effect.render")</c>).
     /// </summary>
     public sealed class StatusEffectDescriptor
     {
@@ -75,6 +75,10 @@ namespace RuneSkin.API
         public string ColorToken;
         /// <summary>Priority inside its category; higher wins presentation budgets.</summary>
         public int Priority;
+        /// <summary>True for harmful effects (sorted first in the status strip).</summary>
+        public bool Harmful;
+        /// <summary>Bar the channels apply to: "health" (default), "stamina" or "eitr".</summary>
+        public string Bar;
         /// <summary>True when the effect has no defensible remaining-damage estimate (never numeric).</summary>
         public bool NoForecast;
         /// <summary>Remaining damage the effect will still deal to the local player, or null when unknown.</summary>
@@ -83,35 +87,86 @@ namespace RuneSkin.API
         public Func<StatusEffect, float?> Timer;
     }
 
+    /// <summary>Pool names for <see cref="Skin.RegisterResourceProvider"/>.</summary>
+    public static class ResourcePools
+    {
+        /// <summary>Vanilla health (provider adds reservation / conversion data; the value is the game's).</summary>
+        public const string Health = "health";
+        /// <summary>Vanilla stamina.</summary>
+        public const string Stamina = "stamina";
+        /// <summary>Vanilla eitr.</summary>
+        public const string Eitr = "eitr";
+        /// <summary>A mod pool drawn as a thin rail above health (value comes from the provider).</summary>
+        public const string EnergyShield = "energyshield";
+    }
+
+    /// <summary>Recharge phase of a pool that recharges on its own (energy shield).</summary>
+    public enum ResourcePhase
+    {
+        /// <summary>Full or regenerating normally.</summary>
+        Active,
+        /// <summary>Waiting before recharge starts (<see cref="ResourceState.PhaseSeconds"/> left).</summary>
+        RechargeDelay,
+        /// <summary>Recharging now.</summary>
+        Recharging,
+        /// <summary>Depleted by damage this moment (short pulse, then RechargeDelay).</summary>
+        Broken
+    }
+
     /// <summary>
-    /// Snapshot of one resource pool for the HUD (energy shield, reserves, conversions).
-    /// PROVISIONAL until M1: <c>Skin.Supports("resource.render")</c> is false and the shape may still change with an
-    /// ApiVersion bump. NaN or inconsistent values make RuneSkin hide the extension, never show stale values.
+    /// Snapshot of one resource pool for the HUD (ApiVersion 2). Definitions: <see cref="Max"/> = B, the pool maximum
+    /// after conversions and before reservations; <see cref="Available"/> = C, what the player can use
+    /// (vanilla GetMax* for the vanilla pools); B - C is drawn as a locked segment at the bar end.
+    /// NaN, negative or inconsistent values (C &gt; B, reserved parts &gt; B - C) make RuneSkin hide the extension for that
+    /// frame, never show stale values. A provider that throws 3 times is disabled for the session.
     /// </summary>
     public struct ResourceState
     {
-        /// <summary>False = provider has nothing to show (pool hidden).</summary>
+        /// <summary>False = provider has nothing to show (extension hidden; for "energyshield" the rail is hidden).</summary>
         public bool Valid;
-        /// <summary>Current amount, in <see cref="Units"/>.</summary>
+        /// <summary>Current amount. Used for mod pools only ("energyshield"); vanilla pools use the game's value.</summary>
         public float Current;
-        /// <summary>Usable maximum B (after reservations).</summary>
-        public float Base;
-        /// <summary>Total capacity C (before reservations), &gt;= Base.</summary>
-        public float Cap;
-        /// <summary>Unit name for numbers (e.g. "hp", "eitr").</summary>
-        public string Units;
-        /// <summary>Pool this one converts into (e.g. "health"), or null.</summary>
+        /// <summary>B: maximum before reservations (bar length and fill denominator).</summary>
+        public float Max;
+        /// <summary>C: usable maximum after reservations, &lt;= <see cref="Max"/>.</summary>
+        public float Available;
+        /// <summary>Part of B - C held by auras (tooltip), &gt;= 0.</summary>
+        public float ReservedAuras;
+        /// <summary>Part of B - C held by summons (tooltip), &gt;= 0.</summary>
+        public float ReservedSummons;
+        /// <summary>
+        /// Set when this pool is converted away by the player's choice (e.g. eitr -&gt; "health" / "shield"): the bar
+        /// collapses to a sealed plaque naming the target. Null = not converted.
+        /// </summary>
         public string ConversionTarget;
-        /// <summary>Conversion rate per second into <see cref="ConversionTarget"/>.</summary>
-        public float ConversionRate;
-        /// <summary>True while regeneration of this pool is blocked.</summary>
+        /// <summary>True while regeneration of this pool waits on something else (paused rune next to the number).</summary>
         public bool RegenBlocked;
-        /// <summary>True while the pool absorbs incoming damage.</summary>
-        public bool Absorbing;
-        /// <summary>Seconds until recharge starts again (0 = recharging now).</summary>
-        public float RechargeDelay;
+        /// <summary>Recharge phase (mod pools).</summary>
+        public ResourcePhase Phase;
+        /// <summary>Seconds left in <see cref="Phase"/> (RechargeDelay countdown), 0 when unknown.</summary>
+        public float PhaseSeconds;
+        /// <summary>This pool carries the player (e.g. max health 1): drawn as the main bar, health becomes a badge.</summary>
+        public bool MainBar;
+        /// <summary>The pool exists but does not act (e.g. absorbs nothing): drawn grey.</summary>
+        public bool Inert;
         /// <summary><c>UnityEngine.Time.time</c> when the snapshot was taken.</summary>
         public float Timestamp;
+    }
+
+    /// <summary>
+    /// Live size of a variable HUD list (ApiVersion 2), e.g. list "food": number of food sockets. Sockets from
+    /// <see cref="ExtraFrom"/> on are drawn with the <see cref="ExtraGlyphToken"/> rim (e.g. a gem-granted socket).
+    /// </summary>
+    public struct CapacityState
+    {
+        /// <summary>False = provider has nothing to say (fallback: vanilla count).</summary>
+        public bool Valid;
+        /// <summary>Number of cells, &gt;= 0.</summary>
+        public int Count;
+        /// <summary>Index of the first special cell; &gt;= Count = none.</summary>
+        public int ExtraFrom;
+        /// <summary>Theme sprite token of the special cells' rim (e.g. "sprite.hud.socket.gem"), or null.</summary>
+        public string ExtraGlyphToken;
     }
 
     /// <summary>Panel an action button belongs to.</summary>
