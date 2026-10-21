@@ -54,6 +54,43 @@ namespace RuneSkin.Restyle
             return decor;
         }
 
+        private static readonly Vector3[] Corners = new Vector3[4];
+
+        // Hosts whose own rect does not cover their laid-out children (the pause menu's entry column is smaller than
+        // its entries): the stack is sized to the union of the active children's rects plus the pad, in host space.
+        // Called after a layout pass, never per frame.
+        public void FitToChildren(string padToken)
+        {
+            var self = (RectTransform)transform;
+            var host = self.parent as RectTransform;
+            if (!host) return;
+            var min = new Vector2(float.MaxValue, float.MaxValue);
+            var max = new Vector2(float.MinValue, float.MinValue);
+            for (var i = 0; i < host.childCount; i++)
+            {
+                var child = host.GetChild(i) as RectTransform;
+                if (!child || child == self || !child.gameObject.activeSelf) continue;
+                child.GetWorldCorners(Corners);
+                foreach (var w in Corners)
+                {
+                    var l = (Vector2)host.InverseTransformPoint(w);
+                    min = Vector2.Min(min, l);
+                    max = Vector2.Max(max, l);
+                }
+            }
+            if (min.x > max.x) return;
+            var pad = ThemeTokens.GetFloat(padToken, 0f);
+            min -= new Vector2(pad, pad);
+            max += new Vector2(pad, pad);
+            // Anchors at the host pivot, so the local-space box maps 1:1 onto anchoredPosition/sizeDelta.
+            self.anchorMin = self.anchorMax = host.pivot;
+            self.pivot = new Vector2(0.5f, 0.5f);
+            var hostRect = host.rect;
+            var pivotLocal = new Vector2(hostRect.xMin + hostRect.width * host.pivot.x, hostRect.yMin + hostRect.height * host.pivot.y);
+            self.sizeDelta = max - min;
+            self.anchoredPosition = (min + max) * 0.5f - pivotLocal;
+        }
+
         public void Revert()
         {
             if (this) Destroy(gameObject);

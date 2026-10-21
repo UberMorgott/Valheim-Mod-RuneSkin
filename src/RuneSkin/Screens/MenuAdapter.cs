@@ -29,7 +29,22 @@ namespace RuneSkin.Screens
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]
         [HarmonyAfter("morgott.valheim.augaskin")]
-        private static void Show_Postfix(Menu __instance) => Apply(__instance);
+        private static void Show_Postfix(Menu __instance)
+        {
+            Apply(__instance);
+            __instance.StartCoroutine(FitPanel(__instance));
+        }
+
+        // Show sets which entries exist (SetButtonsEnabled, Menu.cs:248) and flags m_rebuildLayout; the next
+        // Menu.Update rebuilds the entry column (Menu.cs:373-376). Fit the panel stack once after that frame.
+        private static System.Collections.IEnumerator FitPanel(Menu menu)
+        {
+            yield return null;
+            yield return null;
+            if (!menu || !menu.menuEntriesParent) yield break;
+            var panel = menu.menuEntriesParent.Find(PanelDecor.ChildName);
+            if (panel && panel.TryGetComponent<PanelDecor>(out var decor)) decor.FitToChildren("size.panel.pad");
+        }
 
         private static void Apply(Menu menu)
         {

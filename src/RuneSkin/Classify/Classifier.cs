@@ -99,6 +99,9 @@ namespace RuneSkin.Classify
                 // scrollbars get their own art later (M1); both explained, not unknown, and never a screen dim.
                 if (g.GetComponent<Mask>() || g.GetComponent<RectMask2D>())
                     return Classification.Of("skip", "mask / viewport graphic");
+                var scroll = g.GetComponentInParent<ScrollRect>(true);
+                if (scroll && scroll.viewport == g.rectTransform)
+                    return Classification.Of("skip", "ScrollRect.viewport (clip area)");
                 if (g.GetComponent<ScrollRect>())
                     return Classification.Of("skip", "ScrollRect hit area");
                 if (g.GetComponentInParent<Scrollbar>(true))

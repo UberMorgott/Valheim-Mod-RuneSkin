@@ -42,8 +42,8 @@
   ],
   "floats": [
     { "token": "size.tooltip.padding", "value": 12 },
-    { "token": "size.tooltip.panel.pad", "value": 10 },
-    { "token": "size.panel.pad", "value": 36 },
+    { "token": "size.tooltip.panel.pad", "value": 0 },
+    { "token": "size.panel.pad", "value": 40 },
     { "token": "size.panel.glass.inset", "value": 11.5 },
     { "token": "size.plaque.width", "value": 160 },
     { "token": "size.plaque.height", "value": 36 },
