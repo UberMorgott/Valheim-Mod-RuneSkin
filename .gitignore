@@ -1,0 +1,29 @@
+# .NET
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# Unity project (unity/): generated folders never tracked
+unity/[Ll]ibrary/
+unity/[Tt]emp/
+unity/[Ll]ogs/
+unity/[Bb]uild/
+unity/[Bb]uilds/
+unity/[Oo]bj/
+unity/[Uu]ser[Ss]ettings/
+unity/[Mm]emoryCaptures/
+*.csproj.user
+*.pidb
+*.booproj
+*.unitypackage
+sysinfo.txt
+crashlytics-build.properties
+
+# Generic build outputs anywhere
+[Bb]uild/
+[Tt]emp/
+[Ll]ogs/
+
+.idea/

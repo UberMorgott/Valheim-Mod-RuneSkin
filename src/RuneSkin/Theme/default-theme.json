@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "name": "RuneSkin Stone",
+  "bundle": "runeskin",
+  "colors": [
+    { "token": "color.frame", "value": "#FFFFFFFF" },
+    { "token": "color.glass", "value": "#0C1216E6" },
+    { "token": "color.scrim", "value": "#04070ACC" },
+    { "token": "color.ornament", "value": "#FFFFFFFF" },
+    { "token": "color.text.body", "value": "#E4DCCBFF" },
+    { "token": "color.text.header", "value": "#F0E6D2FF" },
+    { "token": "color.text.label", "value": "#FFFFFFFF" },
+    { "token": "color.text.accent", "value": "#7FDCEBFF" },
+    { "token": "color.state.normal", "value": "#D9CFBCFF" },
+    { "token": "color.state.hover", "value": "#8FE6F2FF" },
+    { "token": "color.state.pressed", "value": "#5BB8C8FF" },
+    { "token": "color.state.selected", "value": "#8FE6F2FF" },
+    { "token": "color.state.disabled", "value": "#6B665EFF" }
+  ],
+  "sprites": [
+    { "token": "sprite.frame.panel", "asset": "rs_frame_panel" },
+    { "token": "sprite.frame.button", "asset": "rs_frame_button" },
+    { "token": "sprite.frame.tooltip", "asset": "rs_frame_tooltip" },
+    { "token": "sprite.fill.glass", "asset": "rs_fill_glass" },
+    { "token": "sprite.divider", "asset": "rs_divider" },
+    { "token": "sprite.ornament.knot", "asset": "rs_knot" }
+  ],
+  "fonts": [
+    { "token": "font.display", "asset": "Cormorant-SemiBold SDF" },
+    { "token": "font.body", "asset": "PTSans-Regular SDF" }
+  ],
+  "floats": [
+    { "token": "size.tooltip.padding", "value": 10 },
+    { "token": "size.text.header.min", "value": 28 },
+    { "token": "floor.text.body.px", "value": 16 },
+    { "token": "floor.text.number.px", "value": 14 }
+  ],
+  "roles": [
+    { "role": "panel", "sprite": "sprite.frame.panel", "color": "color.frame", "imageType": "Sliced" },
+    { "role": "backdrop", "sprite": "sprite.fill.glass", "color": "color.glass", "imageType": "Sliced" },
+    { "role": "scrim", "color": "color.scrim" },
+    { "role": "divider", "sprite": "sprite.divider", "color": "color.ornament", "imageType": "Sliced" },
+    { "role": "ornament.knot", "sprite": "sprite.ornament.knot", "keepColor": true, "preserveAspect": true, "imageType": "Simple" },
+    { "role": "button", "sprite": "sprite.frame.button", "color": "color.frame", "imageType": "Sliced",
+      "stateNormal": "color.state.normal", "stateHover": "color.state.hover", "statePressed": "color.state.pressed",
+      "stateSelected": "color.state.selected", "stateDisabled": "color.state.disabled" },
+    { "role": "button.label", "font": "font.display", "textColor": "color.text.label" },
+    { "role": "menu.entry", "font": "font.display", "textColor": "color.text.label",
+      "stateNormal": "color.state.normal", "stateHover": "color.state.hover", "statePressed": "color.state.pressed",
+      "stateSelected": "color.state.selected", "stateDisabled": "color.state.disabled" },
+    { "role": "text.header", "font": "font.display", "textColor": "color.text.header" },
+    { "role": "text.body", "font": "font.body", "textColor": "color.text.body" },
+    { "role": "tooltip.box", "sprite": "sprite.frame.tooltip", "color": "color.frame", "imageType": "Sliced" },
+    { "role": "tooltip.topic", "font": "font.display", "textColor": "color.text.accent" },
+    { "role": "tooltip.text", "font": "font.body", "textColor": "color.text.body" },
+    { "role": "content" },
+    { "role": "skip" }
+  ],
+  "spriteRoles": [
+    { "match": "woodpanel_400_tileable", "role": "tooltip.box", "context": "Tooltips" },
+    { "match": "woodpanel_*", "role": "panel" },
+    { "match": "panel_bkg_128", "role": "backdrop" },
+    { "match": "panel_interior_bkg_128", "role": "backdrop" },
+    { "match": "item_background", "role": "backdrop" },
+    { "match": "TextBackdrop", "role": "backdrop" },
+    { "match": "button", "role": "button" },
+    { "match": "BraidLineHorisontalMedium", "role": "divider" },
+    { "match": "panel_separator", "role": "divider" },
+    { "match": "BraidKnotMedium", "role": "ornament.knot" },
+    { "match": "darken_blob", "role": "scrim" },
+    { "match": "point", "role": "scrim" },
+    { "match": "point 1", "role": "scrim" },
+    { "match": "mail", "role": "content" }
+  ],
+  "families": [
+    { "family": "Menu", "requires": [ "sprite.frame.panel", "sprite.frame.button", "font.display", "font.body" ] },
+    { "family": "Tooltips", "requires": [ "sprite.frame.tooltip", "font.display", "font.body" ] }
+  ]
+}

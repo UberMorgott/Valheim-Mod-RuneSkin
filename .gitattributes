@@ -1,0 +1,7 @@
+# LF in the repo: the compiler must see identical source bytes on every checkout (deterministic DLL hash).
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.png binary
+*.ttf binary
+*.otf binary

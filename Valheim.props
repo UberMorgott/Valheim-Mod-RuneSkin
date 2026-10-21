@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Game paths. ValheimDir comes from /p:ValheimDir=... or the first existing Steam library candidate below.
+  Everything else derives from it, so the repository builds from any checkout path.
+-->
+<Project>
+  <PropertyGroup Condition="'$(ValheimDir)' == ''">
+    <ValheimDir Condition="Exists('D:\Steam\steamapps\common\Valheim')">D:\Steam\steamapps\common\Valheim</ValheimDir>
+    <ValheimDir Condition="'$(ValheimDir)' == '' AND Exists('C:\Program Files (x86)\Steam\steamapps\common\Valheim')">C:\Program Files (x86)\Steam\steamapps\common\Valheim</ValheimDir>
+    <ValheimDir Condition="'$(ValheimDir)' == '' AND Exists('D:\SteamLibrary\steamapps\common\Valheim')">D:\SteamLibrary\steamapps\common\Valheim</ValheimDir>
+    <ValheimDir Condition="'$(ValheimDir)' == '' AND Exists('E:\SteamLibrary\steamapps\common\Valheim')">E:\SteamLibrary\steamapps\common\Valheim</ValheimDir>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <BepInExCoreDir>$(ValheimDir)\BepInEx\core</BepInExCoreDir>
+    <ValheimManagedDir>$(ValheimDir)\valheim_Data\Managed</ValheimManagedDir>
+  </PropertyGroup>
+
+  <Target Name="CheckValheimInstall" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(ValheimDir)' == ''" Text="Valheim not found. Pass /p:ValheimDir=C:\path\to\Valheim" />
+    <Error Condition="!Exists('$(BepInExCoreDir)\BepInEx.dll')" Text="BepInEx core not found in '$(ValheimDir)'." />
+    <Error Condition="!Exists('$(ValheimManagedDir)\assembly_valheim.dll')" Text="valheim_Data\Managed not found in '$(ValheimDir)'." />
+  </Target>
+</Project>

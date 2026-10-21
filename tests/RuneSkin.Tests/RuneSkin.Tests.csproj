@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\Valheim.props" />
+
+  <!-- Pure-logic tests (no Unity runtime): API registration replay, theme schema validation, colour parsing.
+       net8.0 because the game's Unity 6 assemblies target netstandard2.1 (not loadable on .NET Framework);
+       the tested sources are compiled in directly (they are managed-only by design). -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- The linked sources ship on net472, where ArgumentNullException.ThrowIfNull (CA1510) and span overloads of
+         uint.Parse (CA1846) do not exist; these net8-only suggestions cannot be applied to them. -->
+    <NoWarn>$(NoWarn);CA1510;CA1846</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\src\RuneSkin.API\Skin.cs" Link="Linked\Skin.cs" />
+    <Compile Include="..\..\src\RuneSkin.API\Descriptors.cs" Link="Linked\Descriptors.cs" />
+    <Compile Include="..\..\src\RuneSkin\Theme\HexColor.cs" Link="Linked\HexColor.cs" />
+    <Compile Include="..\..\src\RuneSkin\Theme\ThemeModel.cs" Link="Linked\ThemeModel.cs" />
+    <Compile Include="..\..\src\RuneSkin\Theme\ThemeSchema.cs" Link="Linked\ThemeSchema.cs" />
+    <EmbeddedResource Include="..\..\src\RuneSkin\Theme\default-theme.json" LogicalName="RuneSkin.default-theme.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(ValheimManagedDir)\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(ValheimManagedDir)\UnityEngine.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>$(ValheimManagedDir)\UnityEngine.UIModule.dll</HintPath>
+    </Reference>
+    <Reference Include="assembly_valheim">
+      <HintPath>$(ValheimManagedDir)\assembly_valheim.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

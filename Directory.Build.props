@@ -1,0 +1,18 @@
+<Project>
+  <!-- Reproducible across checkout paths: a worktree or copy of one commit builds a byte-identical DLL
+       (autotest deploy-hash layer, pack hash). PathMap rewrites the repo root in PDB/CallerFilePath strings;
+       SourceLink off because the commit SHA would fold into the deterministic MVID. -->
+  <PropertyGroup>
+    <Deterministic>true</Deterministic>
+    <PathMap>$(MSBuildThisFileDirectory)=/_/</PathMap>
+    <EnableSourceLink>false</EnableSourceLink>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>10</LangVersion>
+    <Nullable>disable</Nullable>
+    <DebugType>embedded</DebugType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- CS1591 only on the plugin: its internals are not public API (set in RuneSkin.csproj). -->
+  </PropertyGroup>
+</Project>

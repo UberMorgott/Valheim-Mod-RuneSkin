@@ -1,0 +1,14 @@
+# Repo-local typos config, layered under the gate's qgate.typos.toml. Only names this repo cannot rename.
+
+[files]
+extend-exclude = [
+    # Unity TextMesh Pro package import (Unity Technologies), not our code.
+    "unity/Assets/TextMesh Pro/",
+]
+
+[default.extend-identifiers]
+# Vanilla sprite name matched at runtime (theme spriteRoles; same name in AugaStyle.cs:37 runtime dump).
+BraidLineHorisontalMedium = "BraidLineHorisontalMedium"
+# art/src/render_sprites.py (art worker): short math names, not words: iy = row index, dout = output directory.
+iy = "iy"
+dout = "dout"

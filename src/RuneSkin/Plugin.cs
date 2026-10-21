@@ -1,0 +1,111 @@
+using System;
+using System.Collections.Generic;
+using BepInEx;
+using BepInEx.Configuration;
+using BepInEx.Logging;
+using HarmonyLib;
+using RuneSkin.API;
+using RuneSkin.Api;
+using RuneSkin.Diagnostics;
+using RuneSkin.Ownership;
+using RuneSkin.Responsive;
+using RuneSkin.Screens;
+using RuneSkin.Theme;
+
+namespace RuneSkin
+{
+    // RuneSkin: clean-room UI skin that restyles live vanilla uGUI from theme tokens (no prefab swaps, no transpilers).
+    // Bootstrap order in Awake: config -> theme + asset bundle -> ownership frozen (before AugaSkin's Awake, which
+    // soft-depends on this plugin) -> API host attached (replays early registrations) -> Harmony patches of owned
+    // families only.
+    [BepInPlugin(Skin.PluginGuid, "RuneSkin", Version)]
+    [BepInProcess("valheim.exe")]
+    public sealed class Plugin : BaseUnityPlugin
+    {
+        public const string Version = "0.1.0";
+
+        public static ManualLogSource Log { get; private set; }
+        public static ConfigEntry<float> SkinScale { get; private set; }
+        public static Host ApiHost { get; private set; }
+
+        private static ConfigEntry<bool> _ownMenu, _ownTooltips, _requireAssets;
+        private Harmony _harmony;
+
+        private void Awake()
+        {
+            Log = Logger;
+            _ownMenu = Config.Bind("Ownership", "Menu", true,
+                "RuneSkin styles the pause menu. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownTooltips = Config.Bind("Ownership", "Tooltips", true,
+                "RuneSkin styles tooltips. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+            _requireAssets = Config.Bind("Ownership", "RequireAssets", true,
+                "Take a family only when its theme assets loaded (otherwise the other skin keeps it). Off = take it anyway (development before the art bundle exists).");
+            SkinScale = Config.Bind("Layout", "SkinScale", 1f, new ConfigDescription(
+                "Extra scale of RuneSkin panels on top of the game's UI scale.",
+                new AcceptableValueRange<float>(ResponsiveContext.MinSkinScale, ResponsiveContext.MaxSkinScale)));
+
+            if (!ThemeTokens.Load())
+            {
+                Log.LogError("[RuneSkin] inactive: no valid theme");
+                OwnershipRegistry.Freeze(new Dictionary<string, bool>(), true);
+                return;
+            }
+
+            OwnershipRegistry.Freeze(new Dictionary<string, bool>
+            {
+                [OwnershipRegistry.Menu] = _ownMenu.Value,
+                [OwnershipRegistry.Tooltips] = _ownTooltips.Value,
+            }, _requireAssets.Value);
+
+            ApiHost = new Host();
+            Skin.Attach(ApiHost);
+
+            gameObject.AddComponent<ResponsiveContext>();
+
+            _harmony = new Harmony(Skin.PluginGuid);
+            _harmony.PatchAll(typeof(ConsoleCommands));
+            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Menu)) _harmony.PatchAll(typeof(MenuAdapter));
+            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Tooltips)) _harmony.PatchAll(typeof(TooltipAdapter));
+            Log.LogInfo($"[RuneSkin] {Version} ready (API v{Skin.ApiVersion})");
+        }
+
+        private void OnDestroy() => _harmony?.UnpatchSelf();
+
+        // Re-reads the theme (override file) and re-applies every live root. Ownership never changes at runtime.
+        public static void ReloadTheme()
+        {
+            if (ThemeTokens.Load()) ScreenRegistry.RestyleAll();
+        }
+
+        // Diagnostics entry for tools (AutotestDriver calls it by reflection): writes BepInEx\RuneSkin\diag\<screen>.txt.
+        public static string[] DiagDump(string screen) => SkinDiagnostics.Dump(string.IsNullOrEmpty(screen) ? null : screen).ToArray();
+    }
+
+    // Console: runeskin_diag [screen] (dump), runeskin_reload (theme). Registered with the vanilla terminal.
+    [HarmonyPatch]
+    internal static class ConsoleCommands
+    {
+        [HarmonyPatch(typeof(Terminal), nameof(Terminal.InitTerminal))]
+        [HarmonyPostfix]
+        private static void InitTerminal_Postfix()
+        {
+            _ = new Terminal.ConsoleCommand("runeskin_diag", "[screen] RuneSkin diagnostics dump to BepInEx\\RuneSkin\\diag", args =>
+            {
+                var paths = Plugin.DiagDump(args.Length > 1 ? args[1] : null);
+                args.Context?.AddString($"RuneSkin: {paths.Length} dump(s) in {SkinDiagnostics.DumpDir}");
+            });
+            _ = new Terminal.ConsoleCommand("runeskin_reload", "reload the RuneSkin theme (override BepInEx\\config\\RuneSkin\\theme.json)", args =>
+            {
+                try
+                {
+                    Plugin.ReloadTheme();
+                    args.Context?.AddString($"RuneSkin: theme '{ThemeTokens.ThemeName}' rev {ThemeTokens.Revision} from {ThemeTokens.Source}");
+                }
+                catch (Exception e)
+                {
+                    Plugin.Log.LogError($"[RuneSkin] reload failed: {e}");
+                }
+            });
+        }
+    }
+}
