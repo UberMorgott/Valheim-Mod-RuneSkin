@@ -16,6 +16,8 @@ device ("Unsupported Format 0", editor crash).
 Review aid (not part of the build): `python -I art\src\contact_sheet.py art\review D:\tmp\cx-augaskin\ref.png`
 -> `art\review\contact-sheet.png` (every sprite, magenta = 9-slice centre) and `art\review\composite-pause-menu.png`
 (pause menu drawn with Unity Sliced/Tiled rules).
+M1 HUD: `python -I art\src\hud_review.py art\review D:\tmp\cx-augaskin\hud-status-b.png` -> `contact-sheet-m1.png`
+(M1 sprites, white masks shown tinted), `composite-hud.png` (bottom-left HUD cluster), `dot-grayscale.png`.
 
 ## Layout
 
@@ -37,6 +39,21 @@ Review aid (not part of the build): `python -I art\src\contact_sheet.py art\revi
 - Panel: `fill_glass` (Sliced) inset 23 sprite px (11.5 ref px) under `frame_panel` (Tiled, fillCenter off),
   `frame_panel_glow` on top with the `rune_glow` tint, then the four `frame_panel_corner_*` caps at native size,
   pivot = their panel corner (never stretched). Minimum panel = 192 sprite px (96 ref px) per side.
+
+## M1 HUD sprites
+
+- White masks (`bar_fill`, `bar_lag`, `bar_growth`, `bar_end_line`, `rail_fill`, `dot_*`, `bar_reserved_edge`,
+  `glyph_*`, `food_timer_ring`, `ring_select`) carry only shading/alpha; colour = `Image.color` from the palette
+  token named in `sprites.json` notes (`pool_hp`, `pool_stamina`, `pool_eitr`, `pool_es`, `pool_adrenaline`, ...).
+- Resource bar = `bar_frame` (400x80, Tiled) with a window inset x 76 / y 18 sprite px (height 44). Inside the window,
+  z-order: `bar_trough` -> `bar_lag` -> `bar_fill` -> `dot_*` (right-aligned from the fill end) -> `bar_reserved`
+  (+ `bar_reserved_edge`, `glyph_lock`) at the right end -> `bar_frame` -> one overlay (`overlay_frost` at the frame
+  top-left, `overlay_wet` tiled along the frame bottom) -> numbers. `bar_growth` + `bar_end_line` = max-growth accent.
+- ES / adrenaline rails: `rail_frame_es` / `rail_frame_adrenaline` (400x28, same outer width as `bar_frame`), window
+  inset x 30 / y 9 (height 10), `rail_trough` + `rail_fill`.
+- Converted pool: `plaque_seal` (height = bar) + `glyph_seal` on its socket, label = font.
+- DoT patterns tile horizontally with period 16 and differ in shape (slashes / chevrons / dots), so they read in
+  grayscale (`dot-grayscale.png`).
 
 ## Fonts
 

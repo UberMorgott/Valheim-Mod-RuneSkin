@@ -19,7 +19,24 @@
     "groove_light": "#8fb8c4",
     "text_header": "#e9c46a",
     "text_body": "#d9d4c7",
-    "text_disabled": "#7b7f80"
+    "text_disabled": "#7b7f80",
+    "pool_hp": "#c3262e",
+    "pool_stamina": "#e3b23c",
+    "pool_eitr": "#7a5cf5",
+    "pool_es": "#70d8e6",
+    "pool_adrenaline": "#ff8a3d",
+    "bar_lag": "#f1e3c6",
+    "bar_growth": "#e9c46a",
+    "bar_end_line": "#70d8e6",
+    "dot_bleed": "#3c060a",
+    "dot_fire": "#ffb347",
+    "dot_poison": "#8be04e",
+    "reserved_edge": "#c8f4fa",
+    "glyph": "#52e0f0",
+    "select_ring": "#52e0f0",
+    "food_timer": "#52e0f0",
+    "ice": "#d6f2ff",
+    "water": "#a9cfe0"
   },
   "sprites": [
     {
@@ -373,6 +390,798 @@
       "fillCenter": true,
       "token": "ornament.knot",
       "notes": "menu-entry ornament (vanilla BraidKnotMedium slot), symmetric, native aspect; shown on hover"
+    },
+    {
+      "name": "bar_frame",
+      "file": "bar_frame.png",
+      "size": [
+        400,
+        80
+      ],
+      "border": {
+        "left": 80,
+        "bottom": 24,
+        "right": 80,
+        "top": 24
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "bar.frame",
+      "notes": "carved stone resource-bar frame, caps fixed, rails tile with period 240 px; window (trough/fill/DoT/reserve rect) = inset x 76, y 18 (sprite px) -> window height 44; left cap socket centre (30, 40) r 16 for the pool glyph; same frame for HP/stamina/eitr"
+    },
+    {
+      "name": "bar_trough",
+      "file": "bar_trough.png",
+      "size": [
+        96,
+        44
+      ],
+      "border": {
+        "left": 12,
+        "bottom": 12,
+        "right": 12,
+        "top": 12
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "bar.trough",
+      "notes": "dark recessed glass, drawn in the bar window under everything"
+    },
+    {
+      "name": "bar_fill",
+      "file": "bar_fill.png",
+      "size": [
+        160,
+        44
+      ],
+      "border": {
+        "left": 8,
+        "bottom": 0,
+        "right": 8,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "bar.fill",
+      "notes": "white grayscale-shaded mask, tint per pool (pool_hp/stamina/eitr/adrenaline); right border = bright fill front; centre tiles with period 144 px"
+    },
+    {
+      "name": "bar_lag",
+      "file": "bar_lag.png",
+      "size": [
+        64,
+        44
+      ],
+      "border": {
+        "left": 4,
+        "bottom": 0,
+        "right": 4,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "bar.lag",
+      "notes": "damage-lag ghost: flat pale mask (tint bar_lag), under the fill, soft right end"
+    },
+    {
+      "name": "bar_growth",
+      "file": "bar_growth.png",
+      "size": [
+        128,
+        44
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "bar.growth",
+      "notes": "max-growth shimmer: faint diagonal sheen, alpha <= 0.3 (never reads as fill), tint bar_growth; transient"
+    },
+    {
+      "name": "bar_end_line",
+      "file": "bar_end_line.png",
+      "size": [
+        8,
+        56
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "bar.end.line",
+      "notes": "old max end ghost line (tint bar_end_line), 56 px tall = window + 6 px above/below; fades 0.8 s"
+    },
+    {
+      "name": "rail_frame_es",
+      "file": "rail_frame_es.png",
+      "size": [
+        400,
+        28
+      ],
+      "border": {
+        "left": 32,
+        "bottom": 8,
+        "right": 32,
+        "top": 8
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "rail.frame.es",
+      "notes": "thin ES rail (28 px = 35 % of bar_frame), same native/outer width as bar_frame; window inset x 30, y 9 -> height 10; cyan gem studs"
+    },
+    {
+      "name": "rail_frame_adrenaline",
+      "file": "rail_frame_adrenaline.png",
+      "size": [
+        400,
+        28
+      ],
+      "border": {
+        "left": 32,
+        "bottom": 8,
+        "right": 32,
+        "top": 8
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "rail.frame.adrenaline",
+      "notes": "thin adrenaline rail, same geometry as rail_frame_es; ember chevron caps"
+    },
+    {
+      "name": "rail_trough",
+      "file": "rail_trough.png",
+      "size": [
+        64,
+        10
+      ],
+      "border": {
+        "left": 4,
+        "bottom": 3,
+        "right": 4,
+        "top": 3
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "rail.trough",
+      "notes": "rail window trough"
+    },
+    {
+      "name": "rail_fill",
+      "file": "rail_fill.png",
+      "size": [
+        64,
+        10
+      ],
+      "border": {
+        "left": 4,
+        "bottom": 0,
+        "right": 4,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "rail.fill",
+      "notes": "white rail fill mask (tint pool_es / pool_adrenaline), bright front at the right end"
+    },
+    {
+      "name": "dot_bleed",
+      "file": "dot_bleed.png",
+      "size": [
+        32,
+        44
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "bar.dot.bleed",
+      "notes": "thick '/' slashes; white mask, tint dot_bleed; tiles horizontally (period 16), height = bar window"
+    },
+    {
+      "name": "dot_fire",
+      "file": "dot_fire.png",
+      "size": [
+        32,
+        44
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "bar.dot.fire",
+      "notes": "thin '^' flame chevrons; white mask, tint dot_fire; tiles horizontally (period 16), height = bar window"
+    },
+    {
+      "name": "dot_poison",
+      "file": "dot_poison.png",
+      "size": [
+        32,
+        44
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "bar.dot.poison",
+      "notes": "staggered round drops; white mask, tint dot_poison; tiles horizontally (period 16), height = bar window"
+    },
+    {
+      "name": "bar_reserved",
+      "file": "bar_reserved.png",
+      "size": [
+        64,
+        44
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "bar.reserved",
+      "notes": "reserved segment: dark stone with carved '\\' hatching (opposite of bleed), opaque, period 64 px; right end of the window; bar_reserved_edge at its left edge, glyph_lock centred (hide < 36 sprite px)"
+    },
+    {
+      "name": "bar_reserved_edge",
+      "file": "bar_reserved_edge.png",
+      "size": [
+        8,
+        44
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.0,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "bar.reserved.edge",
+      "notes": "thin bright divider (tint reserved_edge), line at x = 2.5; pivot left edge"
+    },
+    {
+      "name": "glyph_lock",
+      "file": "glyph_lock.png",
+      "size": [
+        40,
+        40
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.lock",
+      "notes": "rune padlock (tiwaz keyhole), white mask + glow, tint glyph"
+    },
+    {
+      "name": "glyph_es",
+      "file": "glyph_es.png",
+      "size": [
+        40,
+        40
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.es",
+      "notes": "energy-shield glyph (shield + algiz), white mask, tint pool_es"
+    },
+    {
+      "name": "glyph_seal",
+      "file": "glyph_seal.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.seal",
+      "notes": "conversion seal (double ring + ingwaz), white mask, tint glyph; sits on plaque_seal socket"
+    },
+    {
+      "name": "plaque_seal",
+      "file": "plaque_seal.png",
+      "size": [
+        200,
+        80
+      ],
+      "border": {
+        "left": 80,
+        "bottom": 20,
+        "right": 40,
+        "top": 20
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "plaque.seal",
+      "notes": "intact sealed conversion plaque, height = bar_frame; seal socket centre (40, 40) r 20 for glyph_seal; label field x 72..W-34 (sprite px); no cracks"
+    },
+    {
+      "name": "overlay_frost",
+      "file": "overlay_frost.png",
+      "size": [
+        112,
+        96
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.0,
+        1.0
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "overlay.frost",
+      "notes": "frost corner overlay, pivot = frame top-left corner, native size; frame only"
+    },
+    {
+      "name": "overlay_wet",
+      "file": "overlay_wet.png",
+      "size": [
+        128,
+        32
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        1.0
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "overlay.wet",
+      "notes": "wet drips hanging from the frame bottom edge, tile horizontally (period 128), pivot top, place at frame bottom - 4 px"
+    },
+    {
+      "name": "socket_status",
+      "file": "socket_status.png",
+      "size": [
+        80,
+        80
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "socket.status",
+      "notes": "round carved status-icon socket, glass well r 29 (icon 48 px)"
+    },
+    {
+      "name": "socket_status_more",
+      "file": "socket_status_more.png",
+      "size": [
+        80,
+        80
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "socket.status.more",
+      "notes": "'+N' overflow stack socket (front socket centre (37,37) r 33, text = font)"
+    },
+    {
+      "name": "plate_timer",
+      "file": "plate_timer.png",
+      "size": [
+        72,
+        28
+      ],
+      "border": {
+        "left": 16,
+        "bottom": 10,
+        "right": 16,
+        "top": 10
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "plate.timer",
+      "notes": "timer plate under a status socket, text = font"
+    },
+    {
+      "name": "socket_food",
+      "file": "socket_food.png",
+      "size": [
+        112,
+        112
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "socket.food",
+      "notes": "rhombus food socket, glass well |dx|+|dy| < 38 (icon 56 px)"
+    },
+    {
+      "name": "socket_food_gem",
+      "file": "socket_food_gem.png",
+      "size": [
+        112,
+        112
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "socket.food.gem",
+      "notes": "gem-granted food socket: double rim + four rune-glass gems at the points"
+    },
+    {
+      "name": "food_timer_ring",
+      "file": "food_timer_ring.png",
+      "size": [
+        112,
+        112
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "food.timer.ring",
+      "notes": "rhombus timer track, white mask; Image.Filled Radial360 origin top, tint food_timer; same rect as socket_food"
+    },
+    {
+      "name": "socket_quick",
+      "file": "socket_quick.png",
+      "size": [
+        104,
+        104
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "socket.quick",
+      "notes": "quick-slot socket; plate_key centred on its bottom edge, overlapping 12 px"
+    },
+    {
+      "name": "plate_key",
+      "file": "plate_key.png",
+      "size": [
+        44,
+        36
+      ],
+      "border": {
+        "left": 14,
+        "bottom": 12,
+        "right": 14,
+        "top": 12
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "plate.key",
+      "notes": "key-hint plate (Z/V/B = font), stretch for longer labels"
+    },
+    {
+      "name": "socket_hotbar",
+      "file": "socket_hotbar.png",
+      "size": [
+        112,
+        112
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "socket.hotbar",
+      "notes": "hotbar cell with corner rivets; plate_number at its top-left, offset (6,6)"
+    },
+    {
+      "name": "plate_number",
+      "file": "plate_number.png",
+      "size": [
+        36,
+        36
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "plate.number",
+      "notes": "carved number plate for hotbar cells (digit = font)"
+    },
+    {
+      "name": "ring_select",
+      "file": "ring_select.png",
+      "size": [
+        120,
+        120
+      ],
+      "border": {
+        "left": 30,
+        "bottom": 30,
+        "right": 30,
+        "top": 30
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": false,
+      "token": "ring.select",
+      "notes": "selected/highlight ring, white mask + glow, tint select_ring; 8 px outside the socket on each side"
+    },
+    {
+      "name": "scroll_track",
+      "file": "scroll_track.png",
+      "size": [
+        24,
+        128
+      ],
+      "border": {
+        "left": 8,
+        "bottom": 16,
+        "right": 8,
+        "top": 16
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "scroll.track",
+      "notes": "vertical scrollbar track, centre tiles in y (period 96)"
+    },
+    {
+      "name": "scroll_handle_normal",
+      "file": "scroll_handle_normal.png",
+      "size": [
+        24,
+        64
+      ],
+      "border": {
+        "left": 8,
+        "bottom": 16,
+        "right": 8,
+        "top": 16
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "scroll.handle.normal",
+      "notes": "scrollbar handle, centre tiles in y (period 32)"
+    },
+    {
+      "name": "scroll_handle_hover",
+      "file": "scroll_handle_hover.png",
+      "size": [
+        24,
+        64
+      ],
+      "border": {
+        "left": 8,
+        "bottom": 16,
+        "right": 8,
+        "top": 16
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "scroll.handle.hover",
+      "notes": "scrollbar handle, centre tiles in y (period 32); channel glow"
+    },
+    {
+      "name": "scroll_handle_pressed",
+      "file": "scroll_handle_pressed.png",
+      "size": [
+        24,
+        64
+      ],
+      "border": {
+        "left": 8,
+        "bottom": 16,
+        "right": 8,
+        "top": 16
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "scroll.handle.pressed",
+      "notes": "scrollbar handle, centre tiles in y (period 32); channel glow"
     }
   ]
 }
