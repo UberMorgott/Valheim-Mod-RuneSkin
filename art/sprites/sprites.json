@@ -858,7 +858,7 @@
       "name": "dot_poison",
       "file": "dot_poison.png",
       "size": [
-        72,
+        160,
         47
       ],
       "border": {
@@ -874,7 +874,7 @@
       "imageType": "Tiled",
       "fillCenter": true,
       "token": "bar.dot.poison",
-      "notes": "dot cluster, period 36; white mask, tint dot_poison"
+      "notes": "sparse dots (2-5 px, two sizes), period 80; white mask, tint dot_poison"
     },
     {
       "name": "bar_reserved",
@@ -987,6 +987,160 @@
       "notes": "double ring + ingwaz, white mask, tint glyph; sits on plaque_seal socket"
     },
     {
+      "name": "front_health",
+      "file": "front_health.png",
+      "size": [
+        40,
+        80
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "front.health",
+      "notes": "HP fill-end glow front: soft vertical core at 50 % width + top glossy highlight; white mask, tint color.hud.front.health; height = bar window"
+    },
+    {
+      "name": "front_stamina",
+      "file": "front_stamina.png",
+      "size": [
+        96,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "front.stamina",
+      "notes": "stamina fill-end sheen: core at ~20 % width, streaks fade right into the empty trough; white mask"
+    },
+    {
+      "name": "front_eitr",
+      "file": "front_eitr.png",
+      "size": [
+        96,
+        50
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "front.eitr",
+      "notes": "eitr fill-end wisps: core at ~20 % width, lightning wisps + sparkles fading right; white mask"
+    },
+    {
+      "name": "gp_socket",
+      "file": "gp_socket.png",
+      "size": [
+        112,
+        112
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "gp.socket",
+      "notes": "round carved knotwork socket with 4 rune studs for the guardian power; glass interior diameter ~69 % of the sprite (ring inset 15 %, icon inset 22 %)"
+    },
+    {
+      "name": "gp_ring",
+      "file": "gp_ring.png",
+      "size": [
+        112,
+        112
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "gp.ring",
+      "notes": "thin round ring mask (Filled Radial360 cooldown / duration), white + glow; drawn inset 15 % over gp_socket"
+    },
+    {
+      "name": "glyph_stamina",
+      "file": "glyph_stamina.png",
+      "size": [
+        40,
+        40
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.stamina",
+      "notes": "running figure, white mask + glow, tint glyph; slim frame icon recess (49,23) r 12"
+    },
+    {
+      "name": "glyph_eitr",
+      "file": "glyph_eitr.png",
+      "size": [
+        40,
+        40
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.eitr",
+      "notes": "interlaced triangle knot (triquetra), white mask + glow, tint glyph; slim frame icon recess (49,23) r 12"
+    },
+    {
       "name": "plaque_seal",
       "file": "plaque_seal.png",
       "size": [
@@ -1034,8 +1188,8 @@
       "name": "overlay_wet",
       "file": "overlay_wet.png",
       "size": [
-        128,
-        44
+        72,
+        72
       ],
       "border": {
         "left": 0,
@@ -1047,10 +1201,10 @@
         0.5,
         1
       ],
-      "imageType": "Tiled",
+      "imageType": "Simple",
       "fillCenter": true,
       "token": "overlay.wet",
-      "notes": "water drips hanging from the frame bottom edge, tile horizontally (period 128), pivot top"
+      "notes": "one clear water-drip cluster (2-3 drops) hanging from a flat top line, white mask, pivot top; placed 3x along the frame bottom"
     },
     {
       "name": "socket_status",
