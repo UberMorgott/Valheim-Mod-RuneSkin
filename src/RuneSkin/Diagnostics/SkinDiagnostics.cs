@@ -167,7 +167,18 @@ namespace RuneSkin.Diagnostics
                 case Image i:
                     var mark = g.GetComponent<SkinMark>();
                     var sprite = mark && mark.OriginalSprite != null ? mark.OriginalSprite : i.sprite ? i.sprite.name : "-";
-                    return $"spr={sprite} active={g.gameObject.activeInHierarchy}";
+                    var geo = "";
+                    if (i.sprite && (i.type == Image.Type.Sliced || i.type == Image.Type.Tiled))
+                    {
+                        // Live 9-slice data: border in sprite px, drawn border = border x refPPU / (PPU x multiplier).
+                        var b = i.sprite.border;
+                        var c = i.canvas;
+                        var r = i.rectTransform.rect;
+                        geo = $" type={i.type} border={b.x:0}/{b.y:0}/{b.z:0}/{b.w:0} ppu={i.sprite.pixelsPerUnit:0.#} mult={i.pixelsPerUnitMultiplier:0.###}" +
+                              $" refPpu={(c ? c.referencePixelsPerUnit : 0f):0.#} rootRefPpu={(c ? c.rootCanvas.referencePixelsPerUnit : 0f):0.#}" +
+                              $" scaleFactor={(c ? c.scaleFactor : 0f):0.###} rect={r.width:0.#}x{r.height:0.#}";
+                    }
+                    return $"spr={sprite} active={g.gameObject.activeInHierarchy}{geo}";
                 case TMP_Text t:
                     return $"font={(t.font ? t.font.name : "-")} size={t.fontSize:0.#} active={g.gameObject.activeInHierarchy}";
                 default:

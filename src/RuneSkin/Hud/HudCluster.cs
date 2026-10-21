@@ -21,6 +21,7 @@ namespace RuneSkin.PlayerHud
         public static HudCluster Instance { get; private set; }
 
         private Hud _hud;
+        private Canvas _canvas;
         private HudArt _art;
         private RectTransform _root;
         private BarView _es, _health, _stamina, _adrenaline, _eitr;
@@ -61,8 +62,8 @@ namespace RuneSkin.PlayerHud
             _root = (RectTransform)transform;
             _root.anchorMin = _root.anchorMax = new Vector2(0.5f, 0.5f);
             _root.pivot = Vector2.zero;
-            var canvas = gameObject.AddComponent<Canvas>(); // nested: own rebuild batch, inherits sorting
-            canvas.overrideSorting = false;
+            _canvas = gameObject.AddComponent<Canvas>(); // nested: own rebuild batch, inherits sorting
+            _canvas.overrideSorting = false;
             gameObject.AddComponent<GraphicRaycaster>(); // "+N" cell
             BuildViews();
             Suppress();
@@ -180,6 +181,7 @@ namespace RuneSkin.PlayerHud
             // Hud.SetVisible hides by moving m_rootObject off screen (Hud.cs:436-448): never place against that.
             var visible = player && !player.IsDead() && _hud.IsVisible() && _hud.m_healthPanel && _hud.m_healthPanel.localScale.x > 0f;
             if (_themeRevision != ThemeTokens.Revision) RebuildViews();
+            if (_canvas) _art.SyncPpu(_canvas.referencePixelsPerUnit);
             if (_player != player)
             {
                 _player = player;
@@ -225,11 +227,8 @@ namespace RuneSkin.PlayerHud
 
         private void Sample(Player p, float dt)
         {
-            var minL = ThemeTokens.GetFloat("size.hud.bar.min", 160f);
-            var capL = ThemeTokens.GetFloat("size.hud.bar.cap", 384f);
-            var share = ThemeTokens.GetFloat("share.hud.bar.cap", 0.28f);
-            var safeRef = SafeWidthRef();
-            float Len(float b) => HudMath.BarLength(b, minL, capL, share, safeRef);
+            // One outer width for every main bar (mockup hud-status-b; the max is the number, not the length).
+            var outerW = ThemeTokens.GetFloat("size.hud.bar.outer", 438f);
 
             // Energy shield (mod pool): rail above health, or the main bar while it carries the player.
             var esOn = Providers.TryResource(ResourcePools.EnergyShield, p, true, out var es) && es.Max > 0f;
@@ -240,21 +239,22 @@ namespace RuneSkin.PlayerHud
             var hpC = p.GetMaxHealth();
             var hpB = Extension(ResourcePools.Health, p, hpC, out var hpRes);
             CollectDots(p, hp);
-            var tint = BestTint(p, out var overlaySprite, out var overlayColor);
+            // Health fill stays red: effects show only as pending-DoT stripes, frame overlays and strip icons.
+            FrameOverlayOf(p, out var overlaySprite, out var overlayColor);
             if (esMain)
             {
-                _health.SetLength(Len(es.Max), es.Max);
+                _health.SetOuterWidth(outerW);
                 _health.Tick(dt);
                 _health.Render(es.Current, es.Max, es.Available, _stripes, 0, _stripeKinds, "color.hud.es", overlaySprite, overlayColor, es.Inert, dt, es.Available < es.Max - 0.5f);
                 _health.Aux(0);
             }
             else
             {
-                _health.SetLength(Len(hpB), hpB);
+                _health.SetOuterWidth(outerW);
                 _health.Tick(dt);
                 var count = HudMath.Stripes(_pending, hp, hpB, _health.WindowLength, ThemeTokens.GetFloat("size.hud.stripe.min", 4f), BarView.MaxStripes, _stripes);
                 for (var i = 0; i < count; i++) _stripeKinds[i] = _stripes[i].Key < 0 ? (int)DotKind.Other : _stripes[i].Key;
-                _health.Render(hp, hpB, hpC, _stripes, count, _stripeKinds, tint, overlaySprite, overlayColor, false, dt, true); // "54/100" (mockup)
+                _health.Render(hp, hpB, hpC, _stripes, count, _stripeKinds, null, overlaySprite, overlayColor, false, dt, true); // "54/100" (mockup)
             }
 
             // ES rail: same outer width as the health frame (rail window = health window + inset difference).
@@ -262,8 +262,7 @@ namespace RuneSkin.PlayerHud
             _es.SetVisible(railOn);
             if (railOn)
             {
-                var outer = _health.WindowLength + _health.Caps - _es.Caps;
-                _es.SetLength(outer, es.Max);
+                _es.SetOuterWidth(outerW);
                 _es.Tick(dt);
                 var broken = es.Phase == ResourcePhase.Broken;
                 if (broken && !_wasBroken) _breakPulse = ThemeTokens.GetFloat("time.hud.break.pulse", 0.35f);
@@ -279,7 +278,7 @@ namespace RuneSkin.PlayerHud
             var st = p.GetStamina();
             var stC = p.GetMaxStamina();
             var stB = Extension(ResourcePools.Stamina, p, stC, out var stRes);
-            _stamina.SetLength(Len(stB), stB);
+            _stamina.SetOuterWidth(outerW);
             _stamina.Tick(dt);
             _stamina.Render(st, stB, stC, _stripes, 0, _stripeKinds, null, null, null, false, dt, stRes);
             var adMax = p.GetMaxAdrenaline();
@@ -288,8 +287,7 @@ namespace RuneSkin.PlayerHud
             _adrenaline.SetVisible(adOn);
             if (adOn)
             {
-                var outer = _stamina.WindowLength + _stamina.Caps - _adrenaline.Caps;
-                _adrenaline.SetLength(outer, adMax);
+                _adrenaline.SetOuterWidth(outerW);
                 _adrenaline.Tick(dt);
                 _adrenaline.Render(ad, adMax, adMax, _stripes, 0, _stripeKinds, null, null, null, false, dt, false);
             }
@@ -304,7 +302,7 @@ namespace RuneSkin.PlayerHud
             _eitr.SetVisible(eitrOn);
             if (eitrOn)
             {
-                _eitr.SetLength(Len(eiB), eiB);
+                _eitr.SetOuterWidth(outerW);
                 _eitr.Tick(dt);
                 _eitr.Render(ei, eiB, eiC, _stripes, 0, _stripeKinds, null, null, null, false, dt, eiRes);
                 _eitr.Paused(eiState.Valid && eiState.RegenBlocked);
@@ -354,33 +352,23 @@ namespace RuneSkin.PlayerHud
                 if (_kinds[k] > 0.05f) _pending.Add(new KeyValuePair<int, float>(k, _kinds[k]));
         }
 
-        // One tint for the health bar and one primary frame overlay from the active effects.
-        private string BestTint(Player p, out string overlaySprite, out string overlayColor)
+        // One primary frame overlay from the active effects.
+        private static void FrameOverlayOf(Player p, out string overlaySprite, out string overlayColor)
         {
-            string tint = null;
-            var tintPrio = int.MinValue;
             var overlay = FrameOverlay.None;
             var overlayPrio = int.MinValue;
             foreach (var se in p.GetSEMan().GetStatusEffects())
             {
                 if (!se) continue;
                 var c = StatusSource.Classify(se, out _);
-                if (c.TintBar == ResourcePools.Health && c.TintPriority > tintPrio) { tint = c.TintToken; tintPrio = c.TintPriority; }
                 if (c.Overlay != FrameOverlay.None && c.OverlayPriority > overlayPrio) { overlay = c.Overlay; overlayPrio = c.OverlayPriority; }
             }
             overlaySprite = overlay == FrameOverlay.Frost ? "sprite.hud.overlay.frost" : overlay == FrameOverlay.Wet ? "sprite.hud.overlay.wet" : null;
             overlayColor = overlay == FrameOverlay.Frost ? "color.overlay.frost" : "color.overlay.wet";
-            return tint;
         }
 
         // ---- layout ----------------------------------------------------------------------------------------------
 
-        private float SafeWidthRef()
-        {
-            HudBox(out _, out var w);
-            var s = ResponsiveContext.GuiFactor * Mathf.Clamp(Plugin.HudScale?.Value ?? 1f, 0.75f, 1.5f);
-            return s > 0f ? w / s : 1920f;
-        }
 
         private void HudBox(out float x, out float w)
         {

@@ -17,7 +17,7 @@ namespace RuneSkin.Restyle
         private RectOffset _written;
 
         // False when the box has no LayoutGroup (the caller reports it: inset not applicable there).
-        public static bool Ensure(RectTransform box, string insetToken)
+        public static bool Ensure(RectTransform box, string insetToken, string bottomToken = null)
         {
             if (!box || !box.TryGetComponent<LayoutGroup>(out var group)) return false;
             if (!box.TryGetComponent<ContentInset>(out var inset))
@@ -32,8 +32,9 @@ namespace RuneSkin.Restyle
                 inset._original = new RectOffset(p.left, p.right, p.top, p.bottom);
             }
             var px = Mathf.RoundToInt(ThemeTokens.GetFloat(insetToken, 0f));
+            var bottom = bottomToken != null ? Mathf.RoundToInt(ThemeTokens.GetFloat(bottomToken, px)) : px;
             var o = inset._original;
-            var want = new RectOffset(Mathf.Max(o.left, px), Mathf.Max(o.right, px), Mathf.Max(o.top, px), Mathf.Max(o.bottom, px));
+            var want = new RectOffset(Mathf.Max(o.left, px), Mathf.Max(o.right, px), Mathf.Max(o.top, px), Mathf.Max(o.bottom, bottom));
             if (!Same(group.padding, want))
             {
                 group.padding = want;

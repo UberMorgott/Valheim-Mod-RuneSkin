@@ -8,32 +8,20 @@ namespace RuneSkin.PlayerHud
     // ui-skin-engine-plan.md §8a.
     public static class HudMath
     {
-        // Vanilla bar length: 32 px per 25 units (Hud.cs:1084 SetHealthBarSize(maxHealth / 25f * 32f), :1108, :1177).
-        public const float PixelsPerUnit = 32f / 25f;
-
-        // Bar length for pool maximum B: proportional like vanilla, clamped to [min, min(cap, capShare x safe width)].
-        // The cap never drops below min (narrow screens keep a readable bar).
-        public static float BarLength(float b, float min, float cap, float capShare, float safeWidthRef)
+        // Main bars have one fixed outer width (mockup hud-status-b, user call 2026-10-21: the max is shown as a
+        // number, never as bar length). Window = outer width minus the frame caps, never below the readable floor.
+        public static float FixedWindow(float outer, float caps, float minWindow)
         {
-            if (!(b > 0f) || float.IsInfinity(b)) return min;
-            var upper = Math.Max(min, Math.Min(cap, capShare * safeWidthRef));
-            return Clamp(PixelsPerUnit * b, min, upper);
+            if (!(outer > 0f) || float.IsInfinity(outer)) return minWindow;
+            return Math.Max(minWindow, outer - caps);
         }
 
-        // A max change leaves a ghost line + shimmer only for real steps: >= 1 unit (food decay ticks are debounced)
-        // and >= stepShare of the larger max.
-        public static bool IsGhostStep(float oldMax, float newMax, float stepShare)
+        // A max change pulses the value only for real steps: >= 1 unit (food decay ticks are debounced) and
+        // >= stepShare of the larger max.
+        public static bool IsMaxStep(float oldMax, float newMax, float stepShare)
         {
             var delta = Math.Abs(newMax - oldMax);
             return delta >= 1f && delta >= stepShare * Math.Max(oldMax, newMax);
-        }
-
-        // Smoothstep-eased value between from and to at t in [0,1].
-        public static float Ease(float from, float to, float t)
-        {
-            t = Clamp(t, 0f, 1f);
-            t = t * t * (3f - 2f * t);
-            return from + (to - from) * t;
         }
 
         public static float Clamp(float v, float min, float max) => v < min ? min : v > max ? max : v;

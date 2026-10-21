@@ -55,7 +55,9 @@ namespace RuneSkin.Screens
                 // Entry states via their owning components (MenuEntryStyle), then the panel stack behind the entries.
                 foreach (var button in menu.menuEntriesParent.GetComponentsInChildren<Button>(true))
                     MenuEntryStyle.Ensure(button, button.GetComponentInChildren<TMP_Text>(true));
-                PanelDecor.Ensure(menu.menuEntriesParent, "size.panel.pad", glass: true, plaque: true);
+                // No header plaque: the pause menu has no title (menuEntriesParent holds only the entry buttons,
+                // Menu.cs:58), and an empty plaque reads as a missing label.
+                PanelDecor.Ensure(menu.menuEntriesParent, "size.panel.pad", glass: true, plaque: false);
             }
             ScreenRegistry.Register(root, () => Context(menu));
             ScreenRegistry.Restyle(root);

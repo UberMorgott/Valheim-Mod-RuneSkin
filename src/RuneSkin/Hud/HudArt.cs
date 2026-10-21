@@ -41,8 +41,7 @@ namespace RuneSkin.PlayerHud
             img.sprite = sprite;
             img.type = sprite ? type : UnityEngine.UI.Image.Type.Simple;
             img.color = ThemeTokens.GetColor(colorToken, Color.white);
-            // Art is authored at 2x (PPU 200) against the canvas reference 100: borders scale with the multiplier 1.
-            img.pixelsPerUnitMultiplier = 1f;
+            Track(img, _ppuScale.TryGetValue(img, out var scale) ? scale : 1f);
             var role = "hud:" + (spriteToken ?? colorToken);
             Classification c;
             if (spriteToken != null && !sprite)
@@ -95,6 +94,28 @@ namespace RuneSkin.PlayerHud
                 ? new Classification { Role = "hud:" + fontToken, Outcome = Outcome.Styled, Reason = "RuneSkin HUD text" }
                 : new Classification { Role = "hud:" + fontToken, Outcome = Outcome.Degraded, Reason = $"font token '{fontToken}' missing (TMP default)" });
             return t;
+        }
+
+        // Sliced / tiled borders and tile periods in reference px. Unity draws a sprite px as
+        // canvas.referencePixelsPerUnit / (sprite PPU x pixelsPerUnitMultiplier) units (Image.pixelsPerUnit), and the
+        // HUD canvas does not use the reference 100 the geometry is measured in (sprite px x 100 / PPU, see
+        // BarView.FrameGeometry): the multiplier cancels the canvas value, times 1 / scale for frames drawn smaller.
+        private readonly Dictionary<Image, float> _ppuScale = new Dictionary<Image, float>();
+        private float _refPpu = 100f;
+
+        public void Track(Image img, float scale)
+        {
+            _ppuScale[img] = Mathf.Clamp(scale, 0.25f, 4f);
+            img.pixelsPerUnitMultiplier = _refPpu / 100f / _ppuScale[img];
+        }
+
+        // Called with the HUD canvas' referencePixelsPerUnit each frame; writes only on a change.
+        public void SyncPpu(float refPpu)
+        {
+            if (!(refPpu > 0f) || Mathf.Approximately(refPpu, _refPpu)) return;
+            _refPpu = refPpu;
+            foreach (var p in _ppuScale)
+                if (p.Key) p.Key.pixelsPerUnitMultiplier = _refPpu / 100f / p.Value;
         }
 
         public void Suppressed(Transform t, string reason) => _suppressed.Add(new KeyValuePair<Transform, string>(t, reason));

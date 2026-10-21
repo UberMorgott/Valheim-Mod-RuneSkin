@@ -5,42 +5,24 @@ using Xunit;
 
 namespace RuneSkin.Tests
 {
-    public class BarLengthTests
+    public class FixedBarTests
     {
         [Theory]
-        [InlineData(25f, 160f)]       // short pool: floor
-        [InlineData(200f, 256f)]      // proportional (1.28 px per unit, Hud.cs:1084)
-        [InlineData(300f, 384f)]      // the cap
-        [InlineData(1000f, 384f)]     // above cap: fixed
-        [InlineData(0f, 160f)]
-        [InlineData(float.NaN, 160f)]
-        public void ClampsProportionalLength(float max, float expected) =>
-            Assert.Equal(expected, HudMath.BarLength(max, 160f, 384f, 0.28f, 1920f), 3);
-
-        [Fact]
-        public void NarrowSafeAreaCapsAtShareButNeverBelowMin()
-        {
-            // 28 % of 1000 = 280 < 384.
-            Assert.Equal(280f, HudMath.BarLength(1000f, 160f, 384f, 0.28f, 1000f), 3);
-            // 28 % of 400 = 112 < min 160: limits never invert.
-            Assert.Equal(160f, HudMath.BarLength(1000f, 160f, 384f, 0.28f, 400f), 3);
-        }
+        [InlineData(438f, 93.5f, 160f, 344.5f)] // health frame caps (95 + 92 sprite px at PPU 200)
+        [InlineData(438f, 53f, 160f, 385f)]     // slim frame caps (70 + 36)
+        [InlineData(200f, 93.5f, 160f, 160f)]   // narrow outer: readable floor wins
+        [InlineData(0f, 93.5f, 160f, 160f)]
+        [InlineData(float.NaN, 93.5f, 160f, 160f)]
+        public void WindowIsOuterMinusCaps(float outer, float caps, float min, float expected) =>
+            Assert.Equal(expected, HudMath.FixedWindow(outer, caps, min), 3);
 
         [Theory]
         [InlineData(100f, 100.5f, false)] // food decay tick: debounced
         [InlineData(100f, 102f, false)]   // < 3 %
         [InlineData(100f, 104f, true)]
         [InlineData(160f, 100f, true)]    // shrink
-        public void GhostOnlyForRealSteps(float a, float b, bool ghost) =>
-            Assert.Equal(ghost, HudMath.IsGhostStep(a, b, 0.03f));
-
-        [Fact]
-        public void EaseEndsOnTarget()
-        {
-            Assert.Equal(10f, HudMath.Ease(10f, 20f, 0f), 3);
-            Assert.Equal(20f, HudMath.Ease(10f, 20f, 1f), 3);
-            Assert.Equal(15f, HudMath.Ease(10f, 20f, 0.5f), 3);
-        }
+        public void PulseOnlyForRealSteps(float a, float b, bool pulse) =>
+            Assert.Equal(pulse, HudMath.IsMaxStep(a, b, 0.03f));
     }
 
     public class StripeTests
