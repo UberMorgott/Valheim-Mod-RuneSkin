@@ -122,6 +122,7 @@ namespace RuneSkin.Tests
             public IDisposable RegisterResourceProvider(string owner, string pool, Func<Player, ResourceState> p) => Rec("resource:" + pool);
             public IDisposable RegisterCapacityProvider(string owner, string list, Func<Player, CapacityState> p) => Rec("capacity:" + list);
             public IDisposable RegisterPanelAction(string owner, PanelActionDescriptor d) => Rec("action:" + d.Id);
+            public IDisposable SetSlotOverlay(string owner, Inventory inventory, int x, int y, string glyphToken) => Rec($"overlay:{x},{y}");
             public bool TryGetColor(string token, out Color color) { color = Color.white; return true; }
             public bool TryGetSprite(string token, out Sprite sprite) { sprite = null; return false; }
             public bool TryGetFloat(string token, out float value) { value = 1f; return true; }

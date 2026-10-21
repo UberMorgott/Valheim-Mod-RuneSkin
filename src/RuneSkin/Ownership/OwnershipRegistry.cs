@@ -15,7 +15,11 @@ namespace RuneSkin.Ownership
         // Player HUD cluster: health / stamina / eitr / adrenaline bars, food, status effects, hotbar placement.
         public const string Hud = "Hud";
 
-        public static readonly string[] Known = { Menu, Tooltips, Hud };
+        // Inventory screen layout A (M2): InventoryGui player panel (doll, grid, footer), container / backpack dock,
+        // info header, grid cell templates. Crafting, skills/texts/trophies and dialogs stay with the other skin until M3.
+        public const string Inventory = "Inventory";
+
+        public static readonly string[] Known = { Menu, Tooltips, Hud, Inventory };
 
         private static readonly HashSet<string> Owned = new HashSet<string>();
         public static bool Frozen { get; private set; }

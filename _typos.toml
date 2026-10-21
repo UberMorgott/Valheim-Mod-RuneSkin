@@ -15,3 +15,6 @@ dout = "dout"
 # Vanilla field names (assembly_valheim Game.m_localDamgeTakenRate, SE_Stats.m_percentigeDamageModifiers).
 m_localDamgeTakenRate = "m_localDamgeTakenRate"
 m_percentigeDamageModifiers = "m_percentigeDamageModifiers"
+# Vanilla field InventoryElement.m_equiped (assembly_valheim InventoryElement.cs:18), also named in art notes.
+m_equiped = "m_equiped"
+equiped = "equiped"

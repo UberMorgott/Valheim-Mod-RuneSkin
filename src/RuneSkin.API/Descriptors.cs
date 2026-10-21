@@ -204,5 +204,13 @@ namespace RuneSkin.API
         public Action OnInvoke;
         /// <summary>Order in the action bar, ascending.</summary>
         public int Order;
+        /// <summary>
+        /// ApiVersion 3: invoked instead of <see cref="OnInvoke"/> with the inventory of the panel instance the button
+        /// sits on (player inventory, the open container's, or the worn backpack's), so one registration serves every
+        /// container / backpack panel. Null = <see cref="OnInvoke"/>.
+        /// </summary>
+        public Action<Inventory> OnInvokeFor;
+        /// <summary>ApiVersion 3: presentation-only enabled state for that panel instance; null = <see cref="Enabled"/>.</summary>
+        public Func<Inventory, bool> EnabledFor;
     }
 }

@@ -71,8 +71,12 @@ namespace RuneSkin.Api
         // HUD rendering capabilities exist only while RuneSkin owns the HUD family.
         private static readonly HashSet<string> HudCapabilities = new HashSet<string> { "effect.render", "resource.render", "capacity.render" };
 
+        // Inventory rendering capabilities exist only while RuneSkin owns the inventory family.
+        private static readonly HashSet<string> InventoryCapabilities = new HashSet<string> { "panel.dock", "slot.render", "panel.action", "slot.overlay" };
+
         public bool Supports(string capability) =>
-            Capabilities.Contains(capability) || (HudCapabilities.Contains(capability) && OwnershipRegistry.IsOwned(OwnershipRegistry.Hud));
+            Capabilities.Contains(capability) || (HudCapabilities.Contains(capability) && OwnershipRegistry.IsOwned(OwnershipRegistry.Hud)) ||
+            (InventoryCapabilities.Contains(capability) && OwnershipRegistry.IsOwned(OwnershipRegistry.Inventory));
 
         public IDisposable RegisterRoot(string owner, Transform root, string screenId)
         {
@@ -132,9 +136,16 @@ namespace RuneSkin.Api
             }
         }
 
-        public IDisposable RegisterPanel(string owner, RectTransform rect, string region) => Record(owner, "panel", new KeyValuePair<RectTransform, string>(rect, region));
+        // "inventory.*" regions dock in the inventory layout (M2); others are recorded for later milestones.
+        public IDisposable RegisterPanel(string owner, RectTransform rect, string region) =>
+            region.StartsWith("inventory.", StringComparison.Ordinal)
+                ? new Handle(InventoryScreen.InventoryRegistry.AddPanel(rect, region))
+                : Record(owner, "panel", new KeyValuePair<RectTransform, string>(rect, region));
 
-        public IDisposable RegisterSlot(string owner, SlotDescriptor descriptor) => Record(owner, "slot", descriptor);
+        public IDisposable RegisterSlot(string owner, SlotDescriptor descriptor) => new Handle(InventoryScreen.InventoryRegistry.AddSlot(owner, descriptor));
+
+        public IDisposable SetSlotOverlay(string owner, Inventory inventory, int x, int y, string glyphToken) =>
+            new Handle(InventoryScreen.InventoryRegistry.SetOverlay(owner, inventory, x, y, glyphToken));
 
         public IDisposable RegisterStatusEffect(string owner, StatusEffectDescriptor descriptor) =>
             new Handle(Providers.AddEffect(owner, descriptor));
@@ -145,7 +156,7 @@ namespace RuneSkin.Api
         public IDisposable RegisterCapacityProvider(string owner, string list, Func<Player, CapacityState> provider) =>
             new Handle(Providers.AddCapacity(owner, list, provider));
 
-        public IDisposable RegisterPanelAction(string owner, PanelActionDescriptor descriptor) => Record(owner, "action", descriptor);
+        public IDisposable RegisterPanelAction(string owner, PanelActionDescriptor descriptor) => new Handle(InventoryScreen.InventoryRegistry.AddAction(owner, descriptor));
 
         public bool TryGetColor(string token, out Color color) => ThemeTokens.TryGetColor(token, out color);
 

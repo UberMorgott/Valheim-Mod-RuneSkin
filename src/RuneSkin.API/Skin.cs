@@ -23,7 +23,7 @@ namespace RuneSkin.API
         /// Version of the installed API surface (a property, not a const, so you read the installed value at runtime).
         /// Bumped on every public change; check it before using newer members.
         /// </summary>
-        public static int ApiVersion => 2;
+        public static int ApiVersion => 3;
 
         private static IHost _host;
         private static int _mainThread = -1;
@@ -38,7 +38,7 @@ namespace RuneSkin.API
         /// <summary>
         /// Whether the running RuneSkin renders a capability. Known names: "root.restyle", "bind", "invalidate",
         /// "theme.read", "ownership" (M0); "effect.render", "resource.render", "capacity.render" (M1, true while
-        /// RuneSkin owns the HUD); "panel.dock", "slot.render", "panel.action" (later milestones).
+        /// RuneSkin owns the HUD); "panel.dock", "slot.render", "panel.action", "slot.overlay" (M2, true while RuneSkin owns the inventory).
         /// </summary>
         public static bool Supports(string capability) => _host != null && capability != null && _host.Supports(capability);
 
@@ -94,7 +94,7 @@ namespace RuneSkin.API
             return Track(h => h.RegisterPanel(owner, rect, region));
         }
 
-        /// <summary>Registers a character-doll slot (see <see cref="SlotDescriptor"/>). Recorded in M0, rendered in M2.</summary>
+        /// <summary>Registers a character-doll slot (see <see cref="SlotDescriptor"/>). Rendered since M2 (<c>Supports("slot.render")</c>).</summary>
         public static IDisposable RegisterSlot(string owner, SlotDescriptor descriptor)
         {
             CheckOwner(owner);
@@ -137,13 +137,31 @@ namespace RuneSkin.API
             return Track(h => h.RegisterCapacityProvider(owner, list, provider));
         }
 
-        /// <summary>Registers an inventory panel action button. Recorded in M0, rendered in M2.</summary>
+        /// <summary>Registers an inventory panel action button. Rendered since M2 (<c>Supports("panel.action")</c>).</summary>
         public static IDisposable RegisterPanelAction(string owner, PanelActionDescriptor descriptor)
         {
             CheckOwner(owner);
             if (descriptor == null || string.IsNullOrEmpty(descriptor.Id)) throw new ArgumentNullException(nameof(descriptor));
             var copy = Copy(descriptor);
             return Track(h => h.RegisterPanelAction(owner, copy));
+        }
+
+        /// <summary>
+        /// Draws a glyph over one cell of an inventory grid (ApiVersion 3), e.g. a lock on a slot the sort skips.
+        /// <paramref name="inventory"/> is the shown inventory (player, container or backpack); the overlay follows it
+        /// into whichever panel shows it. One overlay per owner and cell (a new call replaces it); disposing removes it.
+        /// </summary>
+        /// <param name="owner">Your plugin GUID.</param>
+        /// <param name="inventory">Inventory the cell belongs to.</param>
+        /// <param name="x">Grid column (ItemData.m_gridPos.x).</param>
+        /// <param name="y">Grid row.</param>
+        /// <param name="glyphToken">Theme sprite token, e.g. "sprite.hud.glyph.lock".</param>
+        public static IDisposable SetSlotOverlay(string owner, Inventory inventory, int x, int y, string glyphToken)
+        {
+            CheckOwner(owner);
+            if (inventory == null) throw new ArgumentNullException(nameof(inventory));
+            if (string.IsNullOrEmpty(glyphToken)) throw new ArgumentNullException(nameof(glyphToken));
+            return Track(h => h.SetSlotOverlay(owner, inventory, x, y, glyphToken));
         }
 
         /// <summary>Read-only access to the active theme tokens.</summary>
@@ -248,7 +266,9 @@ namespace RuneSkin.API
             InputButton = d.InputButton,
             Enabled = d.Enabled,
             OnInvoke = d.OnInvoke,
-            Order = d.Order
+            Order = d.Order,
+            OnInvokeFor = d.OnInvokeFor,
+            EnabledFor = d.EnabledFor
         };
 
         // Handle returned to callers: connects to the host now or on attach; Dispose before attach cancels the replay.
@@ -294,6 +314,7 @@ namespace RuneSkin.API
         IDisposable RegisterResourceProvider(string owner, string pool, Func<Player, ResourceState> provider);
         IDisposable RegisterCapacityProvider(string owner, string list, Func<Player, CapacityState> provider);
         IDisposable RegisterPanelAction(string owner, PanelActionDescriptor descriptor);
+        IDisposable SetSlotOverlay(string owner, Inventory inventory, int x, int y, string glyphToken);
         bool TryGetColor(string token, out Color color);
         bool TryGetSprite(string token, out Sprite sprite);
         bool TryGetFloat(string token, out float value);
