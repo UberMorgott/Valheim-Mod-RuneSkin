@@ -460,15 +460,19 @@ namespace RuneSkin.PlayerHud
         // Band under the inventory column block (layout-a2.png): [food | GP | quick] [bars], status row below
         // (buffs under the left block, debuffs under the bars, one row each, "+N"). Its height never depends on the
         // effect count, so the columns above it never jump. False = does not fit, the caller keeps the stack.
+        // Compact (user call 2026-10-22): the band is as tall as its content - the left block is one row of
+        // size.hud.band.cell sockets (food diamonds side by side, GP, Z/V/B, mockup ratios), as tall as the bar stack,
+        // and the status row is one cell plus its pads.
         private bool ArrangeBand(Player p)
         {
             var gap = ThemeTokens.GetFloat("size.hud.gap", 5f);
             var statusPad = ThemeTokens.GetFloat("size.hud.status.pad", 6f);
             var cell = ThemeTokens.GetFloat("size.hud.status.cell", 42f);
-            var rowH = cell + ThemeTokens.GetFloat("size.hud.status.gap", 4f);
             var foodPad = ThemeTokens.GetFloat("size.hud.food.pad", 8f);
-            var foodGap = ThemeTokens.GetFloat("size.hud.food.gap", 6f) * 2f;
+            var itemGap = ThemeTokens.GetFloat("size.hud.food.gap", 6f) * 2f;
             var blockGap = ThemeTokens.GetFloat("size.hud.band.gap", 16f);
+            var bandCell = ThemeTokens.GetFloat("size.hud.band.cell", 76f);
+            var quickGap = ThemeTokens.GetFloat("size.hud.band.quick.gap", 6f);
             var safe = ResponsiveContext.SafeArea;
             // Scale: the canvas / HUD scale with the font floors, no share-of-screen shrink (the band width is given).
             var s = HudMath.ClusterScale(ResponsiveContext.GuiFactor, Plugin.HudScale?.Value ?? 1f, 0f, 0f, 0f, 0f, 0f, 0f,
@@ -492,42 +496,48 @@ namespace RuneSkin.PlayerHud
             _strip.ExcludeHash = _buffs.ExcludeHash = _gp.Visible ? _gp.ActiveHash : 0;
             if (_fed) { _strip.Feed(_hudEffects); _buffs.Feed(_hudEffects); }
 
-            // Left block widths: food row (group frame reaches foodPad around it), GP socket, EAQS quick block.
-            _food.Update(p, 0f);
+            // Left block, one row at the band cell: food sockets in a straight row (group frame reaches foodPad around
+            // it), guardian power, EAQS quick sockets. Food / GP keep their own geometry, scaled to the cell.
+            var foodK = bandCell / Mathf.Max(1f, ThemeTokens.GetFloat("size.hud.food.cell", 56f));
+            SetScale(_food.Root, foodK);
+            _food.Update(p, 0f, zigzag: false);
+            var gs = _gp.Visible ? bandCell : 0f;
+            SetScale(_gp.Root, bandCell / Mathf.Max(1f, _gp.Size));
             var x = foodPad;
             var foodX = x;
-            x += _food.Width;
-            var gs = _gp.Visible ? _gp.Size : 0f;
-            var gpX = x + foodGap;
+            x += _food.Width * foodK;
+            var gpX = x + itemGap;
             if (_gp.Visible) x = gpX + gs;
-            var quickX = x + foodGap;
-            var quickW = QuickWidth();
+            var quickX = x + itemGap;
+            var quickN = _bandQuickSlots;
+            var quickW = quickN > 0 ? quickN * bandCell + (quickN - 1) * quickGap : 0f;
             if (quickW > 0f) x = quickX + quickW;
             var leftW = x + foodPad;
-            var leftH = _food.TimerDrop + foodPad + Mathf.Max(_food.Height, gs) + foodPad;
+            // Timers hang under the sockets (food: last minute only; GP cooldown): reserved so they never clip.
+            var timerDrop = _food.TimerDrop * foodK;
+            var leftH = timerDrop + foodPad + bandCell + foodPad;
 
             var barsH = StackBars(p, 0f, 0f, gap, _health.Width, false);
-            var statusH = 2f * statusPad + rowH + gap;
+            var statusH = cell + 2f * statusPad + ThemeTokens.GetFloat("size.hud.band.status.gap", 4f);
             var band = HudMath.BandLayout(bandW, leftW, leftH, barsH, statusH, blockGap,
                 ThemeTokens.GetFloat("size.hud.band.bar.min", 280f), 0f);
             if (!band.Fits) return false;
             _bandBarOuter = band.BarOuter;
 
-            // Status row: one row per strip, top edge at statusPad + rowH (strips lay out downwards from their root).
-            var stripTop = statusPad + rowH;
-            _buffs.Arrange(Mathf.Max(cell, leftW - 2f * statusPad), rowH);
+            // Status row: one row per strip, top edge at statusPad + cell (strips lay out downwards from their root).
+            var stripTop = statusPad + cell;
+            _buffs.Arrange(Mathf.Max(cell, leftW - 2f * statusPad), cell);
             _buffs.Root.anchoredPosition = new Vector2(ox + statusPad, o + stripTop);
-            _strip.Arrange(Mathf.Max(cell, band.BarOuter - 2f * statusPad), rowH);
+            _strip.Arrange(Mathf.Max(cell, band.BarOuter - 2f * statusPad), cell);
             _strip.Root.anchoredPosition = new Vector2(ox + band.BarsX + statusPad, o + stripTop);
 
             // Bars right of the left block.
             StackBars(p, ox + band.BarsX, o + band.BarsY, gap, _health.Width, true);
 
-            // Left block: food sockets (bottom of the lowest socket above the timers and the frame pad).
-            var foodY = o + band.LeftY + _food.TimerDrop + foodPad;
-            var rowMid = foodY + Mathf.Max(_food.Height, gs) / 2f;
-            _food.Root.anchoredPosition = new Vector2(ox + foodX, rowMid - _food.Height / 2f);
-            if (_gp.Visible) _gp.Root.anchoredPosition = new Vector2(ox + gpX, rowMid - gs / 2f);
+            // Left block: sockets bottom-aligned above the timers and the frame pad.
+            var rowY = o + band.LeftY + timerDrop + foodPad;
+            _food.Root.anchoredPosition = new Vector2(ox + foodX, rowY);
+            if (_gp.Visible) _gp.Root.anchoredPosition = new Vector2(ox + gpX, rowY);
             var totalH = band.Height + 2f * o;
             if (!_bandPanel.gameObject.activeSelf) _bandPanel.gameObject.SetActive(true);
             _bandPanel.anchoredPosition = Vector2.zero;
@@ -539,35 +549,38 @@ namespace RuneSkin.PlayerHud
             // The frame reaches framePad above the band box: the columns' gap starts above it.
             _reservedTop = bottom + (totalH + framePad) * s;
 
-            var quickAnchor = _root.TransformPoint(new Vector3(ox + quickX, rowMid - QuickHeight() / 2f, 0f));
+            // Quick sockets: the inventory's EAQS quick cells sit on these boxes (BandQuickCell); the hidden HUD bar
+            // follows to the same corner.
+            _bandQuickX = ox + quickX;
+            _bandQuickY = rowY;
+            _bandQuickCell = bandCell;
+            _bandQuickGap = quickGap;
+            var quickAnchor = _root.TransformPoint(new Vector3(_bandQuickX, rowY, 0f));
             QuickAnchor = quickAnchor;
             HasQuickAnchor = true;
             PlaceBlock(QuickBar(), quickAnchor, false);
             return true;
         }
 
-        // EAQS quick block in reference px: measured from its visible rects, else (no element built yet) the slot
-        // count x HotkeyBar.m_elementSpace (HotkeyBar.cs:110 lays slot i at i * m_elementSpace).
-        private float QuickWidth()
+        private float _bandQuickX, _bandQuickY, _bandQuickCell, _bandQuickGap;
+
+        // Band profile: quick socket i as a box of the cluster root (bottom-left world point, size in root units =
+        // reference px). False while the band is not shown.
+        public bool BandQuickCell(int i, out Transform space, out Vector3 bottomLeft, out Vector2 size)
         {
-            var perRef = _root.lossyScale.x;
-            var quick = QuickBar();
-            if (!quick || !(perRef > 0f)) return 0f;
-            if (Bounds(quick, out var min, out var max)) return (max.x - min.x) / perRef;
-            if (_bandQuickSlots <= 0 || !quick.TryGetComponent<HotkeyBar>(out var hb)) return 0f;
-            var size = hb.m_elementPrefab && hb.m_elementPrefab.transform is RectTransform pr ? pr.rect.width : hb.m_elementSpace;
-            var local = (_bandQuickSlots - 1) * hb.m_elementSpace + size;
-            return quick.TransformVector(new Vector3(local, 0f, 0f)).magnitude / perRef;
+            space = _root;
+            bottomLeft = default;
+            size = default;
+            if (!BandActive || i < 0 || !(_bandQuickCell > 0f)) return false;
+            bottomLeft = _root.TransformPoint(new Vector3(_bandQuickX + i * (_bandQuickCell + _bandQuickGap), _bandQuickY, 0f));
+            size = new Vector2(_bandQuickCell, _bandQuickCell);
+            return true;
         }
 
-        private float QuickHeight()
+        private static void SetScale(Transform t, float k)
         {
-            var perRef = _root.lossyScale.y;
-            var quick = QuickBar();
-            if (!quick || !(perRef > 0f)) return 0f;
-            if (Bounds(quick, out var min, out var max)) return (max.y - min.y) / perRef;
-            if (!quick.TryGetComponent<HotkeyBar>(out var hb) || !hb.m_elementPrefab || !(hb.m_elementPrefab.transform is RectTransform pr)) return 0f;
-            return quick.TransformVector(new Vector3(0f, pr.rect.height, 0f)).magnitude / perRef;
+            var v = new Vector3(k, k, 1f);
+            if ((t.localScale - v).sqrMagnitude > 1e-8f) t.localScale = v;
         }
 
         private void ArrangeAndPlace(Player p)
@@ -576,6 +589,8 @@ namespace RuneSkin.PlayerHud
             _bandActive = _bandWanted && InventoryGui.IsVisible() && ArrangeBand(p);
             if (_bandActive) return;
             if (_bandPanel.gameObject.activeSelf) _bandPanel.gameObject.SetActive(false);
+            SetScale(_food.Root, 1f);
+            SetScale(_gp.Root, 1f);
             var gap = ThemeTokens.GetFloat("size.hud.gap", 5f);
             var barW = Mathf.Max(_health.Width, Mathf.Max(_stamina.Width, _eitr.Root.gameObject.activeSelf ? _eitr.Width : 0f));
             if (_es.Root.gameObject.activeSelf) barW = Mathf.Max(barW, _es.Width);

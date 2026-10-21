@@ -47,7 +47,9 @@ namespace RuneSkin.PlayerHud
 
         private readonly Image _group;
 
-        public void Update(Player player, float maxWidth)
+        // zigzag: the HUD checkerboard (stacked profile); false = one straight row (inventory band, layout-a2 bottom:
+        // diamonds side by side, the band height is one socket).
+        public void Update(Player player, float maxWidth, bool zigzag = true)
         {
             var foods = player.GetFoods();
             var capacity = VanillaCapacity;
@@ -68,10 +70,10 @@ namespace RuneSkin.PlayerHud
             // edges parallel with an even gap (HudMath.DiamondStep), every cell on whole physical pixels.
             // Step of whole physical px (lossy scale = physical px per unit on the overlay HUD canvas): every socket
             // lands on the same sub-pixel phase and the diamonds rasterise identically.
-            var step = HudMath.Snap(HudMath.DiamondStep(cell, gap), Root.lossyScale.y);
+            var step = HudMath.Snap(zigzag ? HudMath.DiamondStep(cell, gap) : cell + gap, Root.lossyScale.y);
             Count = n;
             Width = n == 0 ? 0f : (n - 1) * step + cell;
-            Height = n == 0 ? 0f : n == 1 ? cell : cell + step;
+            Height = n == 0 ? 0f : n == 1 || !zigzag ? cell : cell + step;
             Root.sizeDelta = new Vector2(Width, Height);
             var pad = ThemeTokens.GetFloat("size.hud.food.pad", 8f);
             var gr = _group.rectTransform;
@@ -87,7 +89,7 @@ namespace RuneSkin.PlayerHud
                 if (s.Root.gameObject.activeSelf != on) s.Root.gameObject.SetActive(on);
                 if (!on) continue;
                 HudMath.DiamondCell(i, step, out var cx, out var cy);
-                var pos = new Vector2(cx, cy);
+                var pos = new Vector2(cx, zigzag ? cy : 0f);
                 if (s.Root.anchoredPosition != pos) s.Root.anchoredPosition = pos;
                 var gem = i >= extraFrom;
                 if (gem != s.Gem)

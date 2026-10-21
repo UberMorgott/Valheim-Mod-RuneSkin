@@ -1203,6 +1203,14 @@ namespace RuneSkin.InventoryScreen
                 // HUD slot i: the live element when the bar built one, else where HotkeyBar.UpdateIcons would put it
                 // (localPosition (i * m_elementSpace, 0), HotkeyBar.cs:110) at the prefab's size.
                 Box b;
+                var band = PlayerHud.HudCluster.Instance;
+                if (band && band.BandQuickCell(i, out var space, out var bl, out var bandSize))
+                {
+                    // Inventory band profile: the band's own quick sockets (size.hud.band.cell, mockup ratios).
+                    b = Geo.ForeignRect(_canvas, space, bl, bandSize, Vector2.zero);
+                    PlaceQuickCell(e, b);
+                    continue;
+                }
                 var live = i < hb.m_elements.Count && hb.m_elements[i].m_go ? hb.m_elements[i].m_go.transform as RectTransform : null;
                 if (live) b = Geo.ForeignBox(_canvas, live);
                 else if (prefab)
@@ -1221,12 +1229,18 @@ namespace RuneSkin.InventoryScreen
                     b = Geo.ForeignRect(_canvas, bar, origin, size, pivot);
                 }
                 else continue;
-                var rt = (RectTransform)e.transform;
-                var native = rt.rect.width;
-                var parentUnits = rt.parent ? rt.parent.lossyScale.x / Mathf.Max(Geo.WorldPerUnit(_canvas), 1e-6f) : 1f;
-                if (native > 1f && parentUnits > 0f) Geo.SetScale(rt, b.W / (native * parentUnits));
-                Geo.SetTopLeft(rt, Geo.World(_canvas, b.X, b.Y));
+                PlaceQuickCell(e, b);
             }
+        }
+
+        private void PlaceQuickCell(InventoryElement e, Box b)
+        {
+            if (!e) return;
+            var rt = (RectTransform)e.transform;
+            var native = rt.rect.width;
+            var parentUnits = rt.parent ? rt.parent.lossyScale.x / Mathf.Max(Geo.WorldPerUnit(_canvas), 1e-6f) : 1f;
+            if (native > 1f && parentUnits > 0f) Geo.SetScale(rt, b.W / (native * parentUnits));
+            Geo.SetTopLeft(rt, Geo.World(_canvas, b.X, b.Y));
         }
         private Transform QuickBar()
         {
