@@ -45,12 +45,12 @@ namespace RuneSkin.InventoryScreen
         public float DockW = 528f, CenterW = 720f, CraftW = 576f;
         public float MinDockW = 380f, MinCraftW = 456f;
         public float WorkspaceMaxW = 1920f;
-        public float PanelMaxH = 760f;
+        public float PanelMaxH = 760f, CenterMaxH = 920f, PanelActionsH = 48f;
         public float HudBand = 288f;
         public float HeaderH = 88f, FooterH = 48f, PanelHeaderH = 56f, PanelPad = 20f;
         public float GridCell = 64f, GridGap = 8f, HotbarHeaderH = 30f;
         public float ContainerCell = 56f, ContainerGap = 6f;
-        public float DollCell = 48f, DollGap = 8f, DollColumns = 3f, DollMirrorGap = 24f, DollMinRows = 2f;
+        public float DollCell = 48f, DollGap = 8f, DollPad = 8f, DollColumns = 3f, DollMirrorGap = 24f, DollMinRows = 2f;
         public float ScrollbarW = 14f;
         public float MinCellPhysPx = 44f;
     }
@@ -120,6 +120,9 @@ namespace RuneSkin.InventoryScreen
             var top = safe.Y + margin;
             var bottom = safe.Bottom - t.HudBand * k;
             var panelH = Math.Max(0f, Math.Min(t.PanelMaxH * k, bottom - top));
+            // The HUD cluster sits bottom-left (under the dock) and summon frames bottom-right (under crafting):
+            // only those columns stop above the HUD band; the centre column runs down to the bottom margin.
+            var centerH = Math.Max(panelH, Math.Min(t.CenterMaxH * k, safe.Bottom - margin - top));
             o.Workspace = new Box(wsX, top, wsW, panelH);
 
             // Centre width: its design width, but never narrower than the grid at the minimum pitch.
@@ -151,7 +154,7 @@ namespace RuneSkin.InventoryScreen
                 var used = dockW + centerW + craftW + 2f * gap;
                 var x = wsX + Math.Max(0f, (wsW - used) / 2f);
                 o.Dock = new Box(x, top, dockW, panelH);
-                o.Center = new Box(o.Dock.Right + gap, top, centerW, panelH);
+                o.Center = new Box(o.Dock.Right + gap, top, centerW, centerH);
                 o.Crafting = new Box(o.Center.Right + gap, top, craftW, panelH);
             }
             else
@@ -159,7 +162,7 @@ namespace RuneSkin.InventoryScreen
                 // Two columns: the centre keeps its width when possible, the right column takes the rest.
                 centerW = Math.Min(centerW, Math.Max(gridMinW, wsW - gap - t.MinDockW * k));
                 var rightW = Math.Max(0f, wsW - gap - centerW);
-                o.Center = new Box(wsX, top, centerW, panelH);
+                o.Center = new Box(wsX, top, centerW, centerH);
                 var half = Math.Max(0f, (panelH - gap) / 2f);
                 o.Crafting = new Box(o.Center.Right + gap, top, rightW, half);
                 o.Dock = new Box(o.Center.Right + gap, top + half + gap, rightW, panelH - half - gap);
@@ -181,7 +184,8 @@ namespace RuneSkin.InventoryScreen
 
             // Doll needs at least DollMinRows rows; the grid takes what is left (and scrolls past that).
             var dollPitch = Math.Max(t.DollCell * k, o.MinCell) + t.DollGap * k;
-            var dollMinH = Math.Min(t.DollMinRows, DollRows(i, t)) * dollPitch + 2f * pad;
+            var dollPad = t.DollPad * k;
+            var dollMinH = Math.Min(t.DollMinRows, DollRows(i, t)) * dollPitch + 2f * dollPad;
             var gridBoxMaxH = c.H - o.Header.H - footerH - dollMinH - 3f * gap; // header | doll | grid | footer
             var grid = Fit(i.GridW, i.GridH, c.W, Math.Max(0f, gridBoxMaxH), t.HotbarHeaderH * k, pad, t.GridCell * k, t.GridGap * k, o.MinCell, t.ScrollbarW * k);
             o.Player = grid;
@@ -200,7 +204,7 @@ namespace RuneSkin.InventoryScreen
             d.StorageRows = (i.DollStorage + d.StorageColumns - 1) / d.StorageColumns;
             d.MirrorRows = Math.Max(0, i.DollMirrors);
             d.Rows = Math.Max(d.StorageRows, d.MirrorRows);
-            d.VisibleRows = Math.Max(0, (int)Math.Floor((dollH - 2f * pad + t.DollGap * k + 0.01f) / dollPitch));
+            d.VisibleRows = Math.Max(0, (int)Math.Floor((dollH - 2f * dollPad + t.DollGap * k + 0.01f) / dollPitch));
             d.Scroll = d.Rows > d.VisibleRows;
             o.DollCells = d;
         }
@@ -215,7 +219,8 @@ namespace RuneSkin.InventoryScreen
         {
             var dock = o.Dock;
             var gap = t.Gap * k;
-            var headerH = t.PanelHeaderH * k;
+            // Container panels: title row on top, glyph action row at the bottom (layout-a2.png "Взять всё").
+            var headerH = (t.PanelHeaderH + t.PanelActionsH) * k;
             var pad = t.PanelPad * k;
             var hasChest = i.ChestW > 0 && i.ChestH > 0;
             var hasPack = i.BackpackW > 0 && i.BackpackH > 0;

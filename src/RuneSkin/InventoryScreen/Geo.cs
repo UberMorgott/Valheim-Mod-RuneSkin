@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace RuneSkin.InventoryScreen
 {
@@ -25,6 +26,7 @@ namespace RuneSkin.InventoryScreen
         public static void Place(RectTransform canvas, RectTransform rt, Box box)
         {
             if (!rt || !canvas || box.IsEmpty) return;
+            IgnoreLayout(rt);
             var parent = rt.parent as RectTransform;
             if (!parent) return;
             var tl = (Vector2)parent.InverseTransformPoint(World(canvas, box.X, box.Y));
@@ -52,6 +54,7 @@ namespace RuneSkin.InventoryScreen
             var parentScale = rt.parent ? rt.parent.lossyScale.x : 1f;
             // rt's size in canvas units at scale 1.
             var k = parentScale / Mathf.Max(unit, 1e-6f);
+            IgnoreLayout(rt);
             var fit = Mathf.Min(maxScale, Mathf.Min(box.W / (size.x * k), box.H / (size.y * k)));
             SetScale(rt, fit);
             SetTopLeft(rt, World(canvas, box.X, box.Y));
@@ -82,7 +85,47 @@ namespace RuneSkin.InventoryScreen
             return (Corners[2].x - Corners[1].x) / Mathf.Max(WorldPerUnit(canvas), 1e-6f);
         }
 
-        // Canvas box of a world rect (HUD elements on another overlay canvas: world = screen px for both).
+        // A rect of ANOTHER canvas (HUD) as a box of this canvas: through screen space with each canvas's camera
+        // (overlay = null camera), so it holds for overlay and camera canvases alike.
+        public static Box ForeignBox(RectTransform canvas, RectTransform rt)
+        {
+            rt.GetWorldCorners(Corners);
+            var own = canvas.GetComponent<Canvas>();
+            var other = rt.GetComponentInParent<Canvas>();
+            var otherCam = other && other.rootCanvas.renderMode != RenderMode.ScreenSpaceOverlay ? other.rootCanvas.worldCamera : null;
+            var ownCam = own && own.renderMode != RenderMode.ScreenSpaceOverlay ? own.worldCamera : null;
+            var a = RectTransformUtility.WorldToScreenPoint(otherCam, Corners[1]);
+            var b = RectTransformUtility.WorldToScreenPoint(otherCam, Corners[3]);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(canvas, a, ownCam, out var tl);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(canvas, b, ownCam, out var br);
+            var r = canvas.rect;
+            return new Box(tl.x - r.xMin, r.yMax - tl.y, br.x - tl.x, tl.y - br.y);
+        }
+
+        // A rect that would sit at a world pivot point of another canvas (size in that transform's local units).
+        public static Box ForeignRect(RectTransform canvas, Transform space, Vector3 pivotWorld, Vector2 size, Vector2 pivot)
+        {
+            var tlW = pivotWorld + space.TransformVector(new Vector3(-pivot.x * size.x, (1f - pivot.y) * size.y, 0f));
+            var brW = pivotWorld + space.TransformVector(new Vector3((1f - pivot.x) * size.x, -pivot.y * size.y, 0f));
+            var other = space.GetComponentInParent<Canvas>();
+            var own = canvas.GetComponent<Canvas>();
+            var otherCam = other && other.rootCanvas.renderMode != RenderMode.ScreenSpaceOverlay ? other.rootCanvas.worldCamera : null;
+            var ownCam = own && own.renderMode != RenderMode.ScreenSpaceOverlay ? own.worldCamera : null;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(canvas, RectTransformUtility.WorldToScreenPoint(otherCam, tlW), ownCam, out var tl);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(canvas, RectTransformUtility.WorldToScreenPoint(otherCam, brW), ownCam, out var br);
+            var r = canvas.rect;
+            return new Box(tl.x - r.xMin, r.yMax - tl.y, br.x - tl.x, tl.y - br.y);
+        }
+
+        // Layout groups would re-arrange a child we place at the next canvas rebuild: opt it out.
+        public static void IgnoreLayout(RectTransform rt)
+        {
+            if (!rt || !rt.parent || !rt.parent.GetComponent<LayoutGroup>()) return;
+            var le = rt.GetComponent<LayoutElement>() ?? rt.gameObject.AddComponent<LayoutElement>();
+            if (!le.ignoreLayout) le.ignoreLayout = true;
+        }
+
+        // Canvas box of a rect of this canvas.
         public static Box BoxOf(RectTransform canvas, RectTransform rt)
         {
             rt.GetWorldCorners(Corners);

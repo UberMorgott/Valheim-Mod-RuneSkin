@@ -56,3 +56,22 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 - [ ] Hotbar slot art (socket.hotbar, plate.number) and quick-slot art: M2 with doll slots
 - [ ] Reserve tooltip (auras / summons) on hover: needs inventory-open hit area (M2)
 - [ ] Bar-cap pool glyph sockets are empty in the art (no HP/stamina/eitr glyphs yet)
+
+## M2 (code, 2026-10-21) - inventory layout A
+
+- [x] Codex adapter design review (chat 11cdaf31): 12 points adopted (no m_uiGroups insert, equip via UseItem queue, EAQS rows not grid height, reposition not rebuild, dock fallback = halves + scroll, action instance context, ownership by property)
+- [x] InventoryMath (pure, 10 tests): Full/Narrow/Stacked by width, centred 1920 column, HUD band, safe area, SkinScale, 44 px physical floor, container fit + scroll, dock split by needed height, doll rows + scroll
+- [x] InventorySkin: panel placement (m_player/m_container/m_info/crafting place), grid pitch via m_elementSpace + reposition, EAQS cells on the doll (3x3 + appended), quick cells over the HUD quick bar, hand mirrors (drop = UseItem equip, click = source highlight, right-click = unequip, 2H linked), RegisterSlot cells, hotbar header + number plates, equipped marker, slot overlays
+- [x] API v3: SetSlotOverlay(owner, Inventory, x, y, token); PanelActionDescriptor.OnInvokeFor/EnabledFor (panel inventory); Supports panel.dock/slot.render/panel.action/slot.overlay while Inventory owned
+- [x] Action bars: vanilla Take all / Stack all as glyph buttons (listeners kept), registered actions per panel kind, hotkeys gated
+- [x] Backpack dock: m_container showing the worn backpack, fork AB_BackpackPanel or Skin.RegisterPanel("inventory.backpack")
+- [x] AugaSkin 2.2.11 yields Inventory (EaqsSlotPanel, TrashPlate_Skin, slot templates/marks, owned subtrees)
+- [x] Harness shot ui-runeskin-m2
+- [x] Gamepad: EAQS spatial DPad navigation reaches the doll cells from our placement, hidden doll rows scroll into view; vanilla m_uiGroups + per-grid selection kept (focus memory = per grid)
+- [ ] Gamepad focus on hand mirrors / API-registered doll cells (X on the source grid cell toggles equip meanwhile)
+- [x] Placement runs in LateUpdate (InventoryGui Animator writes panel positions after Update), world-measured cell placement
+- [x] Art f907652 pickup (recess cells, glyphs, mirrors + link badge + occupied hand, hotbar header digits, icon buttons, stat plates, header glyphs, wet drip variants)
+- [x] In-game ui-runeskin-m2 run tools\out\20261021-222046: 9/9 PASS (2560x1440 inventory, small chest, large chest, backpack alone, chest + backpack; 1920x1080 large chest + backpack), Inventory dumps unknown=0 degraded=0
+- [x] Compare D:\tmp\cx-augaskin\compare-ingame-inventory.png, Codex 5.5 -> 7 -> 8/10
+- [ ] MorgottTweaks (not RuneSkin): TrashSlot.LayoutColumn re-stacks Armor/Weight/CoinPocket/Trash plates every LateUpdate over m_player/Bkg -> must yield when Skin.IsOwned("Inventory"); RecipeChains MT_ChainTree docks left of crafting over the centre column (M3: fold into crafting detail)
+- [ ] HUD-side: EAQS quick cells placed over the HUD quick block (empty bar in the test save; verify with items)

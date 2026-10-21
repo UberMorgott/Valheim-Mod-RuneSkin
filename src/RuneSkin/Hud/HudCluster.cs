@@ -485,6 +485,8 @@ namespace RuneSkin.PlayerHud
 
             // Foreign blocks: EAQS quick slots right of the food row, guardian power after them, hotbar top-left.
             var food = _root.TransformPoint(new Vector3(quickX, y, 0f));
+            QuickAnchor = food;
+            HasQuickAnchor = true;
             PlaceBlock(QuickBar(), food, false);
             if (_hotbar)
             {
@@ -493,6 +495,11 @@ namespace RuneSkin.PlayerHud
                 PlaceBlock(_hotbar, target, true);
             }
         }
+
+        // Bottom-left world point of the EAQS quick-slot block right of the food row (HUD canvas); the inventory puts
+        // its quick cells there when the bar has no elements to measure.
+        public Vector3 QuickAnchor { get; private set; }
+        public bool HasQuickAnchor { get; private set; }
 
         private Transform QuickBar()
         {

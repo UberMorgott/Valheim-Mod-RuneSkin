@@ -52,8 +52,10 @@ namespace RuneSkin.Tests
             Assert.Equal(528f, o.Dock.W, 2);
             Assert.Equal(576f, o.Center.X, 2);
             Assert.Equal(1312f, o.Crafting.X, 2);
-            Assert.Equal(760f, o.Center.H, 2);
-            Assert.True(o.Center.Bottom <= 1080 - T.HudBand + 0.01f, "panels end above the HUD band");
+            Assert.Equal(760f, o.Dock.H, 2);
+            Assert.Equal(920f, o.Center.H, 2);
+            Assert.True(o.Dock.Bottom <= 1080 - T.HudBand + 0.01f && o.Crafting.Bottom <= 1080 - T.HudBand + 0.01f, "dock / crafting end above the HUD band");
+            Assert.True(o.Center.Bottom <= 1080 - T.Margin + 0.01f, "centre column stays inside the bottom margin");
             Assert.Equal(72f, o.Player.Pitch, 2); // 64 cell + 8 gap fits 680 inner
             Assert.False(o.Player.ScrollV);
             Assert.False(o.DollCells.Scroll);
@@ -98,7 +100,7 @@ namespace RuneSkin.Tests
             var one = Run(1920, 1080, cw: 1, ch: 1);
             Assert.Equal(1, one.ChestGrid.Columns);
             Assert.Equal(T.ContainerCell + T.ContainerGap, one.ChestGrid.Pitch, 2);
-            Assert.True(one.Chest.H < 200f, "1x1 chest panel fits its content, not the dock");
+            Assert.True(one.Chest.H < 240f, "1x1 chest panel fits its content, not the dock");
 
             var huge = Run(1920, 1080, cw: 8, ch: 30);
             Assert.True(huge.ChestGrid.ScrollV);
@@ -137,7 +139,7 @@ namespace RuneSkin.Tests
             var folded = Run(1280, 600, cw: 8, ch: 10, bw: 8, bh: 10);
             Assert.True(folded.BackpackFolded && folded.Backpack.IsEmpty);
             Assert.True(folded.Chest.Inside(folded.Dock) && folded.ChestGrid.VisibleRows >= 1);
-            var o = Run(1920, 720, cw: 8, ch: 10, bw: 8, bh: 10);
+            var o = Run(1920, 760, cw: 8, ch: 10, bw: 8, bh: 10);
             Assert.True(o.DockOverflow);
             Assert.False(o.Chest.Overlaps(o.Backpack));
             Assert.True(o.Chest.Inside(o.Dock) && o.Backpack.Inside(o.Dock), "fallback stays inside the dock");

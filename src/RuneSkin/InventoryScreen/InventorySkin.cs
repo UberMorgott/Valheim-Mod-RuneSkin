@@ -72,6 +72,7 @@ namespace RuneSkin.InventoryScreen
             public Inventory Inventory;
             public float WantPitch, WantScale;
             public int Visible = int.MaxValue;
+            public bool NeedsReposition;
         }
 
         private struct DollEntry
@@ -136,12 +137,13 @@ namespace RuneSkin.InventoryScreen
             t.DockW = F("size.inv.dock", t.DockW); t.CenterW = F("size.inv.center", t.CenterW); t.CraftW = F("size.inv.craft", t.CraftW);
             t.MinDockW = F("size.inv.dock.min", t.MinDockW); t.MinCraftW = F("size.inv.craft.min", t.MinCraftW);
             t.WorkspaceMaxW = F("size.inv.workspace", t.WorkspaceMaxW); t.PanelMaxH = F("size.inv.panel.h", t.PanelMaxH);
+            t.CenterMaxH = F("size.inv.center.h", t.CenterMaxH); t.PanelActionsH = F("size.inv.panel.actions", t.PanelActionsH);
             t.HudBand = F("size.inv.hud.band", t.HudBand); t.HeaderH = F("size.inv.header", t.HeaderH); t.FooterH = F("size.inv.footer", t.FooterH);
             t.PanelHeaderH = F("size.inv.panel.header", t.PanelHeaderH); t.PanelPad = F("size.inv.panel.pad", t.PanelPad);
             t.GridCell = F("size.inv.cell", t.GridCell); t.GridGap = F("size.inv.cell.gap", t.GridGap); t.HotbarHeaderH = F("size.inv.hotbar.header", t.HotbarHeaderH);
             t.ContainerCell = F("size.inv.container.cell", t.ContainerCell); t.ContainerGap = F("size.inv.container.gap", t.ContainerGap);
             t.DollCell = F("size.inv.doll.cell", t.DollCell); t.DollGap = F("size.inv.doll.gap", t.DollGap);
-            t.DollColumns = F("size.inv.doll.columns", t.DollColumns); t.DollMirrorGap = F("size.inv.doll.mirror.gap", t.DollMirrorGap);
+            t.DollColumns = F("size.inv.doll.columns", t.DollColumns); t.DollPad = F("size.inv.doll.pad", t.DollPad); t.DollMirrorGap = F("size.inv.doll.mirror.gap", t.DollMirrorGap);
             t.ScrollbarW = F("size.inv.scrollbar", t.ScrollbarW); t.MinCellPhysPx = F("floor.cell.px", t.MinCellPhysPx);
         }
 
@@ -241,6 +243,7 @@ namespace RuneSkin.InventoryScreen
         }
 
         private static bool IsVanillaBackground(Transform t) =>
+            t.name == "selected_frame" || t.name.StartsWith("BraidLineHorisontalMedium", StringComparison.Ordinal) && !t.parent.name.StartsWith("Title", StringComparison.Ordinal) ||
             t.name == "sunken" || t.name == "Bkg" || t.name == "Darken" || t.name == "bkg" || t.name == "SelectedFrame" || t.name.StartsWith("Eaqs", StringComparison.Ordinal) && t.name.EndsWith("Bkg", StringComparison.Ordinal);
 
         // ---------------------------------------------------------------- classification
@@ -270,6 +273,8 @@ namespace RuneSkin.InventoryScreen
                 else if (t.name == "armor_icon" && t.parent && t.parent.name == "MT_Trash") ctx.Role(image, "glyph.trash", "MorgottTweaks trash plate icon");
                 else if (t.name == "armor_icon" && t.parent && t.parent.name == "CoinPocketUI") ctx.Role(image, "content", "MorgottTweaks coin pocket: item icon");
                 else if (t.name == "Background" && t.parent && t.parent.parent == _gui.m_info) ctx.Role(image, "tab.background", "info tab button background (Info/<tab>/Background)");
+                else if ((t.name == "Icon" || t.name == "Image") && t.parent && t.parent.parent == _gui.m_info) ctx.Role(image, "content", "info tab icon (Button.targetGraphic, keeps its picture)");
+                else if (t.parent == _gui.m_info && (t.name == "selected_frame" || sprite.StartsWith("BraidLine", StringComparison.Ordinal))) ctx.Role(image, "skip", "info panel frame / divider, replaced by the centre panel stack (hidden)");
                 else if (t.name == "Checked" && t.parent && t.parent.parent == _gui.m_info) ctx.Role(image, "content", "PVP toggle state icon");
                 else if (sprite.StartsWith("BraidLine", StringComparison.Ordinal)) ctx.Role(image, "divider", "vanilla braid divider (" + sprite + ")");
             }
@@ -294,7 +299,7 @@ namespace RuneSkin.InventoryScreen
         private static void ElementRoles(ScreenContext ctx, InventoryElement e, bool hotbar, bool doll = false)
         {
             if (e.m_button && e.m_button.targetGraphic)
-                ctx.Role(e.m_button.targetGraphic, doll ? "slot.recess" : hotbar ? "slot.hotbar" : "slot.cell", doll ? "EAQS doll cell (recessed)" : "InventoryElement.m_button target (slot cell)");
+                ctx.Role(e.m_button.targetGraphic, doll ? "slot.recess" : "slot.cell", doll ? "EAQS doll cell (recessed)" : "InventoryElement.m_button target (slot cell)");
             ctx.Role(e.m_icon, "content", "InventoryElement.m_icon (item icon)");
             ctx.Role(e.m_equiped, "slot.marker.equipped", "InventoryElement.m_equiped marker (InventoryGrid.cs:334)");
             ctx.Role(e.m_queued, "content", "InventoryElement.m_queued marker");
@@ -328,13 +333,35 @@ namespace RuneSkin.InventoryScreen
                 _layoutHash = hash;
                 Compute();
             }
-            ApplyPanels();
-            if (_logPlacement > 0 && --_logPlacement == 0) LogPlacement();
+            _frameReady = true;
             UpdateMirrors();
             UpdateActions();
             HideQuickBar();
             if (_focus && _focus.gameObject.activeSelf && Time.unscaledTime > _focusUntil) _focus.gameObject.SetActive(false);
             DollScrollInput();
+        }
+
+        private bool _frameReady;
+
+        // Geometry after the Animator: InventoryGui's open/close animation writes the panels' anchored positions every
+        // frame after Update (in-game run 3: m_player at (40,10) instead of (576,32) at end of frame), so every
+        // placement - panels, cells, doll, quick cells - runs here, after the animation and after EAQS / vanilla
+        // UpdateGui (Update phase). Change-only writes.
+        private void LateUpdate()
+        {
+            if (!_frameReady || _layout == null) return;
+            _frameReady = false;
+            if (!InventoryGui.IsVisible()) return;
+            ApplyPanels();
+            foreach (var pair in _grids)
+            {
+                var s = pair.Value;
+                if (!pair.Key || !s.NeedsReposition) continue;
+                s.NeedsReposition = false;
+                Reposition(pair.Key, s.Visible, s.Scale);
+            }
+            if (_gui.m_playerGrid && _grids.TryGetValue(_gui.m_playerGrid, out var ps)) PlaceEaqsCells(_gui.m_playerGrid, ps.Scale);
+            if (_logPlacement > 0 && --_logPlacement == 0) StartCoroutine(LogAtEndOfFrame());
         }
 
         public void OnHide()
@@ -450,6 +477,12 @@ namespace RuneSkin.InventoryScreen
 
         private int _logPlacement;
 
+        private System.Collections.IEnumerator LogAtEndOfFrame()
+        {
+            yield return new WaitForEndOfFrame(); // after every LateUpdate / layout rebuild: what is drawn
+            if (_layout != null) LogPlacement();
+        }
+
         // Placement self-check a few frames after a layout change: target box vs measured canvas box (diagnostics).
         private void LogPlacement()
         {
@@ -461,14 +494,20 @@ namespace RuneSkin.InventoryScreen
                 var off = Mathf.Abs(b.X - want.X) + Mathf.Abs(b.Y - want.Y);
                 sb.Append($" {name}={b}{(off > 2f ? " OFF(want " + want + ")" : "")}");
             }
+            var lg = _gui.m_player.GetComponent<LayoutGroup>();
+            sb.Append($" playerLayoutGroup={(lg ? lg.GetType().Name : "none")} canvasMode={_rootCanvas.renderMode}");
+            if (_gui.m_playerGrid && _gui.m_playerGrid.m_elements.Count > 0 && _gui.m_playerGrid.m_elements[0])
+                sb.Append($" cell0={Geo.BoxOf(_canvas, (RectTransform)_gui.m_playerGrid.m_elements[0].transform)}");
+            var armor = _gui.m_armor ? DirectChild(_gui.m_player, _gui.m_armor.transform) : null;
+            if (armor) sb.Append($" armorPlate={Geo.BoxOf(_canvas, armor)} footer={_layout.Footer}");
             One("player", _gui.m_player, _layout.Center);
-            One("grid", _gui.m_playerGrid, Inset(_layout.Grid, _tokens.PanelPad * _input.SkinScale, _tokens.PanelPad * _input.SkinScale));
-            if (_gui.m_playerGrid) One("gridRoot", _gui.m_playerGrid.m_gridRoot, Inset(_layout.Grid, _tokens.PanelPad * _input.SkinScale, _tokens.PanelPad * _input.SkinScale));
+            var gi = Inset(_layout.Grid, _tokens.PanelPad * _input.SkinScale, _tokens.PanelPad * _input.SkinScale);
+            var hh = _tokens.HotbarHeaderH * _input.SkinScale;
+            One("grid", _gui.m_playerGrid, new Box(gi.X, gi.Y + hh, gi.W, gi.H - hh));
             if (_gui.m_container && _gui.m_container.gameObject.activeSelf)
             {
                 One("container", _gui.m_container, ContainerIsBackpack() ? _layout.Backpack : _layout.Chest);
-                One("containerGrid", _gui.m_containerGrid, ContainerIsBackpack() ? _layout.Backpack : _layout.Chest);
-                One("containerName", _gui.m_containerName, ContainerIsBackpack() ? _layout.Backpack : _layout.Chest);
+                if (_gui.m_containerGrid.m_elements.Count > 0 && _gui.m_containerGrid.m_elements[0]) sb.Append($" ccell0={Geo.BoxOf(_canvas, (RectTransform)_gui.m_containerGrid.m_elements[0].transform)}");
             }
             if (_packPanel) One("backpack", _packPanel, _layout.Backpack);
             Plugin.Log.LogInfo(sb.ToString());
@@ -487,7 +526,7 @@ namespace RuneSkin.InventoryScreen
 
             // Centre: player panel, info header, grid, footer.
             Geo.Place(_canvas, _gui.m_player, o.Center);
-            if (_gui.m_info) Geo.PlaceFit(_canvas, _gui.m_info, Inset(o.Header, pad, pad / 2f));
+            InfoHeader(Inset(o.Header, pad, pad / 2f));
             // Grid box = carved hotbar header strip (digits 1-8 on it) + the grid below it.
             var headerH = _tokens.HotbarHeaderH * _input.SkinScale;
             var inner = Inset(o.Grid, pad, pad);
@@ -526,6 +565,32 @@ namespace RuneSkin.InventoryScreen
             Bar(_gui.m_player, PanelKind.Player, Player.m_localPlayer.GetInventory(), null, null, FooterActionBox());
         }
 
+        // Info header (layout-a2.png): character name on top, the info tabs (texts, skills, trophies, achievements,
+        // character stats, PVP: every Selectable child of m_info) as one centred row of square tabs below it.
+        private void InfoHeader(Box box)
+        {
+            var info = _gui.m_info;
+            if (!info) return;
+            Geo.Place(_canvas, info, box);
+            var nameH = Mathf.Min(40f * _input.SkinScale, box.H * 0.4f);
+            var title = info.Find("TitlePanel") as RectTransform;
+            if (title) Geo.Place(_canvas, title, new Box(box.X, box.Y, box.W, nameH));
+            var tabs = 0;
+            foreach (Transform child in info)
+                if (child.gameObject.activeSelf && child.GetComponent<Selectable>()) tabs++;
+            if (tabs == 0) return;
+            var gap = _tokens.Gap / 2f;
+            var size = Mathf.Min(box.H - nameH - gap, (box.W - (tabs - 1) * gap) / tabs);
+            var x = box.X + (box.W - (tabs * size + (tabs - 1) * gap)) / 2f;
+            var y = box.Y + nameH + gap;
+            foreach (Transform child in info)
+            {
+                if (!child.gameObject.activeSelf || !child.GetComponent<Selectable>()) continue;
+                Geo.Place(_canvas, (RectTransform)child, new Box(x, y, size, size));
+                x += size + gap;
+            }
+        }
+
         private Box _footerActions;
 
         private Box FooterActionBox() => _footerActions;
@@ -536,14 +601,23 @@ namespace RuneSkin.InventoryScreen
             var x = box.X;
             foreach (var text in new TMP_Text[] { _gui.m_armor, _gui.m_weight })
             {
-                var plate = DirectChild(_gui.m_player, text ? text.transform : null);
+                // The plates sit under m_player or the info header depending on the prefab (in-game: armor under Info).
+                // The stat text's own plate (its parent object, e.g. Player/Weight, Info/.../Armor), wherever the prefab put it.
+                var plate = text && text.transform.parent is RectTransform pr && pr != _gui.m_player && pr != _gui.m_info ? pr : null;
                 if (!plate) continue;
                 var w = Geo.CanvasWidth(_canvas, plate);
                 Geo.PlaceFit(_canvas, plate, new Box(x, box.Y, Mathf.Max(w, 1f), box.H));
                 x += Geo.CanvasWidth(_canvas, plate) + _tokens.Gap;
             }
+            // MorgottTweaks coin pocket plate (CoinPocketUI) next to the stats.
+            var coins = (_gui.m_player.Find("CoinPocketUI") ?? (_gui.m_info ? _gui.m_info.Find("CoinPocketUI") : null)) as RectTransform;
+            if (coins && coins.gameObject.activeSelf)
+            {
+                Geo.PlaceFit(_canvas, coins, new Box(x, box.Y, Mathf.Max(Geo.CanvasWidth(_canvas, coins), 1f), box.H));
+                x += Geo.CanvasWidth(_canvas, coins) + _tokens.Gap;
+            }
             var right = box.Right;
-            var trash = _gui.m_player.Find("MT_Trash") as RectTransform;
+            var trash = (_gui.m_player.Find("MT_Trash") ?? (_gui.m_info ? _gui.m_info.Find("MT_Trash") : null)) as RectTransform;
             if (trash && trash.gameObject.activeSelf)
             {
                 var w = Geo.CanvasWidth(_canvas, trash);
@@ -561,12 +635,14 @@ namespace RuneSkin.InventoryScreen
             var pad = _tokens.PanelPad * k;
             var headerH = _tokens.PanelHeaderH * k;
             Geo.Place(_canvas, panel, box);
+            var actionsH = _tokens.PanelActionsH * k;
             var header = new Box(box.X + pad, box.Y + pad / 2f, box.W - 2f * pad, headerH - pad / 2f);
-            if (grid) Geo.Place(_canvas, (RectTransform)grid.transform, new Box(box.X + pad, box.Y + headerH + pad, box.W - 2f * pad, box.H - headerH - 2f * pad));
+            if (grid) Geo.Place(_canvas, (RectTransform)grid.transform, new Box(box.X + pad, box.Y + headerH + pad, box.W - 2f * pad, box.H - headerH - actionsH - 2f * pad));
             if (grid) Want(grid, fit.Pitch, fit.Cell);
-            var actionsW = Bar(panel, kind, inventory, takeAll, stackAll, default);
+            // Glyph actions in their own row at the panel bottom, right-aligned; the title keeps the header width.
+            Bar(panel, kind, inventory, takeAll, stackAll, new Box(box.X + pad, box.Bottom - pad / 2f - actionsH, box.W - 2f * pad, actionsH));
             var weightPlate = DirectChild(panel, weight);
-            var right = header.Right - actionsW;
+            var right = header.Right;
             if (weightPlate)
             {
                 var w = Geo.CanvasWidth(_canvas, weightPlate);
@@ -580,8 +656,23 @@ namespace RuneSkin.InventoryScreen
                 Geo.Place(_canvas, glyph.rectTransform, new Box(header.X, header.Y, header.H, header.H));
                 nameX += header.H + _tokens.Gap / 2f;
             }
-            if (name) Geo.Place(_canvas, name, new Box(nameX, header.Y, Mathf.Max(1f, right - nameX - _tokens.Gap), header.H));
-            Bar(panel, kind, inventory, takeAll, stackAll, new Box(header.Right - actionsW, header.Y, actionsW, header.H));
+            if (name)
+            {
+                Geo.Place(_canvas, name, new Box(nameX, header.Y, Mathf.Max(1f, right - nameX - _tokens.Gap), header.H));
+                if (name.TryGetComponent<TMP_Text>(out var label))
+                {
+                    if (label.alignment != TextAlignmentOptions.MidlineLeft) label.alignment = TextAlignmentOptions.MidlineLeft;
+                    if (label.overflowMode != TextOverflowModes.Ellipsis) label.overflowMode = TextOverflowModes.Ellipsis;
+                    // Long names (Russian chests): up to two lines, auto-size down to the body floor, then ellipsis.
+                    if (label.textWrappingMode != TextWrappingModes.Normal) label.textWrappingMode = TextWrappingModes.Normal;
+                    if (!label.enableAutoSizing)
+                    {
+                        label.fontSizeMax = label.fontSize;
+                        label.fontSizeMin = Mathf.Min(label.fontSize, ThemeTokens.GetFloat("floor.text.body.px", 16f) / Mathf.Max(0.01f, _rootCanvas.scaleFactor));
+                        label.enableAutoSizing = true;
+                    }
+                }
+            }
         }
 
         // Panel header glyph (chest / backpack), one per panel, role swapped when the panel changes kind.
@@ -678,7 +769,8 @@ namespace RuneSkin.InventoryScreen
                 s.Scale = s.WantScale;
                 s.Elements = grid.m_elements.Count;
                 grid.m_elementSpace = s.Pitch;
-                Reposition(grid, visibleCount, s.Scale);
+                s.Visible = visibleCount;
+                s.NeedsReposition = true; // LateUpdate, after the panel animation
                 if (rebuilt)
                 {
                     var owner = ScreenRegistry.RootOf(grid.transform);
@@ -694,22 +786,27 @@ namespace RuneSkin.InventoryScreen
                 Overlays(grid, inv, grid.m_elements.Count); // EAQS cells hold real inventory coordinates too
                 if (isPlayer) HotbarPlates(grid);
             }
-            if (isPlayer) PlaceEaqsCells(grid, s.Scale);
         }
 
-        // Positions vanilla would give the cells with this pitch (InventoryGrid.cs:267-275), applied to the live cells.
-        private static void Reposition(InventoryGrid grid, int visibleCount, float scale)
+        // The layout vanilla gives the cells (InventoryGrid.cs:267-275: row-major from the top, pitch m_elementSpace,
+        // centred horizontally), measured from the live grid root so it holds for any anchors and a scrolled
+        // container (the root is the ScrollRect content). Applied once per pitch / width / rebuild.
+        private void Reposition(InventoryGrid grid, int visibleCount, float scale)
         {
+            if (!grid.m_gridRoot) return;
             var w = grid.GetInventory().GetWidth();
-            var widget = new Vector2(w * grid.m_elementSpace, 0f);
-            var origin = new Vector2(((RectTransform)grid.transform).rect.width / 2f, 0f) - widget * 0.5f;
+            var root = Geo.BoxOf(_canvas, grid.m_gridRoot);
+            var view = Geo.BoxOf(_canvas, (RectTransform)grid.transform);
+            var unit = Geo.WorldPerUnit(_canvas);
+            var pitch = grid.m_elementSpace * grid.m_gridRoot.lossyScale.x / Mathf.Max(unit, 1e-6f); // canvas units
+            var x0 = view.X + (view.W - w * pitch) / 2f;
             for (var i = 0; i < grid.m_elements.Count && i < visibleCount; i++)
             {
                 var e = grid.m_elements[i];
                 if (!e) continue;
                 var pos = e.Position;
-                ((RectTransform)e.transform).anchoredPosition = origin + new Vector2(pos.x * grid.m_elementSpace, -pos.y * grid.m_elementSpace);
                 Geo.SetScale(e.transform, scale);
+                Geo.SetTopLeft((RectTransform)e.transform, Geo.World(_canvas, x0 + pos.x * pitch, root.Y + pos.y * pitch));
             }
         }
 
@@ -824,7 +921,7 @@ namespace RuneSkin.InventoryScreen
             RefreshEaqs();
             if (_entriesRevision != InventoryRegistry.Revision || _entries.Count != CountDollSources()) RebuildEntries();
             var d = _layout.DollCells;
-            var box = Inset(_layout.Doll, _tokens.PanelPad * _input.SkinScale, _tokens.PanelPad * _input.SkinScale);
+            var box = Inset(_layout.Doll, _tokens.DollPad * _input.SkinScale, _tokens.DollPad * _input.SkinScale);
             var cols = d.StorageColumns;
             // Storage grid left, mirrors column right, carved silhouette between (layout-a2.png).
             var x0 = box.X;
@@ -937,25 +1034,43 @@ namespace RuneSkin.InventoryScreen
         private void PlaceQuickCells(InventoryGrid grid)
         {
             var bar = QuickBar();
-            if (!bar) return;
+            if (!bar || !bar.TryGetComponent<HotkeyBar>(out var hb)) return;
+            var prefab = hb.m_elementPrefab ? hb.m_elementPrefab.transform as RectTransform : null;
             var q = 0;
             foreach (var s in _eaqs)
             {
                 if (s.Kind != EaqsBridge.Kind.Quick || s.Element >= grid.m_elements.Count) continue;
                 var e = grid.m_elements[s.Element];
-                if (!e || q >= bar.childCount) { q++; continue; }
-                var hud = bar.GetChild(q++) as RectTransform;
-                if (!hud) continue;
+                var i = q++;
+                if (!e) continue;
+                // HUD slot i: the live element when the bar built one, else where HotkeyBar.UpdateIcons would put it
+                // (localPosition (i * m_elementSpace, 0), HotkeyBar.cs:110) at the prefab's size.
+                Box b;
+                var live = i < hb.m_elements.Count && hb.m_elements[i].m_go ? hb.m_elements[i].m_go.transform as RectTransform : null;
+                if (live) b = Geo.ForeignBox(_canvas, live);
+                else if (prefab)
+                {
+                    // No element built (empty bar): the HUD block anchor (bottom-left of slot 0, HudCluster) when known.
+                    var cluster = PlayerHud.HudCluster.Instance;
+                    var origin = bar.TransformPoint(new Vector3(i * hb.m_elementSpace, 0f, 0f));
+                    var size = prefab.rect.size;
+                    var pivot = prefab.pivot;
+                    if (cluster && cluster.HasQuickAnchor)
+                    {
+                        // anchor = bottom-left corner of slot 0 -> pivot of slot i
+                        var offset = bar.TransformVector(new Vector3(i * hb.m_elementSpace + pivot.x * size.x, pivot.y * size.y, 0f));
+                        origin = cluster.QuickAnchor + offset;
+                    }
+                    b = Geo.ForeignRect(_canvas, bar, origin, size, pivot);
+                }
+                else continue;
                 var rt = (RectTransform)e.transform;
-                var hudW = Geo.CanvasWidth(_canvas, hud);
                 var native = rt.rect.width;
                 var parentUnits = rt.parent ? rt.parent.lossyScale.x / Mathf.Max(Geo.WorldPerUnit(_canvas), 1e-6f) : 1f;
-                if (native > 1f && parentUnits > 0f) Geo.SetScale(rt, hudW / (native * parentUnits));
-                var b = Geo.BoxOf(_canvas, hud);
+                if (native > 1f && parentUnits > 0f) Geo.SetScale(rt, b.W / (native * parentUnits));
                 Geo.SetTopLeft(rt, Geo.World(_canvas, b.X, b.Y));
             }
         }
-
         private Transform QuickBar()
         {
             if (_quickBar) return _quickBar;
