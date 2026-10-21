@@ -4,7 +4,7 @@
   "bundle": "runeskin",
   "colors": [
     { "token": "color.frame", "value": "#FFFFFFFF" },
-    { "token": "color.glass", "value": "#FFFFFFF2" },
+    { "token": "color.glass", "value": "#FFFFFFFF" },
     { "token": "color.scrim", "value": "#04070ACC" },
     { "token": "color.ornament", "value": "#FFFFFFFF" },
     { "token": "color.text.body", "value": "#E3E6E8FF" },
@@ -17,7 +17,7 @@
     { "token": "color.state.selected", "value": "#4FE0E6FF" },
     { "token": "color.state.disabled", "value": "#6F767AFF" },
     { "token": "color.glow", "value": "#4FE0E6CC" },
-    { "token": "color.hud.trough", "value": "#0A0E12E6" },
+    { "token": "color.hud.trough", "value": "#0A0E12FF" },
     { "token": "color.hud.health", "value": "#C3262EFF" },
     { "token": "color.hud.stamina", "value": "#E3B23CFF" },
     { "token": "color.hud.eitr", "value": "#7A5CF5FF" },

@@ -51,6 +51,7 @@ namespace RuneSkin.PlayerHud
             _insetB *= scale;
             _insetT *= scale;
             _h *= scale;
+            _scale = scale;
             _window = HudArt.Rect("Window", Root);
             _window.anchoredPosition = new Vector2(_insetL, _insetB);
             _trough = art.Image("Trough", _window, rail ? "sprite.hud.rail.trough" : "sprite.hud.bar.trough", "color.hud.trough", Image.Type.Sliced);
@@ -92,6 +93,7 @@ namespace RuneSkin.PlayerHud
         }
 
         private readonly bool _main;
+        private readonly float _scale;
 
         // Window geometry (the trough/fill rect inside the carved frame), in reference px (sprite px x 100 / PPU, the
         // canvas reference PPU). The art states the window per frame sprite in sprite px as theme floats
@@ -190,7 +192,7 @@ namespace RuneSkin.PlayerHud
             _window.sizeDelta = new Vector2(l, _h);
             Full(_trough.rectTransform, l);
             Stretch(_frame.rectTransform);
-            if (_overlay) Stretch(_overlay.rectTransform);
+            if (_overlay) PlaceOverlay();
             var nr = _number.rectTransform;
             if (_rail)
             {
@@ -301,6 +303,8 @@ namespace RuneSkin.PlayerHud
                     {
                         _overlay.sprite = s;
                         _overlay.color = ThemeTokens.GetColor(overlayColor, Color.white);
+                        _overlayWet = overlaySprite == "sprite.hud.overlay.wet";
+                        PlaceOverlay();
                     }
                     if (_overlay.gameObject.activeSelf != on) _overlay.gameObject.SetActive(on);
                 }
@@ -314,6 +318,38 @@ namespace RuneSkin.PlayerHud
             }
             _shownCur = cur;
             _shownAvail = avail;
+        }
+
+        // Frame overlay placement (art\sprites\sprites.json notes): overlay_frost = ice-crystal cluster at native size
+        // with its pivot on the frame top-left corner; overlay_wet = drips hanging from the frame bottom edge (pivot
+        // top), tiled horizontally across the frame. Never stretched over the window (the value stays readable).
+        private bool _overlayWet;
+
+        private void PlaceOverlay()
+        {
+            var r = _overlay.rectTransform;
+            var s = _overlay.sprite;
+            if (!s) return;
+            var toRef = 100f / Mathf.Max(1f, s.pixelsPerUnit) * _scale;
+            var size = new Vector2(s.rect.width, s.rect.height) * toRef;
+            if (_overlayWet)
+            {
+                _overlay.type = Image.Type.Tiled;
+                _overlay.pixelsPerUnitMultiplier = 1f / _scale;
+                r.anchorMin = Vector2.zero;
+                r.anchorMax = new Vector2(1f, 0f);
+                r.pivot = new Vector2(0.5f, 1f);
+                r.anchoredPosition = Vector2.zero;
+                r.sizeDelta = new Vector2(0f, size.y);
+            }
+            else
+            {
+                _overlay.type = Image.Type.Simple;
+                _overlay.preserveAspect = true;
+                r.anchorMin = r.anchorMax = r.pivot = new Vector2(0f, 1f);
+                r.anchoredPosition = Vector2.zero;
+                r.sizeDelta = size;
+            }
         }
 
         // Small text left inside the window (ES recharge countdown) or hidden.

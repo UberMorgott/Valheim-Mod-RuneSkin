@@ -45,9 +45,11 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 - [x] MorgottTweaks 1.122.0 RuneSkinHud providers (2c23285); AugaSkin 2.2.10 yields Hud (e2d1b70)
 - [x] In-game run ui-runeskin-m1 (tools 2021c6a) with art ad65a9c: tools\out\20261021-153950 all 6 checks PASS (Hud unknown=0 degraded=0, MT providers, +N list, EL tooltip, 21:9 box)
 - [x] Codex final review: 9 findings fixed (1392c13, MT c57b773)
-- [ ] Acceptance with mockup art df8dc3a: deployed 5169e46, run queued on broker (exclusive holder); then compare D:\tmp\cx-augaskin\compare-ingame-hud.png ([hud-status-b | in-game], scratchpad compare.ps1) + Codex score >= 8
-- [ ] Panel corner caps above content (art df8dc3a note) for Menu / tooltip PanelDecor
-- [ ] Stamina / eitr pool glyphs for the slim frame icon recess (no glyph sprites yet)
+- [ ] Acceptance with mockup art df8dc3a: runs tools\out\20261021-165440 + 20261021-172719 (2560x1440, m0+m1 all checks PASS); Codex HUD score 5/10 (< 8). Open: health fill reads olive/beige under poison+burning tint + DoT stripes (want red base, poison only in forecast stripes); frames/end caps small vs mockup (cluster scale = width fit share.hud.cluster.w 0.34 with proportional bars; enlarge thickness + ornament together); Codex still sees trough see-through (alpha now 1.0, verify); tooltip text close to the bottom cap; Menu plaque empty (no title); tooltip opacity step mid-box (legacy EL background bounds)
+- [x] Panel corner caps above content (PanelCaps sibling container, 04539ed)
+- [ ] Stamina / eitr pool glyphs for the slim frame icon recess (no glyph sprites yet, recess left empty; art request -> Codex image gen)
+- [x] Frame overlays per art notes (wet drips tiled from frame bottom, frost cluster native at top-left), trough/glass alpha 1.0, cluster width fit measures food row + EAQS/GP (0.2.2)
+- [ ] EAQS quick-slot placement not verified: bar empty in the test save (harness check reports n/a, tools commit)
 - [ ] Hotbar slot art (socket.hotbar, plate.number) and quick-slot art: M2 with doll slots
 - [ ] Reserve tooltip (auras / summons) on hover: needs inventory-open hit area (M2)
 - [ ] Bar-cap pool glyph sockets are empty in the art (no HP/stamina/eitr glyphs yet)

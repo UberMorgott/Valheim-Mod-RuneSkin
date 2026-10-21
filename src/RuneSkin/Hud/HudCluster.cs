@@ -423,13 +423,24 @@ namespace RuneSkin.PlayerHud
             y += _food.TimerDrop; // the timers hang below the sockets: keep them off the rail / bar below
             _food.Root.anchoredPosition = new Vector2(0f, y);
             var rowTop = y + _food.Height;
-            var clusterW = barW;
+            // Width to fit: the bars, or the food row plus the foreign blocks placed after it (EAQS quick slots,
+            // guardian power), measured in reference px from their visible bounds (last frame's cluster scale).
+            var foreignW = 0f;
+            var perRef = _root.lossyScale.x;
+            if (perRef > 0f)
+            {
+                var quick = QuickBar();
+                if (quick && Bounds(quick, out var qMin, out var qMax)) foreignW += (qMax.x - qMin.x) / perRef + gap * 2f;
+                if (_hud.m_gpRoot && _hud.m_gpRoot.gameObject.activeInHierarchy && Bounds(_hud.m_gpRoot, out var gMin, out var gMax))
+                    foreignW += (gMax.x - gMin.x) / perRef + gap * 2f;
+            }
+            var clusterW = Mathf.Max(barW, _food.Width + gap * 2f + foreignW);
             var clusterH = rowTop;
 
             // Scale and place the cluster at the safe/box bottom-left corner.
             HudBox(out var boxX, out var boxW);
             var safe = ResponsiveContext.SafeArea;
-            var s = HudMath.ClusterScale(ResponsiveContext.GuiFactor, Plugin.HudScale?.Value ?? 1f, clusterW + 200f, clusterH,
+            var s = HudMath.ClusterScale(ResponsiveContext.GuiFactor, Plugin.HudScale?.Value ?? 1f, clusterW, clusterH,
                 boxW, safe.height, ThemeTokens.GetFloat("share.hud.cluster.w", 0.34f), ThemeTokens.GetFloat("share.hud.cluster.h", 0.3f),
                 ThemeTokens.GetFloat("size.hud.font.number", 16f), ThemeTokens.GetFloat("floor.text.number.px", 14f),
                 ThemeTokens.GetFloat("size.hud.font.timer", 13f), ThemeTokens.GetFloat("floor.text.timer.px", 12f));
