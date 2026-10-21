@@ -34,6 +34,8 @@ namespace RuneSkin.PlayerHud
         public int Count { get; private set; }
         public float Width { get; private set; }
         public float Height { get; private set; }
+        // How far the timer text reaches below a socket (ref px).
+        public float TimerDrop => ThemeTokens.GetFloat("size.hud.food.cell", 46f) * 0.28f;
 
         public FoodRow(HudArt art, Transform parent)
         {

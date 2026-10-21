@@ -420,6 +420,7 @@ namespace RuneSkin.PlayerHud
             y += _health.Height + gap;
             if (_es.Root.gameObject.activeSelf) { _es.Root.anchoredPosition = new Vector2(0f, y); y += _es.Height + gap; }
             _food.Update(p, barW);
+            y += _food.TimerDrop; // the timers hang below the sockets: keep them off the rail / bar below
             _food.Root.anchoredPosition = new Vector2(0f, y);
             var rowTop = y + _food.Height;
             var clusterW = barW;

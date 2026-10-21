@@ -226,7 +226,9 @@ namespace RuneSkin.PlayerHud
             {
                 _shownFill = fillToken;
                 _shownInert = inert;
-                _fill.color = ThemeTokens.GetColor(inert ? "color.hud.inert" : fillToken, Color.white);
+                var c = ThemeTokens.GetColor(inert ? "color.hud.inert" : fillToken, Color.white);
+                if (tint != null && !inert) c = Color.Lerp(ThemeTokens.GetColor(_fillColor, Color.white), c, ThemeTokens.GetFloat("share.hud.tint", 0.5f));
+                _fill.color = c;
             }
             if (Mathf.Abs(cur - _shownCur) > 0.01f || Mathf.Abs(avail - _shownAvail) > 0.01f || lagChanged)
             {
@@ -245,6 +247,13 @@ namespace RuneSkin.PlayerHud
                     lr.anchoredPosition = new Vector2(rs + (rw - lockSize) / 2f, (_h - lockSize) / 2f);
                 }
                 if (_lock.gameObject.activeSelf != lockOn) _lock.gameObject.SetActive(lockOn);
+                // The number ends before the locked segment (never over the hatch or the lock rune).
+                if (!_rail)
+                {
+                    var nw = Mathf.Max(0f, (reserve ? rs : l) - 4f);
+                    var nr = _number.rectTransform;
+                    if (Mathf.Abs(nr.sizeDelta.x - nw) > 0.5f) nr.sizeDelta = new Vector2(nw, _h);
+                }
             }
             if (!_rail)
             {
