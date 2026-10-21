@@ -1,41 +1,42 @@
 {
-  "version": 1,
+  "version": 2,
   "authoredScale": 2,
   "pixelsPerUnit": 200,
   "borderOrder": "sprite px; Unity spriteBorder = (left, bottom, right, top)",
-  "light": "key light from top-left",
+  "source": "Codex image-gen kit sheets art/src/kit/*.png, cut by art/tools (go run ./art/tools build)",
   "palette": {
-    "stone": "#3b4147",
-    "stone_block": "#464d54",
-    "leather": "#7a4a2a",
-    "leather_edge": "#3a2416",
-    "thread": "#c9ad7d",
-    "thong": "#6b4229",
-    "rune_glow": "#52e0f0",
-    "glass_top": "#1e272d",
-    "glass_bottom": "#0b0f12",
-    "glass_highlight": "#a8e6f0",
-    "groove_dark": "#050708",
-    "groove_light": "#8fb8c4",
-    "text_header": "#e9c46a",
-    "text_body": "#d9d4c7",
-    "text_disabled": "#7b7f80",
-    "pool_hp": "#c3262e",
-    "pool_stamina": "#e3b23c",
-    "pool_eitr": "#7a5cf5",
-    "pool_es": "#70d8e6",
-    "pool_adrenaline": "#ff8a3d",
-    "bar_lag": "#f1e3c6",
-    "bar_growth": "#e9c46a",
     "bar_end_line": "#70d8e6",
+    "bar_growth": "#e9c46a",
+    "bar_lag": "#f1e3c6",
     "dot_bleed": "#3c060a",
     "dot_fire": "#ffb347",
     "dot_poison": "#8be04e",
-    "reserved_edge": "#c8f4fa",
-    "glyph": "#52e0f0",
-    "select_ring": "#52e0f0",
-    "food_timer": "#52e0f0",
+    "food_timer": "#4fe0e6",
+    "glass_bottom": "#0b1419",
+    "glass_highlight": "#2395b7",
+    "glass_top": "#121d23",
+    "glyph": "#4fe0e6",
+    "groove_dark": "#05080a",
+    "groove_light": "#5c6d78",
     "ice": "#d6f2ff",
+    "leather": "#7e4630",
+    "leather_edge": "#4a2a1c",
+    "pool_adrenaline": "#ff8a3d",
+    "pool_eitr": "#7a5cf5",
+    "pool_es": "#70d8e6",
+    "pool_hp": "#c3262e",
+    "pool_stamina": "#e3b23c",
+    "reserved_edge": "#c8f4fa",
+    "rune_glow": "#4fe0e6",
+    "select_ring": "#4fe0e6",
+    "stone": "#2a343b",
+    "stone_block": "#222b31",
+    "text_active": "#e8b64a",
+    "text_body": "#e3e6e8",
+    "text_disabled": "#6f767a",
+    "text_header": "#d9dce0",
+    "thong": "#6b3a26",
+    "thread": "#c9ad7d",
     "water": "#a9cfe0"
   },
   "sprites": [
@@ -43,14 +44,14 @@
       "name": "frame_panel",
       "file": "frame_panel.png",
       "size": [
-        288,
-        288
+        160,
+        160
       ],
       "border": {
-        "left": 96,
-        "bottom": 96,
-        "right": 96,
-        "top": 96
+        "left": 32,
+        "bottom": 32,
+        "right": 32,
+        "top": 32
       },
       "pivot": [
         0.5,
@@ -59,20 +60,20 @@
       "imageType": "Tiled",
       "fillCenter": false,
       "token": "frame.panel",
-      "notes": "carved stone rail 30 px + outer shadow 8 px; place glass fill inset 23 px (sprite px); edges tile with period 96 px"
+      "notes": "thin carved slate rail (~26 px) + faint cyan inner line; glass fill inset 24 px (sprite px); rails tile with period 96; corner blocks/straps come from frame_panel_corner_*"
     },
     {
       "name": "frame_panel_glow",
       "file": "frame_panel_glow.png",
       "size": [
-        288,
-        288
+        160,
+        160
       ],
       "border": {
-        "left": 96,
-        "bottom": 96,
-        "right": 96,
-        "top": 96
+        "left": 32,
+        "bottom": 32,
+        "right": 32,
+        "top": 32
       },
       "pivot": [
         0.5,
@@ -81,14 +82,14 @@
       "imageType": "Tiled",
       "fillCenter": false,
       "token": "frame.panel.glow",
-      "notes": "white emissive rune/channel mask, tint with colour token rune_glow; same rect as frame_panel"
+      "notes": "white emissive mask of the inner cyan line, tint rune_glow; same rect as frame_panel"
     },
     {
       "name": "frame_panel_corner_tl",
       "file": "frame_panel_corner_tl.png",
       "size": [
-        96,
-        96
+        207,
+        207
       ],
       "border": {
         "left": 0,
@@ -97,20 +98,20 @@
         "top": 0
       },
       "pivot": [
-        0.0,
-        1.0
+        0,
+        1
       ],
       "imageType": "Simple",
       "fillCenter": true,
       "token": "frame.panel.corner.tl",
-      "notes": "leather wrap overlay, never stretched; anchor/pivot at the panel corner, native size"
+      "notes": "corner cap 207x207: inset rune block + wide diagonal leather strap over the rail, never stretched, native size; pivot = the panel's outer corner; the rune block (85x82) covers the rail corner, flush with the outer edges"
     },
     {
       "name": "frame_panel_corner_tr",
       "file": "frame_panel_corner_tr.png",
       "size": [
-        96,
-        96
+        207,
+        207
       ],
       "border": {
         "left": 0,
@@ -119,20 +120,20 @@
         "top": 0
       },
       "pivot": [
-        1.0,
-        1.0
+        1,
+        1
       ],
       "imageType": "Simple",
       "fillCenter": true,
       "token": "frame.panel.corner.tr",
-      "notes": "leather wrap overlay, never stretched; anchor/pivot at the panel corner, native size"
+      "notes": "corner cap 207x207: inset rune block + wide diagonal leather strap over the rail, never stretched, native size; pivot = the panel's outer corner; the rune block (85x82) covers the rail corner, flush with the outer edges"
     },
     {
       "name": "frame_panel_corner_bl",
       "file": "frame_panel_corner_bl.png",
       "size": [
-        96,
-        96
+        207,
+        207
       ],
       "border": {
         "left": 0,
@@ -141,20 +142,20 @@
         "top": 0
       },
       "pivot": [
-        0.0,
-        0.0
+        0,
+        0
       ],
       "imageType": "Simple",
       "fillCenter": true,
       "token": "frame.panel.corner.bl",
-      "notes": "leather wrap overlay, never stretched; anchor/pivot at the panel corner, native size"
+      "notes": "corner cap 207x207: inset rune block + wide diagonal leather strap over the rail, never stretched, native size; pivot = the panel's outer corner; the rune block (85x82) covers the rail corner, flush with the outer edges"
     },
     {
       "name": "frame_panel_corner_br",
       "file": "frame_panel_corner_br.png",
       "size": [
-        96,
-        96
+        207,
+        207
       ],
       "border": {
         "left": 0,
@@ -163,13 +164,13 @@
         "top": 0
       },
       "pivot": [
-        1.0,
-        0.0
+        1,
+        0
       ],
       "imageType": "Simple",
       "fillCenter": true,
       "token": "frame.panel.corner.br",
-      "notes": "leather wrap overlay, never stretched; anchor/pivot at the panel corner, native size"
+      "notes": "corner cap 207x207: inset rune block + wide diagonal leather strap over the rail, never stretched, native size; pivot = the panel's outer corner; the rune block (85x82) covers the rail corner, flush with the outer edges"
     },
     {
       "name": "fill_glass",
@@ -191,20 +192,20 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "fill.glass",
-      "notes": "dark glass: vertical gradient + top highlight, no texture"
+      "notes": "near-black glass #0b1419, alpha 0.9 (world faintly shows through)"
     },
     {
       "name": "button_normal",
       "file": "button_normal.png",
       "size": [
-        256,
-        96
+        328,
+        70
       ],
       "border": {
-        "left": 52,
-        "bottom": 28,
-        "right": 52,
-        "top": 28
+        "left": 84,
+        "bottom": 18,
+        "right": 84,
+        "top": 18
       },
       "pivot": [
         0.5,
@@ -213,20 +214,20 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "button.normal",
-      "notes": "stone caps with carved knots + glass well; text area = centre"
+      "notes": "dark slate plaque, carved knot ends with bronze tips (fixed borders), text = centre; states: hover faint cyan rim, pressed sunk, disabled grey, selected bright cyan rim"
     },
     {
       "name": "button_hover",
       "file": "button_hover.png",
       "size": [
-        256,
-        96
+        328,
+        70
       ],
       "border": {
-        "left": 52,
-        "bottom": 28,
-        "right": 52,
-        "top": 28
+        "left": 84,
+        "bottom": 18,
+        "right": 84,
+        "top": 18
       },
       "pivot": [
         0.5,
@@ -235,20 +236,20 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "button.hover",
-      "notes": "stone caps with carved knots + glass well; text area = centre"
+      "notes": "dark slate plaque, carved knot ends with bronze tips (fixed borders), text = centre; states: hover faint cyan rim, pressed sunk, disabled grey, selected bright cyan rim"
     },
     {
       "name": "button_pressed",
       "file": "button_pressed.png",
       "size": [
-        256,
-        96
+        328,
+        70
       ],
       "border": {
-        "left": 52,
-        "bottom": 28,
-        "right": 52,
-        "top": 28
+        "left": 84,
+        "bottom": 18,
+        "right": 84,
+        "top": 18
       },
       "pivot": [
         0.5,
@@ -257,20 +258,20 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "button.pressed",
-      "notes": "stone caps with carved knots + glass well; text area = centre"
+      "notes": "dark slate plaque, carved knot ends with bronze tips (fixed borders), text = centre; states: hover faint cyan rim, pressed sunk, disabled grey, selected bright cyan rim"
     },
     {
       "name": "button_disabled",
       "file": "button_disabled.png",
       "size": [
-        256,
-        96
+        328,
+        70
       ],
       "border": {
-        "left": 52,
-        "bottom": 28,
-        "right": 52,
-        "top": 28
+        "left": 84,
+        "bottom": 18,
+        "right": 84,
+        "top": 18
       },
       "pivot": [
         0.5,
@@ -279,20 +280,20 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "button.disabled",
-      "notes": "stone caps with carved knots + glass well; text area = centre"
+      "notes": "dark slate plaque, carved knot ends with bronze tips (fixed borders), text = centre; states: hover faint cyan rim, pressed sunk, disabled grey, selected bright cyan rim"
     },
     {
       "name": "button_selected",
       "file": "button_selected.png",
       "size": [
-        256,
-        96
+        328,
+        70
       ],
       "border": {
-        "left": 52,
-        "bottom": 28,
-        "right": 52,
-        "top": 28
+        "left": 84,
+        "bottom": 18,
+        "right": 84,
+        "top": 18
       },
       "pivot": [
         0.5,
@@ -301,20 +302,152 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "button.selected",
-      "notes": "stone caps with carved knots + glass well; text area = centre; selected = gamepad focus"
+      "notes": "dark slate plaque, carved knot ends with bronze tips (fixed borders), text = centre; states: hover faint cyan rim, pressed sunk, disabled grey, selected bright cyan rim"
+    },
+    {
+      "name": "slot_cell",
+      "file": "slot_cell.png",
+      "size": [
+        128,
+        124
+      ],
+      "border": {
+        "left": 18,
+        "bottom": 18,
+        "right": 18,
+        "top": 18
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "slot.cell",
+      "notes": "NEW: recessed dark item cell with thin stone rim (inventory/equipment/requirement/tab-icon cells, inner sub-panels)"
+    },
+    {
+      "name": "slot_cell_selected",
+      "file": "slot_cell_selected.png",
+      "size": [
+        128,
+        124
+      ],
+      "border": {
+        "left": 18,
+        "bottom": 18,
+        "right": 18,
+        "top": 18
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "slot.cell.selected",
+      "notes": "NEW: slot_cell with glowing cyan inner rim (selected / hovered cell, selected list row)"
+    },
+    {
+      "name": "tab_normal",
+      "file": "tab_normal.png",
+      "size": [
+        256,
+        52
+      ],
+      "border": {
+        "left": 14,
+        "bottom": 14,
+        "right": 14,
+        "top": 14
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "tab.normal",
+      "notes": "NEW: tab plaque (craft/upgrade tabs), thin stone rim, chamfered corners, strong thin bevel; text text_body"
+    },
+    {
+      "name": "tab_hover",
+      "file": "tab_hover.png",
+      "size": [
+        256,
+        52
+      ],
+      "border": {
+        "left": 14,
+        "bottom": 14,
+        "right": 14,
+        "top": 14
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "tab.hover",
+      "notes": "NEW: tab plaque, lighter rim"
+    },
+    {
+      "name": "tab_selected",
+      "file": "tab_selected.png",
+      "size": [
+        256,
+        52
+      ],
+      "border": {
+        "left": 14,
+        "bottom": 14,
+        "right": 14,
+        "top": 14
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "tab.selected",
+      "notes": "NEW: active tab, glowing gold rim; text text_active"
+    },
+    {
+      "name": "frame_small",
+      "file": "frame_small.png",
+      "size": [
+        248,
+        84
+      ],
+      "border": {
+        "left": 44,
+        "bottom": 18,
+        "right": 44,
+        "top": 18
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "frame.small",
+      "notes": "NEW: small group housing (quick slots, food row, stat boxes): thick sculpted surround, chamfered corners, knotwork endcaps on the short sides, dark interior"
     },
     {
       "name": "tooltip_frame",
       "file": "tooltip_frame.png",
       "size": [
-        128,
-        128
+        188,
+        106
       ],
       "border": {
-        "left": 32,
-        "bottom": 32,
-        "right": 32,
-        "top": 32
+        "left": 44,
+        "bottom": 40,
+        "right": 44,
+        "top": 40
       },
       "pivot": [
         0.5,
@@ -323,19 +456,19 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "frame.tooltip",
-      "notes": "light stone rail 7 px + diamond studs, glass fill included; content padding 20 px"
+      "notes": "thick stepped stone surround, recessed inner corner details, dark fill included; content padding 40 px x / 36 px y"
     },
     {
       "name": "divider",
       "file": "divider.png",
       "size": [
         256,
-        24
+        22
       ],
       "border": {
-        "left": 40,
+        "left": 28,
         "bottom": 0,
-        "right": 40,
+        "right": 28,
         "top": 0
       },
       "pivot": [
@@ -345,36 +478,36 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "divider",
-      "notes": "engraved line, constant along x (stretch-safe), stone studs in the ends"
+      "notes": "thin stone line with bronze diamond studs at the ends, constant along x"
     },
     {
       "name": "header_plaque",
       "file": "header_plaque.png",
       "size": [
-        320,
-        72
+        620,
+        86
       ],
       "border": {
-        "left": 76,
+        "left": 230,
         "bottom": 24,
-        "right": 76,
+        "right": 230,
         "top": 24
       },
       "pivot": [
         0.5,
         0.5
       ],
-      "imageType": "Tiled",
+      "imageType": "Sliced",
       "fillCenter": true,
       "token": "plaque.header",
-      "notes": "text field = recessed centre; ends carry knots"
+      "notes": "title strip 620x86: broad interlaced knotwork bands flanking the name field (fixed 230 px borders), title text_header"
     },
     {
       "name": "knot",
       "file": "knot.png",
       "size": [
         64,
-        32
+        28
       ],
       "border": {
         "left": 0,
@@ -395,13 +528,13 @@
       "name": "bar_frame",
       "file": "bar_frame.png",
       "size": [
-        400,
-        80
+        480,
+        87
       ],
       "border": {
-        "left": 80,
+        "left": 128,
         "bottom": 24,
-        "right": 80,
+        "right": 112,
         "top": 24
       },
       "pivot": [
@@ -409,16 +542,82 @@
         0.5
       ],
       "imageType": "Tiled",
-      "fillCenter": true,
+      "fillCenter": false,
       "token": "bar.frame",
-      "notes": "carved stone resource-bar frame, caps fixed, rails tile with period 240 px; window (trough/fill/DoT/reserve rect) = inset x 76, y 18 (sprite px) -> window height 44; left cap socket centre (30, 40) r 16 for the pool glyph; same frame for HP/stamina/eitr"
+      "notes": "HP bar frame 480x87 (hud-status-b): left knot block with cyan rune + leather wrap, right wrap + rune block, rails tile with period 240; window (trough/fill/DoT/reserve rect) = inset left 95, right 92, top 28, bottom 17 sprite px (height 42), transparent; no glyph socket (pool glyph optional, over the window start)"
+    },
+    {
+      "name": "bar_frame_slim",
+      "file": "bar_frame_slim.png",
+      "size": [
+        380,
+        46
+      ],
+      "border": {
+        "left": 96,
+        "bottom": 14,
+        "right": 44,
+        "top": 14
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": false,
+      "token": "bar.frame.slim",
+      "notes": "NEW: slim stamina/eitr bar frame 380x46: leather grip ends, icon recess centre (49,23) r 12 for the pool glyph; window = inset left 70, right 36, top 13, bottom 11 (height 22), transparent; rails tile with period 240"
+    },
+    {
+      "name": "frame_strip",
+      "file": "frame_strip.png",
+      "size": [
+        336,
+        98
+      ],
+      "border": {
+        "left": 48,
+        "bottom": 30,
+        "right": 48,
+        "top": 30
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "frame.strip",
+      "notes": "NEW: status-effect strip frame (chamfered corners, knotwork side ends, dark interior); status icons + timers sit inside, separator_v between them"
+    },
+    {
+      "name": "separator_v",
+      "file": "separator_v.png",
+      "size": [
+        14,
+        68
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "separator.v",
+      "notes": "NEW: thin vertical diamond-stud separator between status entries, native size"
     },
     {
       "name": "bar_trough",
       "file": "bar_trough.png",
       "size": [
         96,
-        44
+        47
       ],
       "border": {
         "left": 12,
@@ -433,19 +632,19 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "bar.trough",
-      "notes": "dark recessed glass, drawn in the bar window under everything"
+      "notes": "dark recessed trough, drawn in the bar window under everything"
     },
     {
       "name": "bar_fill",
       "file": "bar_fill.png",
       "size": [
-        160,
-        44
+        188,
+        47
       ],
       "border": {
         "left": 8,
         "bottom": 0,
-        "right": 8,
+        "right": 36,
         "top": 0
       },
       "pivot": [
@@ -455,19 +654,19 @@
       "imageType": "Tiled",
       "fillCenter": true,
       "token": "bar.fill",
-      "notes": "white grayscale-shaded mask, tint per pool (pool_hp/stamina/eitr/adrenaline); right border = bright fill front; centre tiles with period 144 px"
+      "notes": "opaque grey-shaded painted fill (grey = shading, tint per pool via Image.color); right border = bright front fading out (soft energy falloff), left 6 px soft start; centre tiles with period 144"
     },
     {
       "name": "bar_lag",
       "file": "bar_lag.png",
       "size": [
-        64,
-        44
+        96,
+        48
       ],
       "border": {
-        "left": 4,
+        "left": 24,
         "bottom": 0,
-        "right": 4,
+        "right": 24,
         "top": 0
       },
       "pivot": [
@@ -477,14 +676,14 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "bar.lag",
-      "notes": "damage-lag ghost: flat pale mask (tint bar_lag), under the fill, soft right end"
+      "notes": "damage-lag ghost: flat pale mask (tint bar_lag), under the fill"
     },
     {
       "name": "bar_growth",
       "file": "bar_growth.png",
       "size": [
-        128,
-        44
+        256,
+        48
       ],
       "border": {
         "left": 0,
@@ -499,14 +698,14 @@
       "imageType": "Tiled",
       "fillCenter": true,
       "token": "bar.growth",
-      "notes": "max-growth shimmer: faint diagonal sheen, alpha <= 0.3 (never reads as fill), tint bar_growth; transient"
+      "notes": "max-growth shimmer: faint diagonal sheen, low alpha, tint bar_growth; transient"
     },
     {
       "name": "bar_end_line",
       "file": "bar_end_line.png",
       "size": [
-        8,
-        56
+        12,
+        60
       ],
       "border": {
         "left": 0,
@@ -521,58 +720,58 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "bar.end.line",
-      "notes": "old max end ghost line (tint bar_end_line), 56 px tall = window + 6 px above/below; fades 0.8 s"
+      "notes": "old max end ghost line (tint bar_end_line), 60 px = window + 6 px above/below"
     },
     {
       "name": "rail_frame_es",
       "file": "rail_frame_es.png",
       "size": [
         400,
-        28
+        40
       ],
       "border": {
-        "left": 32,
-        "bottom": 8,
-        "right": 32,
-        "top": 8
+        "left": 56,
+        "bottom": 12,
+        "right": 56,
+        "top": 12
       },
       "pivot": [
         0.5,
         0.5
       ],
       "imageType": "Tiled",
-      "fillCenter": true,
+      "fillCenter": false,
       "token": "rail.frame.es",
-      "notes": "thin ES rail (28 px = 35 % of bar_frame), same native/outer width as bar_frame; window inset x 30, y 9 -> height 10; cyan gem studs"
+      "notes": "thin ES rail 400x40, caps fixed (knot block + strap, right block with cyan rune), rails tile with period 288; window inset x 36, y 15 (height 14), transparent"
     },
     {
       "name": "rail_frame_adrenaline",
       "file": "rail_frame_adrenaline.png",
       "size": [
         400,
-        28
+        40
       ],
       "border": {
-        "left": 32,
-        "bottom": 8,
-        "right": 32,
-        "top": 8
+        "left": 56,
+        "bottom": 12,
+        "right": 56,
+        "top": 12
       },
       "pivot": [
         0.5,
         0.5
       ],
       "imageType": "Tiled",
-      "fillCenter": true,
+      "fillCenter": false,
       "token": "rail.frame.adrenaline",
-      "notes": "thin adrenaline rail, same geometry as rail_frame_es; ember chevron caps"
+      "notes": "same art/geometry as rail_frame_es (pool told apart by the fill tint)"
     },
     {
       "name": "rail_trough",
       "file": "rail_trough.png",
       "size": [
         64,
-        10
+        14
       ],
       "border": {
         "left": 4,
@@ -593,13 +792,13 @@
       "name": "rail_fill",
       "file": "rail_fill.png",
       "size": [
-        64,
-        10
+        160,
+        14
       ],
       "border": {
-        "left": 4,
+        "left": 2,
         "bottom": 0,
-        "right": 4,
+        "right": 12,
         "top": 0
       },
       "pivot": [
@@ -615,8 +814,8 @@
       "name": "dot_bleed",
       "file": "dot_bleed.png",
       "size": [
-        32,
-        44
+        60,
+        47
       ],
       "border": {
         "left": 0,
@@ -631,14 +830,14 @@
       "imageType": "Tiled",
       "fillCenter": true,
       "token": "bar.dot.bleed",
-      "notes": "thick '/' slashes; white mask, tint dot_bleed; tiles horizontally (period 16), height = bar window"
+      "notes": "painted '/' slashes, period 20; white mask, tint dot_bleed; height = bar window"
     },
     {
       "name": "dot_fire",
       "file": "dot_fire.png",
       "size": [
-        32,
-        44
+        68,
+        47
       ],
       "border": {
         "left": 0,
@@ -653,14 +852,14 @@
       "imageType": "Tiled",
       "fillCenter": true,
       "token": "bar.dot.fire",
-      "notes": "thin '^' flame chevrons; white mask, tint dot_fire; tiles horizontally (period 16), height = bar window"
+      "notes": "double '^' chevrons, period 34; white mask, tint dot_fire"
     },
     {
       "name": "dot_poison",
       "file": "dot_poison.png",
       "size": [
-        32,
-        44
+        72,
+        47
       ],
       "border": {
         "left": 0,
@@ -675,14 +874,14 @@
       "imageType": "Tiled",
       "fillCenter": true,
       "token": "bar.dot.poison",
-      "notes": "staggered round drops; white mask, tint dot_poison; tiles horizontally (period 16), height = bar window"
+      "notes": "dot cluster, period 36; white mask, tint dot_poison"
     },
     {
       "name": "bar_reserved",
       "file": "bar_reserved.png",
       "size": [
-        64,
-        44
+        128,
+        48
       ],
       "border": {
         "left": 0,
@@ -697,14 +896,14 @@
       "imageType": "Tiled",
       "fillCenter": true,
       "token": "bar.reserved",
-      "notes": "reserved segment: dark stone with carved '\\' hatching (opposite of bleed), opaque, period 64 px; right end of the window; bar_reserved_edge at its left edge, glyph_lock centred (hide < 36 sprite px)"
+      "notes": "reserved segment: dark stone with carved '\\' grooves, opaque, period 128; right end of the window; bar_reserved_edge at its left edge, glyph_lock centred (hide \u003c 36 px)"
     },
     {
       "name": "bar_reserved_edge",
       "file": "bar_reserved_edge.png",
       "size": [
         8,
-        44
+        48
       ],
       "border": {
         "left": 0,
@@ -713,13 +912,13 @@
         "top": 0
       },
       "pivot": [
-        0.0,
+        0,
         0.5
       ],
       "imageType": "Simple",
       "fillCenter": true,
       "token": "bar.reserved.edge",
-      "notes": "thin bright divider (tint reserved_edge), line at x = 2.5; pivot left edge"
+      "notes": "thin bright divider (tint reserved_edge); pivot left edge"
     },
     {
       "name": "glyph_lock",
@@ -741,7 +940,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "glyph.lock",
-      "notes": "rune padlock (tiwaz keyhole), white mask + glow, tint glyph"
+      "notes": "padlock with tiwaz keyhole, white mask + glow, tint glyph"
     },
     {
       "name": "glyph_es",
@@ -763,7 +962,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "glyph.es",
-      "notes": "energy-shield glyph (shield + algiz), white mask, tint pool_es"
+      "notes": "shield + algiz, white mask, tint pool_es"
     },
     {
       "name": "glyph_seal",
@@ -785,36 +984,36 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "glyph.seal",
-      "notes": "conversion seal (double ring + ingwaz), white mask, tint glyph; sits on plaque_seal socket"
+      "notes": "double ring + ingwaz, white mask, tint glyph; sits on plaque_seal socket"
     },
     {
       "name": "plaque_seal",
       "file": "plaque_seal.png",
       "size": [
-        200,
-        80
+        174,
+        86
       ],
       "border": {
-        "left": 80,
+        "left": 86,
         "bottom": 20,
-        "right": 40,
+        "right": 24,
         "top": 20
       },
       "pivot": [
         0.5,
         0.5
       ],
-      "imageType": "Tiled",
+      "imageType": "Sliced",
       "fillCenter": true,
       "token": "plaque.seal",
-      "notes": "intact sealed conversion plaque, height = bar_frame; seal socket centre (40, 40) r 20 for glyph_seal; label field x 72..W-34 (sprite px); no cracks"
+      "notes": "sealed conversion plaque 174x86 (~ bar_frame height); seal socket centre (46,43) r 30 for glyph_seal; label field x 92..W-24 (sprite px)"
     },
     {
       "name": "overlay_frost",
       "file": "overlay_frost.png",
       "size": [
         112,
-        96
+        114
       ],
       "border": {
         "left": 0,
@@ -823,20 +1022,20 @@
         "top": 0
       },
       "pivot": [
-        0.0,
-        1.0
+        0,
+        1
       ],
       "imageType": "Simple",
       "fillCenter": true,
       "token": "overlay.frost",
-      "notes": "frost corner overlay, pivot = frame top-left corner, native size; frame only"
+      "notes": "ice-crystal cluster, pivot = frame top-left corner, native size"
     },
     {
       "name": "overlay_wet",
       "file": "overlay_wet.png",
       "size": [
         128,
-        32
+        44
       ],
       "border": {
         "left": 0,
@@ -846,12 +1045,12 @@
       },
       "pivot": [
         0.5,
-        1.0
+        1
       ],
       "imageType": "Tiled",
       "fillCenter": true,
       "token": "overlay.wet",
-      "notes": "wet drips hanging from the frame bottom edge, tile horizontally (period 128), pivot top, place at frame bottom - 4 px"
+      "notes": "water drips hanging from the frame bottom edge, tile horizontally (period 128), pivot top"
     },
     {
       "name": "socket_status",
@@ -873,7 +1072,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "socket.status",
-      "notes": "round carved status-icon socket, glass well r 29 (icon 48 px)"
+      "notes": "round carved socket with rune studs, glass well r ~28 (icon 44 px)"
     },
     {
       "name": "socket_status_more",
@@ -895,26 +1094,26 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "socket.status.more",
-      "notes": "'+N' overflow stack socket (front socket centre (37,37) r 33, text = font)"
+      "notes": "'+N' overflow stack socket (front socket lower-left), text = font"
     },
     {
       "name": "plate_timer",
       "file": "plate_timer.png",
       "size": [
-        72,
-        28
+        80,
+        30
       ],
       "border": {
-        "left": 16,
+        "left": 14,
         "bottom": 10,
-        "right": 16,
+        "right": 14,
         "top": 10
       },
       "pivot": [
         0.5,
         0.5
       ],
-      "imageType": "Tiled",
+      "imageType": "Sliced",
       "fillCenter": true,
       "token": "plate.timer",
       "notes": "timer plate under a status socket, text = font"
@@ -939,7 +1138,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "socket.food",
-      "notes": "rhombus food socket, glass well |dx|+|dy| < 38 (icon 56 px)"
+      "notes": "rhombus food socket, glass well |dx|+|dy| \u003c 36 (icon 52 px)"
     },
     {
       "name": "socket_food_gem",
@@ -961,7 +1160,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "socket.food.gem",
-      "notes": "gem-granted food socket: double rim + four rune-glass gems at the points"
+      "notes": "gem-granted food socket: four cyan gems at the points"
     },
     {
       "name": "food_timer_ring",
@@ -1011,20 +1210,20 @@
       "name": "plate_key",
       "file": "plate_key.png",
       "size": [
-        44,
-        36
+        40,
+        40
       ],
       "border": {
-        "left": 14,
-        "bottom": 12,
-        "right": 14,
-        "top": 12
+        "left": 13,
+        "bottom": 13,
+        "right": 13,
+        "top": 13
       },
       "pivot": [
         0.5,
         0.5
       ],
-      "imageType": "Tiled",
+      "imageType": "Sliced",
       "fillCenter": true,
       "token": "plate.key",
       "notes": "key-hint plate (Z/V/B = font), stretch for longer labels"
@@ -1049,7 +1248,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "socket.hotbar",
-      "notes": "hotbar cell with corner rivets; plate_number at its top-left, offset (6,6)"
+      "notes": "hotbar cell with strapped corners and rivets; plate_number at its top-left, offset (6,6)"
     },
     {
       "name": "plate_number",
@@ -1093,20 +1292,20 @@
       "imageType": "Sliced",
       "fillCenter": false,
       "token": "ring.select",
-      "notes": "selected/highlight ring, white mask + glow, tint select_ring; 8 px outside the socket on each side"
+      "notes": "selection ring with corner accents, white mask + glow, tint select_ring; 8 px outside the socket"
     },
     {
       "name": "scroll_track",
       "file": "scroll_track.png",
       "size": [
         24,
-        128
+        144
       ],
       "border": {
-        "left": 8,
-        "bottom": 16,
-        "right": 8,
-        "top": 16
+        "left": 0,
+        "bottom": 24,
+        "right": 0,
+        "top": 24
       },
       "pivot": [
         0.5,
@@ -1122,66 +1321,66 @@
       "file": "scroll_handle_normal.png",
       "size": [
         24,
-        64
+        68
       ],
       "border": {
-        "left": 8,
-        "bottom": 16,
-        "right": 8,
-        "top": 16
+        "left": 0,
+        "bottom": 18,
+        "right": 0,
+        "top": 18
       },
       "pivot": [
         0.5,
         0.5
       ],
-      "imageType": "Tiled",
+      "imageType": "Sliced",
       "fillCenter": true,
       "token": "scroll.handle.normal",
-      "notes": "scrollbar handle, centre tiles in y (period 32)"
+      "notes": "scrollbar handle, dark stone, faint cyan groove"
     },
     {
       "name": "scroll_handle_hover",
       "file": "scroll_handle_hover.png",
       "size": [
         24,
-        64
+        76
       ],
       "border": {
-        "left": 8,
-        "bottom": 16,
-        "right": 8,
-        "top": 16
+        "left": 0,
+        "bottom": 22,
+        "right": 0,
+        "top": 22
       },
       "pivot": [
         0.5,
         0.5
       ],
-      "imageType": "Tiled",
+      "imageType": "Sliced",
       "fillCenter": true,
       "token": "scroll.handle.hover",
-      "notes": "scrollbar handle, centre tiles in y (period 32); channel glow"
+      "notes": "scrollbar handle, cyan groove glow"
     },
     {
       "name": "scroll_handle_pressed",
       "file": "scroll_handle_pressed.png",
       "size": [
         24,
-        64
+        76
       ],
       "border": {
-        "left": 8,
-        "bottom": 16,
-        "right": 8,
-        "top": 16
+        "left": 0,
+        "bottom": 22,
+        "right": 0,
+        "top": 22
       },
       "pivot": [
         0.5,
         0.5
       ],
-      "imageType": "Tiled",
+      "imageType": "Sliced",
       "fillCenter": true,
       "token": "scroll.handle.pressed",
-      "notes": "scrollbar handle, centre tiles in y (period 32); channel glow"
+      "notes": "scrollbar handle, bright cyan groove"
     }
   ]
 }

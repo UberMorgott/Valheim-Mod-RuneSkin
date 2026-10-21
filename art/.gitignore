@@ -1,3 +1,2 @@
-# review renders (regenerate with src/contact_sheet.py)
+# review renders (regenerate with: go -C art/tools run . compare / sheet)
 review/
-__pycache__/

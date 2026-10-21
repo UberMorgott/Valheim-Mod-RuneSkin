@@ -29,3 +29,10 @@
 - Bundle carries TMP shaders (Distance Field + Mobile fallback); runtime may swap font materials to the game's Shader.Find("TextMeshPro/Distance Field").
 - ThemeTokens ScriptableObject not in the bundle (type lives in src/, other worker); sprites.json token names are the contract.
 - -nographics breaks atlas packing (editor crash), so the build runs with a graphics device.
+
+## Art redo to match the mockups (2026-10-21)
+
+- [x] Style sheet from mockup-1 / hud-status-b (STYLE.md)
+- [x] All sprites re-cut from Codex image-gen kit sheets (src/kit, prompts kept); procedural Python renderer + AI albedos retired
+- [x] Go mechanical pipeline art/tools (build/check/compare/sheet); 61 sprites (52 old names + slot_cell(_selected), tab_*, bar_frame_slim, frame_strip, frame_small, separator_v)
+- [x] Compare images + 3 Codex review rounds (final: inventory 7.5, HUD 7.5, corner 6.5)

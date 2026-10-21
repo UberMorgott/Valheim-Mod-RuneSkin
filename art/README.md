@@ -3,29 +3,37 @@
 ## Rebuild (from the repo root, PowerShell)
 
 ```powershell
-python -I art\src\render_sprites.py; & 'D:\Unity\Editors\6000.0.75f1\Editor\Unity.exe' -batchmode -quit -projectPath unity -executeMethod BuildBundles.Build -logFile unity\Logs\build.log | Out-Null; $LASTEXITCODE
+go -C art/tools run . build; & 'D:\Unity\Editors\6000.0.75f1\Editor\Unity.exe' -batchmode -quit -projectPath unity -executeMethod BuildBundles.Build -logFile unity\Logs\build.log | Out-Null; $LASTEXITCODE
 ```
 
 (`| Out-Null` makes PowerShell wait for Unity.exe, a GUI-subsystem binary; without it the call returns at once.)
 
-Exit code 0 + `RuneSkin: BUILD OK` in the log = bundle `unity\Build\runeskin` (StandaloneWindows64, LZ4) built and
-verified: it is loaded back and every `sprites.json` entry and both fonts are checked
-(`unity\Build\runeskin.contents.txt`). Do NOT add `-nographics`: the sprite atlas packer fails without a graphics
-device ("Unsupported Format 0", editor crash).
+`build` cuts `art/src/kit/*.png` per `art/src/kit/cuts.json` into `art/sprites/*.png` + `sprites.json` and runs
+`check` (sizes, borders, orphans). Exit code 0 + `RuneSkin: BUILD OK` in the log = bundle `unity\Build\runeskin`
+(StandaloneWindows64, LZ4) built and verified: it is loaded back and every `sprites.json` entry and both fonts are
+checked (`unity\Build\runeskin.contents.txt`). Do NOT add `-nographics`: the sprite atlas packer fails without a
+graphics device ("Unsupported Format 0", editor crash).
 
-Review aid (not part of the build): `python -I art\src\contact_sheet.py art\review D:\tmp\cx-augaskin\ref.png`
--> `art\review\contact-sheet.png` (every sprite, magenta = 9-slice centre) and `art\review\composite-pause-menu.png`
-(pause menu drawn with Unity Sliced/Tiled rules).
-M1 HUD: `python -I art\src\hud_review.py art\review D:\tmp\cx-augaskin\hud-status-b.png` -> `contact-sheet-m1.png`
-(M1 sprites, white masks shown tinted), `composite-hud.png` (bottom-left HUD cluster), `dot-grayscale.png`.
+Review aids (not part of the build, output in `art/review/`, git-ignored):
+`go -C art/tools run . compare` -> `compare-inventory.png`, `compare-hud.png`, `compare-corner.png`,
+`compare-groups.png` ([mockup | ours] rebuilt from our sprites with Unity Sliced/Tiled rules; mockups in
+`D:\tmp\cx-augaskin`); `go -C art/tools run . sheet` -> `contact-sheet.png`.
+
+## Rule: Codex makes the pixels
+
+Every sprite pixel comes from Codex image gen (`cx.ps1 -NoSession -Img "<prompt>" -To <file>`), prompts kept next to
+the sheets as `src/kit/*.prompt.txt`. The Go tool is mechanical only: crop, magenta / luminance key, resize,
+9-slice assembly (corners kept, mid segments made periodic by cross-fade for Tiled), mirror, tone/leather grading,
+alpha fades, transparent bar windows. New art = new kit sheet + `cuts.json` entry, never drawn in code.
+Style targets and palette: `STYLE.md`.
 
 ## Layout
 
 | Path | What |
 | --- | --- |
-| `src/render_sprites.py` | height-field relief renderer: bevels, carved runes/braid, leather wraps, one light rig (key light top-left, cavity AO, cast shadows), 4x supersampled. Writes `sprites/*.png` + `sprites/sprites.json`. Deterministic. |
-| `src/ai/` | AI surface textures (Codex image gen, prompts in `prompts.txt`): stone + leather albedo, used as periodic luminance detail only |
-| `src/contact_sheet.py` | contact sheet + composite |
+| `src/kit/*.png` | Codex image-gen kit sheets (panel2, corners, controls, ctrl2, buttons, states, hud, hud2, fill, masks, fx) + `*.prompt.txt` |
+| `src/kit/cuts.json` | cut spec: sheet rect, key, scale, nine/period, grading, Unity border/pivot/type/token/notes, palette |
+| `tools/` (Go, `go -C art/tools run . <cmd>`) | `build`, `check`, `compare`, `sheet`, `zoom`, `sample`, `blobs` (piece rects on a sheet) |
 | `sprites/` | final sprites (authored at 2x reference px, PPU 200) + `sprites.json` |
 | `fonts/` | Cormorant Bold 4.002 (display), PT Sans Regular 2.003W (body), `charset-ru-en.txt` (309 chars), `bake-report.txt`, `licenses/` (OFL 1.1) |
 | `../unity/Assets/Editor/BuildBundles.cs` | import (9-slice borders, pivot, PPU), SpriteAtlas (BC7, no rotation/tight packing), static TMP SDF fonts, bundle build, contents check |
@@ -33,27 +41,28 @@ M1 HUD: `python -I art\src\hud_review.py art\review D:\tmp\cx-augaskin\hud-statu
 ## sprites.json contract
 
 - `border` in sprite px, Unity `spriteBorder = (left, bottom, right, top)`; `pivot` normalized.
-- `imageType` = recommended `Image.type`; `Tiled` items have edge segments that repeat seamlessly (the period equals
-  the centre segment), `Sliced` items are constant along their stretch axis or have negligible detail there.
-- `token` = intended ThemeTokens name. `palette` = colour tokens the art was made for (glow tint, text colours).
-- Panel: `fill_glass` (Sliced) inset 23 sprite px (11.5 ref px) under `frame_panel` (Tiled, fillCenter off),
-  `frame_panel_glow` on top with the `rune_glow` tint, then the four `frame_panel_corner_*` caps at native size,
-  pivot = their panel corner (never stretched). Minimum panel = 192 sprite px (96 ref px) per side.
+- `imageType` = recommended `Image.type`; `Tiled` items have periodic edge/centre segments, `Sliced` items have
+  fixed ornament inside their borders and plain stretchable middles.
+- `token` = intended ThemeTokens name; `palette` = colour tokens the art was made for. Per-sprite geometry
+  (windows, sockets, insets) is in each entry's `notes`.
+- Panel: `fill_glass` (Sliced, alpha 0.9) inset 24 sprite px under `frame_panel` (Tiled, fillCenter off, border 32),
+  `frame_panel_glow` with the `rune_glow` tint, then the four `frame_panel_corner_*` caps (207x207) at native size
+  on top of the panel content, pivot = the panel's outer corner (rune block flush with the outer edges).
+- Small groups (quick slots, food row, stat boxes): `frame_small`; status-effect row: `frame_strip` + `separator_v`;
+  cells: `slot_cell` / `slot_cell_selected`; tabs: `tab_normal` / `tab_hover` / `tab_selected`; menu/craft
+  buttons: `button_*` (knot end caps in the 84 px borders).
 
-## M1 HUD sprites
+## HUD sprites
 
-- White masks (`bar_fill`, `bar_lag`, `bar_growth`, `bar_end_line`, `rail_fill`, `dot_*`, `bar_reserved_edge`,
-  `glyph_*`, `food_timer_ring`, `ring_select`) carry only shading/alpha; colour = `Image.color` from the palette
-  token named in `sprites.json` notes (`pool_hp`, `pool_stamina`, `pool_eitr`, `pool_es`, `pool_adrenaline`, ...).
-- Resource bar = `bar_frame` (400x80, Tiled) with a window inset x 76 / y 18 sprite px (height 44). Inside the window,
-  z-order: `bar_trough` -> `bar_lag` -> `bar_fill` -> `dot_*` (right-aligned from the fill end) -> `bar_reserved`
-  (+ `bar_reserved_edge`, `glyph_lock`) at the right end -> `bar_frame` -> one overlay (`overlay_frost` at the frame
-  top-left, `overlay_wet` tiled along the frame bottom) -> numbers. `bar_growth` + `bar_end_line` = max-growth accent.
-- ES / adrenaline rails: `rail_frame_es` / `rail_frame_adrenaline` (400x28, same outer width as `bar_frame`), window
-  inset x 30 / y 9 (height 10), `rail_trough` + `rail_fill`.
-- Converted pool: `plaque_seal` (height = bar) + `glyph_seal` on its socket, label = font.
-- DoT patterns tile horizontally with period 16 and differ in shape (slashes / chevrons / dots), so they read in
-  grayscale (`dot-grayscale.png`).
+- Masks (`bar_fill`, `rail_fill` = opaque grey shading; `bar_lag`, `bar_growth`, `bar_end_line`, `dot_*`,
+  `bar_reserved_edge`, `glyph_*`, `food_timer_ring`, `ring_select` = white + alpha) are tinted by `Image.color`
+  with the palette token named in their notes.
+- HP bar = `bar_frame` 480x87 (window inset L 95, R 92, T 28, B 17 -> 42 high, transparent except the strap);
+  stamina/eitr = `bar_frame_slim` 380x46 (window inset L 70, R 36, T 13, B 11 -> 22 high; icon recess centre (49,23)).
+  Window z-order: `bar_trough` -> `bar_lag` -> `bar_fill` -> `dot_*` -> `bar_reserved` (+ edge, `glyph_lock`) ->
+  frame -> overlay (`overlay_frost` top-left, `overlay_wet` along the bottom) -> numbers.
+- ES / adrenaline rails: `rail_frame_es` / `rail_frame_adrenaline` 400x40, window inset x 36, y 15 (14 high).
+- DoT strips tile horizontally (bleed period 20, fire 34, poison 36), shapes differ (slashes / chevrons / dots).
 
 ## Fonts
 

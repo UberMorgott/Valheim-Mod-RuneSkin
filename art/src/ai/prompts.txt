@@ -1,3 +1,0 @@
-stone_albedo.png: Seamless tileable square texture, orthographic top-down albedo map of dark grey-blue basalt slate stone surface, fine crystalline grain, faint chisel tool marks, subtle mineral speckles, completely flat even diffuse lighting, no shadows, no highlights, no cracks, no objects, no text, no border, uniform density edge to edge
-
-leather_albedo.png: Seamless tileable square texture, orthographic top-down albedo map of dark brown aged oiled leather, fine pores, soft creases and wrinkles, slight color variation, completely flat even diffuse lighting, no shadows, no stitches, no objects, no text, no border, uniform density edge to edge
