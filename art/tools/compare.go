@@ -201,7 +201,10 @@ func (c *canvas) text(s string, file string, size float64, col string, x, y floa
 }
 
 // icon copies mockup content (an item icon) into the same place, dark background keyed out.
-func (c *canvas) icon(mock *image.NRGBA, x, y, w, h float64) {
+func (c *canvas) icon(mock *image.NRGBA, x, y, w, h float64) { c.iconA(mock, x, y, w, h, 1) }
+
+// iconA: icon at alpha a (muted content, e.g. unavailable recipe rows).
+func (c *canvas) iconA(mock *image.NRGBA, x, y, w, h, a float64) {
 	r := image.Rect(int(x), int(y), int(x+w), int(y+h))
 	p := crop(mock, r)
 	for i := 0; i < len(p.Pix); i += 4 {
@@ -211,6 +214,7 @@ func (c *canvas) icon(mock *image.NRGBA, x, y, w, h float64) {
 		} else if mx < 90 {
 			p.Pix[i+3] = uint8(int(mx-60) * 255 / 30)
 		}
+		p.Pix[i+3] = uint8(float64(p.Pix[i+3]) * a)
 	}
 	over(c.img, resize(p, int(w*c.K), int(h*c.K)), image.Pt(int(x*c.K), int(y*c.K)))
 }

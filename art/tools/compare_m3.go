@@ -95,7 +95,7 @@ func compareM3Mock1() (*image.NRGBA, *image.NRGBA) {
 			st, col = "unavailable", palette["text_disabled"]
 		}
 		c.row(st, 1150, ys[i]-14, 162, 28)
-		c.icon(mock, 1152, ys[i]-12, 30, 26)
+		c.iconA(mock, 1152, ys[i]-12, 30, 26, iconAlpha(st))
 		c.text(s, sans, 12.5, col, 1187, ys[i], 0)
 	}
 	c.sprite("scroll_track", 1314, 340, 8, 430)
@@ -175,7 +175,7 @@ func compareM3A2() (*image.NRGBA, *image.NRGBA) {
 			st, col = "unavailable", palette["text_disabled"]
 		}
 		c.row(st, 1331, y-19, 220, 38)
-		c.icon(mock, 1334, y-18, 40, 36)
+		c.iconA(mock, 1334, y-18, 40, 36, iconAlpha(st))
 		c.text(names[i], sans, 14, col, 1382, y, 0)
 	}
 	c.sprite("scroll_track", 1552, 300, 10, 510)
@@ -315,4 +315,12 @@ func cmdCompareM3() {
 		{"variants: craft/upgrade/repair, EpicLoot-style tabs, upgrade & req states, stars, all category tabs   [ours only]", v, v, v.Bounds(), v.Bounds()},
 	}
 	groupsM2(list, "art/review/compare-groups-m3.png")
+}
+
+// iconAlpha: unavailable rows show muted content.
+func iconAlpha(state string) float64 {
+	if state == "unavailable" {
+		return 0.5
+	}
+	return 1
 }

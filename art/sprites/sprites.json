@@ -2733,11 +2733,11 @@
       "name": "row_recipe_unavailable",
       "file": "row_recipe_unavailable.png",
       "size": [
-        118,
+        112,
         74
       ],
       "border": {
-        "left": 30,
+        "left": 24,
         "bottom": 18,
         "right": 24,
         "top": 18
@@ -2749,7 +2749,7 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "row.recipe.unavailable",
-      "notes": "M3 recipe row, missing materials: dim grey strip + flat ember bar inside the left end; text text_disabled"
+      "notes": "M3 recipe row, missing materials: the idle strip darkened (bright 0.7, alpha 0.45), no marker; unavailability = muted content (text text_disabled, icon alpha ~0.5)"
     },
     {
       "name": "frame_inset",
