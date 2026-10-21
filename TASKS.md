@@ -43,7 +43,11 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 - [x] Frame window geometry read from sprite borders (art may change)
 - [x] Scrollbar roles (track / handle + state sprites) in every skinned root
 - [x] MorgottTweaks 1.122.0 RuneSkinHud providers (2c23285); AugaSkin 2.2.10 yields Hud (e2d1b70)
-- [ ] In-game run ui-runeskin-m1 (harness shot added); Codex final review
+- [x] In-game run ui-runeskin-m1 (tools 2021c6a) with art ad65a9c: tools\out\20261021-153950 all 6 checks PASS (Hud unknown=0 degraded=0, MT providers, +N list, EL tooltip, 21:9 box)
+- [x] Codex final review: 9 findings fixed (1392c13, MT c57b773)
+- [ ] Acceptance with mockup art df8dc3a: deployed 5169e46, run queued on broker (exclusive holder); then compare D:\tmp\cx-augaskin\compare-ingame-hud.png ([hud-status-b | in-game], scratchpad compare.ps1) + Codex score >= 8
+- [ ] Panel corner caps above content (art df8dc3a note) for Menu / tooltip PanelDecor
+- [ ] Stamina / eitr pool glyphs for the slim frame icon recess (no glyph sprites yet)
 - [ ] Hotbar slot art (socket.hotbar, plate.number) and quick-slot art: M2 with doll slots
 - [ ] Reserve tooltip (auras / summons) on hover: needs inventory-open hit area (M2)
 - [ ] Bar-cap pool glyph sockets are empty in the art (no HP/stamina/eitr glyphs yet)
