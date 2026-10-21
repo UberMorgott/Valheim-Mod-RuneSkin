@@ -99,7 +99,9 @@ namespace RuneSkin.PlayerHud
                 _overlay.gameObject.SetActive(false);
                 for (var i = 0; i < _wet.Length; i++)
                 {
-                    _wet[i] = art.Image("Wet" + i, Root, "sprite.hud.overlay.wet", "color.overlay.wet", Image.Type.Simple);
+                    // Three drip variants alternate along the frame (art f907652: overlay_wet, _2, _3); a missing variant falls back.
+                    var token = i == 0 || !ThemeTokens.GetSprite("sprite.hud.overlay.wet." + (i + 1)) ? "sprite.hud.overlay.wet" : "sprite.hud.overlay.wet." + (i + 1);
+                    _wet[i] = art.Image("Wet" + i, Root, token, "color.overlay.wet", Image.Type.Simple);
                     _wet[i].gameObject.SetActive(false);
                 }
             }

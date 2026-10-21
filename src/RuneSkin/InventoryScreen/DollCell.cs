@@ -13,7 +13,8 @@ namespace RuneSkin.InventoryScreen
     // drop onto the cell, without = OnClick), drop at the end of a drag (IDropHandler), right click = OnSecondary.
     public sealed class DollCell : MonoBehaviour, IPointerClickHandler, IDropHandler
     {
-        public Image Background, Icon, Glyph, Link;
+        public Image Background, Icon, Glyph, Link, Badge;
+        private Sprite _glyph, _occupied;
         public TMP_Text Amount;
         public UITooltip Tooltip;
         public string Id;
@@ -53,6 +54,24 @@ namespace RuneSkin.InventoryScreen
             amount.text = "";
             Mark(amount, "content", "doll cell amount (live value)");
             cell.Amount = amount;
+            // Mirror badge (chain links: "equipped from the grid") + occupied-hand glyph for two-handed weapons.
+            if (backgroundRole == "slot.mirror")
+            {
+                var badge = new GameObject("Badge", typeof(RectTransform)).AddComponent<Image>();
+                var b = badge.rectTransform;
+                b.SetParent(rt, false);
+                b.anchorMin = b.anchorMax = b.pivot = new Vector2(1f, 1f);
+                b.anchoredPosition = new Vector2(-2f, -2f);
+                b.sizeDelta = new Vector2(18f, 18f);
+                badge.raycastTarget = false;
+                badge.preserveAspect = true;
+                var bm = Mark(badge, "glyph.link", "mirror link badge");
+                bm.Outcome = Restyler.Apply(badge, bm, ThemeTokens.Role("glyph.link")) ? Outcome.Styled : Outcome.Degraded;
+                badge.enabled = false;
+                cell.Badge = badge;
+                cell._occupied = ThemeTokens.GetSprite("sprite.glyph.hand.occupied");
+            }
+            cell._glyph = cell.Glyph.sprite;
             if (tooltipPrefab)
             {
                 cell.Tooltip = go.AddComponent<UITooltip>();
@@ -99,16 +118,20 @@ namespace RuneSkin.InventoryScreen
         }
 
         // Shows an item (null = empty: glyph visible). linked = the item is the other hand's two-handed weapon.
+        // linked = this hand is taken by the other hand's two-handed weapon: occupied glyph, no icon, link rim.
         public void Show(ItemDrop.ItemData item, bool linked, int amount)
         {
             if (!ReferenceEquals(item, _shown) || linked != _linked)
             {
                 _shown = item;
                 _linked = linked;
-                Icon.enabled = item != null;
+                var occupied = linked && _occupied;
+                Icon.enabled = item != null && !occupied;
                 if (item != null) Icon.sprite = item.GetIcon();
-                if (Glyph.sprite) Glyph.enabled = item == null;
+                Glyph.sprite = occupied ? _occupied : _glyph;
+                Glyph.enabled = Glyph.sprite && (item == null || occupied);
                 if (Link.sprite) Link.enabled = linked;
+                if (Badge && Badge.sprite) Badge.enabled = item != null && !occupied;
             }
             var alpha = linked ? 0.45f : 1f;
             if (!Mathf.Approximately(alpha, _iconAlpha))

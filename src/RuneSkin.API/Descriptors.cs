@@ -212,5 +212,10 @@ namespace RuneSkin.API
         public Action<Inventory> OnInvokeFor;
         /// <summary>ApiVersion 3: presentation-only enabled state for that panel instance; null = <see cref="Enabled"/>.</summary>
         public Func<Inventory, bool> EnabledFor;
+        /// <summary>
+        /// ApiVersion 4: why the action is disabled for that panel instance (shown in the button tooltip while the enabled
+        /// predicate is false). Null or empty = no reason shown.
+        /// </summary>
+        public Func<Inventory, string> DisabledReasonFor;
     }
 }

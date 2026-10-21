@@ -134,7 +134,10 @@ namespace RuneSkin.Tests
         [Fact]
         public void ImpossibleDockMinimumsFlagOverflow()
         {
-            var o = Run(1280, 600, cw: 8, ch: 10, bw: 8, bh: 10);
+            var folded = Run(1280, 600, cw: 8, ch: 10, bw: 8, bh: 10);
+            Assert.True(folded.BackpackFolded && folded.Backpack.IsEmpty);
+            Assert.True(folded.Chest.Inside(folded.Dock) && folded.ChestGrid.VisibleRows >= 1);
+            var o = Run(1920, 720, cw: 8, ch: 10, bw: 8, bh: 10);
             Assert.True(o.DockOverflow);
             Assert.False(o.Chest.Overlaps(o.Backpack));
             Assert.True(o.Chest.Inside(o.Dock) && o.Backpack.Inside(o.Dock), "fallback stays inside the dock");

@@ -138,6 +138,8 @@ namespace RuneSkin.InventoryScreen
             }
         }
 
+        public bool Contains(Vector2 screenPoint) => _panel && RectTransformUtility.RectangleContainsScreenPoint(_panel, screenPoint, null);
+
         public void Tick(bool keysAllowed, ref bool consumed)
         {
             foreach (var e in _entries)
@@ -147,7 +149,13 @@ namespace RuneSkin.InventoryScreen
                 var inv = _inventory;
                 var enabled = a.D.EnabledFor != null ? InventoryRegistry.Guard(a, () => a.D.EnabledFor(inv), false)
                     : a.D.Enabled == null || InventoryRegistry.Guard(a, () => a.D.Enabled(), false);
-                if (e.Button.interactable != enabled) e.Button.interactable = enabled;
+                if (e.Button.interactable != enabled)
+                {
+                    e.Button.interactable = enabled;
+                    var tip = e.Rect.GetComponent<UITooltip>();
+                    var reason = enabled || a.D.DisabledReasonFor == null ? "" : InventoryRegistry.Guard(a, () => a.D.DisabledReasonFor(inv), "") ?? "";
+                    if (tip) tip.m_text = reason;
+                }
                 if (!keysAllowed || consumed || !enabled || string.IsNullOrEmpty(a.D.InputButton)) continue;
                 if (ZInput.GetButtonDown(a.D.InputButton))
                 {

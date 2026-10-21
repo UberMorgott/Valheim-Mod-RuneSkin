@@ -48,7 +48,7 @@ namespace RuneSkin.InventoryScreen
         public float PanelMaxH = 760f;
         public float HudBand = 288f;
         public float HeaderH = 88f, FooterH = 48f, PanelHeaderH = 56f, PanelPad = 20f;
-        public float GridCell = 64f, GridGap = 8f;
+        public float GridCell = 64f, GridGap = 8f, HotbarHeaderH = 30f;
         public float ContainerCell = 56f, ContainerGap = 6f;
         public float DollCell = 48f, DollGap = 8f, DollColumns = 3f, DollMirrorGap = 24f, DollMinRows = 2f;
         public float ScrollbarW = 14f;
@@ -96,6 +96,8 @@ namespace RuneSkin.InventoryScreen
         public DollFit DollCells;
         // Dock minimums did not fit: both panels at their minimum, the dock scrolls.
         public bool DockOverflow;
+        // Dock too short for one row of each: backpack not docked beside the chest.
+        public bool BackpackFolded;
         public float MinCell;
     }
 
@@ -181,7 +183,7 @@ namespace RuneSkin.InventoryScreen
             var dollPitch = Math.Max(t.DollCell * k, o.MinCell) + t.DollGap * k;
             var dollMinH = Math.Min(t.DollMinRows, DollRows(i, t)) * dollPitch + 2f * pad;
             var gridBoxMaxH = c.H - o.Header.H - footerH - dollMinH - 3f * gap; // header | doll | grid | footer
-            var grid = Fit(i.GridW, i.GridH, c.W, Math.Max(0f, gridBoxMaxH), 0f, pad, t.GridCell * k, t.GridGap * k, o.MinCell, t.ScrollbarW * k);
+            var grid = Fit(i.GridW, i.GridH, c.W, Math.Max(0f, gridBoxMaxH), t.HotbarHeaderH * k, pad, t.GridCell * k, t.GridGap * k, o.MinCell, t.ScrollbarW * k);
             o.Player = grid;
             var gridH = Math.Min(grid.DesiredH, Math.Max(0f, gridBoxMaxH));
             o.Grid = new Box(c.X, o.Footer.Y - gap - gridH, c.W, gridH);
@@ -239,6 +241,15 @@ namespace RuneSkin.InventoryScreen
                     chestH = avail / 2f;
                     packH = avail - chestH;
                     o.DockOverflow = true;
+                    // Not even one row each: the chest keeps the dock, the backpack folds away (still reachable
+                    // through its own open key, which shows it alone) - never an unusable sliver (Codex M2 review).
+                    if (chestH < headerH + 2f * pad + chest.Pitch || packH < headerH + 2f * pad + pack.Pitch)
+                    {
+                        chestH = Math.Min(chest.DesiredH, dock.H);
+                        packH = 0f;
+                        hasPack = false;
+                        o.BackpackFolded = true;
+                    }
                 }
                 else
                 {

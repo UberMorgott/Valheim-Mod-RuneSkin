@@ -32,21 +32,14 @@ namespace RuneSkin.InventoryScreen
             var scale = rt.localScale;
             var sx = Mathf.Approximately(scale.x, 0f) ? 1f : scale.x;
             var sy = Mathf.Approximately(scale.y, 0f) ? 1f : scale.y;
-            var w = br.x - tl.x;
-            var h = tl.y - br.y;
-            var size = new Vector2(w / sx, h / sy);
-            var pr = parent.rect;
-            var center = pr.center;
-            var pivotPoint = new Vector2(tl.x + rt.pivot.x * w, br.y + rt.pivot.y * h);
-            var half = new Vector2(0.5f, 0.5f);
-            if (rt.anchorMin != half || rt.anchorMax != half)
-            {
-                rt.anchorMin = half;
-                rt.anchorMax = half;
-            }
-            if ((rt.sizeDelta - size).sqrMagnitude > Eps * Eps) rt.sizeDelta = size;
-            var pos = pivotPoint - center;
-            if ((rt.anchoredPosition - pos).sqrMagnitude > Eps * Eps) rt.anchoredPosition = pos;
+            var w = (br.x - tl.x) / sx;
+            var h = (tl.y - br.y) / sy;
+            // Size through the current anchors, then move by the measured world corner: correct for any anchor /
+            // pivot setup of the target and its parent (first in-game run: anchor-based math left children offset).
+            var r = rt.rect;
+            if (Mathf.Abs(r.width - w) > Eps) rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, w);
+            if (Mathf.Abs(r.height - h) > Eps) rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, h);
+            SetTopLeft(rt, World(canvas, box.X, box.Y));
         }
 
         // Keeps rt's size, moves its top-left corner to the box's and scales it down (never up) to fit the box.

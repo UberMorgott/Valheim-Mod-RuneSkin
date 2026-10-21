@@ -23,7 +23,7 @@ namespace RuneSkin.API
         /// Version of the installed API surface (a property, not a const, so you read the installed value at runtime).
         /// Bumped on every public change; check it before using newer members.
         /// </summary>
-        public static int ApiVersion => 3;
+        public static int ApiVersion => 4;
 
         private static IHost _host;
         private static int _mainThread = -1;
@@ -268,7 +268,8 @@ namespace RuneSkin.API
             OnInvoke = d.OnInvoke,
             Order = d.Order,
             OnInvokeFor = d.OnInvokeFor,
-            EnabledFor = d.EnabledFor
+            EnabledFor = d.EnabledFor,
+            DisabledReasonFor = d.DisabledReasonFor
         };
 
         // Handle returned to callers: connects to the host now or on attach; Dispose before attach cancels the replay.

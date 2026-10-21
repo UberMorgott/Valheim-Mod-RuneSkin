@@ -44,7 +44,13 @@ namespace RuneSkin.InventoryScreen
 
         public static readonly List<Slot> Slots = new List<Slot>();
         public static readonly List<Action> Actions = new List<Action>();
-        public static readonly Dictionary<OverlayKey, string> Overlays = new Dictionary<OverlayKey, string>();
+        public sealed class Overlay
+        {
+            public string Token;
+        }
+
+        // Value = the registration object (identity), so disposing an older handle never removes a newer one.
+        public static readonly Dictionary<OverlayKey, Overlay> Overlays = new Dictionary<OverlayKey, Overlay>();
         public static readonly List<KeyValuePair<RectTransform, string>> Panels = new List<KeyValuePair<RectTransform, string>>();
 
         // Bumped on every change: the screen re-lays out / rebuilds cells only then.
@@ -76,11 +82,12 @@ namespace RuneSkin.InventoryScreen
         public static System.Action SetOverlay(string owner, Inventory inventory, int x, int y, string token)
         {
             var key = new OverlayKey { Owner = owner, Inventory = inventory, X = x, Y = y };
-            Overlays[key] = token;
+            var entry = new Overlay { Token = token };
+            Overlays[key] = entry;
             OverlayRevision++;
             return () =>
             {
-                if (Overlays.TryGetValue(key, out var cur) && ReferenceEquals(cur, token))
+                if (Overlays.TryGetValue(key, out var cur) && ReferenceEquals(cur, entry))
                 {
                     Overlays.Remove(key);
                     OverlayRevision++;
@@ -110,7 +117,7 @@ namespace RuneSkin.InventoryScreen
             string token = null;
             foreach (var pair in Overlays)
                 if (ReferenceEquals(pair.Key.Inventory, inventory) && pair.Key.X == x && pair.Key.Y == y)
-                    token = pair.Value;
+                    token = pair.Value.Token;
             return token;
         }
 

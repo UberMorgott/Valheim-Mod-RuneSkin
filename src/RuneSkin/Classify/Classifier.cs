@@ -120,6 +120,8 @@ namespace RuneSkin.Classify
                 return null;
             }
 
+            if (g is TMP_SubMeshUI)
+                return Classification.Of("content", "TMP_SubMeshUI (fallback-font sub-mesh of its parent text)");
             if (g is TMP_Text text)
             {
                 var selectable = g.GetComponentInParent<Selectable>(true);
