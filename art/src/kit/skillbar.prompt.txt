@@ -1,0 +1,6 @@
+Use the image_gen tool. First load with view_image: D:\tmp\cx-augaskin\skills-a.png (target: each skill row has a thin progress bar under the name: a dark recessed rounded groove with a cyan-teal fill) and D:\tmp\cx-augaskin\work\ref\slot_cell.png (our stone colour #2a343b and chamfer).
+Draw on a perfectly flat pure MAGENTA #FF00FF background (no shadows on the magenta, pieces separated by at least 80 px of magenta, orthographic flat front view, no text), canvas 1536x1024:
+(1) top: SKILL PROGRESS TROUGH about 1200x60: a long thin recessed groove carved into dark slate, rounded ends, a lit bottom bevel lip and a dark shadowed top inner edge, interior near-black glass #0b1419, plain uniform middle so it can stretch;
+(2) middle: SKILL PROGRESS FILL about 1200x44 painted in PURE WHITE and light greys only (a mask to be tinted later): a smooth rounded bar with a soft lighter highlight band along its top third, slightly darker lower edge, the RIGHT end rounded and glowing brighter with a soft bloom, the LEFT end rounded plain;
+(3) bottom: the same fill but in glowing cyan #4fe0e6 for reference.
+Save PNG to: D:\tmp\cx-augaskin\work\kit\skillbar.png

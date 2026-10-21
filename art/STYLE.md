@@ -42,6 +42,11 @@ Measurements are mockup px at 1672 width; "ref px" = 1920 reference (x 1.148); s
 | text_body | #e3e6e8 | body |
 | text_disabled | #6f767a | disabled |
 | text_active | #e8b64a | active tab label (NEW token) |
+| text_missing | #e0413a | missing materials, need counts (M3) |
+| text_ok | #9fd66b | requirement met counts (M3) |
+| text_item_title | #f0c419 | item title in the crafting detail pane (M3) |
+| text_stat_value | #8ab4f0 | stat values (M3) |
+| ember | #c0392b | missing-material rims, RecipeChains rune (M3) |
 
 Pool colours (pool_*, dot_*, bar_*) unchanged. Opacity: fill_glass 0.9, slot_cell 1.0, frame_strip 0.97.
 Glow: emissive only on runes, selection rims and the faint inner panel line (frame_panel_glow, tint rune_glow).

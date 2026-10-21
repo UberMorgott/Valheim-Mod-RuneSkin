@@ -11,6 +11,7 @@
     "dot_bleed": "#3c060a",
     "dot_fire": "#ffb347",
     "dot_poison": "#8be04e",
+    "ember": "#c0392b",
     "food_timer": "#4fe0e6",
     "glass_bottom": "#0b1419",
     "glass_highlight": "#2395b7",
@@ -35,6 +36,10 @@
     "text_body": "#e3e6e8",
     "text_disabled": "#6f767a",
     "text_header": "#d9dce0",
+    "text_item_title": "#f0c419",
+    "text_missing": "#e0413a",
+    "text_ok": "#9fd66b",
+    "text_stat_value": "#8ab4f0",
     "thong": "#6b3a26",
     "thread": "#c9ad7d",
     "water": "#a9cfe0"
@@ -2547,6 +2552,1216 @@
       "fillCenter": true,
       "token": "scroll.fade",
       "notes": "M2 large-grid scroll fade: opaque at the bottom edge -\u003e clear at the top, tint glass_bottom; stretch over the grid's bottom edge (flip Y for the top edge)"
+    },
+    {
+      "name": "badge_level_star",
+      "file": "badge_level_star.png",
+      "size": [
+        150,
+        144
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "badge.level.star",
+      "notes": "M3 station level badge: gold star with a dark round recess, digit centre (76,75), digit text_active, serif bold"
+    },
+    {
+      "name": "tab_square_normal",
+      "file": "tab_square_normal.png",
+      "size": [
+        99,
+        96
+      ],
+      "border": {
+        "left": 16,
+        "bottom": 16,
+        "right": 16,
+        "top": 16
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "tab.square.normal",
+      "notes": "M3 square glyph tab (crafting category filter, EpicLoot icon tabs), thin rim: glyph text_body ~62% of the tab"
+    },
+    {
+      "name": "tab_square_hover",
+      "file": "tab_square_hover.png",
+      "size": [
+        100,
+        97
+      ],
+      "border": {
+        "left": 16,
+        "bottom": 16,
+        "right": 16,
+        "top": 16
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "tab.square.hover",
+      "notes": "M3 square glyph tab hover: thin cyan inner line; glyph rune_glow"
+    },
+    {
+      "name": "tab_square_selected",
+      "file": "tab_square_selected.png",
+      "size": [
+        100,
+        97
+      ],
+      "border": {
+        "left": 16,
+        "bottom": 16,
+        "right": 16,
+        "top": 16
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "tab.square.selected",
+      "notes": "M3 square glyph tab selected: thin gold rim; glyph text_active"
+    },
+    {
+      "name": "field_search",
+      "file": "field_search.png",
+      "size": [
+        100,
+        66
+      ],
+      "border": {
+        "left": 18,
+        "bottom": 18,
+        "right": 18,
+        "top": 18
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "field.search",
+      "notes": "M3 search input, thin rim: glyph_search at the left (centre x = 0.5*height), placeholder text text_disabled from x = height"
+    },
+    {
+      "name": "row_recipe_normal",
+      "file": "row_recipe_normal.png",
+      "size": [
+        112,
+        74
+      ],
+      "border": {
+        "left": 24,
+        "bottom": 18,
+        "right": 24,
+        "top": 18
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "row.recipe.normal",
+      "notes": "M3 recipe list row idle: borderless faint glass strip (alpha 0.6 baked); text text_body"
+    },
+    {
+      "name": "row_recipe_hover",
+      "file": "row_recipe_hover.png",
+      "size": [
+        112,
+        74
+      ],
+      "border": {
+        "left": 24,
+        "bottom": 18,
+        "right": 24,
+        "top": 18
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "row.recipe.hover",
+      "notes": "M3 recipe list row hover: lighter borderless strip with soft cyan haze"
+    },
+    {
+      "name": "row_recipe_selected",
+      "file": "row_recipe_selected.png",
+      "size": [
+        112,
+        70
+      ],
+      "border": {
+        "left": 24,
+        "bottom": 18,
+        "right": 24,
+        "top": 18
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "row.recipe.selected",
+      "notes": "M3 recipe list row selected: one thin cyan outline"
+    },
+    {
+      "name": "row_recipe_unavailable",
+      "file": "row_recipe_unavailable.png",
+      "size": [
+        118,
+        74
+      ],
+      "border": {
+        "left": 30,
+        "bottom": 18,
+        "right": 24,
+        "top": 18
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "row.recipe.unavailable",
+      "notes": "M3 recipe row, missing materials: dim grey strip + flat ember bar inside the left end; text text_disabled"
+    },
+    {
+      "name": "frame_inset",
+      "file": "frame_inset.png",
+      "size": [
+        96,
+        96
+      ],
+      "border": {
+        "left": 16,
+        "bottom": 16,
+        "right": 16,
+        "top": 16
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "frame.inset",
+      "notes": "M3 recessed glass well, thin rim (recipe list, detail/description pane); content inset 14"
+    },
+    {
+      "name": "socket_req",
+      "file": "socket_req.png",
+      "size": [
+        130,
+        131
+      ],
+      "border": {
+        "left": 16,
+        "bottom": 42,
+        "right": 16,
+        "top": 16
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "socket.req",
+      "notes": "M3 compact requirement cell (have enough): clear glass face, count baseline band in the bottom 42 px (count centre at 84% of height); count text_ok, label above text_body"
+    },
+    {
+      "name": "socket_req_missing",
+      "file": "socket_req_missing.png",
+      "size": [
+        133,
+        132
+      ],
+      "border": {
+        "left": 16,
+        "bottom": 42,
+        "right": 16,
+        "top": 16
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "socket.req.missing",
+      "notes": "M3 compact requirement cell, not enough material: thin ember-red rim; count text_missing"
+    },
+    {
+      "name": "socket_req_upgrade",
+      "file": "socket_req_upgrade.png",
+      "size": [
+        137,
+        184
+      ],
+      "border": {
+        "left": 26,
+        "bottom": 64,
+        "right": 26,
+        "top": 26
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "socket.req.upgrade",
+      "notes": "M3 upgrade source/target item socket: gold well rim; quality text_active in the plate"
+    },
+    {
+      "name": "plaque_arrow",
+      "file": "plaque_arrow.png",
+      "size": [
+        119,
+        66
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "plaque.arrow",
+      "notes": "M3 upgrade connector: slate plaque with a gold chevron pointing right (current -\u003e next quality); flip X for RTL"
+    },
+    {
+      "name": "frame_missing",
+      "file": "frame_missing.png",
+      "size": [
+        164,
+        122
+      ],
+      "border": {
+        "left": 70,
+        "bottom": 30,
+        "right": 30,
+        "top": 60
+      },
+      "pivot": [
+        0,
+        1
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "frame.missing",
+      "notes": "M3 'Не хватает:' box (RecipeChains): slate frame + ember rune block top-left (~66x57) + thin red hairline; text inset L 70 (first line may start at L 30 below the block), lines text_missing"
+    },
+    {
+      "name": "pip_quality_empty",
+      "file": "pip_quality_empty.png",
+      "size": [
+        40,
+        42
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "pip.quality.empty",
+      "notes": "M3 item quality pip, not reached (row of max-quality pips under the title)"
+    },
+    {
+      "name": "pip_quality_full",
+      "file": "pip_quality_full.png",
+      "size": [
+        40,
+        42
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "pip.quality.full",
+      "notes": "M3 item quality pip, reached: gold diamond"
+    },
+    {
+      "name": "button_round",
+      "file": "button_round.png",
+      "size": [
+        96,
+        96
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "button.round",
+      "notes": "M3 round icon button (repair-all / upgrade shortcut): glyph ~50% centred; hover = tint rune_glow on the glyph"
+    },
+    {
+      "name": "row_stat",
+      "file": "row_stat.png",
+      "size": [
+        112,
+        45
+      ],
+      "border": {
+        "left": 24,
+        "bottom": 16,
+        "right": 24,
+        "top": 12
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "row.stat",
+      "notes": "M3 detail stat line: borderless dark strip with a dotted leader along the bottom (alpha 0.7 baked); label text_body left, value text_stat_value"
+    },
+    {
+      "name": "glyph_cat_all",
+      "file": "glyph_cat_all.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.cat.all",
+      "notes": "M3 crafting category filter: all (infinity); white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_cat_weapons",
+      "file": "glyph_cat_weapons.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.cat.weapons",
+      "notes": "M3 category: weapons; white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_cat_armor",
+      "file": "glyph_cat_armor.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.cat.armor",
+      "notes": "M3 category: armor; white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_cat_tools",
+      "file": "glyph_cat_tools.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.cat.tools",
+      "notes": "M3 category: tools; white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_cat_food",
+      "file": "glyph_cat_food.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.cat.food",
+      "notes": "M3 category: food; white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_cat_meads",
+      "file": "glyph_cat_meads.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.cat.meads",
+      "notes": "M3 category: meads/potions; white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_cat_ammo",
+      "file": "glyph_cat_ammo.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.cat.ammo",
+      "notes": "M3 category: ammo; white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_cat_shields",
+      "file": "glyph_cat_shields.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.cat.shields",
+      "notes": "M3 category: shields; white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_cat_materials",
+      "file": "glyph_cat_materials.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.cat.materials",
+      "notes": "M3 category: materials; white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_cat_utility",
+      "file": "glyph_cat_utility.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.cat.utility",
+      "notes": "M3 category: utility/trinkets; white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_cat_misc",
+      "file": "glyph_cat_misc.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.cat.misc",
+      "notes": "M3 category: misc; white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_search",
+      "file": "glyph_search.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.search",
+      "notes": "M3 search field magnifier (tint groove_light, focused rune_glow); white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_arrow_left",
+      "file": "glyph_arrow_left.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.arrow.left",
+      "notes": "M3 scroll/page arrow left (tab row scroll, pagers); white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_arrow_right",
+      "file": "glyph_arrow_right.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.arrow.right",
+      "notes": "M3 scroll/page arrow right; white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_star_full",
+      "file": "glyph_star_full.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.star.full",
+      "notes": "M3 star reached (quality/level, tint text_active); white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_star_empty",
+      "file": "glyph_star_empty.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.star.empty",
+      "notes": "M3 star not reached (outline, tint text_disabled); white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_act_upgrade",
+      "file": "glyph_act_upgrade.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.act.upgrade",
+      "notes": "M3 action: upgrade (button glyph / tab); white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_act_repair",
+      "file": "glyph_act_repair.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.act.repair",
+      "notes": "M3 action: repair (hammer over anvil); white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_act_craft",
+      "file": "glyph_act_craft.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.act.craft",
+      "notes": "M3 action: craft (anvil + spark), on button_* left of the label; white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_check",
+      "file": "glyph_check.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.check",
+      "notes": "M3 requirement met (tint text_ok); white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_missing",
+      "file": "glyph_missing.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.missing",
+      "notes": "M3 requirement missing (tint text_missing); white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_ench_enchant",
+      "file": "glyph_ench_enchant.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.ench.enchant",
+      "notes": "M3 EpicLoot tab: enchant; white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_ench_sacrifice",
+      "file": "glyph_ench_sacrifice.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.ench.sacrifice",
+      "notes": "M3 EpicLoot tab: sacrifice / disenchant; white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_ench_augment",
+      "file": "glyph_ench_augment.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.ench.augment",
+      "notes": "M3 EpicLoot tab: augment; white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_boss",
+      "file": "glyph_boss.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.boss",
+      "notes": "M3 boss trophy emblem (corner badge of boss cells, tint text_active); white mask"
+    },
+    {
+      "name": "glyph_death",
+      "file": "glyph_death.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.death",
+      "notes": "M3 death penalty marker (skills header, tint text_disabled); white mask"
+    },
+    {
+      "name": "glyph_sort_level",
+      "file": "glyph_sort_level.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sort.level",
+      "notes": "M3 sort by level toggle (skills); white mask"
+    },
+    {
+      "name": "glyph_tab_skills",
+      "file": "glyph_tab_skills.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.tab.skills",
+      "notes": "M3 character tab: skills (valknut, tint text_active when selected); white mask"
+    },
+    {
+      "name": "glyph_tab_trophies",
+      "file": "glyph_tab_trophies.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.tab.trophies",
+      "notes": "M3 character tab: trophies (cup); white mask"
+    },
+    {
+      "name": "glyph_tab_character",
+      "file": "glyph_tab_character.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.tab.character",
+      "notes": "M3 character tab: inventory/character (raven); white mask"
+    },
+    {
+      "name": "bar_skill_trough",
+      "file": "bar_skill_trough.png",
+      "size": [
+        84,
+        18
+      ],
+      "border": {
+        "left": 10,
+        "bottom": 4,
+        "right": 10,
+        "top": 4
+      },
+      "pivot": [
+        0,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "bar.skill.trough",
+      "notes": "M3 skill progress groove (rounded carved trough, 18 high native); fill inset 3 px"
+    },
+    {
+      "name": "bar_skill_fill",
+      "file": "bar_skill_fill.png",
+      "size": [
+        86,
+        14
+      ],
+      "border": {
+        "left": 8,
+        "bottom": 0,
+        "right": 14,
+        "top": 0
+      },
+      "pivot": [
+        0,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "bar.skill.fill",
+      "notes": "M3 skill progress fill: white shaded mask with rounded ends + bright bloom at the right end, tint rune_glow; width = progress fraction of the trough window"
+    },
+    {
+      "name": "frame_corner_small_tl",
+      "file": "frame_corner_small_tl.png",
+      "size": [
+        78,
+        78
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0,
+        1
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "frame.corner.small.tl",
+      "notes": "M3 small corner cap 78x78 (same art as frame_panel_corner_* at 0.38x) for tooltips/popups: rune block 32x31 flush with the outer corner, pivot = outer corner"
+    },
+    {
+      "name": "frame_corner_small_tr",
+      "file": "frame_corner_small_tr.png",
+      "size": [
+        78,
+        78
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        1,
+        1
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "frame.corner.small.tr",
+      "notes": "M3 small corner cap, top-right"
+    },
+    {
+      "name": "frame_corner_small_bl",
+      "file": "frame_corner_small_bl.png",
+      "size": [
+        78,
+        78
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0,
+        0
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "frame.corner.small.bl",
+      "notes": "M3 small corner cap, bottom-left"
+    },
+    {
+      "name": "frame_corner_small_br",
+      "file": "frame_corner_small_br.png",
+      "size": [
+        78,
+        78
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        1,
+        0
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "frame.corner.small.br",
+      "notes": "M3 small corner cap, bottom-right"
     }
   ]
 }

@@ -52,9 +52,11 @@ type Cut struct {
 	OnlyCyan      bool  `json:"onlyCyan,omitempty"` // emissive extraction: keep cyan glow as white mask
 	// ClearWindow: output rect made transparent except leather (bar windows: fill shows through, strap stays on top)
 	ClearWindow []int      `json:"clearWindow,omitempty"`
-	Leather     [2]float64 `json:"leather,omitempty"` // leather-only grade: saturation keep, brightness
-	Fade        [2]int     `json:"fade,omitempty"`    // alpha ramp at the left/right ends (px)
-	Flip        string     `json:"flip,omitempty"`    // mirror the crop: h | v | hv
+	Leather     [2]float64 `json:"leather,omitempty"`  // leather-only grade: saturation keep, brightness
+	Fade        [2]int     `json:"fade,omitempty"`     // alpha ramp at the left/right ends (px)
+	Flip        string     `json:"flip,omitempty"`     // mirror the crop: h | v | hv
+	FlatEnds    [2]int     `json:"flatEnds,omitempty"` // left/right output columns whose RGB is replaced by the centre column (same row), alpha kept
+	Despill     bool       `json:"despill,omitempty"`  // neutralise violet magenta spill (r and b both above g) to the glass hue
 	Border      Border     `json:"border"`
 	Pivot       [2]float64 `json:"pivot"`
 	ImageType   string     `json:"imageType"`
@@ -131,6 +133,9 @@ func renderCut(c Cut) *image.NRGBA {
 	case "hv":
 		src = flip(src, true, true)
 	}
+	if c.Despill {
+		despillViolet(src)
+	}
 	if c.OnlyCyan {
 		cyanMask(src)
 	}
@@ -195,6 +200,9 @@ func renderCut(c Cut) *image.NRGBA {
 				img.Pix[i+2] = uint8(math.Min(255, (l+(bl-l)*k)*c.Leather[1]))
 			}
 		}
+	}
+	if c.FlatEnds[0] > 0 || c.FlatEnds[1] > 0 {
+		flatEnds(img, c.FlatEnds[0], c.FlatEnds[1])
 	}
 	if c.Fade[0] > 0 || c.Fade[1] > 0 {
 		W := img.Bounds().Dx()
@@ -501,5 +509,38 @@ func shadeMask(img *image.NRGBA) {
 		a := clamp01((l - 0.03) / 0.08)
 		v := uint8(clamp01(0.35+l*0.75) * 255)
 		img.Pix[i], img.Pix[i+1], img.Pix[i+2], img.Pix[i+3] = v, v, v, uint8(a*255)
+	}
+}
+
+// despillViolet: soft piece ends painted into the magenta background keep a violet cast after keying
+// (r and b both above g); map those pixels to the glass hue (r = 0.41 g, b = 1.33 g, from glass #0b1b24)
+// keeping their luminance.
+func despillViolet(img *image.NRGBA) {
+	for i := 0; i < len(img.Pix); i += 4 {
+		r, g, b := float64(img.Pix[i]), float64(img.Pix[i+1]), float64(img.Pix[i+2])
+		if r <= g+4 || b <= g+4 {
+			continue
+		}
+		l := 0.2126*r + 0.7152*g + 0.0722*b
+		k := l / (0.2126*0.41 + 0.7152 + 0.0722*1.33)
+		img.Pix[i] = uint8(math.Min(255, 0.41*k))
+		img.Pix[i+1] = uint8(math.Min(255, k))
+		img.Pix[i+2] = uint8(math.Min(255, 1.33*k))
+	}
+}
+
+// flatEnds copies the centre column's RGB (same row) over the first l and last r columns, keeping alpha:
+// borderless strips whose painted ends carry background spill get a hue continuous with the sliced centre.
+func flatEnds(img *image.NRGBA, l, r int) {
+	W, H := img.Bounds().Dx(), img.Bounds().Dy()
+	for y := 0; y < H; y++ {
+		s := img.PixOffset(W/2, y)
+		for x := 0; x < W; x++ {
+			if x >= l && x < W-r {
+				continue
+			}
+			i := img.PixOffset(x, y)
+			copy(img.Pix[i:i+3], img.Pix[s:s+3])
+		}
 	}
 }

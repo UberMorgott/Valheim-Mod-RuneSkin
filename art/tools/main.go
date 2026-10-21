@@ -6,7 +6,9 @@
 //	go run ./art/tools check            sprites.json <-> files consistency
 //	go run ./art/tools compare          art/review/compare-*.png ([mockup | ours])
 //	go run ./art/tools compare-m2 [OLD_WET.png]  art/review/compare-{inventory,dock,groups}-m2.png (layout A)
-//	go run ./art/tools sheet            art/review/contact-sheet.png
+//	go run ./art/tools compare-m3       art/review/compare-{crafting,groups}-m3.png (crafting kit)
+//	go run ./art/tools compare-m3s      art/review/compare-{skills,trophies}-m3.png + compare-groups-m3s.png
+//	go run ./art/tools sheet           art/review/contact-sheet.png
 //	go run ./art/tools zoom IN x,y,w,h SCALE OUT    inspection crop
 //	go run ./art/tools sample IN x,y [x,y...]       print pixel hex
 package main
@@ -37,6 +39,10 @@ func main() {
 			old = os.Args[2]
 		}
 		cmdCompareM2(old)
+	case "compare-m3":
+		cmdCompareM3()
+	case "compare-m3s":
+		cmdCompareM3S()
 	case "sheet":
 		cmdSheet()
 	case "compare":

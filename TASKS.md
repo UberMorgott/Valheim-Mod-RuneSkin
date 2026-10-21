@@ -81,3 +81,10 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 - [x] Band values (stamina / eitr numbers) small on the long slim bars (Codex 0.3.2 #3): 0.3.3 slim bars x1.4 (window ~15 ref px) + value font 19, normal stacked HUD too (user approved)
 - [x] 0.3.3 compact band (user call 2026-10-22): band = content height; left block one straight row of size.hud.band.cell 76 sockets (food diamonds side by side, GP, Z/V/B quick sockets = HudCluster.BandQuickCell boxes the inventory quick cells sit on), status row = one cell + pads; run tools\out\20261022-010617 (m1+m2 17/17 checks PASS)
 - [ ] HUD-side: EAQS quick cells placed over the HUD quick block (empty bar in the test save; verify with items)
+
+## M3 art (2026-10-22) - crafting kit + skills/trophies pick
+
+- Skills = design skills-a (D:\tmp\cx-augaskin\skills-a.png): one list panel in the character tabs, rows icon/name/gold level/cyan progress + %, hover/focus tooltip. Picked by Codex (user asleep): single list scales to any number of modded skills without category metadata; readable; built from the 9-slice kit.
+- Trophies = design trophies-a (D:\tmp\cx-augaskin\trophies-a.png): boss strip (gold cells + boss emblem) over a scrolling trophy grid, locked = dark icon, tooltip. Picked by Codex: grid handles unknown trophy counts/biomes; boss strip must be metadata-driven and wrap/scroll, unclassified (modded) trophies stay in the main grid, no fixed 7 bosses or 9x6.
+- Rejected: skills-b (3 fixed categories need category data for modded skills), trophies-b (biome shelves need biome metadata for modded trophies).
+- Sprite mapping for code: art\README.md "M3 sprites".

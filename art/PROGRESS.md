@@ -43,3 +43,14 @@
 - [x] 46 new sprites (114 total), slot_cell_recess graded from slot_cell; overlay_wet redrawn 160x88 + _2/_3 variants
 - [x] compare-m2 (go -C art/tools run . compare-m2 [old_wet.png]): compare-inventory-m2 / compare-dock-m2 / compare-groups-m2; Codex 3 rounds, final 8/10 all 10 groups
 - [x] Bundle BUILD OK, 114/114 sprites
+
+## M3 crafting / skills / trophies art (2026-10-22)
+
+- [x] Crafting kit sheets (Codex): craft (star badge, first-pass pieces), craft2 (requirement upgrade socket, arrow plaque, missing box, quality pips, round button), craft3 (thin rework after Codex round 1: square tabs, search field, borderless recipe rows, inset well, stat leader, compact requirement cells), craftglyphs (24 glyphs: categories, search, arrows, stars, craft/upgrade/repair, check/missing, EpicLoot enchant/sacrifice/augment)
+- [x] Build tool: `despill` (violet magenta spill -> glass hue) and `flatEnds` (centre-column RGB over borderless end caps) cut options
+- [x] compare-m3 (`go -C art/tools run . compare-m3`): compare-crafting-m3 ([mockup-1 | ours | layout-a2 | ours]) + compare-groups-m3; Codex 3 rounds: 7 groups 8/10, recipe rows (3 groups) 7.5 - violet cap bands, fixed after round 3 with flatEnds (not re-scored, round cap)
+- [x] Skills/trophies mockups (Codex, D:\tmp\cx-augaskin): skills-a list, skills-b 3-column cards, trophies-a boss strip + grid, trophies-b biome shelves
+- [x] Pick (Codex, user asleep, criteria: mockup-1 style, readability, 9-slice buildable, dynamic counts): skills-a (single list scales to any number of modded skills, no category metadata needed) and trophies-a (scrolling grid handles unknown counts/biomes; boss strip metadata-driven and wrapping, unclassified trophies stay in the grid)
+- [x] Skills/trophies pieces: m3glyphs (glyph_boss, glyph_death, glyph_sort_level, glyph_tab_skills/trophies/character), skillbar (bar_skill_trough, bar_skill_fill), frame_corner_small_* (popup corner caps); rest reused (tab_square_*, row_recipe_*, slot_cell_recess/_selected, frame_inset, tab_square_selected = boss cell)
+- [x] compare-m3s: compare-skills-m3 / compare-trophies-m3 / compare-groups-m3s; Codex 2 rounds, final 8/10 all 8 groups
+- [x] Bundle BUILD OK, 169/169 sprites

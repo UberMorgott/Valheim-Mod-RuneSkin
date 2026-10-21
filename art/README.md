@@ -17,13 +17,13 @@ graphics device ("Unsupported Format 0", editor crash).
 Review aids (not part of the build, output in `art/review/`, git-ignored):
 `go -C art/tools run . compare` -> `compare-inventory.png`, `compare-hud.png`, `compare-corner.png`,
 `compare-groups.png` ([mockup | ours] rebuilt from our sprites with Unity Sliced/Tiled rules; mockups in
-`D:\tmp\cx-augaskin`); `go -C art/tools run . sheet` -> `contact-sheet.png`.
+`D:\tmp\cx-augaskin`); `go -C art/tools run . sheet` -> `contact-sheet.png`. M2/M3: `compare-m2`, `compare-m3` (crafting: `compare-crafting-m3.png`, `compare-groups-m3.png`), `compare-m3s` (skills/trophies: `compare-skills-m3.png`, `compare-trophies-m3.png`, `compare-groups-m3s.png`).
 
 ## Rule: Codex makes the pixels
 
 Every sprite pixel comes from Codex image gen (`cx.ps1 -NoSession -Img "<prompt>" -To <file>`), prompts kept next to
 the sheets as `src/kit/*.prompt.txt`. The Go tool is mechanical only: crop, magenta / luminance key, resize,
-9-slice assembly (corners kept, mid segments made periodic by cross-fade for Tiled), mirror, tone/leather grading,
+9-slice assembly (corners kept, mid segments made periodic by cross-fade for Tiled), mirror, tone/leather grading, magenta-spill fixes (`despill`, `flatEnds`),
 alpha fades, transparent bar windows. New art = new kit sheet + `cuts.json` entry, never drawn in code.
 Style targets and palette: `STYLE.md`.
 
@@ -33,7 +33,7 @@ Style targets and palette: `STYLE.md`.
 | --- | --- |
 | `src/kit/*.png` | Codex image-gen kit sheets (panel2, corners, controls, ctrl2, buttons, states, hud, hud2, fill, masks, fx) + `*.prompt.txt` |
 | `src/kit/cuts.json` | cut spec: sheet rect, key, scale, nine/period, grading, Unity border/pivot/type/token/notes, palette |
-| `tools/` (Go, `go -C art/tools run . <cmd>`) | `build`, `check`, `compare`, `compare-m2`, `sheet`, `zoom`, `sample`, `blobs` (piece rects on a sheet) |
+| `tools/` (Go, `go -C art/tools run . <cmd>`) | `build`, `check`, `compare`, `compare-m2`, `compare-m3`, `compare-m3s`, `sheet`, `zoom`, `sample`, `blobs` (piece rects on a sheet) |
 | `sprites/` | final sprites (authored at 2x reference px, PPU 200) + `sprites.json` |
 | `fonts/` | Cormorant Bold 4.002 (display), PT Sans Regular 2.003W (body), `charset-ru-en.txt` (309 chars), `bake-report.txt`, `licenses/` (OFL 1.1) |
 | `../unity/Assets/Editor/BuildBundles.cs` | import (9-slice borders, pivot, PPU), SpriteAtlas (BC7, no rotation/tight packing), static TMP SDF fonts, bundle build, contents check |
@@ -73,3 +73,19 @@ Style targets and palette: `STYLE.md`.
 - Bake: `TMP_FontAsset.CreateFontAsset` (SDFAA) + `TryAddCharacters(charset, includeFontFeatures)` then Static,
   source font dropped, atlas non-readable, material shader `TextMeshPro/Distance Field` (same approach as the
   AugaSkin fork's `FontAtlasBake.cs`, baked directly instead of spliced).
+
+## M3 sprites (crafting, skills, trophies)
+
+- Crafting: station title = serif text (no plaque) + `badge_level_star` (digit text_active at (76,75)); mode tabs `tab_*`;
+  category filter row = `tab_square_*` + `glyph_cat_*` (scroll with `glyph_arrow_left/right`); `field_search` + `glyph_search`;
+  list well + detail well `frame_inset`; rows `row_recipe_normal/hover/selected/unavailable` (unavailable text text_disabled);
+  detail: title text_item_title, `pip_quality_*`, `row_stat` (value text_stat_value); requirements `socket_req` (count text_ok) /
+  `socket_req_missing` (count text_missing), upgrade preview `socket_req_upgrade` + `plaque_arrow`; craft button `button_*` +
+  `glyph_act_craft/upgrade/repair` left of the label; `button_round` for repair/upgrade shortcuts; RecipeChains box
+  `frame_missing` (lines text_missing); EpicLoot tabs = `tab_*` + `glyph_ench_*`.
+- Skills (skills-a): character tabs `tab_square_*` + `glyph_tab_*`; summary row `row_recipe_normal` + `glyph_death` +
+  sort toggles `tab_square_*` + `glyph_sort_level/name`; rows `row_recipe_*`, icon socket `slot_cell_recess`, progress
+  `bar_skill_trough` + `bar_skill_fill` (tint rune_glow, inset 3), level text_active; tooltip = popup.
+- Trophies (trophies-a): boss strip `frame_inset` + boss cells `tab_square_selected` + `glyph_boss` corner badge (text_active);
+  grid `slot_cell_recess`, selection `slot_cell_selected`; locked = trophy icon tinted dark (no per-trophy silhouette art).
+- Popup (tooltips): `fill_glass` inset 24 + `frame_panel` + `frame_panel_glow` + `frame_corner_small_*` (78x78, pivot = outer corner).
