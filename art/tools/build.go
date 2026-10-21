@@ -57,6 +57,7 @@ type Cut struct {
 	Flip        string     `json:"flip,omitempty"`     // mirror the crop: h | v | hv
 	FlatEnds    [2]int     `json:"flatEnds,omitempty"` // left/right output columns whose RGB is replaced by the centre column (same row), alpha kept
 	Despill     bool       `json:"despill,omitempty"`  // neutralise violet magenta spill (r and b both above g) to the glass hue
+	Bold        int        `json:"bold,omitempty"`     // alpha max-filter radius (output px): thickens thin white glyph masks
 	Border      Border     `json:"border"`
 	Pivot       [2]float64 `json:"pivot"`
 	ImageType   string     `json:"imageType"`
@@ -219,6 +220,9 @@ func renderCut(c Cut) *image.NRGBA {
 				img.Pix[i+3] = uint8(float64(img.Pix[i+3]) * f * f * (3 - 2*f))
 			}
 		}
+	}
+	if c.Bold > 0 {
+		img = boldAlpha(img, c.Bold)
 	}
 	adjust(img, c.Alpha, c.Gray, c.Bright)
 	return img
@@ -543,4 +547,27 @@ func flatEnds(img *image.NRGBA, l, r int) {
 			copy(img.Pix[i:i+3], img.Pix[s:s+3])
 		}
 	}
+}
+
+// boldAlpha: alpha = max over a (2r+1)^2 neighbourhood (mask stroke thickening), RGB kept.
+func boldAlpha(src *image.NRGBA, r int) *image.NRGBA {
+	W, H := src.Bounds().Dx(), src.Bounds().Dy()
+	out := image.NewNRGBA(src.Bounds())
+	copy(out.Pix, src.Pix)
+	for y := 0; y < H; y++ {
+		for x := 0; x < W; x++ {
+			m := uint8(0)
+			for dy := -r; dy <= r; dy++ {
+				for dx := -r; dx <= r; dx++ {
+					px, py := x+dx, y+dy
+					if px < 0 || py < 0 || px >= W || py >= H {
+						continue
+					}
+					m = max(m, src.Pix[src.PixOffset(px, py)+3])
+				}
+			}
+			out.Pix[out.PixOffset(x, y)+3] = m
+		}
+	}
+	return out
 }

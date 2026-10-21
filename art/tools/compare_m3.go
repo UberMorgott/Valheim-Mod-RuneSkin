@@ -222,7 +222,8 @@ func variantsM3() *image.NRGBA {
 		c.glyph(b.g, x+110, 65, 44, col, 0.9)
 		c.text(b.s, serif, 40, col, x+250, 65, 1)
 	}
-	// EpicLoot enchanting tabs in the same tab style
+	// EpicLoot enchanting tabs in the same tab style, on the tab strip ledge
+	c.sprite("tab_strip", 10, 182, 1050, 28)
 	for i, t := range []struct{ g, s string }{{"glyph_ench_sacrifice", "ЖЕРТВА"}, {"glyph_ench_enchant", "ЗАЧАРОВАТЬ"},
 		{"glyph_ench_augment", "УСИЛИТЬ"}, {"glyph_act_upgrade", "УЛУЧШИТЬ"}} {
 		x := 20 + float64(i)*260
@@ -275,7 +276,7 @@ func variantsM3() *image.NRGBA {
 	c.text("3", serif, 60, gold, 1325, 308, 1)
 	// all category glyphs on square tabs
 	c.catTabs(20, 450, 72, 80, 0, 1, true, "glyph_cat_all", "glyph_cat_weapons", "glyph_cat_armor", "glyph_cat_tools", "glyph_cat_food",
-		"glyph_cat_meads", "glyph_cat_ammo", "glyph_cat_shields", "glyph_cat_materials", "glyph_cat_utility", "glyph_cat_misc")
+		"glyph_cat_meads", "glyph_cat_ammo", "glyph_cat_shields", "glyph_cat_materials", "glyph_cat_utility", "glyph_cat_misc", "glyph_cat_ranged", "glyph_cat_magic")
 	return c.img
 }
 

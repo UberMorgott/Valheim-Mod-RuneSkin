@@ -2755,14 +2755,14 @@
       "name": "frame_inset",
       "file": "frame_inset.png",
       "size": [
-        96,
-        96
+        112,
+        112
       ],
       "border": {
-        "left": 16,
-        "bottom": 16,
-        "right": 16,
-        "top": 16
+        "left": 24,
+        "bottom": 24,
+        "right": 24,
+        "top": 24
       },
       "pivot": [
         0.5,
@@ -2771,7 +2771,7 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "frame.inset",
-      "notes": "M3 recessed glass well, thin rim (recipe list, detail/description pane); content inset 14"
+      "notes": "M3 recessed glass well, deep carved bevel (recipe list, detail/description pane); content inset 20 (M3 polish: was 14)"
     },
     {
       "name": "socket_req",
@@ -3762,6 +3762,160 @@
       "fillCenter": true,
       "token": "frame.corner.small.br",
       "notes": "M3 small corner cap, bottom-right"
+    },
+    {
+      "name": "tab_strip",
+      "file": "tab_strip.png",
+      "size": [
+        116,
+        28
+      ],
+      "border": {
+        "left": 26,
+        "bottom": 8,
+        "right": 26,
+        "top": 8
+      },
+      "pivot": [
+        0.5,
+        1
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "tab.strip",
+      "notes": "M3 polish: slim carved ledge under a tab row (character tabs, settings tabs); tabs overlap its top edge by ~4 px"
+    },
+    {
+      "name": "glyph_cat_ranged",
+      "file": "glyph_cat_ranged.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.cat.ranged",
+      "notes": "M3 polish category: ranged (bow); white mask, tint text_body (selected text_active, hover rune_glow)"
+    },
+    {
+      "name": "glyph_cat_magic",
+      "file": "glyph_cat_magic.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.cat.magic",
+      "notes": "M3 polish category: magic (staff with orb); white mask"
+    },
+    {
+      "name": "glyph_refresh",
+      "file": "glyph_refresh.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.refresh",
+      "notes": "refresh (server list); white mask"
+    },
+    {
+      "name": "glyph_plus",
+      "file": "glyph_plus.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.plus",
+      "notes": "plus (zoom in, add); white mask"
+    },
+    {
+      "name": "glyph_minus",
+      "file": "glyph_minus.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.minus",
+      "notes": "minus (zoom out); white mask, same box as glyph_plus"
+    },
+    {
+      "name": "glyph_settings",
+      "file": "glyph_settings.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.settings",
+      "notes": "settings cog; white mask"
     }
   ]
 }

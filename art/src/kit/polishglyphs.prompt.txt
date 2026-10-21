@@ -1,0 +1,1 @@
+Codex image_gen (refs: work\ref\glyph_es.png, glyph_lock.png for stroke weight). Six white-on-black glyph masks, grid 3x2 cells 512, ~260 px each, no text: ranged (recurve bow with nocked arrow), magic (staff with orb in claws), refresh (two circular arrows), plus, minus, settings cog (8 teeth).

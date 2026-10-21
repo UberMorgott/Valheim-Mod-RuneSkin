@@ -89,3 +89,15 @@ Style targets and palette: `STYLE.md`.
 - Trophies (trophies-a): boss strip `frame_inset` + boss cells `tab_square_selected` + `glyph_boss` corner badge (text_active);
   grid `slot_cell_recess`, selection `slot_cell_selected`; locked = trophy icon tinted dark (no per-trophy silhouette art).
 - Popup (tooltips): `fill_glass` inset 24 + `frame_panel` + `frame_panel_glow` + `frame_corner_small_*` (78x78, pivot = outer corner).
+
+## M3 polish sprites (2026-10-22, from the M3 in-game review)
+
+- `button_*` (5 states) redrawn from kit `m3polish.png` to match mockup-1 "СОЗДАТЬ": cool grey slate, deeper carved rim, bronze only on
+  the tips. Same names, size 346x70 (was 328x70), borders unchanged (L/R 84, T/B 18). If it still reads brown/flat in game, check the
+  code side: `Image.color` must be white and the Button `ColorBlock`/transition must not tint the sprite (vanilla buttons tint brownish).
+- `frame_inset` redrawn with a deep carved bevel: border 24 (was 16), content inset 20 (was 14).
+- `tab_strip` (Sliced, borders L/R 26 T/B 8, pivot top-centre): slim carved ledge under a tab row (character tabs skills/trophies,
+  settings, EpicLoot tabs); tabs overlap its top by ~4 px. Skills sort toggles stay `tab_square_*` + `glyph_sort_level/name`.
+- New glyph masks (48x48, white, tint like `glyph_cat_*`): `glyph_cat_ranged` (bow), `glyph_cat_magic` (staff) for CraftingFilter
+  Ranged/Magic; `glyph_refresh`, `glyph_plus`, `glyph_minus`, `glyph_settings` (map zoom, server refresh, settings).
+- Codex: button 8.5, wells 8, ranged/magic 8, tab_strip 8. Build tool: new `bold` cut option (alpha max-filter for thin glyph masks).

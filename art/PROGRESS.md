@@ -54,3 +54,9 @@
 - [x] Skills/trophies pieces: m3glyphs (glyph_boss, glyph_death, glyph_sort_level, glyph_tab_skills/trophies/character), skillbar (bar_skill_trough, bar_skill_fill), frame_corner_small_* (popup corner caps); rest reused (tab_square_*, row_recipe_*, slot_cell_recess/_selected, frame_inset, tab_square_selected = boss cell)
 - [x] compare-m3s: compare-skills-m3 / compare-trophies-m3 / compare-groups-m3s; Codex 2 rounds, final 8/10 all 8 groups
 - [x] Bundle BUILD OK, 169/169 sprites
+
+## M3 leftovers + polish (2026-10-22)
+
+- [x] Recipe rows re-score after flatEnds: hover 8, filters/list top 8, selected/unavailable 7.5 -> unavailable = darkened idle strip, no ember marker, muted content -> 8.5
+- [x] M3 polish (coordinator in-game review): kit m3polish (buttons x5, deep well, tab strip), polishglyphs (ranged, magic, refresh, plus, minus, settings); Codex button 8.5, wells 8, glyphs 8 (after `bold` 1), tab_strip 8 (after brighten)
+- [x] Bundle BUILD OK 176/176
