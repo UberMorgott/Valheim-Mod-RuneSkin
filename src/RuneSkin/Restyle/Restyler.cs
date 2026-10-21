@@ -68,7 +68,7 @@ namespace RuneSkin.Restyle
                 if (mark.ThemeRevision != ThemeTokens.Revision)
                 {
                     mark.Outcome = Apply(g, mark, ThemeTokens.Role(mark.Role)) ? Outcome.Styled : Outcome.Degraded;
-                    if (g.GetComponentInParent<PanelDecor>(true)) g.enabled = mark.Outcome == Outcome.Styled;
+                    if (g.GetComponentInParent<PanelDecor>(true) || g.GetComponentInParent<PanelCaps>(true)) g.enabled = mark.Outcome == Outcome.Styled;
                 }
                 return new Classification { Role = mark.Role, Outcome = mark.Outcome, Reason = mark.Reason };
             }

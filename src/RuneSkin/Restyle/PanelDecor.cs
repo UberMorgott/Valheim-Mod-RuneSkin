@@ -12,8 +12,9 @@ namespace RuneSkin.Restyle
 
     // The panel stack (art contract, art\README.md): glass fill inset under the frame (Tiled, centre empty), the rune
     // glow layer tinted on top, four leather corner caps at native size with their pivot on the panel corner, and an
-    // optional header plaque on the top edge. Built once per host as child graphics behind the host's own children,
-    // stretched by anchors (vanilla layout moves/resizes the host, the stack follows without any per-frame code).
+    // optional header plaque on the top edge. Glass/frame/glow/plaque are child graphics behind the host's own
+    // children; the corner caps sit in a sibling container above them (art df8dc3a: caps overlap the content edge).
+    // Both are stretched by anchors (vanilla layout moves/resizes the host, the stack follows without per-frame code).
     // Each child is an Internal SkinMark graphic, so theme reloads restyle it and RevertRoot destroys it.
     [DisallowMultipleComponent]
     public sealed class PanelDecor : MonoBehaviour, IRevertible
@@ -27,6 +28,7 @@ namespace RuneSkin.Restyle
             if (existing && existing.TryGetComponent<PanelDecor>(out var decor))
             {
                 if (decor.Revision != ThemeTokens.Revision) decor.Layout(); // theme reload: geometry tokens again
+                decor.RaiseCaps();
                 return decor;
             }
 
@@ -40,19 +42,27 @@ namespace RuneSkin.Restyle
             if (glass) decor._glass = Add(rect, "Glass", "decor.glass");
             Add(rect, "Frame", "decor.frame");
             Add(rect, "Glow", "decor.glow");
+            if (plaque) decor._plaque = Add(rect, "Plaque", "decor.plaque");
+            var caps = new GameObject(CapsName, typeof(RectTransform));
+            decor._caps = (RectTransform)caps.transform;
+            decor._caps.SetParent(host, false);
+            caps.AddComponent<LayoutElement>().ignoreLayout = true;
+            caps.AddComponent<PanelCaps>();
             decor._corners = new[]
             {
-                Add(rect, "CornerTL", "decor.corner.tl"), Add(rect, "CornerTR", "decor.corner.tr"),
-                Add(rect, "CornerBL", "decor.corner.bl"), Add(rect, "CornerBR", "decor.corner.br")
+                Add(decor._caps, "CornerTL", "decor.corner.tl"), Add(decor._caps, "CornerTR", "decor.corner.tr"),
+                Add(decor._caps, "CornerBL", "decor.corner.bl"), Add(decor._caps, "CornerBR", "decor.corner.br")
             };
-            if (plaque) decor._plaque = Add(rect, "Plaque", "decor.plaque");
+            decor.RaiseCaps();
             decor.Layout();
             return decor;
         }
 
+        public const string CapsName = "RuneSkinPanelCaps";
+
         public string PadToken;
         public int Revision = -1;
-        private RectTransform _glass, _plaque;
+        private RectTransform _glass, _plaque, _caps;
         private RectTransform[] _corners;
         private bool _fitted;
 
@@ -63,8 +73,9 @@ namespace RuneSkin.Restyle
             var self = (RectTransform)transform;
             if (!_fitted) Stretch(self, -ThemeTokens.GetFloat(PadToken, 0f));
             foreach (Transform child in self)
-                if (child is RectTransform r && r != _plaque && (_corners == null || System.Array.IndexOf(_corners, r) < 0))
+                if (child is RectTransform r && r != _plaque)
                     Stretch(r, r == _glass ? ThemeTokens.GetFloat("size.panel.glass.inset", 0f) : 0f);
+            SyncCaps();
             if (_corners != null)
             {
                 Corner(_corners[0], new Vector2(0f, 1f));
@@ -96,7 +107,7 @@ namespace RuneSkin.Restyle
             for (var i = 0; i < host.childCount; i++)
             {
                 var child = host.GetChild(i) as RectTransform;
-                if (!child || child == self || !child.gameObject.activeSelf) continue;
+                if (!child || child == self || child == _caps || !child.gameObject.activeSelf) continue;
                 child.GetWorldCorners(Corners);
                 foreach (var w in Corners)
                 {
@@ -117,11 +128,37 @@ namespace RuneSkin.Restyle
             var pivotLocal = new Vector2(hostRect.xMin + hostRect.width * host.pivot.x, hostRect.yMin + hostRect.height * host.pivot.y);
             self.sizeDelta = max - min;
             self.anchoredPosition = (min + max) * 0.5f - pivotLocal;
+            SyncCaps();
+            RaiseCaps();
+        }
+
+        // Caps container: same box as the stack, drawn after every host child (re-raised on each Ensure/fit, as
+        // hosts may add children after the stack was built).
+        public void RaiseCaps()
+        {
+            if (_caps) _caps.SetAsLastSibling();
+        }
+
+        private void SyncCaps()
+        {
+            if (!_caps) return;
+            var self = (RectTransform)transform;
+            _caps.anchorMin = self.anchorMin;
+            _caps.anchorMax = self.anchorMax;
+            _caps.pivot = self.pivot;
+            _caps.anchoredPosition = self.anchoredPosition;
+            _caps.sizeDelta = self.sizeDelta;
         }
 
         public void Revert()
         {
+            if (_caps) Destroy(_caps.gameObject);
             if (this) Destroy(gameObject);
+        }
+
+        private void OnDestroy()
+        {
+            if (_caps) Destroy(_caps.gameObject);
         }
 
         private static RectTransform Add(RectTransform parent, string name, string role)
@@ -158,6 +195,16 @@ namespace RuneSkin.Restyle
             rect.anchorMin = rect.anchorMax = rect.pivot = corner;
             rect.anchoredPosition = Vector2.zero;
             if (rect.TryGetComponent<Image>(out var image) && image.sprite) image.SetNativeSize();
+        }
+    }
+
+    // Marks the corner-cap container of a PanelDecor (a host sibling drawn above the host content).
+    [DisallowMultipleComponent]
+    public sealed class PanelCaps : MonoBehaviour, IRevertible
+    {
+        public void Revert()
+        {
+            if (this) Destroy(gameObject);
         }
     }
 }
