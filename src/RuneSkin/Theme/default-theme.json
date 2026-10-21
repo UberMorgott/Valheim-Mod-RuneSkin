@@ -62,6 +62,7 @@
   ],
   "spriteRoles": [
     { "match": "woodpanel_400_tileable", "role": "tooltip.box", "context": "Tooltips" },
+    { "match": "Background", "role": "tooltip.box", "context": "Tooltips" },
     { "match": "woodpanel_*", "role": "panel" },
     { "match": "panel_bkg_128", "role": "backdrop" },
     { "match": "panel_interior_bkg_128", "role": "backdrop" },

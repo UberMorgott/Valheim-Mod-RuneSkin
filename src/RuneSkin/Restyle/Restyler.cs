@@ -44,12 +44,14 @@ namespace RuneSkin.Restyle
             if (!root) return;
             foreach (var mark in root.GetComponentsInChildren<SkinMark>(true))
             {
+                if (UnderNestedRoot(mark.transform, root)) continue; // its own registration reverts it
                 Revert(mark);
                 if (mark.Internal) Object.Destroy(mark.gameObject);
                 else Object.Destroy(mark);
             }
             foreach (var scale in root.GetComponentsInChildren<ScaleMark>(true))
-                Responsive.ResponsiveContext.RevertScale(scale);
+                if (!UnderNestedRoot(scale.transform, root))
+                    Responsive.ResponsiveContext.RevertScale(scale);
         }
 
         // Classifies (once per theme revision) and applies one graphic.
@@ -124,6 +126,7 @@ namespace RuneSkin.Restyle
                     mark.OrigFont = text.font;
                     mark.OrigFontMaterial = text.fontSharedMaterial;
                     text.font = mark.SetFont = role.Font;
+                    mark.SetFontMaterial = text.fontSharedMaterial;
                 }
                 else if (role.FontToken != null) complete = false;
                 if (role.TextColor.HasValue) { mark.HasTextColor = true; mark.OrigTextColor = text.color; text.color = mark.SetTextColor = role.TextColor.Value; }
@@ -184,7 +187,8 @@ namespace RuneSkin.Restyle
             }
             else if (g is TMP_Text text)
             {
-                if (mark.HasFont && text.font == mark.SetFont)
+                // The font/material pair is restored only while both are still ours (another mod may have set a preset).
+                if (mark.HasFont && text.font == mark.SetFont && text.fontSharedMaterial == mark.SetFontMaterial)
                 {
                     text.font = mark.OrigFont;
                     if (mark.OrigFontMaterial) text.fontSharedMaterial = mark.OrigFontMaterial;
@@ -210,6 +214,13 @@ namespace RuneSkin.Restyle
                 }
             }
             mark.ClearJournal();
+        }
+
+        private static bool UnderNestedRoot(Transform t, Transform root)
+        {
+            for (var p = t; p && p != root; p = p.parent)
+                if (p.TryGetComponent<RootMark>(out _)) return true;
+            return false;
         }
 
         private static bool SameStates(SpriteState a, SpriteState b) =>

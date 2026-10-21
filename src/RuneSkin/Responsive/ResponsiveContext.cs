@@ -84,7 +84,11 @@ namespace RuneSkin.Responsive
             {
                 mark.BoundInstance = t.gameObject.GetInstanceID(); // clone: Original copied from the template
             }
-            if (!Targets.Contains(t)) Targets.Add(t);
+            if (!Targets.Contains(t))
+            {
+                Targets.RemoveAll(x => !x); // destroyed tooltip roots
+                Targets.Add(t);
+            }
             var target = mark.Original * SkinScale;
             if (t.localScale != target) t.localScale = mark.Written = target;
             else mark.Written = target;

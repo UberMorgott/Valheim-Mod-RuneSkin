@@ -18,10 +18,12 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 - [x] AugaSkin yields owned families (soft dep + skip list), 2.2.9 (Auga c8d1133; push after in-game check)
 - [x] quality gate wired + clean (qgate -All -Full exit 0)
 - [x] Harness: RuneSkin in autotest `$mods`, shot `ui-runeskin-m0` (tools 9191ff1, pushed)
-- [ ] In-game run 1920x1080, 0 unexplained unknowns on Menu
-- [ ] Codex final diff review
+- [x] In-game run 1920x1080 (tools\out\20261021-141846): Menu unknown=0 styled=64 degraded=20 (knot art missing); item tooltip styled=4 unknown=3 (EL scroll view: fixed after the run, not re-run)
+- [x] Codex final diff review: 8 findings fixed (Bind reset, nested-root revert, replay isolation, runtime ApiVersion, tooltip root pruning, font/material pair revert, stricter shot checks)
 
 ## Later
 
-- Settings family (M0 plan lists it; this pass = pause Menu + tooltips only)
-- Compendium menu entry moves from AugaSkin to MorgottTweaks before AugaSkin retires (Codex)
+- Menu entry hover colour stays vanilla orange (text colour animated by vanilla; not traced yet)
+- Decoration layers: glass fill under frame_panel, frame_panel_glow, leather corners, header_plaque (need child graphics)
+- Knot art `knot` missing in bundle (knots stay vanilla, reported degraded)
+- Settings family; Compendium entry to MorgottTweaks before AugaSkin retires

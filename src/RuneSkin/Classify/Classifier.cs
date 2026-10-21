@@ -95,6 +95,14 @@ namespace RuneSkin.Classify
                     if (selectable is TMP_InputField || selectable is InputField)
                         return Classification.Of("backdrop", "input field graphic");
                 }
+                // Scroll views (Epic Loot item tooltips wrap their texts in one): masks and hit areas are structure,
+                // scrollbars get their own art later (M1); both explained, not unknown, and never a screen dim.
+                if (g.GetComponent<Mask>() || g.GetComponent<RectMask2D>())
+                    return Classification.Of("skip", "mask / viewport graphic");
+                if (g.GetComponent<ScrollRect>())
+                    return Classification.Of("skip", "ScrollRect hit area");
+                if (g.GetComponentInParent<Scrollbar>(true))
+                    return Classification.Of("content", "scrollbar graphic (scrollbar art: M1)");
                 if (!image.sprite && string.IsNullOrEmpty(originalSprite) && Stretches(image.rectTransform))
                     return Classification.Of("scrim", "sprite-less full-stretch image (screen dim)");
                 return null;

@@ -19,8 +19,11 @@ namespace RuneSkin.API
         /// <summary>BepInEx GUID of the RuneSkin plugin.</summary>
         public const string PluginGuid = "morgott.valheim.runeskin";
 
-        /// <summary>Version of this API surface. Bumped on every public change; check it before using newer members.</summary>
-        public const int ApiVersion = 1;
+        /// <summary>
+        /// Version of the installed API surface (a property, not a const, so you read the installed value at runtime).
+        /// Bumped on every public change; check it before using newer members.
+        /// </summary>
+        public static int ApiVersion => 1;
 
         private static IHost _host;
         private static int _mainThread = -1;
@@ -164,7 +167,11 @@ namespace RuneSkin.API
             var pending = Pending.ToArray();
             Pending.Clear();
             foreach (var registration in pending)
-                registration.Connect(host);
+            {
+                // One bad queued registration (e.g. its root destroyed meanwhile) must not drop the others.
+                try { registration.Connect(host); }
+                catch (Exception e) { Debug.LogError($"[RuneSkin.API] replayed registration failed: {e}"); }
+            }
         }
 
         private static IDisposable Track(Func<IHost, IDisposable> make)

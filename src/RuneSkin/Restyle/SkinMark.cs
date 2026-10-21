@@ -39,7 +39,7 @@ namespace RuneSkin.Restyle
         public bool OrigFill, SetFill;
         public SpriteState OrigSpriteState, SetSpriteState;
         public TMP_FontAsset OrigFont, SetFont;
-        public Material OrigFontMaterial;
+        public Material OrigFontMaterial, SetFontMaterial;
         public Color OrigTextColor, SetTextColor;
         public ColorBlock OrigColors, SetColors;
         public Selectable.Transition OrigTransition;

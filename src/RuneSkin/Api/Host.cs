@@ -16,7 +16,17 @@ namespace RuneSkin.Api
     {
         private static readonly Dictionary<Transform, Func<ScreenContext>> Roots = new Dictionary<Transform, Func<ScreenContext>>();
 
-        public static void Register(Transform root, Func<ScreenContext> context) => Roots[root] = context;
+        private static readonly List<Transform> Dead = new List<Transform>();
+
+        public static void Register(Transform root, Func<ScreenContext> context)
+        {
+            // Destroyed roots (tooltip instances die on every hide) leave the registry here.
+            foreach (var key in Roots.Keys)
+                if (!key) Dead.Add(key);
+            foreach (var key in Dead) Roots.Remove(key);
+            Dead.Clear();
+            Roots[root] = context;
+        }
 
         public static void Unregister(Transform root) => Roots.Remove(root);
 
@@ -62,6 +72,7 @@ namespace RuneSkin.Api
 
         public IDisposable RegisterRoot(string owner, Transform root, string screenId)
         {
+            if (!root) return new Handle(null); // destroyed while queued before attach
             var id = owner + ":" + screenId;
             var mark = root.GetComponent<RootMark>();
             if (!mark) mark = root.gameObject.AddComponent<RootMark>();
@@ -81,6 +92,7 @@ namespace RuneSkin.Api
 
         public IDisposable Bind(string owner, Graphic graphic, string role)
         {
+            if (!graphic) return new Handle(null);
             Classifier.Bindings[graphic] = Classification.Of(role, $"bound by {owner}");
             Restyle(graphic);
             return new Handle(() =>
@@ -90,8 +102,10 @@ namespace RuneSkin.Api
                 var mark = graphic.GetComponent<SkinMark>();
                 if (mark)
                 {
+                    // Reset in place (a Destroy would land after the restyle below and take its journal with it).
                     Restyler.Revert(mark);
-                    UnityEngine.Object.Destroy(mark);
+                    mark.Role = null;
+                    mark.ThemeRevision = -1;
                 }
                 Restyle(graphic);
             });
