@@ -52,26 +52,33 @@ namespace RuneSkin.PlayerHud
         // stripe at least minWidth px without growing the total (stripes that cannot get minWidth merge into the
         // last kept one). Entries past maxStripes merge into the last stripe (key -1 = "other").
         // pending: (key, amount) in units; barPx = px of the full max B. Returns the stripe count written to output.
+        // Scratch (main thread only): no allocation per frame.
+        private static float[] _amounts = new float[3], _widths = new float[3];
+        private static int[] _keys = new int[3];
+
         public static int Stripes(IList<KeyValuePair<int, float>> pending, float current, float max, float barPx,
             float minWidth, int maxStripes, Stripe[] output)
         {
             if (pending == null || output == null || !(max > 0f) || !(current > 0f) || maxStripes <= 0) return 0;
             var count = 0;
-            var amounts = new float[Math.Min(maxStripes, output.Length)];
-            var keys = new int[amounts.Length];
-            if (amounts.Length == 0) return 0;
-            foreach (var p in pending)
+            var slots = Math.Min(maxStripes, output.Length);
+            if (slots <= 0) return 0;
+            if (_amounts.Length < slots) { _amounts = new float[slots]; _keys = new int[slots]; _widths = new float[slots]; }
+            var amounts = _amounts;
+            var keys = _keys;
+            for (var n = 0; n < pending.Count; n++)
             {
+                var p = pending[n];
                 if (!(p.Value > 0f) || float.IsInfinity(p.Value)) continue;
-                if (count < amounts.Length)
+                if (count < slots)
                 {
                     keys[count] = p.Key;
                     amounts[count++] = p.Value;
                 }
                 else
                 {
-                    amounts[amounts.Length - 1] += p.Value;
-                    keys[amounts.Length - 1] = -1;
+                    amounts[slots - 1] += p.Value;
+                    keys[slots - 1] = -1;
                 }
             }
             if (count == 0) return 0;
@@ -81,7 +88,7 @@ namespace RuneSkin.PlayerHud
             var totalPx = Math.Min(fillPx, barPx * Math.Min(total, current) / max);
             if (!(totalPx > 0f)) return 0;
             // Widths proportional to amounts inside the capped total.
-            var widths = new float[count];
+            var widths = _widths;
             for (var i = 0; i < count; i++) widths[i] = totalPx * amounts[i] / total;
             // Too narrow for every stripe at minWidth: keep as many as fit, the last kept one absorbs the rest.
             var fit = minWidth > 0f ? Math.Max(1, (int)Math.Floor(totalPx / minWidth)) : count;

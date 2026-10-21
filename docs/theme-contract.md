@@ -34,3 +34,14 @@ Panel stack (`Restyle\PanelDecor.cs`, children behind the host): `decor.glass` (
 
 Families need their tokens before RuneSkin takes them (asset preflight, `families` in the theme):
 `Menu` = frame.panel, button.normal, font.display, font.body; `Tooltips` = frame.tooltip, font.display, font.body.
+
+## HUD (M1)
+
+Tokens -> assets: `sprite.hud.*` in `default-theme.json` (bar_frame, bar_trough, bar_fill, bar_lag, bar_growth, bar_end_line,
+rail_frame_es/adrenaline, rail_trough/fill, dot_*, bar_reserved(+_edge), glyph_lock/es/seal, plaque_seal, overlay_frost/wet,
+socket_status(+_more), plate_timer, socket_food(+_gem), food_timer_ring, socket_quick, plate_key, socket_hotbar, plate_number,
+ring_select), `sprite.scrollbar.*` (scroll_track, scroll_handle_normal/hover/pressed).
+Geometry is read from the sprites at runtime: bar/rail window inset = 9-slice border, window height = native height minus top and
+bottom border (sprite px x 100 / PPU). Optional theme floats `size.hud.frame.inset.x/.y`, `size.hud.rail.inset.x/.y`,
+`size.hud.bar.height`, `size.hud.rail.height` override for tuning. Sprite entries may name a `fallback` token (used and reported
+while the asset is missing).

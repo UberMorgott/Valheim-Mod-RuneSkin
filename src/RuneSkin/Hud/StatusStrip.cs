@@ -77,6 +77,7 @@ namespace RuneSkin.PlayerHud
                 _entries.Add(new Entry { Effect = se, Hash = se.NameHash(), Class = c, Priority = prio });
             }
             _entries.Sort(Order);
+            if (_popupOpen && changed) BuildPopup(); // keep the open list in step with the effects
         }
 
         private static bool Contains(List<StatusEffect> list, StatusEffect se)
@@ -169,8 +170,11 @@ namespace RuneSkin.PlayerHud
                 name.rectTransform.sizeDelta = new Vector2(width - cell - 8f - 2f * pad, cell);
                 _popupRows.Add(row);
             }
-            var h = _entries.Count * (cell + gap) - gap + 2f * pad;
-            _popup.sizeDelta = new Vector2(width, h);
+            // Bounded: at most size.hud.list.rows rows per column, more columns side by side (every entry reachable).
+            var rows = Mathf.Max(1, Mathf.Min(_entries.Count, (int)ThemeTokens.GetFloat("size.hud.list.rows", 10f)));
+            var columns = (_entries.Count + rows - 1) / rows;
+            var h = rows * (cell + gap) - gap + 2f * pad;
+            _popup.sizeDelta = new Vector2(columns * width, h);
             // Right of the cluster, bottom-aligned with the strip, growing upward (never over the bars).
             _popup.anchoredPosition = new Vector2(Root.sizeDelta.x + 12f, -Root.sizeDelta.y);
             for (var i = 0; i < _popupRows.Count; i++)
@@ -179,7 +183,7 @@ namespace RuneSkin.PlayerHud
                 var r = _popupRows[i];
                 if (r.Root.gameObject.activeSelf != on) r.Root.gameObject.SetActive(on);
                 if (!on) continue;
-                r.Root.anchoredPosition = new Vector2(pad, h - pad - (i + 1) * (cell + gap) + gap);
+                r.Root.anchoredPosition = new Vector2(pad + i / rows * width, h - pad - (i % rows + 1) * (cell + gap) + gap);
                 Bind(r, _entries[i]);
                 var name = r.Root.Find("Name").GetComponent<TMP_Text>();
                 name.text = Localization.instance != null ? Localization.instance.Localize(_entries[i].Effect.m_name) : _entries[i].Effect.m_name;
@@ -263,8 +267,7 @@ namespace RuneSkin.PlayerHud
             float? custom = null;
             if (RuneSkin.Api.Providers.TryEffect(se.NameHash(), out var d) && d.Timer != null)
             {
-                try { custom = d.Timer(se); }
-                catch { custom = null; }
+                custom = StatusSource.Guard(se.NameHash(), d.Timer, se);
             }
             if (!custom.HasValue && StatusSource.HasOwnIconText(se))
             {

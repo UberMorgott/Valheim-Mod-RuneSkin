@@ -31,4 +31,19 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 - [x] Knot art added (art pipeline), degraded 0
 - [x] Menu entry hover: Button Transition.Animation + Animator -> MenuEntryStyle (ColorTint on label, knots on hover/select)
 - [x] Final run tools\out\20261021-143820: Menu styled=92 degraded=0 unknown=0; tooltip styled=9 degraded=0 unknown=0; offSafeArea=0
-- [ ] Tooltip text touches the frame rail on box-padded-0 tooltips (Epic Loot content has no inner padding): add content inset
+- [x] Tooltip text touches the frame rail on box-padded-0 tooltips: ContentInset raises LayoutGroup padding to size.tooltip.content.inset (M1)
+
+## M1 (code, 2026-10-21)
+
+- [x] Codex structure review (chat 11cdaf31): own renderer, wrapper suppression, own status duties, bounded forecasts, floors win, named action
+- [x] API v2: ResourceState (Max=B, Available=C, reserved split, conversion, phase, MainBar, Inert), RegisterCapacityProvider, ResourcePools; Supports effect/resource/capacity.render while Hud owned
+- [x] Providers registry (latest wins, 3 faults -> disabled, sanity check hides extension)
+- [x] HudMath (bar length clamp, ghost step, stripes, reserve, flow wrap + "+N", cluster scale floors, 16:9 box) + EffectTaxonomy + ResourceCheck, 66 unit tests
+- [x] HudCluster (family Hud): bars HP/stamina/eitr + ES/adrenaline rails, lag + growth ghosts, DoT stripes, reserve + lock, overlay, plaque, paused rune; food sockets; status strip + full list (F7 / Alt+DPadDown); hotbar top-left hidden with inventory; EAQS quick slots + GP placed after food
+- [x] Frame window geometry read from sprite borders (art may change)
+- [x] Scrollbar roles (track / handle + state sprites) in every skinned root
+- [x] MorgottTweaks 1.122.0 RuneSkinHud providers (2c23285); AugaSkin 2.2.10 yields Hud (e2d1b70)
+- [ ] In-game run ui-runeskin-m1 (harness shot added); Codex final review
+- [ ] Hotbar slot art (socket.hotbar, plate.number) and quick-slot art: M2 with doll slots
+- [ ] Reserve tooltip (auras / summons) on hover: needs inventory-open hit area (M2)
+- [ ] Bar-cap pool glyph sockets are empty in the art (no HP/stamina/eitr glyphs yet)

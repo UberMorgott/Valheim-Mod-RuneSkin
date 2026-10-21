@@ -133,6 +133,17 @@ namespace RuneSkin.PlayerHud
         {
             kind = DotKind.None;
             spirit = 0f;
+            // A registration decides first: explicit "no forecast" or its own estimate.
+            if (Providers.TryEffect(se.NameHash(), out var reg))
+            {
+                if (reg.NoForecast) return 0f;
+                if (reg.PendingDamage != null)
+                {
+                    var v = Guard(se.NameHash(), reg.PendingDamage, se);
+                    if (v.HasValue && v.Value > 0f && !float.IsInfinity(v.Value)) { kind = DotKind.Other; return v.Value; }
+                    return 0f;
+                }
+            }
             var rate = Game.m_localDamgeTakenRate;
             if (se is SE_Poison poison)
             {
@@ -149,23 +160,22 @@ namespace RuneSkin.PlayerHud
                 kind = fire > 0f ? DotKind.Fire : DotKind.Spirit;
                 return fire;
             }
-            if (Providers.TryEffect(se.NameHash(), out var d) && d.PendingDamage != null && !d.NoForecast)
-            {
-                try
-                {
-                    var v = d.PendingDamage(se);
-                    if (v.HasValue && v.Value > 0f && !float.IsInfinity(v.Value))
-                    {
-                        kind = DotKind.Other;
-                        return v.Value;
-                    }
-                }
-                catch (Exception e)
-                {
-                    Plugin.Log.LogWarning($"[RuneSkin] effect forecast {se.name} failed: {e.Message}");
-                }
-            }
             return 0f;
+        }
+
+        // Foreign effect callbacks (forecast / timer): 3 faults per effect hash disable them for the session.
+        private static readonly Dictionary<int, int> Faults = new Dictionary<int, int>();
+
+        public static float? Guard(int hash, Func<StatusEffect, float?> f, StatusEffect se)
+        {
+            if (Faults.TryGetValue(hash, out var n) && n >= Providers.MaxFaults) return null;
+            try { return f(se); }
+            catch (Exception e)
+            {
+                Faults[hash] = n + 1;
+                Plugin.Log.LogWarning($"[RuneSkin] effect callback {se.name} failed ({n + 1}/{Providers.MaxFaults}" + (n + 1 >= Providers.MaxFaults ? ", disabled" : "") + $"): {e.Message}");
+                return null;
+            }
         }
 
         // Ticks still to come before the effect ends: one at timer <= 0, then one per interval of remaining real time.

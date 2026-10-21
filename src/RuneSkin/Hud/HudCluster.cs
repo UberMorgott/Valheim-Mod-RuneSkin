@@ -64,6 +64,31 @@ namespace RuneSkin.PlayerHud
             var canvas = gameObject.AddComponent<Canvas>(); // nested: own rebuild batch, inherits sorting
             canvas.overrideSorting = false;
             gameObject.AddComponent<GraphicRaycaster>(); // "+N" cell
+            BuildViews();
+            Suppress();
+            _hotbar = _hud.GetComponentInChildren<HotkeyBar>(true)?.transform;
+            if (_hotbar && !_hotbar.TryGetComponent(out _hotbarGroup))
+                _hotbarGroup = _hotbar.gameObject.AddComponent<CanvasGroup>();
+            Plugin.Log.LogInfo("[RuneSkin] HUD cluster built");
+        }
+
+        private int _themeRevision = -1;
+
+        // Theme reload (runeskin_reload): every HUD graphic is ours, so the views are rebuilt from the new tokens
+        // (sprites, colours, sprite-derived geometry); the vanilla suppression stays.
+        private void RebuildViews()
+        {
+            foreach (Transform c in _root) Destroy(c.gameObject);
+            _art = new HudArt();
+            BuildViews();
+            foreach (var r in _suppressedRoots) _art.Suppressed(r, "vanilla HUD part (RuneSkin draws its own; vanilla code keeps running)");
+        }
+
+        private void BuildViews()
+        {
+            _themeRevision = ThemeTokens.Revision;
+            _childrenOn = true;
+            _plaqueShown = null;
             _strip = new StatusStrip(_art, _root);
             _eitr = new BarView(_art, _root, "Eitr", false, "sprite.hud.bar.frame", "color.hud.eitr");
             _adrenaline = new BarView(_art, _root, "Adrenaline", true, "sprite.hud.rail.frame.adrenaline", "color.hud.adrenaline");
@@ -82,12 +107,9 @@ namespace RuneSkin.PlayerHud
             _plaqueText.rectTransform.offsetMin = new Vector2(20f, 0f);
             _plaqueText.rectTransform.offsetMax = Vector2.zero;
             _plaque.gameObject.SetActive(false);
-            Suppress();
-            _hotbar = _hud.GetComponentInChildren<HotkeyBar>(true)?.transform;
-            if (_hotbar && !_hotbar.TryGetComponent(out _hotbarGroup))
-                _hotbarGroup = _hotbar.gameObject.AddComponent<CanvasGroup>();
-            Plugin.Log.LogInfo("[RuneSkin] HUD cluster built");
         }
+
+        private readonly List<Transform> _suppressedRoots = new List<Transform>();
 
         private void OnDestroy()
         {
@@ -146,6 +168,7 @@ namespace RuneSkin.PlayerHud
                     if (cg.ignoreParentGroups)
                         Plugin.Log.LogWarning($"[RuneSkin] HUD: {SkinDiagnostics.PathOf(cg.transform, _hud.transform)} ignores parent groups (stays visible)");
                 _art.Suppressed(r, "vanilla HUD part (RuneSkin draws its own; vanilla code keeps running)");
+                _suppressedRoots.Add(r);
             }
         }
 
@@ -154,7 +177,9 @@ namespace RuneSkin.PlayerHud
         private void LateUpdate()
         {
             var player = Player.m_localPlayer;
-            var visible = player && !player.IsDead() && _hud.m_healthPanel && _hud.m_healthPanel.localScale.x > 0f;
+            // Hud.SetVisible hides by moving m_rootObject off screen (Hud.cs:436-448): never place against that.
+            var visible = player && !player.IsDead() && _hud.IsVisible() && _hud.m_healthPanel && _hud.m_healthPanel.localScale.x > 0f;
+            if (_themeRevision != ThemeTokens.Revision) RebuildViews();
             if (_player != player)
             {
                 _player = player;

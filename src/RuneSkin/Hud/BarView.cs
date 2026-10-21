@@ -157,13 +157,13 @@ namespace RuneSkin.PlayerHud
             {
                 _ghostAlpha = Mathf.Max(0f, _ghostAlpha - dt / fade);
                 Place(_ghost, _ghostAt - 1f, ThemeTokens.GetFloat("size.hud.ghost.width", 2f), _ghostAlpha > 0f);
-                Alpha(_ghost, _ghostAlpha);
+                Alpha(_ghost, _ghostAlpha * ThemeTokens.GetColor("color.hud.ghost", Color.white).a);
             }
             if (_growAlpha > 0f)
             {
                 _growAlpha = Mathf.Max(0f, _growAlpha - dt / fade);
                 Place(_growth, _growFrom, Mathf.Max(0f, Mathf.Min(_growTo, _length) - _growFrom), _growAlpha > 0f);
-                Alpha(_growth, _growAlpha);
+                Alpha(_growth, _growAlpha * ThemeTokens.GetColor("color.hud.growth", Color.white).a);
             }
         }
 
