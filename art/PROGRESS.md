@@ -36,3 +36,10 @@
 - [x] All sprites re-cut from Codex image-gen kit sheets (src/kit, prompts kept); procedural Python renderer + AI albedos retired
 - [x] Go mechanical pipeline art/tools (build/check/compare/sheet); 61 sprites (52 old names + slot_cell(_selected), tab_*, bar_frame_slim, frame_strip, frame_small, separator_v)
 - [x] Compare images + 3 Codex review rounds (final: inventory 7.5, HUD 7.5, corner 6.5)
+
+## M2 inventory art, layout A (2026-10-21)
+
+- [x] Codex kit sheets doll (12 slot glyphs), actions (18 action/sort/stat/panel glyphs + equipped marker, link, occupied hand), doll2 (mirror cells, hotbar header, number plate, lock badge), doll3 (frosted halo backdrop, silhouette, stat plate, glyph buttons), fx3 (lock veil, scroll fade), fx4 (wet drips redraw)
+- [x] 46 new sprites (114 total), slot_cell_recess graded from slot_cell; overlay_wet redrawn 160x88 + _2/_3 variants
+- [x] compare-m2 (go -C art/tools run . compare-m2 [old_wet.png]): compare-inventory-m2 / compare-dock-m2 / compare-groups-m2; Codex 3 rounds, final 8/10 all 10 groups
+- [x] Bundle BUILD OK, 114/114 sprites

@@ -5,6 +5,7 @@
 //	go run ./art/tools build            kit sheets -> art/sprites/*.png + sprites.json
 //	go run ./art/tools check            sprites.json <-> files consistency
 //	go run ./art/tools compare          art/review/compare-*.png ([mockup | ours])
+//	go run ./art/tools compare-m2 [OLD_WET.png]  art/review/compare-{inventory,dock,groups}-m2.png (layout A)
 //	go run ./art/tools sheet            art/review/contact-sheet.png
 //	go run ./art/tools zoom IN x,y,w,h SCALE OUT    inspection crop
 //	go run ./art/tools sample IN x,y [x,y...]       print pixel hex
@@ -30,6 +31,12 @@ func main() {
 		cmdBuild()
 	case "check":
 		cmdCheck()
+	case "compare-m2":
+		old := ""
+		if len(os.Args) > 2 {
+			old = os.Args[2]
+		}
+		cmdCompareM2(old)
 	case "sheet":
 		cmdSheet()
 	case "compare":

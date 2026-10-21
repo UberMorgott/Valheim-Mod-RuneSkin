@@ -33,7 +33,7 @@ Style targets and palette: `STYLE.md`.
 | --- | --- |
 | `src/kit/*.png` | Codex image-gen kit sheets (panel2, corners, controls, ctrl2, buttons, states, hud, hud2, fill, masks, fx) + `*.prompt.txt` |
 | `src/kit/cuts.json` | cut spec: sheet rect, key, scale, nine/period, grading, Unity border/pivot/type/token/notes, palette |
-| `tools/` (Go, `go -C art/tools run . <cmd>`) | `build`, `check`, `compare`, `sheet`, `zoom`, `sample`, `blobs` (piece rects on a sheet) |
+| `tools/` (Go, `go -C art/tools run . <cmd>`) | `build`, `check`, `compare`, `compare-m2`, `sheet`, `zoom`, `sample`, `blobs` (piece rects on a sheet) |
 | `sprites/` | final sprites (authored at 2x reference px, PPU 200) + `sprites.json` |
 | `fonts/` | Cormorant Bold 4.002 (display), PT Sans Regular 2.003W (body), `charset-ru-en.txt` (309 chars), `bake-report.txt`, `licenses/` (OFL 1.1) |
 | `../unity/Assets/Editor/BuildBundles.cs` | import (9-slice borders, pivot, PPU), SpriteAtlas (BC7, no rotation/tight packing), static TMP SDF fonts, bundle build, contents check |
