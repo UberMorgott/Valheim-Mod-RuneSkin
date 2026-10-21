@@ -1,0 +1,356 @@
+{
+  "version": 1,
+  "authoredScale": 2,
+  "pixelsPerUnit": 200,
+  "borderOrder": "sprite px; Unity spriteBorder = (left, bottom, right, top)",
+  "light": "key light from top-left",
+  "palette": {
+    "stone": "#3b4147",
+    "stone_block": "#464d54",
+    "leather": "#7a4a2a",
+    "leather_edge": "#3a2416",
+    "thread": "#c9ad7d",
+    "thong": "#6b4229",
+    "rune_glow": "#52e0f0",
+    "glass_top": "#1e272d",
+    "glass_bottom": "#0b0f12",
+    "glass_highlight": "#a8e6f0",
+    "groove_dark": "#050708",
+    "groove_light": "#8fb8c4",
+    "text_header": "#e9c46a",
+    "text_body": "#d9d4c7",
+    "text_disabled": "#7b7f80"
+  },
+  "sprites": [
+    {
+      "name": "frame_panel",
+      "file": "frame_panel.png",
+      "size": [
+        288,
+        288
+      ],
+      "border": {
+        "left": 96,
+        "bottom": 96,
+        "right": 96,
+        "top": 96
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": false,
+      "token": "frame.panel",
+      "notes": "carved stone rail 30 px + outer shadow 8 px; place glass fill inset 23 px (sprite px); edges tile with period 96 px"
+    },
+    {
+      "name": "frame_panel_glow",
+      "file": "frame_panel_glow.png",
+      "size": [
+        288,
+        288
+      ],
+      "border": {
+        "left": 96,
+        "bottom": 96,
+        "right": 96,
+        "top": 96
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": false,
+      "token": "frame.panel.glow",
+      "notes": "white emissive rune/channel mask, tint with colour token rune_glow; same rect as frame_panel"
+    },
+    {
+      "name": "frame_panel_corner_tl",
+      "file": "frame_panel_corner_tl.png",
+      "size": [
+        96,
+        96
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.0,
+        1.0
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "frame.panel.corner.tl",
+      "notes": "leather wrap overlay, never stretched; anchor/pivot at the panel corner, native size"
+    },
+    {
+      "name": "frame_panel_corner_tr",
+      "file": "frame_panel_corner_tr.png",
+      "size": [
+        96,
+        96
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        1.0,
+        1.0
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "frame.panel.corner.tr",
+      "notes": "leather wrap overlay, never stretched; anchor/pivot at the panel corner, native size"
+    },
+    {
+      "name": "frame_panel_corner_bl",
+      "file": "frame_panel_corner_bl.png",
+      "size": [
+        96,
+        96
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.0,
+        0.0
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "frame.panel.corner.bl",
+      "notes": "leather wrap overlay, never stretched; anchor/pivot at the panel corner, native size"
+    },
+    {
+      "name": "frame_panel_corner_br",
+      "file": "frame_panel_corner_br.png",
+      "size": [
+        96,
+        96
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        1.0,
+        0.0
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "frame.panel.corner.br",
+      "notes": "leather wrap overlay, never stretched; anchor/pivot at the panel corner, native size"
+    },
+    {
+      "name": "fill_glass",
+      "file": "fill_glass.png",
+      "size": [
+        64,
+        192
+      ],
+      "border": {
+        "left": 16,
+        "bottom": 16,
+        "right": 16,
+        "top": 32
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "fill.glass",
+      "notes": "dark glass: vertical gradient + top highlight, no texture"
+    },
+    {
+      "name": "button_normal",
+      "file": "button_normal.png",
+      "size": [
+        256,
+        96
+      ],
+      "border": {
+        "left": 52,
+        "bottom": 28,
+        "right": 52,
+        "top": 28
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "button.normal",
+      "notes": "stone caps with carved knots + glass well; text area = centre"
+    },
+    {
+      "name": "button_hover",
+      "file": "button_hover.png",
+      "size": [
+        256,
+        96
+      ],
+      "border": {
+        "left": 52,
+        "bottom": 28,
+        "right": 52,
+        "top": 28
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "button.hover",
+      "notes": "stone caps with carved knots + glass well; text area = centre"
+    },
+    {
+      "name": "button_pressed",
+      "file": "button_pressed.png",
+      "size": [
+        256,
+        96
+      ],
+      "border": {
+        "left": 52,
+        "bottom": 28,
+        "right": 52,
+        "top": 28
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "button.pressed",
+      "notes": "stone caps with carved knots + glass well; text area = centre"
+    },
+    {
+      "name": "button_disabled",
+      "file": "button_disabled.png",
+      "size": [
+        256,
+        96
+      ],
+      "border": {
+        "left": 52,
+        "bottom": 28,
+        "right": 52,
+        "top": 28
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "button.disabled",
+      "notes": "stone caps with carved knots + glass well; text area = centre"
+    },
+    {
+      "name": "button_selected",
+      "file": "button_selected.png",
+      "size": [
+        256,
+        96
+      ],
+      "border": {
+        "left": 52,
+        "bottom": 28,
+        "right": 52,
+        "top": 28
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "button.selected",
+      "notes": "stone caps with carved knots + glass well; text area = centre; selected = gamepad focus"
+    },
+    {
+      "name": "tooltip_frame",
+      "file": "tooltip_frame.png",
+      "size": [
+        128,
+        128
+      ],
+      "border": {
+        "left": 32,
+        "bottom": 32,
+        "right": 32,
+        "top": 32
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "frame.tooltip",
+      "notes": "light stone rail 7 px + diamond studs, glass fill included; content padding 20 px"
+    },
+    {
+      "name": "divider",
+      "file": "divider.png",
+      "size": [
+        256,
+        24
+      ],
+      "border": {
+        "left": 40,
+        "bottom": 0,
+        "right": 40,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "divider",
+      "notes": "engraved line, constant along x (stretch-safe), stone studs in the ends"
+    },
+    {
+      "name": "header_plaque",
+      "file": "header_plaque.png",
+      "size": [
+        320,
+        72
+      ],
+      "border": {
+        "left": 76,
+        "bottom": 24,
+        "right": 76,
+        "top": 24
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "plaque.header",
+      "notes": "text field = recessed centre; ends carry knots"
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+# review renders (regenerate with src/contact_sheet.py)
+review/
+__pycache__/
