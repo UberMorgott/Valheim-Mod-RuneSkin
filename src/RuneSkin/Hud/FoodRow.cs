@@ -112,7 +112,9 @@ namespace RuneSkin.PlayerHud
         {
             var has = food != null && food.m_item != null;
             if (s.Icon.gameObject.activeSelf != has) s.Icon.gameObject.SetActive(has);
-            if (s.Timer.gameObject.activeSelf != has) s.Timer.gameObject.SetActive(has);
+            // The ring carries the time (mockup); the text shows only in the last minute (vanilla blinks it, Hud.cs:1043-1046).
+            var urgent = has && food.m_time / Game.m_foodRate < 60f;
+            if (s.Timer.gameObject.activeSelf != urgent) s.Timer.gameObject.SetActive(urgent);
             if (s.Ring.gameObject.activeSelf != (has && s.Ring.sprite)) s.Ring.gameObject.SetActive(has && s.Ring.sprite);
             var empty = ThemeTokens.GetColor(has ? "color.frame" : "color.hud.socket.empty", Color.white);
             if (s.Rim.color != empty) s.Rim.color = empty;

@@ -90,10 +90,10 @@ namespace RuneSkin.PlayerHud
             _childrenOn = true;
             _plaqueShown = null;
             _strip = new StatusStrip(_art, _root);
-            _eitr = new BarView(_art, _root, "Eitr", false, "sprite.hud.bar.frame", "color.hud.eitr");
+            _eitr = new BarView(_art, _root, "Eitr", false, "sprite.hud.bar.frame", "color.hud.eitr", ThemeTokens.GetFloat("share.hud.bar.minor", 0.75f));
             _adrenaline = new BarView(_art, _root, "Adrenaline", true, "sprite.hud.rail.frame.adrenaline", "color.hud.adrenaline");
-            _stamina = new BarView(_art, _root, "Stamina", false, "sprite.hud.bar.frame", "color.hud.stamina");
-            _health = new BarView(_art, _root, "Health", false, "sprite.hud.bar.frame", "color.hud.health");
+            _stamina = new BarView(_art, _root, "Stamina", false, "sprite.hud.bar.frame", "color.hud.stamina", ThemeTokens.GetFloat("share.hud.bar.minor", 0.75f));
+            _health = new BarView(_art, _root, "Health", false, "sprite.hud.bar.frame", "color.hud.health", 1f, mainValue: true);
             _es = new BarView(_art, _root, "EnergyShield", true, "sprite.hud.rail.frame.es", "color.hud.es");
             _food = new FoodRow(_art, _root);
             _plaque = HudArt.Rect("ConversionPlaque", _root);
@@ -254,7 +254,7 @@ namespace RuneSkin.PlayerHud
                 _health.Tick(dt);
                 var count = HudMath.Stripes(_pending, hp, hpB, _health.WindowLength, ThemeTokens.GetFloat("size.hud.stripe.min", 4f), BarView.MaxStripes, _stripes);
                 for (var i = 0; i < count; i++) _stripeKinds[i] = _stripes[i].Key < 0 ? (int)DotKind.Other : _stripes[i].Key;
-                _health.Render(hp, hpB, hpC, _stripes, count, _stripeKinds, tint, overlaySprite, overlayColor, false, dt, hpRes);
+                _health.Render(hp, hpB, hpC, _stripes, count, _stripeKinds, tint, overlaySprite, overlayColor, false, dt, true); // "54/100" (mockup)
             }
 
             // ES rail: same outer width as the health frame (rail window = health window + inset difference).
@@ -400,7 +400,7 @@ namespace RuneSkin.PlayerHud
             _strip.Arrange(barW, stripBudget);
             y += stripBudget;
             _strip.Root.anchoredPosition = new Vector2(0f, y);
-            y += gap;
+            y += gap + ThemeTokens.GetFloat("size.hud.status.pad", 6f); // the strip panel reaches pad above its cells
             if (_eitr.Root.gameObject.activeSelf) { _eitr.Root.anchoredPosition = new Vector2(0f, y); y += _eitr.Height + gap; }
             if (_plaque.gameObject.activeSelf)
             {

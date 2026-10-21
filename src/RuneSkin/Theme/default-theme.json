@@ -33,6 +33,7 @@
     { "token": "color.hud.frame", "value": "#FFFFFFFF" },
     { "token": "color.hud.text", "value": "#F2EEE2FF" },
     { "token": "color.hud.timer", "value": "#D9D4C7FF" },
+    { "token": "color.hud.text.glow", "value": "#52E0F073" },
     { "token": "color.hud.harmful", "value": "#E0574BFF" },
     { "token": "color.hud.buff", "value": "#52E0F0FF" },
     { "token": "color.hud.marker", "value": "#B8B2A2FF" },
@@ -120,7 +121,7 @@
     { "token": "floor.text.timer.px", "value": 12 },
     { "token": "size.tooltip.content.inset", "value": 14 },
     { "token": "size.hud.margin", "value": 24 },
-    { "token": "size.hud.gap", "value": 5 },
+    { "token": "size.hud.gap", "value": 2 },
     { "token": "size.hud.bar.min", "value": 160 },
     { "token": "size.hud.bar.cap", "value": 384 },
     { "token": "share.hud.bar.cap", "value": 0.28 },
@@ -147,7 +148,14 @@
     { "token": "ratio.hud.ultrawide", "value": 2.2 },
     { "token": "size.hud.hotbar.top", "value": 24 },
     { "token": "size.hud.list.rows", "value": 10 },
-    { "token": "share.hud.tint", "value": 0.5 }
+    { "token": "share.hud.tint", "value": 0.5 },
+    { "token": "share.hud.bar.minor", "value": 0.75 },
+    { "token": "size.hud.font.value", "value": 22 },
+    { "token": "size.hud.font.minor", "value": 13 },
+    { "token": "size.hud.font.status", "value": 15 },
+    { "token": "size.hud.status.pad", "value": 6 },
+    { "token": "size.hud.text.glow.softness", "value": 0.6 },
+    { "token": "size.hud.text.glow.dilate", "value": 0.3 }
   ],
   "roles": [
     { "role": "panel", "sprite": "sprite.frame.panel", "color": "color.frame", "imageType": "Tiled", "fillCenter": "false" },

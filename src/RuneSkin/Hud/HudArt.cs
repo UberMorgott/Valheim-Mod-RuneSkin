@@ -55,7 +55,26 @@ namespace RuneSkin.PlayerHud
             Set(img, c);
         }
 
-        public TMP_Text Text(string name, Transform parent, string fontToken, string colorToken, float size, TextAlignmentOptions align)
+        // One shared glow material per font (mockup: values in soft light): the font's material with a soft
+        // underlay in color.hud.text.glow. Built once, never per text.
+        private static readonly Dictionary<TMP_FontAsset, Material> Glow = new Dictionary<TMP_FontAsset, Material>();
+        private static int _glowRevision = -1;
+
+        private static Material GlowMaterial(TMP_FontAsset font)
+        {
+            if (!font || !font.material) return null;
+            if (_glowRevision != ThemeTokens.Revision) { Glow.Clear(); _glowRevision = ThemeTokens.Revision; }
+            if (Glow.TryGetValue(font, out var m) && m) return m;
+            m = new Material(font.material) { name = font.material.name + " (RuneSkin glow)" };
+            m.EnableKeyword(ShaderUtilities.Keyword_Underlay);
+            m.SetColor(ShaderUtilities.ID_UnderlayColor, ThemeTokens.GetColor("color.hud.text.glow", new Color(0.32f, 0.88f, 0.94f, 0.45f)));
+            m.SetFloat(ShaderUtilities.ID_UnderlaySoftness, ThemeTokens.GetFloat("size.hud.text.glow.softness", 0.6f));
+            m.SetFloat(ShaderUtilities.ID_UnderlayDilate, ThemeTokens.GetFloat("size.hud.text.glow.dilate", 0.3f));
+            Glow[font] = m;
+            return m;
+        }
+
+        public TMP_Text Text(string name, Transform parent, string fontToken, string colorToken, float size, TextAlignmentOptions align, bool glow = false)
         {
             var rt = Rect(name, parent);
             var t = rt.gameObject.AddComponent<TextMeshProUGUI>();
@@ -67,6 +86,7 @@ namespace RuneSkin.PlayerHud
             t.fontSize = size;
             var font = ThemeTokens.GetFont(fontToken);
             if (font) t.font = font;
+            if (glow && font && GlowMaterial(font) is Material gm) t.fontSharedMaterial = gm;
             t.color = ThemeTokens.GetColor(colorToken, Color.white);
             rt.gameObject.AddComponent<TextFloor>().Px = size >= ThemeTokens.GetFloat("size.hud.font.number", 16f)
                 ? ThemeTokens.GetFloat("floor.text.number.px", 14f)

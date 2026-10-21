@@ -52,10 +52,19 @@ namespace RuneSkin.PlayerHud
         public int Count => _entries.Count;
         public bool PopupOpen => _popupOpen;
 
+        private readonly RectTransform _panel;
+
         public StatusStrip(HudArt art, Transform parent)
         {
             _art = art;
             Root = HudArt.Rect("StatusStrip", parent);
+            // One framed dark-glass panel behind the cells (mockup hud-status-b), only while effects exist.
+            _panel = HudArt.Rect("Panel", Root);
+            var glass = art.Image("Glass", _panel, "sprite.fill.glass", "color.glass", Image.Type.Sliced);
+            Stretch(glass.rectTransform, 0f);
+            var frame = art.Image("Frame", _panel, "sprite.frame.tooltip", "color.frame", Image.Type.Sliced);
+            Stretch(frame.rectTransform, 0f);
+            _panel.gameObject.SetActive(false);
         }
 
         // Vanilla's HUD list (SEMan.GetHUDStatusEffects, Hud.cs:527): the effects with an icon; hidden ones dropped.
@@ -95,6 +104,15 @@ namespace RuneSkin.PlayerHud
             var flow = HudMath.Wrap(_entries.Count, cell, gap, width, HudMath.MaxRows(budget, cell, gap));
             Layout = flow;
             Root.sizeDelta = new Vector2(width, flow.Rows * (cell + gap));
+            var panelOn = flow.Rows > 0;
+            if (_panel.gameObject.activeSelf != panelOn) _panel.gameObject.SetActive(panelOn);
+            if (panelOn)
+            {
+                var pad = ThemeTokens.GetFloat("size.hud.status.pad", 6f);
+                var used = Mathf.Min(_entries.Count, flow.Columns);
+                _panel.sizeDelta = new Vector2(used * (cell + gap) - gap + 2f * pad, flow.Rows * (cell + gap) - gap + 2f * pad);
+                _panel.anchoredPosition = new Vector2(-pad, -flow.Rows * (cell + gap) + gap - pad);
+            }
             var shown = flow.Visible;
             while (_cells.Count < shown) _cells.Add(MakeCell("Effect" + _cells.Count, Root, cell));
             for (var i = 0; i < _cells.Count; i++)
@@ -221,7 +239,7 @@ namespace RuneSkin.PlayerHud
                 plate.gameObject.SetActive(false);
             }
             c.Timer = _art.Text("Timer", c.Root, more ? "font.display" : "font.body", "color.hud.timer",
-                ThemeTokens.GetFloat(more ? "size.hud.font.number" : "size.hud.font.timer", 13f), TextAlignmentOptions.Center);
+                ThemeTokens.GetFloat(more ? "size.hud.font.number" : "size.hud.font.status", 15f), TextAlignmentOptions.Center);
             var tr = c.Timer.rectTransform;
             tr.sizeDelta = more ? new Vector2(size, size) : new Vector2(size, size * 0.34f);
             tr.anchoredPosition = more ? Vector2.zero : new Vector2(0f, -size * 0.12f);

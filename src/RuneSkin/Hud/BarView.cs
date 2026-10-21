@@ -33,13 +33,22 @@ namespace RuneSkin.PlayerHud
         private bool _shownInert;
         private float _lastMax = -1f;
 
-        public BarView(HudArt art, Transform parent, string name, bool rail, string frameToken, string fillColorToken)
+        // scale: the frame drawn smaller than its sprite (mockup hud-status-b: stamina / eitr frames ~0.75 of the
+        // health frame); borders follow through pixelsPerUnitMultiplier, geometry through the same factor.
+        // mainValue: the value is centred and large with the glow material (health); else small, right-aligned.
+        public BarView(HudArt art, Transform parent, string name, bool rail, string frameToken, string fillColorToken,
+            float scale = 1f, bool mainValue = false)
         {
             _art = art;
             _rail = rail;
             _fillColor = fillColorToken;
+            _main = mainValue;
             Root = HudArt.Rect(name, parent);
             FrameGeometry(frameToken, rail, out _insetX, out _insetY, out _h);
+            scale = Mathf.Clamp(scale, 0.25f, 4f);
+            _insetX *= scale;
+            _insetY *= scale;
+            _h *= scale;
             _window = HudArt.Rect("Window", Root);
             _window.anchoredPosition = new Vector2(_insetX, _insetY);
             _trough = art.Image("Trough", _window, rail ? "sprite.hud.rail.trough" : "sprite.hud.bar.trough", "color.hud.trough", Image.Type.Sliced);
@@ -67,13 +76,20 @@ namespace RuneSkin.PlayerHud
                 _overlay = art.Image("Overlay", Root, "sprite.hud.overlay.frost", "color.overlay.frost", Image.Type.Simple);
                 _overlay.gameObject.SetActive(false);
             }
-            var numberSize = ThemeTokens.GetFloat(rail ? "size.hud.font.timer" : "size.hud.font.number", 16f);
-            _number = art.Text("Value", Root, "font.display", "color.hud.text", numberSize, TextAlignmentOptions.MidlineRight);
+            var numberSize = ThemeTokens.GetFloat(mainValue ? "size.hud.font.value" : rail ? "size.hud.font.timer" : "size.hud.font.minor", 16f);
+            _number = art.Text("Value", Root, "font.display", "color.hud.text", numberSize,
+                mainValue ? TextAlignmentOptions.Center : TextAlignmentOptions.MidlineRight, glow: true);
             _aux = art.Text("Aux", Root, "font.body", "color.hud.timer", ThemeTokens.GetFloat("size.hud.font.timer", 13f), TextAlignmentOptions.MidlineLeft);
             _aux.gameObject.SetActive(false);
             _paused = art.Image("Paused", Root, "sprite.hud.glyph.seal", "color.hud.glyph", Image.Type.Simple);
             _paused.gameObject.SetActive(false);
+            if (!Mathf.Approximately(scale, 1f))
+                foreach (var img in Root.GetComponentsInChildren<Image>(true))
+                    if (img.type == Image.Type.Sliced || img.type == Image.Type.Tiled)
+                        img.pixelsPerUnitMultiplier = 1f / scale;
         }
+
+        private readonly bool _main;
 
         // Window geometry from the frame sprite itself (art changes never need code): the 9-slice border is the
         // frame's inset and the window height is the native height minus top and bottom borders, in reference px
@@ -186,7 +202,7 @@ namespace RuneSkin.PlayerHud
             else
             {
                 nr.anchoredPosition = new Vector2(_insetX, _insetY);
-                nr.sizeDelta = new Vector2(l - 4f, _h);
+                nr.sizeDelta = new Vector2(_main ? l : l - 4f, _h);
             }
             var ar = _aux.rectTransform;
             ar.anchoredPosition = new Vector2(_insetX + 4f, _insetY);
@@ -250,7 +266,7 @@ namespace RuneSkin.PlayerHud
                 // The number ends before the locked segment (never over the hatch or the lock rune).
                 if (!_rail)
                 {
-                    var nw = Mathf.Max(0f, (reserve ? rs : l) - 4f);
+                    var nw = _main && !reserve ? l : Mathf.Max(0f, (reserve ? rs : l) - 4f);
                     var nr = _number.rectTransform;
                     if (Mathf.Abs(nr.sizeDelta.x - nw) > 0.5f) nr.sizeDelta = new Vector2(nw, _h);
                 }
