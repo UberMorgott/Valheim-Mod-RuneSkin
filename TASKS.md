@@ -14,10 +14,10 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 - [x] Responsive base (tuple compare, SkinScale on content roots)
 - [x] Public API (all signatures; M0 implements RegisterRoot/Bind/Invalidate/RegisterPanel record)
 - [x] Menu adapter, Tooltip adapter (+ frame for box-less tooltips)
-- [ ] GitHub repo + push
-- [ ] AugaSkin yields owned families (soft dep + skip list), version bump, push
-- [ ] quality gate wired + clean
-- [ ] Harness: RuneSkin in autotest `$mods`, shot `ui-runeskin-m0` (pause menu + tooltip + diag dump)
+- [x] GitHub repo + push (78a966d, <https://github.com/UberMorgott/Valheim-Mod-RuneSkin>)
+- [x] AugaSkin yields owned families (soft dep + skip list), 2.2.9 (Auga c8d1133; push after in-game check)
+- [x] quality gate wired + clean (qgate -All -Full exit 0)
+- [x] Harness: RuneSkin in autotest `$mods`, shot `ui-runeskin-m0` (tools 9191ff1, pushed)
 - [ ] In-game run 1920x1080, 0 unexplained unknowns on Menu
 - [ ] Codex final diff review
 

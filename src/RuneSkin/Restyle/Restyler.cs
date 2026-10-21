@@ -111,6 +111,7 @@ namespace RuneSkin.Restyle
                     if (role.ImageType.HasValue) { mark.HasType = true; mark.OrigType = image.type; image.type = mark.SetType = role.ImageType.Value; }
                     if (role.PpuMultiplier > 0f) { mark.HasPpu = true; mark.OrigPpu = image.pixelsPerUnitMultiplier; image.pixelsPerUnitMultiplier = mark.SetPpu = role.PpuMultiplier; }
                     if (role.PreserveAspect) { mark.HasPreserve = true; mark.OrigPreserve = image.preserveAspect; image.preserveAspect = mark.SetPreserve = true; }
+                    if (role.FillCenter.HasValue) { mark.HasFill = true; mark.OrigFill = image.fillCenter; image.fillCenter = mark.SetFill = role.FillCenter.Value; }
                     if (role.Color.HasValue) { mark.HasImageColor = true; mark.OrigImageColor = image.color; image.color = mark.SetImageColor = role.Color.Value; }
                 }
                 else complete = false;
@@ -128,7 +129,25 @@ namespace RuneSkin.Restyle
                 if (role.TextColor.HasValue) { mark.HasTextColor = true; mark.OrigTextColor = text.color; text.color = mark.SetTextColor = role.TextColor.Value; }
             }
 
-            if (role.HasStates)
+            if (role.HasSpriteStates && g is Image && role.ImageUsable)
+            {
+                var selectable = g.GetComponentInParent<Selectable>(true);
+                if (selectable && selectable.targetGraphic == g)
+                {
+                    mark.HasSpriteStates = true;
+                    mark.OrigSpriteState = selectable.spriteState;
+                    mark.OrigTransition = selectable.transition;
+                    selectable.spriteState = mark.SetSpriteState = new SpriteState
+                    {
+                        highlightedSprite = role.SpriteHover,
+                        pressedSprite = role.SpritePressed,
+                        selectedSprite = role.SpriteSelected,
+                        disabledSprite = role.SpriteDisabled
+                    };
+                    selectable.transition = Selectable.Transition.SpriteSwap;
+                }
+            }
+            else if (role.HasStates)
             {
                 var selectable = g.GetComponentInParent<Selectable>(true);
                 if (selectable && selectable.targetGraphic == g)
@@ -160,6 +179,7 @@ namespace RuneSkin.Restyle
                 if (mark.HasType && image.type == mark.SetType) image.type = mark.OrigType;
                 if (mark.HasPpu && Mathf.Approximately(image.pixelsPerUnitMultiplier, mark.SetPpu)) image.pixelsPerUnitMultiplier = mark.OrigPpu;
                 if (mark.HasPreserve && image.preserveAspect == mark.SetPreserve) image.preserveAspect = mark.OrigPreserve;
+                if (mark.HasFill && image.fillCenter == mark.SetFill) image.fillCenter = mark.OrigFill;
                 if (mark.HasImageColor && image.color == mark.SetImageColor) image.color = mark.OrigImageColor;
             }
             else if (g is TMP_Text text)
@@ -170,6 +190,15 @@ namespace RuneSkin.Restyle
                     if (mark.OrigFontMaterial) text.fontSharedMaterial = mark.OrigFontMaterial;
                 }
                 if (mark.HasTextColor && text.color == mark.SetTextColor) text.color = mark.OrigTextColor;
+            }
+            if (mark.HasSpriteStates && g)
+            {
+                var selectable = g.GetComponentInParent<Selectable>(true);
+                if (selectable && SameStates(selectable.spriteState, mark.SetSpriteState))
+                {
+                    selectable.spriteState = mark.OrigSpriteState;
+                    selectable.transition = mark.OrigTransition;
+                }
             }
             if (mark.HasStates && g)
             {
@@ -182,6 +211,10 @@ namespace RuneSkin.Restyle
             }
             mark.ClearJournal();
         }
+
+        private static bool SameStates(SpriteState a, SpriteState b) =>
+            a.highlightedSprite == b.highlightedSprite && a.pressedSprite == b.pressedSprite &&
+            a.selectedSprite == b.selectedSprite && a.disabledSprite == b.disabledSprite;
 
         private static string ExcludedBy(Transform t, Transform root, ScreenContext ctx)
         {

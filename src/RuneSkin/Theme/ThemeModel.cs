@@ -2,7 +2,7 @@ using System;
 
 namespace RuneSkin.Theme
 {
-    // JSON shape of a theme file (UnityEngine.JsonUtility: public fields, arrays of [Serializable] classes).
+    // JSON shape of a theme file (read by ThemeJson).
     // Default theme: Theme\default-theme.json (embedded); dev override: BepInEx\config\RuneSkin\theme.json.
     // Contract for the art bundle: docs\theme-contract.md.
     [Serializable]
@@ -52,6 +52,7 @@ namespace RuneSkin.Theme
         public float ppuMultiplier;
         public bool preserveAspect;
         public bool keepColor;
+        public string fillCenter; // "true" / "false" / empty = keep
         public string font;
         public string textColor;
         public string stateNormal;
@@ -59,6 +60,11 @@ namespace RuneSkin.Theme
         public string statePressed;
         public string stateSelected;
         public string stateDisabled;
+        // Sprite tokens for Selectable SpriteSwap states (button art per state).
+        public string spriteHover;
+        public string spritePressed;
+        public string spriteSelected;
+        public string spriteDisabled;
     }
 
     // Classifier fallback (d): vanilla sprite name (exact, or prefix with a trailing '*') -> role, optionally only

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using RuneSkin.API;
 using RuneSkin.Theme;
 using UnityEngine;
@@ -88,12 +89,20 @@ namespace RuneSkin.Tests
             using var stream = typeof(ThemeSchema).Assembly.GetManifestResourceStream("RuneSkin.default-theme.json");
             Assert.NotNull(stream);
             using var reader = new System.IO.StreamReader(stream);
-            var json = reader.ReadToEnd();
-            // JsonUtility is native; the file is checked structurally here and fully by Validate at runtime.
-            Assert.Contains("\"schema\": 1", json);
+            var theme = ThemeJson.Parse(reader.ReadToEnd());
+            Assert.Empty(ThemeSchema.Validate(theme));
+            var roles = theme.roles.Select(r => r.role).ToList();
             foreach (var role in new[] { "panel", "button", "menu.entry", "tooltip.box", "tooltip.text", "tooltip.topic", "content", "skip" })
-                Assert.Contains($"\"role\": \"{role}\"", json);
+                Assert.Contains(role, roles);
+            Assert.Equal("button_hover", theme.sprites.Single(s => s.token == theme.roles.Single(r => r.role == "button").spriteHover).asset);
         }
+
+        [Theory]
+        [InlineData("{\"schema\": 1,}")]
+        [InlineData("{\"schema\": 1} x")]
+        [InlineData("{\"a\": 1, \"a\": 2}")]
+        [InlineData("[1]")]
+        public void ParserRejectsBadJson(string json) => Assert.Throws<FormatException>(() => ThemeJson.Parse(json));
     }
 
     // Skin keeps static state: one ordered test covers pending, cancel, replay and live registration.

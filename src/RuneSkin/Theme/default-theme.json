@@ -4,54 +4,58 @@
   "bundle": "runeskin",
   "colors": [
     { "token": "color.frame", "value": "#FFFFFFFF" },
-    { "token": "color.glass", "value": "#0C1216E6" },
+    { "token": "color.glass", "value": "#FFFFFFF2" },
     { "token": "color.scrim", "value": "#04070ACC" },
     { "token": "color.ornament", "value": "#FFFFFFFF" },
-    { "token": "color.text.body", "value": "#E4DCCBFF" },
-    { "token": "color.text.header", "value": "#F0E6D2FF" },
+    { "token": "color.text.body", "value": "#D9D4C7FF" },
+    { "token": "color.text.header", "value": "#E9C46AFF" },
     { "token": "color.text.label", "value": "#FFFFFFFF" },
-    { "token": "color.text.accent", "value": "#7FDCEBFF" },
-    { "token": "color.state.normal", "value": "#D9CFBCFF" },
-    { "token": "color.state.hover", "value": "#8FE6F2FF" },
-    { "token": "color.state.pressed", "value": "#5BB8C8FF" },
-    { "token": "color.state.selected", "value": "#8FE6F2FF" },
-    { "token": "color.state.disabled", "value": "#6B665EFF" }
+    { "token": "color.text.accent", "value": "#52E0F0FF" },
+    { "token": "color.state.normal", "value": "#D9D4C7FF" },
+    { "token": "color.state.hover", "value": "#52E0F0FF" },
+    { "token": "color.state.pressed", "value": "#3FB7C6FF" },
+    { "token": "color.state.selected", "value": "#52E0F0FF" },
+    { "token": "color.state.disabled", "value": "#7B7F80FF" }
   ],
   "sprites": [
-    { "token": "sprite.frame.panel", "asset": "rs_frame_panel" },
-    { "token": "sprite.frame.button", "asset": "rs_frame_button" },
-    { "token": "sprite.frame.tooltip", "asset": "rs_frame_tooltip" },
-    { "token": "sprite.fill.glass", "asset": "rs_fill_glass" },
-    { "token": "sprite.divider", "asset": "rs_divider" },
-    { "token": "sprite.ornament.knot", "asset": "rs_knot" }
+    { "token": "sprite.frame.panel", "asset": "frame_panel" },
+    { "token": "sprite.button.normal", "asset": "button_normal" },
+    { "token": "sprite.button.hover", "asset": "button_hover" },
+    { "token": "sprite.button.pressed", "asset": "button_pressed" },
+    { "token": "sprite.button.selected", "asset": "button_selected" },
+    { "token": "sprite.button.disabled", "asset": "button_disabled" },
+    { "token": "sprite.frame.tooltip", "asset": "tooltip_frame" },
+    { "token": "sprite.fill.glass", "asset": "fill_glass" },
+    { "token": "sprite.divider", "asset": "divider" },
+    { "token": "sprite.ornament.knot", "asset": "knot" }
   ],
   "fonts": [
-    { "token": "font.display", "asset": "Cormorant-SemiBold SDF" },
-    { "token": "font.body", "asset": "PTSans-Regular SDF" }
+    { "token": "font.display", "asset": "RuneSkin-Display Cormorant-Bold SDF" },
+    { "token": "font.body", "asset": "RuneSkin-Body PTSans-Regular SDF" }
   ],
   "floats": [
-    { "token": "size.tooltip.padding", "value": 10 },
+    { "token": "size.tooltip.padding", "value": 12 },
     { "token": "size.text.header.min", "value": 28 },
     { "token": "floor.text.body.px", "value": 16 },
     { "token": "floor.text.number.px", "value": 14 }
   ],
   "roles": [
-    { "role": "panel", "sprite": "sprite.frame.panel", "color": "color.frame", "imageType": "Sliced" },
-    { "role": "backdrop", "sprite": "sprite.fill.glass", "color": "color.glass", "imageType": "Sliced" },
+    { "role": "panel", "sprite": "sprite.frame.panel", "color": "color.frame", "imageType": "Tiled", "fillCenter": "false" },
+    { "role": "backdrop", "sprite": "sprite.fill.glass", "color": "color.glass", "imageType": "Sliced", "fillCenter": "true" },
     { "role": "scrim", "color": "color.scrim" },
     { "role": "divider", "sprite": "sprite.divider", "color": "color.ornament", "imageType": "Sliced" },
     { "role": "ornament.knot", "sprite": "sprite.ornament.knot", "keepColor": true, "preserveAspect": true, "imageType": "Simple" },
-    { "role": "button", "sprite": "sprite.frame.button", "color": "color.frame", "imageType": "Sliced",
-      "stateNormal": "color.state.normal", "stateHover": "color.state.hover", "statePressed": "color.state.pressed",
-      "stateSelected": "color.state.selected", "stateDisabled": "color.state.disabled" },
-    { "role": "button.label", "font": "font.display", "textColor": "color.text.label" },
+    { "role": "button", "sprite": "sprite.button.normal", "color": "color.frame", "imageType": "Sliced", "fillCenter": "true",
+      "spriteHover": "sprite.button.hover", "spritePressed": "sprite.button.pressed",
+      "spriteSelected": "sprite.button.selected", "spriteDisabled": "sprite.button.disabled" },
+    { "role": "button.label", "font": "font.display", "textColor": "color.text.body" },
     { "role": "menu.entry", "font": "font.display", "textColor": "color.text.label",
       "stateNormal": "color.state.normal", "stateHover": "color.state.hover", "statePressed": "color.state.pressed",
       "stateSelected": "color.state.selected", "stateDisabled": "color.state.disabled" },
     { "role": "text.header", "font": "font.display", "textColor": "color.text.header" },
     { "role": "text.body", "font": "font.body", "textColor": "color.text.body" },
-    { "role": "tooltip.box", "sprite": "sprite.frame.tooltip", "color": "color.frame", "imageType": "Sliced" },
-    { "role": "tooltip.topic", "font": "font.display", "textColor": "color.text.accent" },
+    { "role": "tooltip.box", "sprite": "sprite.frame.tooltip", "color": "color.frame", "imageType": "Sliced", "fillCenter": "true" },
+    { "role": "tooltip.topic", "font": "font.display", "textColor": "color.text.header" },
     { "role": "tooltip.text", "font": "font.body", "textColor": "color.text.body" },
     { "role": "content" },
     { "role": "skip" }
@@ -73,7 +77,7 @@
     { "match": "mail", "role": "content" }
   ],
   "families": [
-    { "family": "Menu", "requires": [ "sprite.frame.panel", "sprite.frame.button", "font.display", "font.body" ] },
+    { "family": "Menu", "requires": [ "sprite.frame.panel", "sprite.button.normal", "font.display", "font.body" ] },
     { "family": "Tooltips", "requires": [ "sprite.frame.tooltip", "font.display", "font.body" ] }
   ]
 }

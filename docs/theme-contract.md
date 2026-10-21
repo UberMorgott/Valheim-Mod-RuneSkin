@@ -16,16 +16,21 @@ RuneSkin loads one AssetBundle named `runeskin`, placed next to `RuneSkin.dll`
 
 ## Names the M0 theme expects
 
+Art side: `art\sprites\sprites.json` (sprite names, borders, art tokens), `unity\Build\runeskin.contents.txt`.
+Sprites are 2x art (PPU 200), SpriteAtlas `RuneSkin`; TMP materials are switched to the game's own SDF shader at load.
+
 | Token | Asset name | Use |
 | --- | --- | --- |
-| `sprite.frame.panel` | `rs_frame_panel` | 9-slice dialog frame (stone, rune border) |
-| `sprite.frame.button` | `rs_frame_button` | 9-slice button frame |
-| `sprite.frame.tooltip` | `rs_frame_tooltip` | 9-slice tooltip frame |
-| `sprite.fill.glass` | `rs_fill_glass` | 9-slice dark glass backdrop |
-| `sprite.divider` | `rs_divider` | horizontal divider (sliced) |
-| `sprite.ornament.knot` | `rs_knot` | small ornament beside menu entries (simple, aspect kept) |
-| `font.display` | `Cormorant-SemiBold SDF` | headers, menu entries, button labels |
-| `font.body` | `PTSans-Regular SDF` | body text, tooltips |
+| `sprite.frame.panel` | `frame_panel` | dialog frame, Tiled, centre not filled |
+| `sprite.button.normal` / `.hover` / `.pressed` / `.selected` / `.disabled` | `button_*` | button art per Selectable state (SpriteSwap) |
+| `sprite.frame.tooltip` | `tooltip_frame` | tooltip frame, Sliced |
+| `sprite.fill.glass` | `fill_glass` | dark glass backdrop, Sliced |
+| `sprite.divider` | `divider` | horizontal divider, Sliced |
+| `sprite.ornament.knot` | `knot` | menu entry ornament (not in the bundle yet: knots stay vanilla, reported as degraded) |
+| `font.display` | `RuneSkin-Display Cormorant-Bold SDF` | headers, menu entries, button labels |
+| `font.body` | `RuneSkin-Body PTSans-Regular SDF` | body text, tooltips |
+
+Not used yet (need decoration children, M1): `frame_panel_glow`, `frame_panel_corner_*`, `header_plaque`.
 
 Families need their tokens before RuneSkin takes them (asset preflight, `families` in the theme):
-`Menu` = frame.panel, frame.button, font.display, font.body; `Tooltips` = frame.tooltip, font.display, font.body.
+`Menu` = frame.panel, button.normal, font.display, font.body; `Tooltips` = frame.tooltip, font.display, font.body.

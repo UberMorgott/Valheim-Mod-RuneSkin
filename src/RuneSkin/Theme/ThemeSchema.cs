@@ -63,6 +63,12 @@ namespace RuneSkin.Theme
                 Ref(r.statePressed, colorTokens, "statePressed");
                 Ref(r.stateSelected, colorTokens, "stateSelected");
                 Ref(r.stateDisabled, colorTokens, "stateDisabled");
+                Ref(r.spriteHover, spriteTokens, "spriteHover");
+                Ref(r.spritePressed, spriteTokens, "spritePressed");
+                Ref(r.spriteSelected, spriteTokens, "spriteSelected");
+                Ref(r.spriteDisabled, spriteTokens, "spriteDisabled");
+                if (!string.IsNullOrEmpty(r.fillCenter) && r.fillCenter != "true" && r.fillCenter != "false")
+                    errors.Add($"role '{r.role}': fillCenter '{r.fillCenter}' must be true or false");
                 if (!string.IsNullOrEmpty(r.imageType) && !Enum.TryParse<Image.Type>(r.imageType, out _))
                     errors.Add($"role '{r.role}': imageType '{r.imageType}' invalid");
                 if (r.ppuMultiplier < 0f) errors.Add($"role '{r.role}': ppuMultiplier < 0");

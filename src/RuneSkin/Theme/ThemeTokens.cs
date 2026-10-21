@@ -25,10 +25,13 @@ namespace RuneSkin.Theme
         public TMP_FontAsset Font;
         public Color? TextColor;
         public Color? StateNormal, StateHover, StatePressed, StateSelected, StateDisabled;
+        public bool? FillCenter;
+        public Sprite SpriteHover, SpritePressed, SpriteSelected, SpriteDisabled;
 
         // An image role that names a sprite is drawn only when the sprite exists (missing art = vanilla look, not a
         // recoloured vanilla sprite).
         public bool ImageUsable => SpriteToken == null || Sprite;
+        public bool HasSpriteStates => SpriteHover || SpritePressed || SpriteSelected || SpriteDisabled;
         public bool HasStates => StateNormal.HasValue || StateHover.HasValue || StatePressed.HasValue || StateSelected.HasValue || StateDisabled.HasValue;
     }
 
@@ -60,6 +63,15 @@ namespace RuneSkin.Theme
         private static readonly Dictionary<string, Sprite> BundleSprites = new Dictionary<string, Sprite>();
         private static readonly Dictionary<string, TMP_FontAsset> BundleFonts = new Dictionary<string, TMP_FontAsset>();
         private static bool _fallbacksLinked;
+        private static readonly List<SpriteAtlas> Atlases = new List<SpriteAtlas>();
+
+        // Late binding of our SpriteAtlas: Unity asks for an atlas a sprite references when it was not loaded with it.
+        private static void OnAtlasRequested(string tag, Action<SpriteAtlas> done)
+        {
+            var atlas = Atlases.FirstOrDefault(a => a && (a.tag == tag || a.name == tag));
+            if (!atlas && _bundle) atlas = _bundle.LoadAsset<SpriteAtlas>(tag);
+            if (atlas) done(atlas);
+        }
 
         public static string ThemeName { get; private set; }
         public static string Source { get; private set; }
@@ -133,8 +145,8 @@ namespace RuneSkin.Theme
             }
             foreach (var token in requires)
             {
-                var ok = (Sprites.TryGetValue(token, out var s) && s) || (Fonts.TryGetValue(token, out var f) && f) ||
-                         Colors.ContainsKey(token) || Floats.ContainsKey(token);
+                var asset = (Sprites.TryGetValue(token, out var s) && s) || (Fonts.TryGetValue(token, out var f) && f);
+                var ok = asset || Colors.ContainsKey(token) || Floats.ContainsKey(token);
                 if (!ok) missing?.Add(token);
             }
             return missing == null || missing.Count == 0;
@@ -150,8 +162,13 @@ namespace RuneSkin.Theme
                 .Select(n => game.FirstOrDefault(f => f && f.name == n)).Where(f => f).ToList();
             if (tail.Count == 0) return; // game fonts not loaded yet; retried on the next restyle
             _fallbacksLinked = true;
+            // Our TMP materials use the game's own SDF shader: a shader compiled into the bundle may not match the
+            // game's graphics setup (art pipeline note), the game's instance always does.
+            var gameShader = tail[0].material ? tail[0].material.shader : null;
             foreach (var font in Fonts.Values.Where(f => f).Distinct())
             {
+                if (gameShader && font.material && font.material.shader != gameShader)
+                    font.material.shader = gameShader;
                 if (font.fallbackFontAssetTable == null) font.fallbackFontAssetTable = new List<TMP_FontAsset>();
                 foreach (var t in tail)
                     if (t != font && !font.fallbackFontAssetTable.Contains(t))
@@ -182,11 +199,13 @@ namespace RuneSkin.Theme
                 Diagnostics.SkinDiagnostics.Theme($"asset bundle unreadable (Unity version?): {BundlePath}");
                 return;
             }
+            SpriteAtlasManager.atlasRequested += OnAtlasRequested; // before any sprite load can ask for it
             // Sprites may be standalone assets, texture sub-assets or packed in a SpriteAtlas: index all by name.
             foreach (var s in _bundle.LoadAllAssets<Sprite>())
                 if (s && !BundleSprites.ContainsKey(s.name)) BundleSprites.Add(s.name, s);
             foreach (var atlas in _bundle.LoadAllAssets<SpriteAtlas>())
             {
+                Atlases.Add(atlas);
                 var packed = new Sprite[atlas.spriteCount];
                 atlas.GetSprites(packed);
                 foreach (var s in packed)
@@ -196,6 +215,7 @@ namespace RuneSkin.Theme
                     if (!BundleSprites.ContainsKey(name)) BundleSprites.Add(name, s);
                 }
             }
+
             foreach (var f in _bundle.LoadAllAssets<TMP_FontAsset>())
                 if (f && !BundleFonts.ContainsKey(f.name)) BundleFonts.Add(f.name, f);
             Plugin.Log.LogInfo($"[RuneSkin] bundle: {BundleSprites.Count} sprites, {BundleFonts.Count} TMP fonts");
@@ -221,7 +241,7 @@ namespace RuneSkin.Theme
             }
             try
             {
-                file = JsonUtility.FromJson<ThemeFile>(json);
+                file = ThemeJson.Parse(json);
             }
             catch (Exception e)
             {
@@ -257,6 +277,7 @@ namespace RuneSkin.Theme
             _fallbacksLinked = false;
             foreach (var v in f.floats ?? new FloatEntry[0])
                 Floats[v.token] = v.value;
+            Sprite S(string t) => !string.IsNullOrEmpty(t) && Sprites.TryGetValue(t, out var s) ? s : null;
             Color? C(string t) => !string.IsNullOrEmpty(t) && Colors.TryGetValue(t, out var c) ? c : (Color?)null;
             foreach (var r in f.roles ?? new RoleRule[0])
             {
@@ -278,6 +299,11 @@ namespace RuneSkin.Theme
                     StatePressed = C(r.statePressed),
                     StateSelected = C(r.stateSelected),
                     StateDisabled = C(r.stateDisabled),
+                    FillCenter = string.IsNullOrEmpty(r.fillCenter) ? (bool?)null : r.fillCenter == "true",
+                    SpriteHover = S(r.spriteHover),
+                    SpritePressed = S(r.spritePressed),
+                    SpriteSelected = S(r.spriteSelected),
+                    SpriteDisabled = S(r.spriteDisabled),
                 };
             }
             foreach (var s in f.spriteRoles ?? new SpriteRoleEntry[0])

@@ -29,13 +29,15 @@ namespace RuneSkin.Restyle
         public bool Internal; // graphic created by RuneSkin (keeps its role, never re-classified)
 
         // Journal flags
-        public bool HasSprite, HasType, HasImageColor, HasPpu, HasPreserve, HasFont, HasTextColor, HasStates;
+        public bool HasSprite, HasType, HasImageColor, HasPpu, HasPreserve, HasFill, HasFont, HasTextColor, HasStates, HasSpriteStates;
 
         public Sprite OrigSprite, SetSprite;
         public Image.Type OrigType, SetType;
         public Color OrigImageColor, SetImageColor;
         public float OrigPpu, SetPpu;
         public bool OrigPreserve, SetPreserve;
+        public bool OrigFill, SetFill;
+        public SpriteState OrigSpriteState, SetSpriteState;
         public TMP_FontAsset OrigFont, SetFont;
         public Material OrigFontMaterial;
         public Color OrigTextColor, SetTextColor;
@@ -46,7 +48,7 @@ namespace RuneSkin.Restyle
 
         public void ClearJournal()
         {
-            HasSprite = HasType = HasImageColor = HasPpu = HasPreserve = HasFont = HasTextColor = HasStates = false;
+            HasSprite = HasType = HasImageColor = HasPpu = HasPreserve = HasFill = HasFont = HasTextColor = HasStates = HasSpriteStates = false;
         }
     }
 
