@@ -64,13 +64,14 @@ namespace RuneSkin.PlayerHud
             var gap = ThemeTokens.GetFloat("size.hud.food.gap", 6f);
             while (_sockets.Count < n) _sockets.Add(Make(_sockets.Count, cell));
             _ = maxWidth; // one zigzag row: food counts stay small (vanilla 3, gem 4)
-            // Staggered zigzag (user call): odd sockets raised by the stagger, steps of (1 - stagger) cell, so the diamonds
-            // interlock edge to edge (two diamonds touch when dx + dy = cell).
-            var stagger = cell * ThemeTokens.GetFloat("share.hud.food.stagger", 0.5f);
-            var step = cell - stagger + gap;
+            // Checkerboard zigzag (AugaSkin geometry, user call): equal diagonal steps, odd sockets raised, facing
+            // edges parallel with an even gap (HudMath.DiamondStep), every cell on whole physical pixels.
+            // Step of whole physical px (lossy scale = physical px per unit on the overlay HUD canvas): every socket
+            // lands on the same sub-pixel phase and the diamonds rasterise identically.
+            var step = HudMath.Snap(HudMath.DiamondStep(cell, gap), Root.lossyScale.y);
             Count = n;
             Width = n == 0 ? 0f : (n - 1) * step + cell;
-            Height = n == 0 ? 0f : n == 1 ? cell : cell + stagger;
+            Height = n == 0 ? 0f : n == 1 ? cell : cell + step;
             Root.sizeDelta = new Vector2(Width, Height);
             var pad = ThemeTokens.GetFloat("size.hud.food.pad", 8f);
             var gr = _group.rectTransform;
@@ -85,7 +86,8 @@ namespace RuneSkin.PlayerHud
                 var on = i < n;
                 if (s.Root.gameObject.activeSelf != on) s.Root.gameObject.SetActive(on);
                 if (!on) continue;
-                var pos = new Vector2(i * step, i % 2 == 1 ? stagger : 0f);
+                HudMath.DiamondCell(i, step, out var cx, out var cy);
+                var pos = new Vector2(cx, cy);
                 if (s.Root.anchoredPosition != pos) s.Root.anchoredPosition = pos;
                 var gem = i >= extraFrom;
                 if (gem != s.Gem)

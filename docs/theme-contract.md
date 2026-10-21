@@ -30,7 +30,7 @@ Sprites are 2x art (PPU 200), SpriteAtlas `RuneSkin`; TMP materials are switched
 | `font.display` | `RuneSkin-Display Cormorant-Bold SDF` | headers, menu entries, button labels |
 | `font.body` | `RuneSkin-Body PTSans-Regular SDF` | body text, tooltips |
 
-Panel stack (`Restyle\PanelDecor.cs`, children behind the host): `decor.glass` (`fill_glass`, inset `size.panel.glass.inset`), `decor.frame` (`frame_panel`), `decor.glow` (`frame_panel_glow`, `color.glow`), `decor.corner.*` (`frame_panel_corner_*`, native size), `decor.plaque` (`header_plaque`, Menu only).
+Panel stack (`Restyle\PanelDecor.cs`, children behind the host): `decor.backing` (flat `color.panel.backing`, near-opaque, under the glass), `decor.glass` (`fill_glass`, inset `size.panel.glass.inset`), `decor.frame` (`frame_panel`), `decor.glow` (`frame_panel_glow`, `color.glow`), `decor.corner.*` (`frame_panel_corner_*`, native size), `decor.plaque` (`header_plaque`, Menu only). Corner-cap keep-out: `clear.<cap asset>` (sprite px; every opaque cap pixel has min(dx, dy) < clear from its corner); content hosts are inset by it (`PanelMath.CapInset`, tooltip `ContentInset`, menu `FitToChildren`). HUD frame stacking: `edge.<frame asset>.top/bottom` (sprite px of transparent rows above / below the rail), frames stack rail to rail (`HudMath.StackStep`).
 
 Families need their tokens before RuneSkin takes them (asset preflight, `families` in the theme):
 `Menu` = frame.panel, button.normal, font.display, font.body; `Tooltips` = frame.tooltip, font.display, font.body.

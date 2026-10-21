@@ -15,9 +15,11 @@ namespace RuneSkin.Restyle
         private LayoutGroup _group;
         private RectOffset _original;
         private RectOffset _written;
+        private bool _tookWidth;
 
         // False when the box has no LayoutGroup (the caller reports it: inset not applicable there).
-        public static bool Ensure(RectTransform box, string insetToken, string bottomToken = null)
+        // minInset: floor from the box's panel stack (PanelDecor.ContentInset: corner-cap keep-out), every side.
+        public static bool Ensure(RectTransform box, string insetToken, float minInset = 0f)
         {
             if (!box || !box.TryGetComponent<LayoutGroup>(out var group)) return false;
             if (!box.TryGetComponent<ContentInset>(out var inset))
@@ -31,13 +33,21 @@ namespace RuneSkin.Restyle
                 var p = group.padding;
                 inset._original = new RectOffset(p.left, p.right, p.top, p.bottom);
             }
-            var px = Mathf.RoundToInt(ThemeTokens.GetFloat(insetToken, 0f));
-            var bottom = bottomToken != null ? Mathf.RoundToInt(ThemeTokens.GetFloat(bottomToken, px)) : px;
+            var px = Mathf.CeilToInt(Mathf.Max(ThemeTokens.GetFloat(insetToken, 0f), minInset));
             var o = inset._original;
-            var want = new RectOffset(Mathf.Max(o.left, px), Mathf.Max(o.right, px), Mathf.Max(o.top, px), Mathf.Max(o.bottom, bottom));
+            var want = new RectOffset(Mathf.Max(o.left, px), Mathf.Max(o.right, px), Mathf.Max(o.top, px), Mathf.Max(o.bottom, px));
             if (!Same(group.padding, want))
             {
                 group.padding = want;
+                LayoutRebuilder.MarkLayoutForRebuild(box);
+            }
+            // A column that leaves child widths alone (Epic Loot's tooltip content: fixed-width texts) only shifts
+            // its children by the left padding, so the right side runs under the rail; the column then sizes its
+            // children's width to the padded inner width (texts wrap inside it). Journaled like the padding.
+            if (group is VerticalLayoutGroup column && !column.childControlWidth)
+            {
+                column.childControlWidth = true;
+                inset._tookWidth = true;
                 LayoutRebuilder.MarkLayoutForRebuild(box);
             }
             inset._written = want;
@@ -51,6 +61,12 @@ namespace RuneSkin.Restyle
                 _group.padding = _original;
                 LayoutRebuilder.MarkLayoutForRebuild((RectTransform)_group.transform);
             }
+            if (_tookWidth && _group is VerticalLayoutGroup column && column.childControlWidth)
+            {
+                column.childControlWidth = false;
+                LayoutRebuilder.MarkLayoutForRebuild((RectTransform)_group.transform);
+            }
+            _tookWidth = false;
             _written = null;
             Destroy(this);
         }

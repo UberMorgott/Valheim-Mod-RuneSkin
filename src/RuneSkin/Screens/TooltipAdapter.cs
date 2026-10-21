@@ -56,11 +56,11 @@ namespace RuneSkin.Screens
                 ctx.Role(box, "tooltip.box", "image framing the tooltip texts");
                 // box = the glass; the stack adds a second glass layer: fill_glass is alpha 0.9 by design (world faintly
                 // through), and a tooltip over the inventory panel otherwise shows a brightness step where the panel ends.
-                PanelDecor.Ensure(box.rectTransform, "size.tooltip.panel.pad", glass: true, plaque: false);
-                // The frame lies on the box edge: content laid out inside the box needs the inset (Epic Loot's
-                // InventoryTooltip content has padding 0). Boxes without a LayoutGroup keep their own text margins.
-                // The bottom side clears the corner caps' rune blocks (the last line ran into the bottom-left cap).
-                ContentInset.Ensure(box.rectTransform, "size.tooltip.content.inset", "size.tooltip.content.inset.bottom");
+                var decor = PanelDecor.Ensure(box.rectTransform, "size.tooltip.panel.pad", glass: true, plaque: false);
+                // The frame lies on the box edge: content laid out inside the box needs the rail inset (Epic Loot's
+                // InventoryTooltip content has padding 0), raised to the corner caps' keep-out so no line runs under
+                // a leather strap. Boxes without a LayoutGroup keep their own text margins.
+                ContentInset.Ensure(box.rectTransform, "size.tooltip.content.inset", decor ? decor.ContentInset() : 0f);
             }
             else if (text && text.TryGetComponent<TMP_Text>(out var bare)) TooltipFrame.Ensure(bare);
             return ctx;

@@ -413,24 +413,34 @@ namespace RuneSkin.PlayerHud
             y += statusPad + Mathf.Max(used, rowH);
             _strip.Root.anchoredPosition = new Vector2(0f, y);
             y += gap + statusPad; // the strip panel reaches pad above its cells
-            if (_eitr.Root.gameObject.activeSelf) { _eitr.Root.anchoredPosition = new Vector2(0f, y); y += _eitr.Height + gap; }
+            // Bars bottom-up, rail to rail: each frame starts where the one below ends minus both transparent rail
+            // margins (HudMath.StackStep; mockup hud-status-b has no gaps), on whole physical pixels.
+            var pxPerUnit = _root.lossyScale.y;
+            var stacked = false;
+            float prevY = 0f, prevH = 0f, prevEdge = 0f;
+            void Place(RectTransform rt, float height, float edgeBottom, float edgeTop)
+            {
+                if (stacked) y = prevY + HudMath.StackStep(prevH, prevEdge, edgeBottom, gap);
+                y = HudMath.Snap(y, pxPerUnit);
+                rt.anchoredPosition = new Vector2(0f, y);
+                stacked = true;
+                prevY = y;
+                prevH = height;
+                prevEdge = edgeTop;
+            }
+            if (_eitr.Root.gameObject.activeSelf) Place(_eitr.Root, _eitr.Height, _eitr.EdgeBottom, _eitr.EdgeTop);
             if (_plaque.gameObject.activeSelf)
             {
                 var h = _health.Height;
                 _plaque.sizeDelta = new Vector2(Mathf.Max(120f, barW * ThemeTokens.GetFloat("share.hud.plaque", 0.34f)), h);
-                _plaque.anchoredPosition = new Vector2(0f, y);
-                y += h + gap;
+                Place(_plaque, h, 0f, 0f);
             }
             if (_adrenaline.Root.gameObject.activeSelf || p.GetMaxAdrenaline() > 0f)
-            {
-                _adrenaline.Root.anchoredPosition = new Vector2(0f, y);
-                y += _adrenaline.Height + gap;
-            }
-            _stamina.Root.anchoredPosition = new Vector2(0f, y);
-            y += _stamina.Height + gap;
-            _health.Root.anchoredPosition = new Vector2(0f, y);
-            y += _health.Height + gap;
-            if (_es.Root.gameObject.activeSelf) { _es.Root.anchoredPosition = new Vector2(0f, y); y += _es.Height + gap; }
+                Place(_adrenaline.Root, _adrenaline.Height, _adrenaline.EdgeBottom, _adrenaline.EdgeTop);
+            Place(_stamina.Root, _stamina.Height, _stamina.EdgeBottom, _stamina.EdgeTop);
+            Place(_health.Root, _health.Height, _health.EdgeBottom, _health.EdgeTop);
+            if (_es.Root.gameObject.activeSelf) Place(_es.Root, _es.Height, _es.EdgeBottom, _es.EdgeTop);
+            y = prevY + prevH + gap;
             _food.Update(p, barW);
             y += _food.TimerDrop + ThemeTokens.GetFloat("size.hud.food.pad", 8f); // timers + group frame below the sockets
             _food.Root.anchoredPosition = new Vector2(0f, y);

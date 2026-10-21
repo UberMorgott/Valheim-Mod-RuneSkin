@@ -64,6 +64,9 @@ namespace RuneSkin.PlayerHud
             _insetT *= scale;
             _h *= scale;
             _scale = scale;
+            FrameEdges(frameToken, out var edgeT, out var edgeB);
+            EdgeTop = edgeT * scale;
+            EdgeBottom = edgeB * scale;
             _window = HudArt.Rect("Window", Root);
             _window.anchoredPosition = new Vector2(_insetL, _insetB);
             _trough = art.Image("Trough", _window, rail ? "sprite.hud.rail.trough" : "sprite.hud.bar.trough", "color.hud.trough", Image.Type.Sliced);
@@ -148,6 +151,23 @@ namespace RuneSkin.PlayerHud
             _glyph = _art.Image("Glyph", Root, glyphToken, "color.hud.glyph", Image.Type.Simple);
             _glyph.preserveAspect = true;
         }
+
+        // Transparent rows above / below the frame's rail (ref px, scaled): the art states them per frame sprite in
+        // sprite px as theme floats "edge.<asset>.top/bottom" (measured from the sprite's alpha along the rail).
+        // HudCluster stacks frames rail to rail through them (HudMath.StackStep). Without them: 0, frames edge to edge.
+        public static void FrameEdges(string frameToken, out float top, out float bottom)
+        {
+            top = bottom = 0f;
+            var sprite = ThemeTokens.GetSprite(frameToken);
+            if (!sprite) return;
+            var toRef = 100f / Mathf.Max(1f, sprite.pixelsPerUnit);
+            var key = "edge." + (sprite.name.EndsWith("(Clone)", System.StringComparison.Ordinal) ? sprite.name.Substring(0, sprite.name.Length - 7) : sprite.name);
+            top = ThemeTokens.GetFloat(key + ".top", 0f) * toRef;
+            bottom = ThemeTokens.GetFloat(key + ".bottom", 0f) * toRef;
+        }
+
+        public float EdgeTop { get; }
+        public float EdgeBottom { get; }
 
         public float Height => _h + _insetB + _insetT;
         public float Width => Mathf.Max(0f, _length) + _insetL + _insetR;

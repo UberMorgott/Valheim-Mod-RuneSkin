@@ -10,7 +10,7 @@ namespace RuneSkin.Restyle
         void Revert();
     }
 
-    // The panel stack (art contract, art\README.md): glass fill inset under the frame (Tiled, centre empty), the rune
+    // The panel stack (art contract, art\README.md): opaque backing (color.panel.backing) + glass fill inset under the frame (Tiled, centre empty), the rune
     // glow layer tinted on top, four leather corner caps at native size with their pivot on the panel corner, and an
     // optional header plaque on the top edge. Glass/frame/glow/plaque are child graphics behind the host's own
     // children; the corner caps sit in a sibling container above them (art df8dc3a: caps overlap the content edge).
@@ -39,7 +39,13 @@ namespace RuneSkin.Restyle
             go.AddComponent<LayoutElement>().ignoreLayout = true; // hosts may be layout groups (tooltip content)
             decor = go.AddComponent<PanelDecor>();
             decor.PadToken = padToken;
-            if (glass) decor._glass = Add(rect, "Glass", "decor.glass");
+            if (glass)
+            {
+                // Opaque backing under the glass: fill_glass is alpha 0.9 by design and UI blends in linear space,
+                // so one glass layer alone lets the world read through (~25 % luminance contrast in the pause menu).
+                decor._backing = Add(rect, "Backing", "decor.backing");
+                decor._glass = Add(rect, "Glass", "decor.glass");
+            }
             Add(rect, "Frame", "decor.frame");
             Add(rect, "Glow", "decor.glow");
             if (plaque) decor._plaque = Add(rect, "Plaque", "decor.plaque");
@@ -62,7 +68,7 @@ namespace RuneSkin.Restyle
 
         public string PadToken;
         public int Revision = -1;
-        private RectTransform _glass, _plaque, _caps;
+        private RectTransform _backing, _glass, _plaque, _caps;
         private RectTransform[] _corners;
         private bool _fitted;
 
@@ -74,7 +80,7 @@ namespace RuneSkin.Restyle
             if (!_fitted) Stretch(self, -ThemeTokens.GetFloat(PadToken, 0f));
             foreach (Transform child in self)
                 if (child is RectTransform r && r != _plaque)
-                    Stretch(r, r == _glass ? ThemeTokens.GetFloat("size.panel.glass.inset", 0f) : 0f);
+                    Stretch(r, r == _glass || r == _backing ? ThemeTokens.GetFloat("size.panel.glass.inset", 0f) : 0f);
             SyncCaps();
             if (_corners != null)
             {
@@ -118,7 +124,8 @@ namespace RuneSkin.Restyle
             }
             if (min.x > max.x) return;
             _fitted = true;
-            var pad = ThemeTokens.GetFloat(padToken, 0f);
+            // The stack reaches at least the caps' keep-out beyond the children, so no child runs under a cap.
+            var pad = Mathf.Max(ThemeTokens.GetFloat(padToken, 0f), CapClearance(0f));
             min -= new Vector2(pad, pad);
             max += new Vector2(pad, pad);
             // Anchors at the host pivot, so the local-space box maps 1:1 onto anchoredPosition/sizeDelta.
@@ -130,6 +137,24 @@ namespace RuneSkin.Restyle
             self.anchoredPosition = (min + max) * 0.5f - pivotLocal;
             SyncCaps();
             RaiseCaps();
+        }
+
+        // Inset the host's content needs so nothing runs under a corner cap (ref px, host space): the largest cap
+        // keep-out (theme "clear.<asset>", PanelMath.CapInset) minus how far the stack reaches beyond the host.
+        public float ContentInset() => _fitted ? 0f : CapClearance(ThemeTokens.GetFloat(PadToken, 0f));
+
+        private float CapClearance(float pad)
+        {
+            var inset = 0f;
+            if (_corners == null) return inset;
+            foreach (var corner in _corners)
+            {
+                if (!corner || !corner.TryGetComponent<Image>(out var image) || !image.enabled || !image.sprite) continue;
+                var s = image.sprite;
+                var asset = s.name.EndsWith("(Clone)", System.StringComparison.Ordinal) ? s.name.Substring(0, s.name.Length - 7) : s.name;
+                inset = Mathf.Max(inset, PanelMath.CapInset(ThemeTokens.GetFloat("clear." + asset, 0f), s.pixelsPerUnit, pad));
+            }
+            return inset;
         }
 
         // Caps container: same box as the stack, drawn after every host child (re-raised on each Ensure/fit, as

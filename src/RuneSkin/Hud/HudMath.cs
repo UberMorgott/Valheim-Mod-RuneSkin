@@ -26,6 +26,28 @@ namespace RuneSkin.PlayerHud
 
         public static float Clamp(float v, float min, float max) => v < min ? min : v > max ? max : v;
 
+        // Rounds a reference-px position to whole physical pixels (pxPerUnit = physical px per reference px).
+        public static float Snap(float v, float pxPerUnit) =>
+            pxPerUnit > 0f && !float.IsInfinity(pxPerUnit) ? (float)Math.Round(v * pxPerUnit) / pxPerUnit : v;
+
+        // Vertical stacking of frames whose rails do not reach the sprite edge (theme "edge.<asset>.top/bottom",
+        // transparent rows above / below the rail): the next frame starts where the lower rail's top edge is,
+        // minus the upper frame's own bottom margin, so the rails touch (mockup hud-status-b: no gaps).
+        public static float StackStep(float lowerHeight, float lowerEdgeTop, float upperEdgeBottom, float gap) =>
+            Math.Max(0f, lowerHeight - Math.Max(0f, lowerEdgeTop) - Math.Max(0f, upperEdgeBottom) + gap);
+
+        // Food diamonds (sockets = squares rotated 45 deg, the diamond touching the cell's edge midpoints), a
+        // checkerboard row like AugaSkin's (equal diagonal steps, alternating low / high): centres step by s on both
+        // axes, so facing edges are parallel along their whole length, perpendicular gap = (2s - cell) / sqrt 2.
+        public static float DiamondStep(float cell, float gap) => (cell + Math.Max(0f, gap) * (float)Math.Sqrt(2.0)) / 2f;
+
+        // Lower-left corner of socket i (row origin = lower-left of the lowest cell); odd sockets are raised.
+        public static void DiamondCell(int i, float step, out float x, out float y)
+        {
+            x = i * step;
+            y = (i & 1) == 1 ? step : 0f;
+        }
+
         // ---- pending-damage stripes (hud-resource-states §3) ------------------------------------------------------
 
         public struct Stripe
