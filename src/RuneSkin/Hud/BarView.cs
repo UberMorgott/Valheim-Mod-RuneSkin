@@ -17,7 +17,12 @@ namespace RuneSkin.PlayerHud
 
         public RectTransform Root;
         private RectTransform _window;
-        private Image _trough, _lag, _fill, _reserved, _reservedEdge, _lock, _frame, _overlay, _paused;
+        private Image _trough, _lag, _fill, _reserved, _reservedEdge, _lock, _frame, _overlay, _paused, _glyph;
+        private Vector2 _glyphAt; private float _glyphSize;
+        // Fill-end effect (mockup: HP glossy glow front, stamina sheen, eitr wisps): one Simple image riding the fill
+        // end, its core at frontCore of its width; alpha breathes (canvasRenderer alpha: no mesh rebuild).
+        private Image _front;
+        private float _frontCore, _frontClock;
         // Wet: a few single drip clusters at irregular spots along the frame bottom (a tiled row read as a zipper).
         private static readonly float[] WetSpots = { 0.07f, 0.38f, 0.79f };
         private readonly Image[] _wet = new Image[WetSpots.Length];
@@ -43,7 +48,8 @@ namespace RuneSkin.PlayerHud
         // the same factor). mainValue: the value is centred and large with the glow material (health); else small,
         // right-aligned.
         public BarView(HudArt art, Transform parent, string name, bool rail, string frameToken, string fillColorToken,
-            float scale = 1f, bool mainValue = false)
+            float scale = 1f, bool mainValue = false, string glyphToken = null, string frontToken = null, string frontColorToken = null,
+            float frontCore = 0.5f)
         {
             _art = art;
             _rail = rail;
@@ -63,6 +69,12 @@ namespace RuneSkin.PlayerHud
             _trough = art.Image("Trough", _window, rail ? "sprite.hud.rail.trough" : "sprite.hud.bar.trough", "color.hud.trough", Image.Type.Sliced);
             _lag = art.Image("Lag", _window, rail ? "sprite.hud.rail.fill" : "sprite.hud.bar.lag", "color.hud.lag", Image.Type.Sliced);
             _fill = art.Image("Fill", _window, rail ? "sprite.hud.rail.fill" : "sprite.hud.bar.fill", fillColorToken, Image.Type.Sliced);
+            if (frontToken != null && ThemeTokens.GetSprite(frontToken))
+            {
+                _front = art.Image("Front", _window, frontToken, frontColorToken, Image.Type.Simple);
+                _frontCore = Mathf.Clamp01(frontCore);
+                _front.gameObject.SetActive(false);
+            }
             if (!rail)
                 for (var i = 0; i < MaxStripes; i++)
                 {
@@ -77,6 +89,7 @@ namespace RuneSkin.PlayerHud
             _lock.gameObject.SetActive(false);
             _frame = art.Image("Frame", Root, frameToken, "color.hud.frame", Image.Type.Tiled);
             _frameColor = _frame.color;
+            if (glyphToken != null) Glyph(frameToken, glyphToken, scale);
             if (!rail)
             {
                 _overlay = art.Image("Overlay", Root, "sprite.hud.overlay.frost", "color.overlay.frost", Image.Type.Simple);
@@ -119,6 +132,23 @@ namespace RuneSkin.PlayerHud
             top = ThemeTokens.GetFloat(key + ".top", b.w) * toRef;
             height = Mathf.Max(2f, sprite.rect.height * toRef - bottom - top);
         }
+        // Pool glyph in the frame's icon recess: the art states the recess per frame sprite as theme floats
+        // "recess.<asset>.x/y/r" (sprite px, y from the top; art\sprites\sprites.json notes). Without them, or
+        // without the glyph sprite, no glyph is drawn.
+        private void Glyph(string frameToken, string glyphToken, float scale)
+        {
+            var frame = ThemeTokens.GetSprite(frameToken);
+            if (!frame || !ThemeTokens.GetSprite(glyphToken)) return;
+            var key = "recess." + (frame.name.EndsWith("(Clone)", System.StringComparison.Ordinal) ? frame.name.Substring(0, frame.name.Length - 7) : frame.name);
+            var r = ThemeTokens.GetFloat(key + ".r", 0f);
+            if (!(r > 0f)) return;
+            var toRef = 100f / Mathf.Max(1f, frame.pixelsPerUnit) * scale;
+            _glyphAt = new Vector2(ThemeTokens.GetFloat(key + ".x", 0f), frame.rect.height - ThemeTokens.GetFloat(key + ".y", 0f)) * toRef;
+            _glyphSize = 2f * r * ThemeTokens.GetFloat("share.hud.glyph.recess", 0.9f) * toRef;
+            _glyph = _art.Image("Glyph", Root, glyphToken, "color.hud.glyph", Image.Type.Simple);
+            _glyph.preserveAspect = true;
+        }
+
         public float Height => _h + _insetB + _insetT;
         public float Width => Mathf.Max(0f, _length) + _insetL + _insetR;
         public float WindowLength => _length;
@@ -151,6 +181,12 @@ namespace RuneSkin.PlayerHud
         // Per-frame animation clock (runs even when no value changed).
         public void Tick(float dt)
         {
+            if (_front && _front.gameObject.activeSelf)
+            {
+                _frontClock += dt;
+                var lo = ThemeTokens.GetFloat("share.hud.front.min", 0.7f);
+                _front.canvasRenderer.SetAlpha(Mathf.Lerp(lo, 1f, 0.5f + 0.5f * Mathf.Sin(_frontClock * ThemeTokens.GetFloat("rate.hud.front", 2.4f))));
+            }
             if (_pulse <= 0f) return;
             _pulse = Mathf.Max(0f, _pulse - dt / Mathf.Max(0.05f, ThemeTokens.GetFloat("time.hud.pulse", 0.6f)));
             var k = Mathf.Sin(_pulse * Mathf.PI * 0.5f); // full highlight at the step, eases out
@@ -166,6 +202,14 @@ namespace RuneSkin.PlayerHud
             _window.sizeDelta = new Vector2(l, _h);
             Full(_trough.rectTransform, l);
             Stretch(_frame.rectTransform);
+            if (_glyph)
+            {
+                var gr = _glyph.rectTransform;
+                gr.anchorMin = gr.anchorMax = Vector2.zero;
+                gr.pivot = new Vector2(0.5f, 0.5f);
+                gr.anchoredPosition = _glyphAt;
+                gr.sizeDelta = new Vector2(_glyphSize, _glyphSize);
+            }
             if (_overlay) PlaceOverlay();
             var nr = _number.rectTransform;
             nr.anchoredPosition = new Vector2(_insetL, _insetB);
@@ -211,7 +255,21 @@ namespace RuneSkin.PlayerHud
                 _fill.color = ThemeTokens.GetColor(inert ? "color.hud.inert" : fillToken, Color.white);
             }
             {
-                Place(_fill, 0f, l * cur / max, cur > 0f);
+                var fillW = l * cur / max;
+                Place(_fill, 0f, fillW, cur > 0f);
+                if (_front)
+                {
+                    var fs = _front.sprite;
+                    var fwid = fs ? _h * fs.rect.width / Mathf.Max(1f, fs.rect.height) : _h;
+                    var on = fillW > fwid * _frontCore;
+                    if (_front.gameObject.activeSelf != on) _front.gameObject.SetActive(on);
+                    if (on)
+                    {
+                        var fr = _front.rectTransform;
+                        fr.sizeDelta = new Vector2(fwid, _h);
+                        fr.anchoredPosition = new Vector2(fillW - fwid * _frontCore, 0f);
+                    }
+                }
                 Place(_lag, 0f, l * _lagValue / max, _lagValue > cur + 0.01f);
                 HudMath.Reserved(avail, max, l, out var rs, out var rw);
                 var reserve = rw >= 0.5f;
@@ -227,7 +285,8 @@ namespace RuneSkin.PlayerHud
                 }
                 if (_lock.gameObject.activeSelf != lockOn) _lock.gameObject.SetActive(lockOn);
                 // The number ends before the locked segment (never over the hatch or the lock rune).
-                var nw = _main && !reserve ? l : Mathf.Max(0f, (reserve ? rs : l) - 4f);
+                // Main value: centred in the filled part (mockup), never narrower than the text itself.
+                var nw = _main && !reserve ? Mathf.Clamp(fillW, Mathf.Min(l, _number.preferredWidth + 24f), l) : Mathf.Max(0f, (reserve ? rs : l) - 4f);
                 var nr = _number.rectTransform;
                 if (Mathf.Abs(nr.sizeDelta.x - nw) > 0.5f) nr.sizeDelta = new Vector2(nw, _h);
             }

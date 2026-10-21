@@ -117,7 +117,10 @@ namespace RuneSkin.Restyle
                 {
                     if (role.Sprite) { mark.HasSprite = true; mark.OrigSprite = image.sprite; image.sprite = mark.SetSprite = role.Sprite; }
                     if (role.ImageType.HasValue) { mark.HasType = true; mark.OrigType = image.type; image.type = mark.SetType = role.ImageType.Value; }
-                    if (role.PpuMultiplier > 0f) { mark.HasPpu = true; mark.OrigPpu = image.pixelsPerUnitMultiplier; image.pixelsPerUnitMultiplier = mark.SetPpu = role.PpuMultiplier; }
+                    var ppu = role.PpuMultiplier > 0f ? role.PpuMultiplier : 0f;
+                    if (role.Sprite && (image.type == Image.Type.Sliced || image.type == Image.Type.Tiled))
+                        ppu = (ppu > 0f ? ppu : 1f) * CanvasPpuFactor(image);
+                    if (ppu > 0f) { mark.HasPpu = true; mark.OrigPpu = image.pixelsPerUnitMultiplier; image.pixelsPerUnitMultiplier = mark.SetPpu = ppu; }
                     if (role.PreserveAspect) { mark.HasPreserve = true; mark.OrigPreserve = image.preserveAspect; image.preserveAspect = mark.SetPreserve = true; }
                     if (role.FillCenter.HasValue) { mark.HasFill = true; mark.OrigFill = image.fillCenter; image.fillCenter = mark.SetFill = role.FillCenter.Value; }
                     if (role.Color.HasValue) { mark.HasImageColor = true; mark.OrigImageColor = image.color; image.color = mark.SetImageColor = role.Color.Value; }
@@ -176,6 +179,26 @@ namespace RuneSkin.Restyle
                 }
             }
             return complete;
+        }
+
+        // Theme geometry (sliced borders, tile periods, native sizes) is authored at canvas referencePixelsPerUnit 100
+        // (sprite px x 100 / sprite PPU). Unity draws a sprite px as canvas.referencePixelsPerUnit / (sprite PPU x
+        // pixelsPerUnitMultiplier) units, and Valheim's canvases run at 50 (live dump: Hud, Menu and tooltip refPpu=50),
+        // which halves every border. Multiplying the multiplier by refPpu / 100 cancels the canvas value.
+        public static float CanvasPpuFactor(Graphic g)
+        {
+            var canvas = g.canvas;
+            if (!canvas) canvas = g.GetComponentInParent<Canvas>(true);
+            var r = canvas ? canvas.referencePixelsPerUnit : 100f;
+            return r > 0f ? r / 100f : 1f;
+        }
+
+        // SetNativeSize at reference 100 (SetNativeSize itself divides by the canvas value and ignores the multiplier).
+        public static void SetReferenceSize(Image image)
+        {
+            var s = image ? image.sprite : null;
+            if (!s || !(s.pixelsPerUnit > 0f)) return;
+            image.rectTransform.sizeDelta = s.rect.size * (100f / s.pixelsPerUnit);
         }
 
         public static void Revert(SkinMark mark)

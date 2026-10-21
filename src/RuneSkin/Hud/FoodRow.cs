@@ -41,7 +41,11 @@ namespace RuneSkin.PlayerHud
         {
             _art = art;
             Root = HudArt.Rect("Food", parent);
+            // Dark small-frame group behind the sockets (mockup-1 bottom-left), padded by size.hud.food.pad.
+            _group = art.Image("Group", Root, "sprite.hud.frame.small", "color.frame", Image.Type.Sliced);
         }
+
+        private readonly Image _group;
 
         public void Update(Player player, float maxWidth)
         {
@@ -57,27 +61,37 @@ namespace RuneSkin.PlayerHud
             }
             var n = Mathf.Max(capacity, foods.Count);
             var cell = ThemeTokens.GetFloat("size.hud.food.cell", 46f);
-            var gap = ThemeTokens.GetFloat("size.hud.gap", 5f);
+            var gap = ThemeTokens.GetFloat("size.hud.food.gap", 6f);
             while (_sockets.Count < n) _sockets.Add(Make(_sockets.Count, cell));
-            var flow = HudMath.Wrap(n, cell, gap, maxWidth, n); // as many rows as needed: food is never hidden
+            _ = maxWidth; // one zigzag row: food counts stay small (vanilla 3, gem 4)
+            // Staggered zigzag (user call): odd sockets raised by the stagger, steps of (1 - stagger) cell, so the diamonds
+            // interlock edge to edge (two diamonds touch when dx + dy = cell).
+            var stagger = cell * ThemeTokens.GetFloat("share.hud.food.stagger", 0.5f);
+            var step = cell - stagger + gap;
             Count = n;
-            Width = n == 0 ? 0f : Mathf.Min(n, flow.Columns) * (cell + gap) - gap;
-            Height = flow.Rows * (cell + gap) - (flow.Rows > 0 ? gap : 0f);
+            Width = n == 0 ? 0f : (n - 1) * step + cell;
+            Height = n == 0 ? 0f : n == 1 ? cell : cell + stagger;
             Root.sizeDelta = new Vector2(Width, Height);
+            var pad = ThemeTokens.GetFloat("size.hud.food.pad", 8f);
+            var gr = _group.rectTransform;
+            gr.anchorMin = Vector2.zero;
+            gr.anchorMax = Vector2.one;
+            gr.offsetMin = new Vector2(-pad, -pad);
+            gr.offsetMax = new Vector2(pad, pad);
+            if (_group.gameObject.activeSelf != (n > 0)) _group.gameObject.SetActive(n > 0);
             for (var i = 0; i < _sockets.Count; i++)
             {
                 var s = _sockets[i];
                 var on = i < n;
                 if (s.Root.gameObject.activeSelf != on) s.Root.gameObject.SetActive(on);
                 if (!on) continue;
-                // Rows grow upward from the row's bottom edge.
-                var pos = new Vector2(i % flow.Columns * (cell + gap), i / flow.Columns * (cell + gap));
+                var pos = new Vector2(i * step, i % 2 == 1 ? stagger : 0f);
                 if (s.Root.anchoredPosition != pos) s.Root.anchoredPosition = pos;
                 var gem = i >= extraFrom;
                 if (gem != s.Gem)
                 {
                     s.Gem = gem;
-                    _art.Restyle(s.Rim, gem ? extraGlyph ?? "sprite.hud.socket.gem" : "sprite.hud.socket", "color.frame", Image.Type.Simple);
+                    _art.Restyle(s.Rim, gem ? extraGlyph ?? "sprite.hud.socket.gem" : "sprite.hud.socket", "color.hud.socket", Image.Type.Simple);
                 }
                 Fill(s, i < foods.Count ? foods[i] : null);
             }
@@ -87,9 +101,9 @@ namespace RuneSkin.PlayerHud
         {
             var s = new Socket { Root = HudArt.Rect("Socket" + index, Root) };
             s.Root.sizeDelta = new Vector2(cell, cell);
-            s.Rim = _art.Image("Rim", s.Root, "sprite.hud.socket", "color.frame", Image.Type.Simple);
+            s.Rim = _art.Image("Rim", s.Root, "sprite.hud.socket", "color.hud.socket", Image.Type.Simple);
             Stretch(s.Rim.rectTransform, 0f);
-            s.Ring = _art.Image("Ring", s.Root, "sprite.hud.food.ring", "color.hud.glyph", Image.Type.Simple);
+            s.Ring = _art.Image("Ring", s.Root, "sprite.hud.food.ring", "color.hud.food.ring", Image.Type.Simple);
             Stretch(s.Ring.rectTransform, 0f);
             if (s.Ring.sprite)
             {
@@ -116,7 +130,7 @@ namespace RuneSkin.PlayerHud
             var urgent = has && food.m_time / Game.m_foodRate < 60f;
             if (s.Timer.gameObject.activeSelf != urgent) s.Timer.gameObject.SetActive(urgent);
             if (s.Ring.gameObject.activeSelf != (has && s.Ring.sprite)) s.Ring.gameObject.SetActive(has && s.Ring.sprite);
-            var empty = ThemeTokens.GetColor(has ? "color.frame" : "color.hud.socket.empty", Color.white);
+            var empty = ThemeTokens.GetColor(has ? "color.hud.socket" : "color.hud.socket.empty", Color.white);
             if (s.Rim.color != empty) s.Rim.color = empty;
             if (!has)
             {

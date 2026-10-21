@@ -194,7 +194,7 @@ namespace RuneSkin.Restyle
         {
             rect.anchorMin = rect.anchorMax = rect.pivot = corner;
             rect.anchoredPosition = Vector2.zero;
-            if (rect.TryGetComponent<Image>(out var image) && image.sprite) image.SetNativeSize();
+            if (rect.TryGetComponent<Image>(out var image)) Restyler.SetReferenceSize(image);
         }
     }
 

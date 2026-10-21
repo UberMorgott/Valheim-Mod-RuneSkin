@@ -29,7 +29,8 @@ namespace RuneSkin.PlayerHud
         private TMPro.TMP_Text _plaqueText;
         private string _plaqueShown;
         private FoodRow _food;
-        private StatusStrip _strip;
+        private StatusStrip _strip, _buffs;
+        private GuardianSocket _gp;
         private readonly List<StatusEffect> _hudEffects = new List<StatusEffect>(16);
         private bool _fed;
         private readonly List<KeyValuePair<int, float>> _pending = new List<KeyValuePair<int, float>>(4);
@@ -90,11 +91,16 @@ namespace RuneSkin.PlayerHud
             _themeRevision = ThemeTokens.Revision;
             _childrenOn = true;
             _plaqueShown = null;
-            _strip = new StatusStrip(_art, _root);
-            _eitr = new BarView(_art, _root, "Eitr", false, "sprite.hud.bar.frame.slim", "color.hud.eitr");
+            _strip = new StatusStrip(_art, _root, true, "StatusStrip");
+            _buffs = new StatusStrip(_art, _root, false, "BuffStrip");
+            _gp = new GuardianSocket(_art, _root);
+            _eitr = new BarView(_art, _root, "Eitr", false, "sprite.hud.bar.frame.slim", "color.hud.eitr",
+                ThemeTokens.GetFloat("scale.hud.bar.slim", 1f), glyphToken: "sprite.hud.glyph.eitr", frontToken: "sprite.hud.front.eitr", frontColorToken: "color.hud.front.eitr", frontCore: 0.2f);
             _adrenaline = new BarView(_art, _root, "Adrenaline", true, "sprite.hud.rail.frame.adrenaline", "color.hud.adrenaline");
-            _stamina = new BarView(_art, _root, "Stamina", false, "sprite.hud.bar.frame.slim", "color.hud.stamina");
-            _health = new BarView(_art, _root, "Health", false, "sprite.hud.bar.frame", "color.hud.health", 1f, mainValue: true);
+            _stamina = new BarView(_art, _root, "Stamina", false, "sprite.hud.bar.frame.slim", "color.hud.stamina",
+                ThemeTokens.GetFloat("scale.hud.bar.slim", 1f), glyphToken: "sprite.hud.glyph.stamina", frontToken: "sprite.hud.front.stamina", frontColorToken: "color.hud.front.stamina", frontCore: 0.2f);
+            _health = new BarView(_art, _root, "Health", false, "sprite.hud.bar.frame", "color.hud.health", 1f, mainValue: true,
+                frontToken: "sprite.hud.front.health", frontColorToken: "color.hud.front.health", frontCore: 0.5f);
             _es = new BarView(_art, _root, "EnergyShield", true, "sprite.hud.rail.frame.es", "color.hud.es");
             _food = new FoodRow(_art, _root);
             _plaque = HudArt.Rect("ConversionPlaque", _root);
@@ -132,7 +138,7 @@ namespace RuneSkin.PlayerHud
         // CanvasGroup at alpha 0. Animators keep animating their own groups inside it.
         private void Suppress()
         {
-            var roots = new[] { _hud.m_healthPanel, _hud.m_staminaBar2Root, _hud.m_adrenalineBarRoot, _hud.m_eitrBarRoot, _hud.m_statusEffectListRoot };
+            var roots = new[] { _hud.m_healthPanel, _hud.m_staminaBar2Root, _hud.m_adrenalineBarRoot, _hud.m_eitrBarRoot, _hud.m_statusEffectListRoot, _hud.m_gpRoot };
             var wrappers = new Dictionary<Transform, Transform>();
             foreach (var r in roots)
             {
@@ -194,6 +200,7 @@ namespace RuneSkin.PlayerHud
             Sample(player, dt);
             ArrangeAndPlace(player);
             _strip.Tick(dt);
+            _buffs.Tick(dt);
             if (Time.frameCount % 300 == 0) Record();
         }
 
@@ -221,8 +228,19 @@ namespace RuneSkin.PlayerHud
             var pressed = key.MainKey != KeyCode.None && key.IsDown();
             if (!pressed && !string.IsNullOrEmpty(pad) && ZInput.IsGamepadActive() && ZInput.GetButton("JoyAltKeys") && ZInput.GetButtonDown(pad))
                 pressed = true;
-            if (pressed) _strip.TogglePopup();
-            else if (_strip.PopupOpen && (ZInput.GetKeyDown(KeyCode.Escape) || ZInput.GetButtonDown("JoyBack"))) _strip.ClosePopup();
+            // One key cycles the full lists: debuffs -> buffs -> closed (only lists with entries open).
+            if (pressed)
+            {
+                if (_strip.PopupOpen) { _strip.ClosePopup(); if (_buffs.Count > 0) _buffs.TogglePopup(); }
+                else if (_buffs.PopupOpen) _buffs.ClosePopup();
+                else if (_strip.Count > 0) _strip.TogglePopup();
+                else if (_buffs.Count > 0) _buffs.TogglePopup();
+            }
+            else if ((_strip.PopupOpen || _buffs.PopupOpen) && (ZInput.GetKeyDown(KeyCode.Escape) || ZInput.GetButtonDown("JoyBack")))
+            {
+                _strip.ClosePopup();
+                _buffs.ClosePopup();
+            }
         }
 
         private void Sample(Player p, float dt)
@@ -384,11 +402,17 @@ namespace RuneSkin.PlayerHud
             if (_es.Root.gameObject.activeSelf) barW = Mathf.Max(barW, _es.Width);
             var y = 0f;
             var stripBudget = ThemeTokens.GetFloat("size.hud.status.budget", 84f);
-            if (_fed) _strip.Feed(_hudEffects);
-            _strip.Arrange(barW, stripBudget);
-            y += stripBudget;
+            var statusPad = ThemeTokens.GetFloat("size.hud.status.pad", 6f);
+            _gp.Update(p);
+            _strip.ExcludeHash = _buffs.ExcludeHash = _gp.Visible ? _gp.ActiveHash : 0;
+            if (_fed) { _strip.Feed(_hudEffects); _buffs.Feed(_hudEffects); }
+            // Debuff strip under the bars: as tall as its rows, nothing at all without debuffs.
+            // The bars keep one strip row reserved, so they never jump when the first debuff arrives.
+            var used = _strip.Arrange(barW, stripBudget);
+            var rowH = ThemeTokens.GetFloat("size.hud.status.cell", 42f) + ThemeTokens.GetFloat("size.hud.status.gap", 4f);
+            y += statusPad + Mathf.Max(used, rowH);
             _strip.Root.anchoredPosition = new Vector2(0f, y);
-            y += gap + ThemeTokens.GetFloat("size.hud.status.pad", 6f); // the strip panel reaches pad above its cells
+            y += gap + statusPad; // the strip panel reaches pad above its cells
             if (_eitr.Root.gameObject.activeSelf) { _eitr.Root.anchoredPosition = new Vector2(0f, y); y += _eitr.Height + gap; }
             if (_plaque.gameObject.activeSelf)
             {
@@ -408,20 +432,34 @@ namespace RuneSkin.PlayerHud
             y += _health.Height + gap;
             if (_es.Root.gameObject.activeSelf) { _es.Root.anchoredPosition = new Vector2(0f, y); y += _es.Height + gap; }
             _food.Update(p, barW);
-            y += _food.TimerDrop; // the timers hang below the sockets: keep them off the rail / bar below
+            y += _food.TimerDrop + ThemeTokens.GetFloat("size.hud.food.pad", 8f); // timers + group frame below the sockets
             _food.Root.anchoredPosition = new Vector2(0f, y);
             var rowTop = y + _food.Height;
             // Width to fit: the bars, or the food row plus the foreign blocks placed after it (EAQS quick slots,
             // guardian power), measured in reference px from their visible bounds (last frame's cluster scale).
             var foreignW = 0f;
             var perRef = _root.lossyScale.x;
+            // Guardian power socket right after the food row (own art, vanilla m_gpRoot suppressed), then EAQS.
+            var foodGap = ThemeTokens.GetFloat("size.hud.food.gap", 6f) * 2f;
+            if (_gp.Visible)
+            {
+                var gs = _gp.Size;
+                _gp.Root.anchoredPosition = new Vector2(_food.Width + foodGap, y + Mathf.Max(0f, (_food.Height - gs) / 2f));
+                foreignW += gs + foodGap;
+                rowTop = Mathf.Max(rowTop, y + gs);
+            }
+            var quickX = _food.Width + foodGap + foreignW;
             if (perRef > 0f)
             {
                 var quick = QuickBar();
                 if (quick && Bounds(quick, out var qMin, out var qMax)) foreignW += (qMax.x - qMin.x) / perRef + gap * 2f;
-                if (_hud.m_gpRoot && _hud.m_gpRoot.gameObject.activeInHierarchy && Bounds(_hud.m_gpRoot, out var gMin, out var gMax))
-                    foreignW += (gMax.x - gMin.x) / perRef + gap * 2f;
             }
+            // Buff row above the food: one row, same dynamic-length frame, "+N" overflow.
+            var cellB = ThemeTokens.GetFloat("size.hud.status.cell", 42f);
+            var buffTop = rowTop + ThemeTokens.GetFloat("size.hud.food.pad", 8f) + statusPad + gap;
+            var usedB = _buffs.Arrange(barW, cellB + ThemeTokens.GetFloat("size.hud.status.gap", 4f));
+            _buffs.Root.anchoredPosition = new Vector2(0f, buffTop + usedB);
+            if (usedB > 0f) rowTop = buffTop + usedB + statusPad;
             var clusterW = Mathf.Max(barW, _food.Width + gap * 2f + foreignW);
             var clusterH = rowTop;
 
@@ -436,10 +474,8 @@ namespace RuneSkin.PlayerHud
             PlaceAtScreen(_root, new Vector2(boxX + margin, safe.y + margin), s);
 
             // Foreign blocks: EAQS quick slots right of the food row, guardian power after them, hotbar top-left.
-            var food = _root.TransformPoint(new Vector3(_food.Width + gap * 2f, y, 0f));
-            var after = PlaceBlock(QuickBar(), food, false);
-            if (_hud.m_gpRoot && _hud.m_gpRoot.gameObject.activeInHierarchy)
-                PlaceBlock(_hud.m_gpRoot, after, false);
+            var food = _root.TransformPoint(new Vector3(quickX, y, 0f));
+            PlaceBlock(QuickBar(), food, false);
             if (_hotbar)
             {
                 var top = ThemeTokens.GetFloat("size.hud.hotbar.top", 24f) * s;

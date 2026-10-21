@@ -54,10 +54,16 @@ namespace RuneSkin.PlayerHud
 
         private readonly RectTransform _panel;
 
-        public StatusStrip(HudArt art, Transform parent)
+        // harmful: the debuff strip under the bars (true) or the buff row above the food (false); each takes only its
+        // side of EffectTaxonomy Harmful. The guardian power's own effect (ExcludeHash) shows on its socket instead.
+        private readonly bool _harmful;
+        public int ExcludeHash;
+
+        public StatusStrip(HudArt art, Transform parent, bool harmful, string name)
         {
             _art = art;
-            Root = HudArt.Rect("StatusStrip", parent);
+            _harmful = harmful;
+            Root = HudArt.Rect(name, parent);
             // One framed dark-glass panel behind the cells (mockup hud-status-b), only while effects exist.
             _panel = HudArt.Rect("Panel", Root);
             // frame_strip carries its own dark interior (art notes); separator_v studs between entries.
@@ -79,8 +85,9 @@ namespace RuneSkin.PlayerHud
             _entries.Clear();
             foreach (var se in effects)
             {
-                if (!se || se.m_hidden) continue;
+                if (!se || se.m_hidden || (ExcludeHash != 0 && se.NameHash() == ExcludeHash)) continue;
                 var c = StatusSource.Classify(se, out var registered);
+                if (c.Harmful != _harmful) continue;
                 var prio = registered && RuneSkin.Api.Providers.TryEffect(se.NameHash(), out var d) ? d.Priority : c.TintPriority + c.OverlayPriority;
                 _entries.Add(new Entry { Effect = se, Hash = se.NameHash(), Class = c, Priority = prio });
             }
@@ -108,8 +115,10 @@ namespace RuneSkin.PlayerHud
             if (panelOn)
             {
                 var pad = ThemeTokens.GetFloat("size.hud.status.pad", 6f);
-                // Full cluster width like the bars above (mockup hud-status-b).
-                _panel.sizeDelta = new Vector2(width + 2f * pad, flow.Rows * (cell + gap) - gap + 2f * pad);
+                // Frame length follows the drawn cells (never empty cells); the tiled frame grows with the count.
+                var cols = Mathf.Min(flow.Columns, flow.Visible + (flow.MoreCell ? 1 : 0));
+                // Extra room at the end: timer text is wider than its cell (h:mm:ss) and must clear the frame edge.
+                _panel.sizeDelta = new Vector2(cols * (cell + gap) - gap + 2f * pad + ThemeTokens.GetFloat("size.hud.status.pad.end", 0f), flow.Rows * (cell + gap) - gap + 2f * pad);
                 _panel.anchoredPosition = new Vector2(-pad, -flow.Rows * (cell + gap) + gap - pad);
             }
             Separators(flow, cell, gap);
