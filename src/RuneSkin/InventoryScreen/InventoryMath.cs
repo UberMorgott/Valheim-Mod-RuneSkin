@@ -41,12 +41,13 @@ namespace RuneSkin.InventoryScreen
     // Sizes in design units (multiplied by SkinScale inside Compute). Defaults = 1920x1080 reference of layout A.
     public sealed class InventoryTokens
     {
-        public float Margin = 32f, Gap = 16f;
+        public float Margin = 32f, Gap = 16f, InnerGap = 8f;
         public float DockW = 528f, CenterW = 720f, CraftW = 576f;
         public float MinDockW = 380f, MinCraftW = 456f;
         public float WorkspaceMaxW = 1920f;
-        public float PanelMaxH = 760f, CenterMaxH = 920f, PanelActionsH = 48f;
-        public float HudBand = 288f;
+        public float PanelMaxH = 840f, PanelActionsH = 48f;
+        // Fallback HUD band when the HUD cluster top is not known (InventoryInput.HudTop).
+        public float HudBand = 210f;
         public float HeaderH = 88f, FooterH = 48f, PanelHeaderH = 56f, PanelPad = 20f;
         public float GridCell = 64f, GridGap = 8f, HotbarHeaderH = 30f;
         public float ContainerCell = 56f, ContainerGap = 6f;
@@ -86,6 +87,8 @@ namespace RuneSkin.InventoryScreen
         public int ChestW, ChestH;
         public int BackpackW, BackpackH;
         public int DollStorage = 9, DollMirrors = 3;
+        // Top of the HUD cluster in the same logical units (0 = unknown): the columns end a gap above it.
+        public float HudTop;
     }
 
     public sealed class InventoryLayout
@@ -118,19 +121,22 @@ namespace RuneSkin.InventoryScreen
             var wsW = Math.Min(usableW, Math.Max(0f, t.WorkspaceMaxW * k - 2f * margin));
             var wsX = safe.X + (safe.W - wsW) / 2f;
             var top = safe.Y + margin;
-            var bottom = safe.Bottom - t.HudBand * k;
+            // layout-a2/a3: dock, centre and crafting share one top and one bottom edge, the HUD band below the block.
+            // The band is the live HUD cluster top when known (it sits bottom-left, under the dock), else the token.
+            var bottom = i.HudTop > 0f ? Math.Min(safe.Bottom - margin, i.HudTop - gap) : safe.Bottom - t.HudBand * k;
             var panelH = Math.Max(0f, Math.Min(t.PanelMaxH * k, bottom - top));
-            // The HUD cluster sits bottom-left (under the dock) and summon frames bottom-right (under crafting):
-            // only those columns stop above the HUD band; the centre column runs down to the bottom margin.
-            var centerH = Math.Max(panelH, Math.Min(t.CenterMaxH * k, safe.Bottom - margin - top));
+            var centerH = panelH;
             o.Workspace = new Box(wsX, top, wsW, panelH);
+            // No chest and no backpack: no dock column, centre + crafting re-centre (inventory-layout.md section 9).
+            var hasDock = i.ChestW > 0 && i.ChestH > 0 || i.BackpackW > 0 && i.BackpackH > 0;
 
             // Centre width: its design width, but never narrower than the grid at the minimum pitch.
             var gridMinW = i.GridW * Math.Max(o.MinCell + t.GridGap * k, 1f) + 2f * t.PanelPad * k;
             var centerW = Math.Max(t.CenterW * k, gridMinW);
-            var dockW = t.DockW * k;
+            var dockW = hasDock ? t.DockW * k : 0f;
             var craftW = t.CraftW * k;
-            var full = dockW + centerW + craftW + 2f * gap;
+            var dockGap = hasDock ? gap : 0f;
+            var full = dockW + centerW + craftW + gap + dockGap;
             if (wsW >= full - 0.01f)
             {
                 o.Mode = InventoryMode.Full;
@@ -142,7 +148,7 @@ namespace RuneSkin.InventoryScreen
                 var craftCut = Math.Min(deficit, craftW - t.MinCraftW * k);
                 craftW -= craftCut;
                 deficit -= craftCut;
-                var dockCut = Math.Min(deficit, dockW - t.MinDockW * k);
+                var dockCut = hasDock ? Math.Min(deficit, dockW - t.MinDockW * k) : 0f;
                 dockW -= dockCut;
                 deficit -= dockCut;
                 o.Mode = deficit <= 0.01f ? InventoryMode.Narrow : InventoryMode.Stacked;
@@ -151,10 +157,10 @@ namespace RuneSkin.InventoryScreen
             if (o.Mode != InventoryMode.Stacked)
             {
                 // Centred group: dock | centre | crafting; leftover width splits on both sides.
-                var used = dockW + centerW + craftW + 2f * gap;
+                var used = dockW + centerW + craftW + gap + dockGap;
                 var x = wsX + Math.Max(0f, (wsW - used) / 2f);
-                o.Dock = new Box(x, top, dockW, panelH);
-                o.Center = new Box(o.Dock.Right + gap, top, centerW, centerH);
+                o.Dock = hasDock ? new Box(x, top, dockW, panelH) : default;
+                o.Center = new Box(x + dockW + dockGap, top, centerW, centerH);
                 o.Crafting = new Box(o.Center.Right + gap, top, craftW, panelH);
             }
             else
@@ -163,9 +169,16 @@ namespace RuneSkin.InventoryScreen
                 centerW = Math.Min(centerW, Math.Max(gridMinW, wsW - gap - t.MinDockW * k));
                 var rightW = Math.Max(0f, wsW - gap - centerW);
                 o.Center = new Box(wsX, top, centerW, centerH);
-                var half = Math.Max(0f, (panelH - gap) / 2f);
-                o.Crafting = new Box(o.Center.Right + gap, top, rightW, half);
-                o.Dock = new Box(o.Center.Right + gap, top + half + gap, rightW, panelH - half - gap);
+                if (hasDock)
+                {
+                    var half = Math.Max(0f, (panelH - gap) / 2f);
+                    o.Crafting = new Box(o.Center.Right + gap, top, rightW, half);
+                    o.Dock = new Box(o.Center.Right + gap, top + half + gap, rightW, panelH - half - gap);
+                }
+                else
+                {
+                    o.Crafting = new Box(o.Center.Right + gap, top, rightW, panelH);
+                }
             }
 
             LayoutCenter(i, t, k, o);
@@ -176,20 +189,34 @@ namespace RuneSkin.InventoryScreen
         private static void LayoutCenter(InventoryInput i, InventoryTokens t, float k, InventoryLayout o)
         {
             var c = o.Center;
-            var gap = t.Gap * k;
+            var gap = t.InnerGap * k;
             var pad = t.PanelPad * k;
             o.Header = new Box(c.X, c.Y, c.W, t.HeaderH * k);
             var footerH = t.FooterH * k;
             o.Footer = new Box(c.X, c.Bottom - footerH, c.W, footerH);
 
-            // Doll needs at least DollMinRows rows; the grid takes what is left (and scrolls past that).
-            var dollPitch = Math.Max(t.DollCell * k, o.MinCell) + t.DollGap * k;
+            // Doll and grid share the height between header and footer (header | doll | grid | footer). Both pitches
+            // shrink by one factor from their tokens until every doll row and grid row fits, never below the physical
+            // floor; past that the doll keeps DollMinRows rows and the grid scrolls.
             var dollPad = t.DollPad * k;
-            var dollMinH = Math.Min(t.DollMinRows, DollRows(i, t)) * dollPitch + 2f * dollPad;
-            var gridBoxMaxH = c.H - o.Header.H - footerH - dollMinH - 3f * gap; // header | doll | grid | footer
-            var grid = Fit(i.GridW, i.GridH, c.W, Math.Max(0f, gridBoxMaxH), t.HotbarHeaderH * k, pad, t.GridCell * k, t.GridGap * k, o.MinCell, t.ScrollbarW * k);
+            var dollRows = DollRows(i, t);
+            var hotbarH = t.HotbarHeaderH * k;
+            var avail = Math.Max(0f, c.H - o.Header.H - footerH - 3f * gap);
+            var gridMaxPitch = t.GridCell * k + t.GridGap * k;
+            var dollMaxPitch = Math.Max(t.DollCell * k, o.MinCell) + t.DollGap * k;
+            var gridMinPitch = o.MinCell + t.GridGap * k;
+            var dollMinPitch = o.MinCell + t.DollGap * k;
+            var fixedH = hotbarH + 2f * pad + (dollRows > 0 ? 2f * dollPad : 0f);
+            var wantH = i.GridH * gridMaxPitch + dollRows * dollMaxPitch;
+            var f = wantH > 0f ? Clamp((avail - fixedH) / wantH, 0f, 1f) : 1f;
+            var gridPitch = Math.Max(gridMinPitch, gridMaxPitch * f);
+            var dollPitch = Math.Max(dollMinPitch, dollMaxPitch * f);
+            var dollWantH = dollRows > 0 ? dollRows * dollPitch + 2f * dollPad : 0f;
+            var dollMinH = dollRows > 0 ? Math.Min(t.DollMinRows, dollRows) * dollPitch + 2f * dollPad : 0f;
+            var gridBoxMaxH = Math.Max(0f, avail - Math.Min(dollWantH, Math.Max(dollMinH, avail - (hotbarH + 2f * pad + i.GridH * gridPitch))));
+            var grid = Fit(i.GridW, i.GridH, c.W, gridBoxMaxH, hotbarH, pad, gridPitch - t.GridGap * k, t.GridGap * k, o.MinCell, t.ScrollbarW * k);
             o.Player = grid;
-            var gridH = Math.Min(grid.DesiredH, Math.Max(0f, gridBoxMaxH));
+            var gridH = Math.Min(grid.DesiredH, gridBoxMaxH);
             o.Grid = new Box(c.X, o.Footer.Y - gap - gridH, c.W, gridH);
 
             var dollTop = o.Header.Bottom + gap;
@@ -197,7 +224,7 @@ namespace RuneSkin.InventoryScreen
             o.Doll = new Box(c.X, dollTop, c.W, dollH);
             var d = new DollFit
             {
-                Cell = Math.Max(t.DollCell * k, o.MinCell),
+                Cell = dollPitch - t.DollGap * k,
                 Pitch = dollPitch,
                 StorageColumns = Math.Max(1, (int)t.DollColumns),
             };
@@ -236,8 +263,10 @@ namespace RuneSkin.InventoryScreen
                 var avail = dock.H - gap;
                 if (chest.DesiredH + pack.DesiredH <= avail + 0.01f)
                 {
-                    chestH = chest.DesiredH;
+                    // Both fit: the backpack keeps its content height, the chest fills the rest of the dock (one
+                    // bottom edge with centre and crafting, layout-a3.png).
                     packH = pack.DesiredH;
+                    chestH = avail - packH;
                 }
                 else if (minChest + minPack > avail + 0.01f)
                 {
@@ -250,7 +279,7 @@ namespace RuneSkin.InventoryScreen
                     // through its own open key, which shows it alone) - never an unusable sliver (Codex M2 review).
                     if (chestH < headerH + 2f * pad + chest.Pitch || packH < headerH + 2f * pad + pack.Pitch)
                     {
-                        chestH = Math.Min(chest.DesiredH, dock.H);
+                        chestH = dock.H;
                         packH = 0f;
                         hasPack = false;
                         o.BackpackFolded = true;
@@ -264,13 +293,14 @@ namespace RuneSkin.InventoryScreen
                     packH = avail - chestH;
                 }
             }
+            // One panel: the whole dock height (same bottom edge as the other columns; the grid sits at the top).
             else if (hasChest)
             {
-                chestH = Math.Min(chest.DesiredH, dock.H);
+                chestH = dock.H;
             }
             else if (hasPack)
             {
-                packH = Math.Min(pack.DesiredH, dock.H);
+                packH = dock.H;
             }
 
             if (hasChest)

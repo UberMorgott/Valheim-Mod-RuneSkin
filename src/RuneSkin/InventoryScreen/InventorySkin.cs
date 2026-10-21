@@ -137,7 +137,7 @@ namespace RuneSkin.InventoryScreen
             t.DockW = F("size.inv.dock", t.DockW); t.CenterW = F("size.inv.center", t.CenterW); t.CraftW = F("size.inv.craft", t.CraftW);
             t.MinDockW = F("size.inv.dock.min", t.MinDockW); t.MinCraftW = F("size.inv.craft.min", t.MinCraftW);
             t.WorkspaceMaxW = F("size.inv.workspace", t.WorkspaceMaxW); t.PanelMaxH = F("size.inv.panel.h", t.PanelMaxH);
-            t.CenterMaxH = F("size.inv.center.h", t.CenterMaxH); t.PanelActionsH = F("size.inv.panel.actions", t.PanelActionsH);
+            t.InnerGap = F("size.inv.inner.gap", t.InnerGap); t.PanelActionsH = F("size.inv.panel.actions", t.PanelActionsH);
             t.HudBand = F("size.inv.hud.band", t.HudBand); t.HeaderH = F("size.inv.header", t.HeaderH); t.FooterH = F("size.inv.footer", t.FooterH);
             t.PanelHeaderH = F("size.inv.panel.header", t.PanelHeaderH); t.PanelPad = F("size.inv.panel.pad", t.PanelPad);
             t.GridCell = F("size.inv.cell", t.GridCell); t.GridGap = F("size.inv.cell.gap", t.GridGap); t.HotbarHeaderH = F("size.inv.hotbar.header", t.HotbarHeaderH);
@@ -242,6 +242,9 @@ namespace RuneSkin.InventoryScreen
             }
         }
 
+        // Footer stat plates: vanilla Armor / Weight, CurrencyPocket CoinPocketUI, MorgottTweaks MT_Trash.
+        private static readonly string[] StatPlates = { "Armor", "CoinPocketUI", "Weight", "MT_Trash" };
+
         private static bool IsVanillaBackground(Transform t) =>
             t.name == "selected_frame" || t.name.StartsWith("BraidLineHorisontalMedium", StringComparison.Ordinal) && !t.parent.name.StartsWith("Title", StringComparison.Ordinal) ||
             t.name == "sunken" || t.name == "Bkg" || t.name == "Darken" || t.name == "bkg" || t.name == "SelectedFrame" || t.name.StartsWith("Eaqs", StringComparison.Ordinal) && t.name.EndsWith("Bkg", StringComparison.Ordinal);
@@ -267,6 +270,7 @@ namespace RuneSkin.InventoryScreen
                 var t = image.transform;
                 var sprite = image.sprite ? image.sprite.name : "";
                 if (t.name == "sunken") ctx.Role(image, "skip", "vanilla inset bevel (hidden, RuneSkin panel stack)");
+                else if (t.name == "bkg" && t.parent && Array.IndexOf(StatPlates, t.parent.name) >= 0) ctx.Role(image, "plate.stat", "stat plate strip (footer: armour, coins, weight, trash)");
                 else if (t.name == "Weight" && t.parent && (t.parent == _gui.m_player || t.parent.GetComponentInChildren<InventoryGrid>(true))) ctx.Role(image, "plate.stat", "weight plate (InventoryGui.m_weight / m_containerWeight)");
                 else if (t.name == "weight_icon") ctx.Role(image, "glyph.stat.weight", "weight plate icon");
                 else if (t.name == "armor_icon" && t.parent && t.parent.name == "Armor") ctx.Role(image, "glyph.stat.armor", "armor plate icon (InventoryGui.m_armor)");
@@ -274,6 +278,7 @@ namespace RuneSkin.InventoryScreen
                 else if (t.name == "armor_icon" && t.parent && t.parent.name == "CoinPocketUI") ctx.Role(image, "content", "MorgottTweaks coin pocket: item icon");
                 else if (t.name == "Background" && t.parent && t.parent.parent == _gui.m_info) ctx.Role(image, "tab.background", "info tab button background (Info/<tab>/Background)");
                 else if ((t.name == "Icon" || t.name == "Image") && t.parent && t.parent.parent == _gui.m_info) ctx.Role(image, "content", "info tab icon (Button.targetGraphic, keeps its picture)");
+                else if (t.parent && t.parent.name == "TitlePanel" && t.parent.parent == _gui.m_info && sprite.StartsWith("BraidLine", StringComparison.Ordinal)) ctx.Role(image, "skip", "name row braid halves (hidden under the RuneSkin name plaque)");
                 else if (t.parent == _gui.m_info && (t.name == "selected_frame" || sprite.StartsWith("BraidLine", StringComparison.Ordinal))) ctx.Role(image, "skip", "info panel frame / divider, replaced by the centre panel stack (hidden)");
                 else if (t.name == "Checked" && t.parent && t.parent.parent == _gui.m_info) ctx.Role(image, "content", "PVP toggle state icon");
                 else if (sprite.StartsWith("BraidLine", StringComparison.Ordinal)) ctx.Role(image, "divider", "vanilla braid divider (" + sprite + ")");
@@ -387,8 +392,17 @@ namespace RuneSkin.InventoryScreen
                 h = h * 31 + DollStorageCount();
                 h = h * 31 + InventoryRegistry.Revision;
                 h = h * 31 + ThemeTokens.Revision;
+                h = h * 31 + Mathf.RoundToInt(HudTopLogical(_rootCanvas ? Mathf.Max(_rootCanvas.scaleFactor, 0.01f) : 1f) / 4f);
                 return h;
             }
+        }
+
+        // HUD cluster top (RuneSkin HUD, buff row reserved) in this canvas's logical units, top-left origin; 0 = no HUD.
+        private static float HudTopLogical(float scale)
+        {
+            var cluster = PlayerHud.HudCluster.Instance;
+            var top = cluster ? cluster.ReservedScreenTop : 0f;
+            return top > 0f ? (Screen.height - top) / scale : 0f;
         }
 
         private Inventory ContainerInventory() => _gui.m_currentContainer ? _gui.m_currentContainer.GetInventory() : null;
@@ -464,6 +478,7 @@ namespace RuneSkin.InventoryScreen
             i.BackpackH = pack?.GetHeight() ?? 0;
             i.DollStorage = DollStorageCount();
             i.DollMirrors = 3;
+            i.HudTop = HudTopLogical(scale);
             ReadTokens();
             _layout = InventoryMath.Compute(i, _tokens);
             _entriesRevision = -1; // rebuild doll order
@@ -559,7 +574,8 @@ namespace RuneSkin.InventoryScreen
             }
 
             // Crafting: position only (look = other skin until M3); scaled down, never up, to stay in its column.
-            if (_gui.m_crafting && _gui.m_crafting.gameObject.activeSelf) Geo.PlaceFit(_canvas, _gui.m_crafting, o.Crafting);
+            // Width fit (scaled down, never up), height = the column: one bottom edge with dock and centre.
+            if (_gui.m_crafting && _gui.m_crafting.gameObject.activeSelf) Geo.PlaceFitWidth(_canvas, _gui.m_crafting, o.Crafting);
 
             // Player panel actions in the footer, right of the stats, left of the trash plate.
             Bar(_gui.m_player, PanelKind.Player, Player.m_localPlayer.GetInventory(), null, null, FooterActionBox());
@@ -572,9 +588,14 @@ namespace RuneSkin.InventoryScreen
             var info = _gui.m_info;
             if (!info) return;
             Geo.Place(_canvas, info, box);
-            var nameH = Mathf.Min(40f * _input.SkinScale, box.H * 0.4f);
+            var k = _input.SkinScale;
+            var nameH = Mathf.Min(ThemeTokens.GetFloat("size.inv.name.h", 52f) * k, box.H * 0.42f);
             var title = info.Find("TitlePanel") as RectTransform;
-            if (title) Geo.Place(_canvas, title, new Box(box.X, box.Y, box.W, nameH));
+            if (title)
+            {
+                Geo.Place(_canvas, title, new Box(box.X, box.Y, box.W, nameH));
+                NamePlaque(title, new Box(box.X, box.Y, box.W, nameH));
+            }
             var tabs = 0;
             foreach (Transform child in info)
                 if (child.gameObject.activeSelf && child.GetComponent<Selectable>()) tabs++;
@@ -595,36 +616,109 @@ namespace RuneSkin.InventoryScreen
 
         private Box FooterActionBox() => _footerActions;
 
-        // Footer: armour, weight (vanilla plates) left, MorgottTweaks trash plate right; player actions in between.
+        // Footer (layout-a2.png): stat plates armour, coins, weight left, trash plate right, player actions in between.
+        // Every plate is a plate_stat strip (glyph in the round socket, value right of it) of a token width.
         private void Footer(Box box)
         {
+            var k = _input.SkinScale;
+            var gap = _tokens.InnerGap * k;
             var x = box.X;
-            foreach (var text in new TMP_Text[] { _gui.m_armor, _gui.m_weight })
+            // The plates sit under m_player or the info header depending on the prefab: the stat text's own plate
+            // (its parent object, e.g. Player/Weight, Player/Armor), wherever the prefab put it.
+            RectTransform PlateOf(TMP_Text text) => text && text.transform.parent is RectTransform pr && pr != _gui.m_player && pr != _gui.m_info ? pr : null;
+            RectTransform Named(string name) => (_gui.m_player.Find(name) ?? (_gui.m_info ? _gui.m_info.Find(name) : null)) as RectTransform;
+            void Left(RectTransform plate, string token, float width)
             {
-                // The plates sit under m_player or the info header depending on the prefab (in-game: armor under Info).
-                // The stat text's own plate (its parent object, e.g. Player/Weight, Info/.../Armor), wherever the prefab put it.
-                var plate = text && text.transform.parent is RectTransform pr && pr != _gui.m_player && pr != _gui.m_info ? pr : null;
-                if (!plate) continue;
-                var w = Geo.CanvasWidth(_canvas, plate);
-                Geo.PlaceFit(_canvas, plate, new Box(x, box.Y, Mathf.Max(w, 1f), box.H));
-                x += Geo.CanvasWidth(_canvas, plate) + _tokens.Gap;
+                if (!plate || !plate.gameObject.activeSelf) return;
+                var w = ThemeTokens.GetFloat(token, width) * k;
+                StatPlate(plate, new Box(x, box.Y, w, box.H));
+                x += w + gap;
             }
-            // MorgottTweaks coin pocket plate (CoinPocketUI) next to the stats.
-            var coins = (_gui.m_player.Find("CoinPocketUI") ?? (_gui.m_info ? _gui.m_info.Find("CoinPocketUI") : null)) as RectTransform;
-            if (coins && coins.gameObject.activeSelf)
-            {
-                Geo.PlaceFit(_canvas, coins, new Box(x, box.Y, Mathf.Max(Geo.CanvasWidth(_canvas, coins), 1f), box.H));
-                x += Geo.CanvasWidth(_canvas, coins) + _tokens.Gap;
-            }
+            Left(PlateOf(_gui.m_armor), "size.inv.plate.armor", 104f);
+            // Coin pocket plate (CurrencyPocket CoinPocketUI) next to the armour, as in the mockup.
+            Left(Named("CoinPocketUI"), "size.inv.plate.coins", 104f);
+            Left(PlateOf(_gui.m_weight), "size.inv.plate.weight", 160f);
             var right = box.Right;
-            var trash = (_gui.m_player.Find("MT_Trash") ?? (_gui.m_info ? _gui.m_info.Find("MT_Trash") : null)) as RectTransform;
+            var trash = Named("MT_Trash");
             if (trash && trash.gameObject.activeSelf)
             {
-                var w = Geo.CanvasWidth(_canvas, trash);
-                Geo.PlaceFit(_canvas, trash, new Box(right - w, box.Y, w, box.H));
-                right -= Geo.CanvasWidth(_canvas, trash) + _tokens.Gap;
+                var w = ThemeTokens.GetFloat("size.inv.plate.trash", 150f) * k;
+                StatPlate(trash, new Box(right - w, box.Y, w, box.H));
+                right -= w + gap;
             }
             _footerActions = new Box(x, box.Y, Mathf.Max(0f, right - x), box.H);
+        }
+
+        // One stat plate on its box at scale 1: the plate_stat strip (Weight's own image, else its "bkg" child) over the
+        // whole plate, the glyph in the round socket on the left, the value text in the field right of it.
+        private void StatPlate(RectTransform plate, Box box)
+        {
+            Geo.SetScale(plate, 1f);
+            Geo.Place(_canvas, plate, box);
+            var socket = box.H; // plate_stat: round socket as wide as the strip is tall (sprite border 92 of 96 px)
+            // Weight carries its own plate image and a bkg child: one strip only (the bkg one, like the other plates).
+            if (plate.Find("bkg") && plate.TryGetComponent<Image>(out var own) && own.enabled) own.enabled = false;
+            foreach (Transform child in plate)
+            {
+                if (!(child is RectTransform rt) || !child.gameObject.activeSelf) continue;
+                if (child.name == "bkg") Geo.Place(_canvas, rt, box);
+                else if (child.name.EndsWith("_icon", StringComparison.Ordinal)) Geo.Place(_canvas, rt, Inset(new Box(box.X, box.Y, socket, box.H), socket * 0.2f, socket * 0.2f));
+                else if (child.TryGetComponent<TMP_Text>(out var text))
+                {
+                    Geo.Place(_canvas, rt, new Box(box.X + socket + 4f, box.Y, Mathf.Max(1f, box.W - socket - 12f), box.H));
+                    if (text.alignment != TextAlignmentOptions.MidlineLeft) text.alignment = TextAlignmentOptions.MidlineLeft;
+                    if (text.textWrappingMode != TextWrappingModes.NoWrap) text.textWrappingMode = TextWrappingModes.NoWrap;
+                    if (text.overflowMode != TextOverflowModes.Ellipsis) text.overflowMode = TextOverflowModes.Ellipsis;
+                    // Value at ~45% of the strip height (mockup), never below the body floor.
+                    var size = Mathf.Max(rt.rect.height * 0.5f, ThemeTokens.GetFloat("floor.text.body.px", 16f) / Mathf.Max(0.01f, _rootCanvas.scaleFactor));
+                    if (text.enableAutoSizing) text.enableAutoSizing = false;
+                    if (Mathf.Abs(text.fontSize - size) > 0.1f) text.fontSize = size;
+                }
+            }
+        }
+
+        private Image _namePlaque;
+
+        // Character name on the carved header plaque (layout-a2.png "AUTOTESTCHAR"): plaque centred in the name row,
+        // name in capitals between its two knot ends, auto-sized down to the floor, never clipped mid-word.
+        private void NamePlaque(RectTransform title, Box box)
+        {
+            var k = _input.SkinScale;
+            if (!_namePlaque)
+            {
+                _namePlaque = new GameObject("RuneSkinNamePlaque", typeof(RectTransform)).AddComponent<Image>();
+                _namePlaque.rectTransform.SetParent(title, false);
+                _namePlaque.rectTransform.SetAsFirstSibling();
+                _namePlaque.raycastTarget = false;
+                var mark = DollCell.Mark(_namePlaque, "decor.plaque", "character name plaque (header_plaque)");
+                mark.Outcome = Restyler.Apply(_namePlaque, mark, ThemeTokens.Role("decor.plaque")) ? Outcome.Styled : Outcome.Degraded;
+                _namePlaque.enabled = mark.Outcome == Outcome.Styled;
+            }
+            var width = Mathf.Min(box.W, ThemeTokens.GetFloat("size.inv.name.plaque", 560f) * k);
+            var plaque = new Box(box.X + (box.W - width) / 2f, box.Y, width, box.H);
+            Geo.Place(_canvas, _namePlaque.rectTransform, plaque);
+            foreach (Transform child in title)
+            {
+                // The vanilla braid halves would run through the plaque: hidden while it is shown.
+                if (child.name.StartsWith("BraidLine", StringComparison.Ordinal) && child.TryGetComponent<Image>(out var braid) && braid.enabled == _namePlaque.enabled)
+                    braid.enabled = !_namePlaque.enabled;
+                if (!(child is RectTransform rt) || !child.TryGetComponent<TMP_Text>(out var label)) continue;
+                // Text between the knot ends (share of the plaque width each side, sprite border 230 of 620 px).
+                var side = width * ThemeTokens.GetFloat("share.inv.name.knot", 0.2f);
+                Geo.Place(_canvas, rt, new Box(plaque.X + side, plaque.Y, Mathf.Max(1f, width - 2f * side), plaque.H));
+                if (label.alignment != TextAlignmentOptions.Center) label.alignment = TextAlignmentOptions.Center;
+                if (label.textWrappingMode != TextWrappingModes.NoWrap) label.textWrappingMode = TextWrappingModes.NoWrap;
+                if (label.overflowMode != TextOverflowModes.Ellipsis) label.overflowMode = TextOverflowModes.Ellipsis;
+                if ((label.fontStyle & FontStyles.UpperCase) != FontStyles.UpperCase) label.fontStyle |= FontStyles.UpperCase;
+                var max = rt.rect.height * 0.62f;
+                var min = Mathf.Min(max, ThemeTokens.GetFloat("floor.text.body.px", 16f) / Mathf.Max(0.01f, _rootCanvas.scaleFactor));
+                if (!label.enableAutoSizing || Mathf.Abs(label.fontSizeMax - max) > 0.1f || Mathf.Abs(label.fontSizeMin - min) > 0.1f)
+                {
+                    label.fontSizeMax = max;
+                    label.fontSizeMin = min;
+                    label.enableAutoSizing = true;
+                }
+            }
         }
 
         private void ArrangeContainer(RectTransform panel, InventoryGrid grid, Box box, GridFit fit, PanelKind kind, Inventory inventory,

@@ -60,6 +60,22 @@ namespace RuneSkin.InventoryScreen
             SetTopLeft(rt, World(canvas, box.X, box.Y));
         }
 
+        // Scales rt down (never up) to the box width, then sets its height so the scaled panel spans the box height
+        // (children follow their own anchors); top-left on the box.
+        public static void PlaceFitWidth(RectTransform canvas, RectTransform rt, Box box)
+        {
+            if (!rt || !canvas || box.IsEmpty) return;
+            var size = rt.rect.size;
+            if (size.x <= 0f || size.y <= 0f) return;
+            var k = (rt.parent ? rt.parent.lossyScale.x : 1f) / Mathf.Max(WorldPerUnit(canvas), 1e-6f);
+            IgnoreLayout(rt);
+            var fit = Mathf.Min(1f, box.W / (size.x * k));
+            SetScale(rt, fit);
+            var h = box.H / Mathf.Max(fit * k, 1e-6f);
+            if (Mathf.Abs(size.y - h) > Eps) rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, h);
+            SetTopLeft(rt, World(canvas, box.X, box.Y));
+        }
+
         // Moves rt so its top-left corner lands on a world point (size/scale untouched).
         public static void SetTopLeft(RectTransform rt, Vector3 world)
         {

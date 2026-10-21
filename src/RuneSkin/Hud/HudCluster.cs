@@ -482,6 +482,9 @@ namespace RuneSkin.PlayerHud
                 ThemeTokens.GetFloat("size.hud.font.timer", 13f), ThemeTokens.GetFloat("floor.text.timer.px", 12f));
             var margin = ThemeTokens.GetFloat("size.hud.margin", 24f) * s;
             PlaceAtScreen(_root, new Vector2(boxX + margin, safe.y + margin), s);
+            // Top of the cluster with the buff row always reserved (it comes and goes with buffs): the inventory
+            // columns end above it (InventoryMath HudTop), so they never jump when the first buff arrives.
+            _reservedTop = safe.y + margin + Mathf.Max(clusterH, buffTop + cellB + statusPad) * s;
 
             // Foreign blocks: EAQS quick slots right of the food row, guardian power after them, hotbar top-left.
             var food = _root.TransformPoint(new Vector3(quickX, y, 0f));
@@ -499,6 +502,11 @@ namespace RuneSkin.PlayerHud
         // Bottom-left world point of the EAQS quick-slot block right of the food row (HUD canvas); the inventory puts
         // its quick cells there when the bar has no elements to measure.
         public Vector3 QuickAnchor { get; private set; }
+
+        // Screen y (pixels, bottom-up) of the cluster top incl. a reserved buff row; 0 while the cluster is hidden.
+        public float ReservedScreenTop => _childrenOn && isActiveAndEnabled ? _reservedTop : 0f;
+
+        private float _reservedTop;
         public bool HasQuickAnchor { get; private set; }
 
         private Transform QuickBar()
