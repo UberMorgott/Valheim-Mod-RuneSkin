@@ -60,9 +60,8 @@ namespace RuneSkin.PlayerHud
             Root = HudArt.Rect("StatusStrip", parent);
             // One framed dark-glass panel behind the cells (mockup hud-status-b), only while effects exist.
             _panel = HudArt.Rect("Panel", Root);
-            var glass = art.Image("Glass", _panel, "sprite.fill.glass", "color.glass", Image.Type.Sliced);
-            Stretch(glass.rectTransform, 0f);
-            var frame = art.Image("Frame", _panel, "sprite.frame.tooltip", "color.frame", Image.Type.Sliced);
+            // frame_strip carries its own dark interior (art notes); separator_v studs between entries.
+            var frame = art.Image("Frame", _panel, "sprite.hud.frame.strip", "color.frame", Image.Type.Tiled);
             Stretch(frame.rectTransform, 0f);
             _panel.gameObject.SetActive(false);
         }
@@ -109,10 +108,11 @@ namespace RuneSkin.PlayerHud
             if (panelOn)
             {
                 var pad = ThemeTokens.GetFloat("size.hud.status.pad", 6f);
-                var used = Mathf.Min(_entries.Count, flow.Columns);
-                _panel.sizeDelta = new Vector2(used * (cell + gap) - gap + 2f * pad, flow.Rows * (cell + gap) - gap + 2f * pad);
+                // Full cluster width like the bars above (mockup hud-status-b).
+                _panel.sizeDelta = new Vector2(width + 2f * pad, flow.Rows * (cell + gap) - gap + 2f * pad);
                 _panel.anchoredPosition = new Vector2(-pad, -flow.Rows * (cell + gap) + gap - pad);
             }
+            Separators(flow, cell, gap);
             var shown = flow.Visible;
             while (_cells.Count < shown) _cells.Add(MakeCell("Effect" + _cells.Count, Root, cell));
             for (var i = 0; i < _cells.Count; i++)
@@ -150,6 +150,38 @@ namespace RuneSkin.PlayerHud
             if (_popupOpen && _entries.Count == 0) _popupOpen = false;
             if (_popup && _popup.gameObject.activeSelf != _popupOpen) _popup.gameObject.SetActive(_popupOpen);
             return flow.Rows * (cell + gap);
+        }
+
+        private readonly List<Image> _separators = new List<Image>(16);
+
+        // One stud between neighbours in a row (none after the last drawn cell).
+        private void Separators(HudMath.Flow flow, float cell, float gap)
+        {
+            var drawn = flow.Visible + (flow.MoreCell ? 1 : 0);
+            var n = 0;
+            for (var i = 0; i + 1 < drawn; i++)
+            {
+                if ((i + 1) % flow.Columns == 0) continue;
+                if (n == _separators.Count)
+                {
+                    var s = _art.Image("Separator" + n, Root, "sprite.hud.separator", "color.frame", Image.Type.Simple);
+                    s.SetNativeSize();
+                    var native = s.rectTransform.sizeDelta;
+                    var k = native.y > 0f ? Mathf.Min(1f, cell / native.y) : 1f;
+                    s.rectTransform.sizeDelta = native * k;
+                    s.rectTransform.SetSiblingIndex(1); // above the panel, below the cells
+                    _separators.Add(s);
+                }
+                var sep = _separators[n++];
+                if (!sep.gameObject.activeSelf) sep.gameObject.SetActive(true);
+                var size = sep.rectTransform.sizeDelta;
+                var col = i % flow.Columns;
+                var row = i / flow.Columns;
+                var pos = new Vector2((col + 1) * (cell + gap) - gap / 2f - size.x / 2f, -(row + 1) * (cell + gap) + gap + (cell - size.y) / 2f);
+                if (sep.rectTransform.anchoredPosition != pos) sep.rectTransform.anchoredPosition = pos;
+            }
+            for (var i = n; i < _separators.Count; i++)
+                if (_separators[i].gameObject.activeSelf) _separators[i].gameObject.SetActive(false);
         }
 
         public void TogglePopup()
@@ -222,15 +254,21 @@ namespace RuneSkin.PlayerHud
         {
             var c = new Cell { Root = HudArt.Rect(name, parent) };
             c.Root.sizeDelta = new Vector2(size, size);
-            c.Back = _art.Image("Socket", c.Root, more ? "sprite.hud.status.more" : "sprite.hud.status.cell", "color.frame", Image.Type.Simple, raycast: more);
+            // Effect cells are bare icons on the strip (mockup); only the "+N" cell has its socket art.
+            c.Back = _art.Image("Socket", c.Root, more ? "sprite.hud.status.more" : null, more ? "color.frame" : "color.hud.clear", Image.Type.Simple, raycast: more);
             Stretch(c.Back.rectTransform, 0f);
             if (!more)
             {
                 c.Icon = _art.Image("Icon", c.Root, null, "color.frame", Image.Type.Simple);
                 c.Icon.preserveAspect = true;
-                Stretch(c.Icon.rectTransform, size * 0.18f);
+                var ir = c.Icon.rectTransform;
+                ir.anchorMin = new Vector2(0.5f, 1f);
+                ir.anchorMax = new Vector2(0.5f, 1f);
+                ir.pivot = new Vector2(0.5f, 1f);
+                ir.sizeDelta = new Vector2(size * 0.62f, size * 0.62f);
+                ir.anchoredPosition = Vector2.zero;
             }
-            var plate = more ? null : _art.Image("Plate", c.Root, "sprite.hud.plate.timer", "color.frame", Image.Type.Sliced);
+            Image plate = null;
             if (plate)
             {
                 var pr = plate.rectTransform;
@@ -241,8 +279,8 @@ namespace RuneSkin.PlayerHud
             c.Timer = _art.Text("Timer", c.Root, more ? "font.display" : "font.body", "color.hud.timer",
                 ThemeTokens.GetFloat(more ? "size.hud.font.number" : "size.hud.font.status", 15f), TextAlignmentOptions.Center);
             var tr = c.Timer.rectTransform;
-            tr.sizeDelta = more ? new Vector2(size, size) : new Vector2(size, size * 0.34f);
-            tr.anchoredPosition = more ? Vector2.zero : new Vector2(0f, -size * 0.12f);
+            tr.sizeDelta = more ? new Vector2(size, size) : new Vector2(size + 16f, size * 0.38f);
+            tr.anchoredPosition = more ? Vector2.zero : new Vector2(-8f, 0f);
             return c;
         }
 
@@ -258,7 +296,7 @@ namespace RuneSkin.PlayerHud
                 c.Icon.sprite = e.Effect.m_icon;
                 c.Icon.enabled = e.Effect.m_icon;
             }
-            c.Back.color = ThemeTokens.GetColor(e.Class.Harmful ? "color.hud.harmful" : e.Class.Category == 4 ? "color.hud.marker" : "color.frame", Color.white);
+
             if (e.Effect.m_isNew)
             {
                 e.Effect.m_isNew = false; // vanilla acknowledges here (Hud.cs:1684)

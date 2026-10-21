@@ -90,9 +90,9 @@ namespace RuneSkin.PlayerHud
             _childrenOn = true;
             _plaqueShown = null;
             _strip = new StatusStrip(_art, _root);
-            _eitr = new BarView(_art, _root, "Eitr", false, "sprite.hud.bar.frame", "color.hud.eitr", ThemeTokens.GetFloat("share.hud.bar.minor", 0.75f));
+            _eitr = new BarView(_art, _root, "Eitr", false, "sprite.hud.bar.frame.slim", "color.hud.eitr");
             _adrenaline = new BarView(_art, _root, "Adrenaline", true, "sprite.hud.rail.frame.adrenaline", "color.hud.adrenaline");
-            _stamina = new BarView(_art, _root, "Stamina", false, "sprite.hud.bar.frame", "color.hud.stamina", ThemeTokens.GetFloat("share.hud.bar.minor", 0.75f));
+            _stamina = new BarView(_art, _root, "Stamina", false, "sprite.hud.bar.frame.slim", "color.hud.stamina");
             _health = new BarView(_art, _root, "Health", false, "sprite.hud.bar.frame", "color.hud.health", 1f, mainValue: true);
             _es = new BarView(_art, _root, "EnergyShield", true, "sprite.hud.rail.frame.es", "color.hud.es");
             _food = new FoodRow(_art, _root);
@@ -262,7 +262,7 @@ namespace RuneSkin.PlayerHud
             _es.SetVisible(railOn);
             if (railOn)
             {
-                var outer = _health.WindowLength + 2f * (_health.InsetX - _es.InsetX);
+                var outer = _health.WindowLength + _health.Caps - _es.Caps;
                 _es.SetLength(outer, es.Max);
                 _es.Tick(dt);
                 var broken = es.Phase == ResourcePhase.Broken;
@@ -288,7 +288,7 @@ namespace RuneSkin.PlayerHud
             _adrenaline.SetVisible(adOn);
             if (adOn)
             {
-                var outer = _stamina.WindowLength + 2f * (_stamina.InsetX - _adrenaline.InsetX);
+                var outer = _stamina.WindowLength + _stamina.Caps - _adrenaline.Caps;
                 _adrenaline.SetLength(outer, adMax);
                 _adrenaline.Tick(dt);
                 _adrenaline.Render(ad, adMax, adMax, _stripes, 0, _stripeKinds, null, null, null, false, dt, false);

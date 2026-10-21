@@ -23,7 +23,7 @@ namespace RuneSkin.PlayerHud
         private readonly bool _rail;
         private readonly string _fillColor;
 
-        private float _insetX, _insetY, _h;
+        private float _insetL, _insetR, _insetB, _insetT, _h;
         private float _length = -1f, _lengthFrom, _lengthTo, _lengthT = 1f;
         private float _ghostAt, _ghostAlpha, _growFrom, _growTo, _growAlpha;
         private float _lagValue = -1f, _lagHold, _lastCur = -1f;
@@ -44,13 +44,15 @@ namespace RuneSkin.PlayerHud
             _fillColor = fillColorToken;
             _main = mainValue;
             Root = HudArt.Rect(name, parent);
-            FrameGeometry(frameToken, rail, out _insetX, out _insetY, out _h);
+            FrameGeometry(frameToken, out _insetL, out _insetR, out _insetB, out _insetT, out _h);
             scale = Mathf.Clamp(scale, 0.25f, 4f);
-            _insetX *= scale;
-            _insetY *= scale;
+            _insetL *= scale;
+            _insetR *= scale;
+            _insetB *= scale;
+            _insetT *= scale;
             _h *= scale;
             _window = HudArt.Rect("Window", Root);
-            _window.anchoredPosition = new Vector2(_insetX, _insetY);
+            _window.anchoredPosition = new Vector2(_insetL, _insetB);
             _trough = art.Image("Trough", _window, rail ? "sprite.hud.rail.trough" : "sprite.hud.bar.trough", "color.hud.trough", Image.Type.Sliced);
             _lag = art.Image("Lag", _window, rail ? "sprite.hud.rail.fill" : "sprite.hud.bar.lag", "color.hud.lag", Image.Type.Sliced);
             _fill = art.Image("Fill", _window, rail ? "sprite.hud.rail.fill" : "sprite.hud.bar.fill", fillColorToken, Image.Type.Sliced);
@@ -91,32 +93,30 @@ namespace RuneSkin.PlayerHud
 
         private readonly bool _main;
 
-        // Window geometry from the frame sprite itself (art changes never need code): the 9-slice border is the
-        // frame's inset and the window height is the native height minus top and bottom borders, in reference px
-        // (sprite px x 100 / PPU, the canvas reference PPU). Theme floats of the same names override (tuning only);
-        // without the sprite the theme values or small defaults apply.
-        public static void FrameGeometry(string frameToken, bool rail, out float insetX, out float insetY, out float height)
+        // Window geometry (the trough/fill rect inside the carved frame), in reference px (sprite px x 100 / PPU, the
+        // canvas reference PPU). The art states the window per frame sprite in sprite px as theme floats
+        // "window.<asset>.left/right/top/bottom" (art\sprites\sprites.json notes); without them the 9-slice border is
+        // the window inset. The window height is the frame height minus top and bottom insets.
+        public static void FrameGeometry(string frameToken, out float left, out float right, out float bottom, out float top, out float height)
         {
-            var k = rail ? "size.hud.rail" : "size.hud.frame";
             var sprite = ThemeTokens.GetSprite(frameToken);
-            float bx = 0f, by = 0f, h = rail ? 5f : 20f;
-            if (sprite)
-            {
-                var toRef = 100f / Mathf.Max(1f, sprite.pixelsPerUnit);
-                var b = sprite.border; // (left, bottom, right, top)
-                bx = Mathf.Max(b.x, b.z) * toRef;
-                by = Mathf.Max(b.y, b.w) * toRef;
-                h = Mathf.Max(2f, sprite.rect.height * toRef - b.y * toRef - b.w * toRef);
-            }
-            insetX = ThemeTokens.TryGetFloat(k + ".inset.x", out var ix) ? ix : bx;
-            insetY = ThemeTokens.TryGetFloat(k + ".inset.y", out var iy) ? iy : by;
-            height = ThemeTokens.TryGetFloat(rail ? "size.hud.rail.height" : "size.hud.bar.height", out var hh) ? hh : h;
+            left = right = bottom = top = 0f;
+            height = 20f;
+            if (!sprite) return;
+            var toRef = 100f / Mathf.Max(1f, sprite.pixelsPerUnit);
+            var b = sprite.border; // (left, bottom, right, top)
+            var key = "window." + (sprite.name.EndsWith("(Clone)", System.StringComparison.Ordinal) ? sprite.name.Substring(0, sprite.name.Length - 7) : sprite.name);
+            left = ThemeTokens.GetFloat(key + ".left", b.x) * toRef;
+            right = ThemeTokens.GetFloat(key + ".right", b.z) * toRef;
+            bottom = ThemeTokens.GetFloat(key + ".bottom", b.y) * toRef;
+            top = ThemeTokens.GetFloat(key + ".top", b.w) * toRef;
+            height = Mathf.Max(2f, sprite.rect.height * toRef - bottom - top);
         }
-
-        public float Height => _h + 2f * _insetY;
-        public float Width => (_length < 0f ? _lengthTo : _length) + 2f * _insetX + (_rail ? ThemeTokens.GetFloat("size.hud.rail.number", 22f) : 0f);
+        public float Height => _h + _insetB + _insetT;
+        public float Width => (_length < 0f ? _lengthTo : _length) + _insetL + _insetR + (_rail ? ThemeTokens.GetFloat("size.hud.rail.number", 22f) : 0f);
         public float WindowLength => _length;
-        public float InsetX => _insetX;
+        // Frame width outside the window (left + right caps).
+        public float Caps => _insetL + _insetR;
 
         public void SetVisible(bool on)
         {
@@ -186,7 +186,7 @@ namespace RuneSkin.PlayerHud
         private void Layout()
         {
             var l = Mathf.Max(0f, _length);
-            Root.sizeDelta = new Vector2(l + 2f * _insetX, _h + 2f * _insetY);
+            Root.sizeDelta = new Vector2(l + _insetL + _insetR, Height);
             _window.sizeDelta = new Vector2(l, _h);
             Full(_trough.rectTransform, l);
             Stretch(_frame.rectTransform);
@@ -195,22 +195,22 @@ namespace RuneSkin.PlayerHud
             if (_rail)
             {
                 // Rail number sits right of the rail (art: the cap would cover it).
-                nr.anchoredPosition = new Vector2(l + 2f * _insetX + 2f, 0f);
-                nr.sizeDelta = new Vector2(ThemeTokens.GetFloat("size.hud.rail.number", 22f) + 20f, _h + 2f * _insetY);
+                nr.anchoredPosition = new Vector2(l + _insetL + _insetR + 2f, 0f);
+                nr.sizeDelta = new Vector2(ThemeTokens.GetFloat("size.hud.rail.number", 22f) + 20f, Height);
                 _number.alignment = TextAlignmentOptions.MidlineLeft;
             }
             else
             {
-                nr.anchoredPosition = new Vector2(_insetX, _insetY);
+                nr.anchoredPosition = new Vector2(_insetL, _insetB);
                 nr.sizeDelta = new Vector2(_main ? l : l - 4f, _h);
             }
             var ar = _aux.rectTransform;
-            ar.anchoredPosition = new Vector2(_insetX + 4f, _insetY);
+            ar.anchoredPosition = new Vector2(_insetL + 4f, _insetB);
             ar.sizeDelta = new Vector2(Mathf.Max(0f, l - 8f), _h);
             var pr = _paused.rectTransform;
-            var g = _h + _insetY;
+            var g = _h + _insetB;
             pr.sizeDelta = new Vector2(g, g);
-            pr.anchoredPosition = new Vector2(_insetX + l - 4f - g - 56f, (Height - g) / 2f);
+            pr.anchoredPosition = new Vector2(_insetL + l - 4f - g - 56f, (Height - g) / 2f);
         }
 
         // Renders one frame of data. cur / max (B) / avail (C) in units; stripes in window px; tint = fill colour
