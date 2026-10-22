@@ -23,10 +23,13 @@ public static class BuildBundles
     const string SpriteDir = Root + "/Sprites";
     const string FontDir = Root + "/Fonts";
     const string AtlasPath = Root + "/RuneSkin.spriteatlas";
+    // High-resolution art (sprites.json "atlas": "hires", e.g. the 4x Codex redraws of the stats window): own atlas up
+    // to 4096 with mipmaps (trilinear), so large sprites are never downscaled to fit the 2048 main atlas.
+    const string HiAtlasPath = Root + "/RuneSkinHi.spriteatlas";
     const string OutDir = "Build";
 
     [Serializable] public class Border { public int left, bottom, right, top; }
-    [Serializable] public class SpriteDef { public string name, file, imageType, token; public int[] size; public Border border; public float[] pivot; }
+    [Serializable] public class SpriteDef { public string name, file, imageType, token, atlas; public int[] size; public Border border; public float[] pivot; }
     [Serializable] public class Manifest { public int version, authoredScale, pixelsPerUnit; public SpriteDef[] sprites; }
 
     // body regular + its real bold cut (user 2026-10-22: two faces, PT Sans + the game's own Norsebold, loaded at runtime); sampling size/padding,
@@ -56,12 +59,14 @@ public static class BuildBundles
             EnsureTmpResources();
             var man = JsonUtility.FromJson<Manifest>(File.ReadAllText(Path.Combine(Art, "sprites", "sprites.json")));
             var sprites = ImportSprites(man);
-            BuildAtlas(sprites);
+            var hi = new HashSet<string>(man.sprites.Where(s => s.atlas == "hires").Select(s => s.name));
+            BuildAtlas(sprites.Where(s => !hi.Contains(s.name)).ToList(), AtlasPath, 4096, true); // main atlas: 4x redraws, mipmapped (padding 8 keeps the mips from bleeding)
+            if (hi.Count > 0) BuildAtlas(sprites.Where(s => hi.Contains(s.name)).ToList(), HiAtlasPath, 4096, true);
             var fonts = BakeFonts();
             fonts.AddRange(ImportLegacyFonts());
             fonts.AddRange(ImportTextures());
             fonts.AddRange(ImportShaders());
-            foreach (var p in sprites.Select(AssetDatabase.GetAssetPath).Distinct().Append(AtlasPath).Concat(fonts))
+            foreach (var p in sprites.Select(AssetDatabase.GetAssetPath).Distinct().Append(AtlasPath).Concat(hi.Count > 0 ? new[] { HiAtlasPath } : new string[0]).Concat(fonts))
                 AssetImporter.GetAtPath(p).SetAssetBundleNameAndVariant(BundleName, "");
             AssetDatabase.SaveAssets();
             AssetDatabase.RemoveUnusedAssetBundleNames();
@@ -195,14 +200,14 @@ public static class BuildBundles
         return list;
     }
 
-    static void BuildAtlas(List<Sprite> sprites)
+    static void BuildAtlas(List<Sprite> sprites, string atlasPath, int maxSize, bool mips)
     {
         EditorSettings.spritePackerMode = SpritePackerMode.AlwaysOnAtlas;
-        var atlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(AtlasPath);
+        var atlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(atlasPath);
         if (atlas == null)
         {
             atlas = new SpriteAtlas();
-            AssetDatabase.CreateAsset(atlas, AtlasPath);
+            AssetDatabase.CreateAsset(atlas, atlasPath);
         }
         atlas.Remove(atlas.GetPackables());
         atlas.SetPackingSettings(new SpriteAtlasPackingSettings
@@ -211,11 +216,11 @@ public static class BuildBundles
         });
         atlas.SetTextureSettings(new SpriteAtlasTextureSettings
         {
-            readable = false, generateMipMaps = true, sRGB = true, filterMode = FilterMode.Trilinear, anisoLevel = 0,
+            readable = false, generateMipMaps = mips, sRGB = true, filterMode = mips ? FilterMode.Trilinear : FilterMode.Bilinear, anisoLevel = 0,
         });
         var ps = atlas.GetPlatformSettings("Standalone");
         ps.overridden = true;
-        ps.maxTextureSize = 4096; // ART PIPELINE: 4x redraws, mipmapped (padding 8 keeps the mips from bleeding)
+        ps.maxTextureSize = maxSize;
         ps.format = TextureImporterFormat.BC7;
         ps.textureCompression = TextureImporterCompression.CompressedHQ;
         atlas.SetPlatformSettings(ps);
@@ -224,7 +229,7 @@ public static class BuildBundles
         EditorUtility.SetDirty(atlas);
         AssetDatabase.SaveAssets();
         SpriteAtlasUtility.PackAtlases(new[] { atlas }, BuildTarget.StandaloneWindows64);
-        Debug.Log($"RuneSkin: atlas {AtlasPath} packed with {atlas.spriteCount} sprites");
+        Debug.Log($"RuneSkin: atlas {atlasPath} packed with {atlas.spriteCount} sprites");
     }
 
     static List<string> BakeFonts()
