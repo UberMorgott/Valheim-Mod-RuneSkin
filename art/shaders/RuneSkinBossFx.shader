@@ -184,15 +184,17 @@ Shader "RuneSkin/UI Boss FX"
                 // Only the fill's warming toward the hot edge (pink, last ~_WeldWidth of the bar); the crackling edge and
                 // the spark spray are the Codex flipbook (sprite.fx.weld.*) played on the edge.
                 float w = max(_WeldWidth, 1e-4);
-                float x = uv.x - _Fill;
+                // a jagged, crackling end: the edge wanders along v (two frequencies), the ramp stops hard at it
+                float jag = (vnoise(float2(uv.y * 24.0, t * 3.0)) - 0.5) * 0.012 + (vnoise(float2(uv.y * 61.0, t * 7.0)) - 0.5) * 0.006;
+                float x = uv.x - _Fill - jag;
                 float inBand = bandDist(uv.y) <= 0.0 ? 1.0 : 0.0;
-                float ramp = x <= 0.0 ? pow(saturate(1.0 + x / (w * 1.35)), 1.8) : 0.0;
+                float ramp = x <= 0.0 ? pow(saturate(1.0 + x / (w * 1.35)), 1.6) : 0.0;
                 float3 warm = lerp(_WeldGlow.rgb, _WeldCore.rgb, pow(ramp, 3.0));
                 // keep the glossy cylinder through the warming: strongest in the highlight band, the top / bottom stay dark
                 float tb = saturate((uv.y - _BandMin) / max(1e-4, _BandMax - _BandMin));
                 float cyl = 0.35 + 0.65 * pow(sin(3.14159 * saturate(tb * 1.1 - 0.02)), 1.5);
                 ramp *= cyl;
-                return fixed4(warm * ramp * 0.7 * inBand * _Intensity, ramp * 0.35 * inBand * _Intensity);
+                return fixed4(warm * ramp * 1.2 * inBand * _Intensity, ramp * 0.55 * inBand * _Intensity);
             }
             fixed4 frag(v2f IN) : SV_Target
             {

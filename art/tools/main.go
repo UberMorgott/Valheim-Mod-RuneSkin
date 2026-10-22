@@ -66,6 +66,10 @@ func main() {
 		cmdMetalMatch()
 	case "pairdiff":
 		cmdPairDiff()
+	case "symcheck":
+		cmdSymCheck()
+	case "emblem":
+		cmdEmblem()
 	case "sheet":
 		cmdSheet()
 	case "compare":

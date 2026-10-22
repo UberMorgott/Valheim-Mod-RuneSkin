@@ -5505,8 +5505,8 @@
       "name": "fx_gasend_0",
       "file": "fx_gasend_0.png",
       "size": [
-        384,
-        128
+        192,
+        256
       ],
       "border": {
         "left": 0,
@@ -5515,20 +5515,20 @@
         "top": 0
       },
       "pivot": [
-        0.26,
-        0.5
+        0.28,
+        0.32
       ],
       "imageType": "Simple",
       "fillCenter": true,
       "token": "fx.gasend.0",
-      "notes": "ART PIPELINE: Codex flipbook frame 1/8 of boss-c's gas-end smoke (hd_fx_gasend.prompt.txt, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; green keyed"
+      "notes": "ART PIPELINE: Codex flipbook frame 1/8 of boss-c's gas-end smoke (hd_fx_gasend2.prompt.txt: filaments rising mostly above the end, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; black keyed, drawn additively"
     },
     {
       "name": "fx_gasend_1",
       "file": "fx_gasend_1.png",
       "size": [
-        384,
-        128
+        192,
+        256
       ],
       "border": {
         "left": 0,
@@ -5537,20 +5537,20 @@
         "top": 0
       },
       "pivot": [
-        0.26,
-        0.5
+        0.28,
+        0.32
       ],
       "imageType": "Simple",
       "fillCenter": true,
       "token": "fx.gasend.1",
-      "notes": "ART PIPELINE: Codex flipbook frame 2/8 of boss-c's gas-end smoke (hd_fx_gasend.prompt.txt, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; green keyed"
+      "notes": "ART PIPELINE: Codex flipbook frame 2/8 of boss-c's gas-end smoke (hd_fx_gasend2.prompt.txt: filaments rising mostly above the end, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; black keyed, drawn additively"
     },
     {
       "name": "fx_gasend_2",
       "file": "fx_gasend_2.png",
       "size": [
-        384,
-        128
+        192,
+        256
       ],
       "border": {
         "left": 0,
@@ -5559,20 +5559,20 @@
         "top": 0
       },
       "pivot": [
-        0.26,
-        0.5
+        0.28,
+        0.32
       ],
       "imageType": "Simple",
       "fillCenter": true,
       "token": "fx.gasend.2",
-      "notes": "ART PIPELINE: Codex flipbook frame 3/8 of boss-c's gas-end smoke (hd_fx_gasend.prompt.txt, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; green keyed"
+      "notes": "ART PIPELINE: Codex flipbook frame 3/8 of boss-c's gas-end smoke (hd_fx_gasend2.prompt.txt: filaments rising mostly above the end, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; black keyed, drawn additively"
     },
     {
       "name": "fx_gasend_3",
       "file": "fx_gasend_3.png",
       "size": [
-        384,
-        128
+        192,
+        256
       ],
       "border": {
         "left": 0,
@@ -5581,20 +5581,20 @@
         "top": 0
       },
       "pivot": [
-        0.26,
-        0.5
+        0.28,
+        0.32
       ],
       "imageType": "Simple",
       "fillCenter": true,
       "token": "fx.gasend.3",
-      "notes": "ART PIPELINE: Codex flipbook frame 4/8 of boss-c's gas-end smoke (hd_fx_gasend.prompt.txt, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; green keyed"
+      "notes": "ART PIPELINE: Codex flipbook frame 4/8 of boss-c's gas-end smoke (hd_fx_gasend2.prompt.txt: filaments rising mostly above the end, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; black keyed, drawn additively"
     },
     {
       "name": "fx_gasend_4",
       "file": "fx_gasend_4.png",
       "size": [
-        384,
-        128
+        192,
+        256
       ],
       "border": {
         "left": 0,
@@ -5603,20 +5603,20 @@
         "top": 0
       },
       "pivot": [
-        0.26,
-        0.5
+        0.28,
+        0.32
       ],
       "imageType": "Simple",
       "fillCenter": true,
       "token": "fx.gasend.4",
-      "notes": "ART PIPELINE: Codex flipbook frame 5/8 of boss-c's gas-end smoke (hd_fx_gasend.prompt.txt, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; green keyed"
+      "notes": "ART PIPELINE: Codex flipbook frame 5/8 of boss-c's gas-end smoke (hd_fx_gasend2.prompt.txt: filaments rising mostly above the end, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; black keyed, drawn additively"
     },
     {
       "name": "fx_gasend_5",
       "file": "fx_gasend_5.png",
       "size": [
-        384,
-        128
+        192,
+        256
       ],
       "border": {
         "left": 0,
@@ -5625,20 +5625,20 @@
         "top": 0
       },
       "pivot": [
-        0.26,
-        0.5
+        0.28,
+        0.32
       ],
       "imageType": "Simple",
       "fillCenter": true,
       "token": "fx.gasend.5",
-      "notes": "ART PIPELINE: Codex flipbook frame 6/8 of boss-c's gas-end smoke (hd_fx_gasend.prompt.txt, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; green keyed"
+      "notes": "ART PIPELINE: Codex flipbook frame 6/8 of boss-c's gas-end smoke (hd_fx_gasend2.prompt.txt: filaments rising mostly above the end, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; black keyed, drawn additively"
     },
     {
       "name": "fx_gasend_6",
       "file": "fx_gasend_6.png",
       "size": [
-        384,
-        128
+        192,
+        256
       ],
       "border": {
         "left": 0,
@@ -5647,20 +5647,20 @@
         "top": 0
       },
       "pivot": [
-        0.26,
-        0.5
+        0.28,
+        0.32
       ],
       "imageType": "Simple",
       "fillCenter": true,
       "token": "fx.gasend.6",
-      "notes": "ART PIPELINE: Codex flipbook frame 7/8 of boss-c's gas-end smoke (hd_fx_gasend.prompt.txt, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; green keyed"
+      "notes": "ART PIPELINE: Codex flipbook frame 7/8 of boss-c's gas-end smoke (hd_fx_gasend2.prompt.txt: filaments rising mostly above the end, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; black keyed, drawn additively"
     },
     {
       "name": "fx_gasend_7",
       "file": "fx_gasend_7.png",
       "size": [
-        384,
-        128
+        192,
+        256
       ],
       "border": {
         "left": 0,
@@ -5669,13 +5669,35 @@
         "top": 0
       },
       "pivot": [
-        0.26,
-        0.5
+        0.28,
+        0.32
       ],
       "imageType": "Simple",
       "fillCenter": true,
       "token": "fx.gasend.7",
-      "notes": "ART PIPELINE: Codex flipbook frame 8/8 of boss-c's gas-end smoke (hd_fx_gasend.prompt.txt, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; green keyed"
+      "notes": "ART PIPELINE: Codex flipbook frame 8/8 of boss-c's gas-end smoke (hd_fx_gasend2.prompt.txt: filaments rising mostly above the end, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; black keyed, drawn additively"
+    },
+    {
+      "name": "ornament_triquetra",
+      "file": "ornament_triquetra.png",
+      "size": [
+        259,
+        259
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "ornament.triquetra",
+      "notes": "ART PIPELINE: Codex-drawn symmetric triquetra (hd_triquetra.prompt.txt; symcheck IoU120/240 0.92 glow / 0.81 core), centred on its rotation centre; the shared triquetra symbol (magic socket, medallions); black keyed, additive"
     },
     {
       "name": "boss_marker",
@@ -5725,8 +5747,8 @@
       "name": "bar_boss_fill_c",
       "file": "bar_boss_fill_c.png",
       "size": [
-        1084,
-        128
+        988,
+        127
       ],
       "border": {
         "left": 0,

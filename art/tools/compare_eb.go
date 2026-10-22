@@ -371,3 +371,94 @@ func cmdPairDiff() {
 	savePNG(os.Args[4], out)
 	fmt.Printf("SSIM %.3f  mean dE %.1f  %s\n", ssimSum/float64(max(1, n)), sumDE/float64(w*h), os.Args[4])
 }
+
+// cmdSymCheck: SRC [THRESH]. Rotational symmetry of a glow glyph on black: mask = luma > THRESH (default 0.5), centroid,
+// then IoU of the mask with itself rotated 120 and 240 degrees about the centroid, and the centroid's offset from the
+// canvas centre. A clean triquetra gives IoU close to 1.
+func cmdSymCheck() {
+	img := loadPNG(os.Args[2])
+	th := 0.5
+	if len(os.Args) > 3 {
+		if _, err := fmt.Sscanf(os.Args[3], "%g", &th); err != nil {
+			th = 0.5
+		}
+	}
+	b := img.Bounds()
+	W, H := b.Dx(), b.Dy()
+	mask := make([]bool, W*H)
+	var cx, cy, n float64
+	for y := 0; y < H; y++ {
+		for x := 0; x < W; x++ {
+			i := img.PixOffset(b.Min.X+x, b.Min.Y+y)
+			l := (0.2126*float64(img.Pix[i]) + 0.7152*float64(img.Pix[i+1]) + 0.0722*float64(img.Pix[i+2])) / 255
+			if l > th {
+				mask[y*W+x] = true
+				cx += float64(x)
+				cy += float64(y)
+				n++
+			}
+		}
+	}
+	cx /= n
+	cy /= n
+	iou := func(deg float64) float64 {
+		s, c := math.Sincos(deg * math.Pi / 180)
+		inter, union := 0, 0
+		for y := 0; y < H; y++ {
+			for x := 0; x < W; x++ {
+				dx, dy := float64(x)-cx, float64(y)-cy
+				rx, ry := int(math.Round(cx+dx*c-dy*s)), int(math.Round(cy+dx*s+dy*c))
+				r := rx >= 0 && ry >= 0 && rx < W && ry < H && mask[ry*W+rx]
+				m := mask[y*W+x]
+				if m && r {
+					inter++
+				}
+				if m || r {
+					union++
+				}
+			}
+		}
+		return float64(inter) / float64(max(1, union))
+	}
+	fmt.Printf("centroid %.1f,%.1f (canvas centre %.1f,%.1f, off %.1f px)  IoU120 %.3f  IoU240 %.3f\n", cx, cy, float64(W)/2, float64(H)/2,
+		math.Hypot(cx-float64(W)/2, cy-float64(H)/2), iou(120), iou(240))
+}
+
+// cmdEmblem: BASE SOCKET OX,OY GLYPH GCX,GCY SCALE DCX,DCY OUT. Mechanical composite: the SOCKET image (magenta keyed) is
+// pasted over BASE at OX,OY; then GLYPH (glow on black) is scaled by SCALE and added (light) so its point GCX,GCY lands on
+// DCX,DCY of the socket image. Used to put the Codex-drawn symmetric triquetra into the Codex-drawn empty magic socket.
+func cmdEmblem() {
+	base := loadPNG(os.Args[2])
+	sock := loadPNG(os.Args[3])
+	keyMagenta(sock)
+	o := parseInts(os.Args[4])
+	glyph := loadPNG(os.Args[5])
+	g := parseInts(os.Args[6])
+	var sc float64
+	if _, err := fmt.Sscanf(os.Args[7], "%g", &sc); err != nil {
+		fmt.Println("bad scale")
+		os.Exit(1)
+	}
+	d := parseInts(os.Args[8])
+	over(base, sock, image.Pt(o[0], o[1]))
+	gs := resize(glyph, int(math.Round(float64(glyph.Bounds().Dx())*sc)), int(math.Round(float64(glyph.Bounds().Dy())*sc)))
+	px := o[0] + d[0] - int(math.Round(float64(g[0])*sc))
+	py := o[1] + d[1] - int(math.Round(float64(g[1])*sc))
+	for y := 0; y < gs.Bounds().Dy(); y++ {
+		for x := 0; x < gs.Bounds().Dx(); x++ {
+			bx, by := px+x, py+y
+			if !image.Pt(bx, by).In(base.Bounds()) {
+				continue
+			}
+			si, bi := gs.PixOffset(x, y), base.PixOffset(bx, by)
+			if base.Pix[bi+3] == 0 {
+				continue
+			}
+			for k := 0; k < 3; k++ {
+				base.Pix[bi+k] = uint8(min(255, int(base.Pix[bi+k])+int(gs.Pix[si+k])))
+			}
+		}
+	}
+	savePNG(os.Args[9], base)
+	fmt.Println("wrote", os.Args[9])
+}
