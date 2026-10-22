@@ -22,7 +22,7 @@ namespace RuneSkin
     [BepInProcess("valheim.exe")]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Version = "0.4.2";
+        public const string Version = "0.5.0";
 
         public static ManualLogSource Log { get; private set; }
         public static ConfigEntry<float> SkinScale { get; private set; }
@@ -33,6 +33,7 @@ namespace RuneSkin
         public static ConfigEntry<string> StatusListButton { get; private set; }
 
         private static ConfigEntry<bool> _ownMenu, _ownTooltips, _ownHud, _ownInventory, _ownCrafting, _ownSkills, _ownTrophies, _ownAlmanac, _requireAssets;
+        private static ConfigEntry<bool> _ownMinimap, _ownEnemyHud, _ownMessageHud, _ownDamageText;
         private Harmony _harmony;
 
         private void Awake()
@@ -54,6 +55,14 @@ namespace RuneSkin
                 "RuneSkin styles and lays out the trophies panel (needs Inventory). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
             _ownAlmanac = Config.Bind("Ownership", "Almanac", true,
                 "RuneSkin restyles the Almanac mod's window (its layout and content stay Almanac's). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownMinimap = Config.Bind("Ownership", "Minimap", true,
+                "RuneSkin draws the small minimap as a round rune ring (compass runes, wind, day phase, biome plaque) and restyles the large map screen. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownEnemyHud = Config.Bind("Ownership", "EnemyHud", true,
+                "RuneSkin restyles enemy health bars, star levels and the boss bar (Vaettir rarity frames keep their tiers). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownMessageHud = Config.Bind("Ownership", "MessageHud", true,
+                "RuneSkin restyles centre messages, top-left notifications, unlock messages and the biome-discovered banner. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownDamageText = Config.Bind("Ownership", "DamageText", true,
+                "RuneSkin restyles floating damage numbers (font, outline, colour per hit type). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
             HudScale = Config.Bind("Hud", "Scale", 1f, new ConfigDescription(
                 "HUD cluster scale on top of the game's UI scale (fonts never go below the readable floor).",
                 new AcceptableValueRange<float>(0.75f, 1.5f)));
@@ -89,6 +98,10 @@ namespace RuneSkin
                 // Restyle only, no Inventory needed. Owned whether or not Almanac is installed (the plugin load order
                 // is not known here); without it the hook finds no window and does nothing.
                 [OwnershipRegistry.Almanac] = _ownAlmanac.Value,
+                [OwnershipRegistry.Minimap] = _ownMinimap.Value,
+                [OwnershipRegistry.EnemyHud] = _ownEnemyHud.Value,
+                [OwnershipRegistry.MessageHud] = _ownMessageHud.Value,
+                [OwnershipRegistry.DamageText] = _ownDamageText.Value,
             }, _requireAssets.Value);
 
             ApiHost = new Host();
@@ -110,6 +123,10 @@ namespace RuneSkin
                 ModScreens.AlmanacAdapter.Harmony = _harmony;
                 _harmony.PatchAll(typeof(ModScreens.AlmanacAdapter));
             }
+            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Minimap)) _harmony.PatchAll(typeof(MapScreen.MinimapAdapter));
+            if (OwnershipRegistry.IsOwned(OwnershipRegistry.EnemyHud)) _harmony.PatchAll(typeof(WorldHud.EnemyHudAdapter));
+            if (OwnershipRegistry.IsOwned(OwnershipRegistry.MessageHud)) _harmony.PatchAll(typeof(WorldHud.MessageAdapter));
+            if (OwnershipRegistry.IsOwned(OwnershipRegistry.DamageText)) _harmony.PatchAll(typeof(WorldHud.DamageTextAdapter));
             Log.LogInfo($"[RuneSkin] {Version} ready (API v{Skin.ApiVersion})");
         }
 
@@ -125,6 +142,10 @@ namespace RuneSkin
         public static string[] DiagDump(string screen)
         {
             PlayerHud.HudCluster.Instance?.Record();
+            MapScreen.MinimapSkin.Instance?.Record();
+            WorldHud.EnemyHudSkin.Record();
+            WorldHud.MessageSkin.Instance?.Record();
+            WorldHud.DamageTextSkin.Record();
             return SkinDiagnostics.Dump(string.IsNullOrEmpty(screen) ? null : screen).ToArray();
         }
     }

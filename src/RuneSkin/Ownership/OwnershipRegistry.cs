@@ -30,7 +30,14 @@ namespace RuneSkin.Ownership
         // The Almanac mod's window (RustyMods.Almanac; it replaces the trophies panel): restyle only, its layout stays.
         public const string Almanac = "Almanac";
 
-        public static readonly string[] Known = { Menu, Tooltips, Hud, Inventory, Crafting, Skills, Trophies, Almanac };
+        // M4 (live vanilla restyles, no prefab swaps): small minimap ring + large map screen, enemy / boss bars, centre /
+        // top-left / biome / unlock messages, floating damage numbers.
+        public const string Minimap = "Minimap";
+        public const string EnemyHud = "EnemyHud";
+        public const string MessageHud = "MessageHud";
+        public const string DamageText = "DamageText";
+
+        public static readonly string[] Known = { Menu, Tooltips, Hud, Inventory, Crafting, Skills, Trophies, Almanac, Minimap, EnemyHud, MessageHud, DamageText };
 
         private static readonly HashSet<string> Owned = new HashSet<string>();
         public static bool Frozen { get; private set; }

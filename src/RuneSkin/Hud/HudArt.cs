@@ -14,6 +14,9 @@ namespace RuneSkin.PlayerHud
     public sealed class HudArt
     {
         private readonly List<KeyValuePair<Graphic, Classification>> _rows = new List<KeyValuePair<Graphic, Classification>>();
+        private readonly string _screenId;
+
+        public HudArt(string screenId = "Hud") => _screenId = screenId;
         private readonly List<KeyValuePair<Transform, string>> _suppressed = new List<KeyValuePair<Transform, string>>();
 
         public static RectTransform Rect(string name, Transform parent)
@@ -42,7 +45,7 @@ namespace RuneSkin.PlayerHud
             img.type = sprite ? type : UnityEngine.UI.Image.Type.Simple;
             img.color = ThemeTokens.GetColor(colorToken, Color.white);
             Track(img, _ppuScale.TryGetValue(img, out var scale) ? scale : 1f);
-            var role = "hud:" + (spriteToken ?? colorToken);
+            var role = _screenId.ToLowerInvariant() + ":" + (spriteToken ?? colorToken);
             Classification c;
             if (spriteToken != null && !sprite)
                 c = new Classification { Role = role, Outcome = Outcome.Degraded, Reason = $"sprite token '{spriteToken}' has no asset (hidden)" };
@@ -118,6 +121,32 @@ namespace RuneSkin.PlayerHud
                 if (p.Key) p.Key.pixelsPerUnitMultiplier = _refPpu / 100f / p.Value;
         }
 
+        // Diagnostics row for a vanilla graphic restyled in place (no journal: the owning family never hands it back).
+        public void Note(Graphic g, string role, bool styled, string reason)
+        {
+            if (!g) return;
+            Set(g, new Classification { Role = _screenId.ToLowerInvariant() + ":" + role, Outcome = styled ? Outcome.Styled : Outcome.Degraded, Reason = reason });
+        }
+
+        // Restyles a vanilla Image from a sprite token (type from the art: Sliced when it has borders); colour kept
+        // unless a colour token is given. Missing art leaves the vanilla look (degraded row).
+        public bool Reskin(Image img, string spriteToken, string colorToken, string reason)
+        {
+            if (!img) return false;
+            var sprite = ThemeTokens.GetSprite(spriteToken);
+            if (!sprite)
+            {
+                Note(img, spriteToken, false, $"sprite token '{spriteToken}' has no asset (vanilla look kept)");
+                return false;
+            }
+            img.sprite = sprite;
+            img.type = sprite.border != Vector4.zero ? UnityEngine.UI.Image.Type.Sliced : UnityEngine.UI.Image.Type.Simple;
+            if (colorToken != null) img.color = ThemeTokens.GetColor(colorToken, img.color);
+            Track(img, 1f);
+            Note(img, spriteToken, true, reason);
+            return true;
+        }
+
         public void Suppressed(Transform t, string reason) => _suppressed.Add(new KeyValuePair<Transform, string>(t, reason));
 
         private void Set(Graphic g, Classification c)
@@ -133,7 +162,7 @@ namespace RuneSkin.PlayerHud
 
         public ScreenReport Report(Transform root)
         {
-            var report = new ScreenReport("Hud", root);
+            var report = new ScreenReport(_screenId, root);
             foreach (var p in _rows)
                 if (p.Key) report.Add(p.Key, root, p.Value);
             foreach (var p in _suppressed)
