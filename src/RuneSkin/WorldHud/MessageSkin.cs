@@ -65,6 +65,10 @@ namespace RuneSkin.WorldHud
                 // A dark backing band (color.message.band) under the rune text: readable over snow / sky (run
                 // 20261022-232945: contrast 3.9 on white with a light band).
                 _centerBand = Behind("RuneSkin_CenterBand", center.rectTransform, "sprite.band.message", "color.message.band");
+                // Solid, sprite-less: the band sprite is mostly transparent under the glyphs (run 20261023-012017:
+                // contrast 3.7 on white with the tinted sprite). Offline estimate with #0B1419 at 0.9 over white:
+                // lum 0.024 vs the warm face 0.86 -> ratio ~12.
+                if (_centerBand) { _centerBand.sprite = null; _centerBand.type = Image.Type.Simple; }
             }
             var top = hud.m_messageText;
             if (top)

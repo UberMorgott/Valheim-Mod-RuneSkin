@@ -688,6 +688,6 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
 - [x] Side panels (world source notice, modifier description): RuneSkin frame, docked beside the window, body text inside (height fit).
 - [x] Label size groups (TextSizeGroup), slider track classification, badges at the button corner (BadgeDock), placeholders without brackets.
 - [x] Two-font theme: font.body = PT Sans Regular + real Bold cut, font.display = Valheim-Norsebold; Cormorant removed from theme and bundle.
-- [ ] Centre message contrast on white 3.7 (needs 4.5): band sprite tint does not darken under the glyphs; use a solid sprite-less backing or material outline (m5-center-contrast).
-- [ ] Settings stepper value (CommonSettings/InputLayout/GUIStepper/Value/Text) renders 14.9 px despite the readable floor; diagnose (plate-label exemption / later scaling / autosize max).
-- [ ] Character creation sex toggle labels (SexPanel/FemaleToggle|MaleToggle/Label) render 15.5 px; same diagnosis.
+- [x] Centre message contrast on white: solid sprite-less dark backing (0.16.1, run 20261023-032312 m5-center-contrast PASS).
+- [x] Settings stepper value: the one-shot floor never saw the per-tab panel; ReadableSweep measures in screen px every 30 frames (0.16.1, run 20261023-032312 PASS).
+- [ ] Character creation sex toggle labels (SexPanel/FemaleToggle|MaleToggle/Label) still 15.5 px (run 20261023-032312): most likely plate labels (PlateLabelFit shrinks them to the plate, the floor exempts plate labels); fix = wider plates for that pair, not a floor on plate labels (a floor truncated other plates).

@@ -78,15 +78,15 @@ namespace RuneSkin.PreWorld
                 if (t.GetComponent<PlateLabelFit>() || t.GetComponent<TextSizeGroup>()) continue;
                 // Measured where it renders: screen code scales subtrees / sets sizes after the restyle (settings stepper
                 // 14.9 px, sex toggles 15.5 px with a one-shot floor, run 20261022-232945), so the floor re-applies for a
-                // few frames after every enable (ReadableText).
-                if (!t.TryGetComponent<ReadableText>(out var rt))
-                {
-                    rt = t.gameObject.AddComponent<ReadableText>();
-                    rt.hideFlags = HideFlags.HideInInspector;
-                }
-                rt.Floor = floor;
-                ReadableText.Apply(t, floor);
+                // sweep keeps it every 30 frames (ReadableSweep, in screen px like the check).
+                if (t.isActiveAndEnabled) ReadableSweep.Apply(t, floor);
             }
+            if (!root.TryGetComponent<ReadableSweep>(out var sweep))
+            {
+                sweep = root.gameObject.AddComponent<ReadableSweep>();
+                sweep.hideFlags = HideFlags.HideInInspector;
+            }
+            sweep.Floor = floor;
         }
         public static void Common(ScreenContext ctx, Transform root)
         {
@@ -158,29 +158,46 @@ namespace RuneSkin.PreWorld
     }
 
     // Vanilla panel image switched off under the RuneSkin panel stack; Revert turns it back on.
-    // Readable floor kept on one pre-world text (PreWorldKit.ReadableFloor): size in canvas units >= Floor, re-applied for
-    // 10 frames after each enable (layout / scale passes of the screen code run then), idle otherwise.
+    // Readable floor on a pre-world root (PreWorldKit.ReadableFloor): every 30 frames the active texts under it are
+    // measured where they render (screen px of one local unit, normalised to a 1080 px screen, the m5-text-min
+    // measure) and raised to Floor px. A one-shot pass in canvas units missed texts made later (settings stepper value
+    // 14.9 px, panels instantiated per tab) and the canvas scaler's own factor (sex toggles 15.5 px), runs
+    // 20261022-232945 / 20261023-012017. Plate labels and size groups keep their own fit.
     [DisallowMultipleComponent]
-    public sealed class ReadableText : MonoBehaviour, IRevertible
+    public sealed class ReadableSweep : MonoBehaviour, IRevertible
     {
         public float Floor = 16f;
-        private TMP_Text _text;
-        private int _until;
-
-        private void OnEnable() => _until = Time.frameCount + 10;
+        private int _next;
+        private static readonly System.Collections.Generic.List<TMP_Text> Buffer = new System.Collections.Generic.List<TMP_Text>(128);
 
         private void LateUpdate()
         {
-            if (Time.frameCount > _until) return;
-            if (!_text && !TryGetComponent(out _text)) return;
-            Apply(_text, Floor);
+            if (Time.frameCount < _next || Screen.height <= 0) return;
+            _next = Time.frameCount + 30;
+            Buffer.Clear();
+            GetComponentsInChildren(false, Buffer);
+            foreach (var t in Buffer)
+            {
+                if (!t || !t.enabled) continue;
+                if (t.GetComponent<SkinMark>() is SkinMark m && m.Internal) continue;
+                if (t.GetComponent<PlateLabelFit>() || t.GetComponent<TextSizeGroup>()) continue;
+                Apply(t, Floor);
+            }
+            Buffer.Clear();
         }
 
         public static void Apply(TMP_Text t, float floor)
         {
-            var canvas = t.canvas ? t.canvas : t.GetComponentInParent<Canvas>(true);
-            var k = canvas ? t.transform.lossyScale.y / canvas.rootCanvas.transform.lossyScale.y : 1f;
-            var want = k > 0.01f ? floor / k : floor;
+            var canvas = t.canvas;
+            if (!canvas) return;
+            var root = canvas.rootCanvas;
+            if (root.renderMode == RenderMode.WorldSpace) return;
+            var cam = root.renderMode == RenderMode.ScreenSpaceOverlay ? null : root.worldCamera;
+            var p0 = RectTransformUtility.WorldToScreenPoint(cam, t.transform.TransformPoint(Vector3.zero));
+            var p1 = RectTransformUtility.WorldToScreenPoint(cam, t.transform.TransformPoint(Vector3.up));
+            var k = Vector2.Distance(p0, p1) * 1080f / Screen.height; // px@1080 per font unit
+            if (!(k > 0.01f)) return;
+            var want = floor / k + 0.05f;
             if (!t.enableAutoSizing) { if (t.fontSize < want - 0.05f) t.fontSize = want; }
             else
             {
@@ -191,7 +208,6 @@ namespace RuneSkin.PreWorld
 
         public void Revert() => Destroy(this);
     }
-
     [DisallowMultipleComponent]
     public sealed class PanelSwap : MonoBehaviour, IRevertible
     {

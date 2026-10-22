@@ -233,6 +233,10 @@ public static class BuildBundles
         Sync(Path.Combine(Art, "fonts"), Fonts.Select(f => f.file).ToList(), FontDir + "/Source");
         var report = new StringBuilder($"RuneSkin TMP bake report ({DateTime.Now:yyyy-MM-dd HH:mm}), Unity {Application.unityVersion}, " +
             $"charset art/fonts/charset-ru-en.txt = {charset.Length} chars (RU+EN)\n");
+        // Generated faces no longer in Fonts (Cormorant after the two-font theme, 2026-10-23) would stay in the bundle
+        // folder and fail the font count check: deleted first.
+        foreach (var stale in AssetDatabase.FindAssets("t:TMP_FontAsset", new[] { FontDir }).Select(AssetDatabase.GUIDToAssetPath))
+            if (!Fonts.Any(f => stale.EndsWith("/" + f.name + ".asset", StringComparison.Ordinal))) AssetDatabase.DeleteAsset(stale);
         var paths = new List<string>();
         foreach (var (name, file, pt, pad) in Fonts)
         {
