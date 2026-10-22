@@ -118,7 +118,7 @@ namespace RuneSkin.WorldHud
                 mat.SetFloat(FxBandMax, (1f + room) / (1f + 2f * room));
                 mat.SetFloat(FxAspect, width / (barH * (1f + 2f * room)));
                 mat.SetFloat(FxGlowOut, ThemeTokens.GetFloat("fx.gas.glow", 0.36f));
-                mat.SetFloat(FxWeldWidth, ThemeTokens.GetFloat("fx.weld.width", 0.09f));
+                mat.SetFloat(FxWeldWidth, ThemeTokens.GetFloat("fx.weld.width", 0.2f));
                 mat.SetFloat(FxIntensity, ThemeTokens.GetFloat("fx.weld.intensity", 1.4f));
                 mat.SetFloat(FxFill, 1f);
                 weld.material = mat;
