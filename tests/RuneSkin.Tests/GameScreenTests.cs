@@ -63,5 +63,26 @@ namespace RuneSkin.Tests
             Assert.Equal("Compendium", SkinFamilies.Compendium);
             Assert.Equal("SplitDialog", SkinFamilies.SplitDialog);
         }
+
+        // Active effects rows: blank-line runs of SE tooltips collapse to one break, ends trimmed.
+        [Theory]
+        [InlineData("Rested\n\n$se_healthregen: +50%\n \n\nDuration", "Rested\n$se_healthregen: +50%\nDuration")]
+        [InlineData("  one line  ", "one line")]
+        [InlineData("a\nb", "a\nb")]
+        [InlineData("", "")]
+        [InlineData(null, "")]
+        public void TidyCollapsesBlankLines(string text, string want) => Assert.Equal(want, GameScreenMath.Tidy(text));
+
+        // Panel stacks kept on screen: the overhang past an edge comes back; a box that fits stays; an oversize box
+        // keeps its low edge (connect panel: stack 40 px past the top-left corner of a 1920 canvas).
+        [Theory]
+        [InlineData(-40f, 556f, 0f, 1920f, 40f)]
+        [InlineData(10f, 600f, 0f, 1920f, 0f)]
+        [InlineData(1500f, 1960f, 0f, 1920f, -40f)]
+        [InlineData(-10f, 2000f, 0f, 1920f, 10f)]
+        [InlineData(100f, 2100f, 0f, 1920f, -100f)]
+        [InlineData(float.NaN, 10f, 0f, 1920f, 0f)]
+        public void EdgeShiftBringsTheStackInside(float min, float max, float lo, float hi, float want) =>
+            Assert.Equal(want, RuneSkin.Restyle.PanelMath.EdgeShift(min, max, lo, hi), 3);
     }
 }

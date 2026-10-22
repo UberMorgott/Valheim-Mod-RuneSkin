@@ -38,6 +38,7 @@ namespace RuneSkin.PreWorld
             Layout(fejd);
             var menuList = fejd.m_menuList ? fejd.m_menuList.transform : null;
             PreWorldKit.Panels(root, "size.panel.pad", img => (menuList && img.transform.IsChildOf(menuList)) || VanillaCorner(img.transform, root));
+            Changelog(fejd);
             TabSelected(root);
             DefaultCancel(fejd.m_removeCharacterDialog);
             // The character's name in the delete confirm (OnCharacterRemove :2857 writes it): the header size of the
@@ -100,6 +101,26 @@ namespace RuneSkin.PreWorld
                 fejd.m_versionLabel.alignment = TextAlignmentOptions.BottomRight;
                 fejd.m_versionLabel.overflowMode = TextOverflowModes.Overflow;
             }
+        }
+
+        // Changelog (FejdStartup.m_changeLog, "Canvas Changelog/ChangeLog"; OnButtonShowChangelog toggles it): vanilla
+        // draws its window as a darken_blob image (485x600 behind the topic and the scroll text). darken_blob is the
+        // scrim sprite, not a panel sprite, so the panel pass left the window a bare scrim. That image is the window:
+        // switched off under a RuneSkin panel stack like every other vanilla panel, kept inside the screen.
+        private static void Changelog(FejdStartup fejd)
+        {
+            if (!fejd.m_changeLog) return;
+            var window = (RectTransform)fejd.m_changeLog.transform;
+            foreach (var img in window.GetComponentsInChildren<Image>(true))
+            {
+                if (img.GetComponent<SkinMark>() is SkinMark m && m.Internal) continue;
+                var sprite = img.TryGetComponent<PanelSwap>(out var swapped) ? swapped.OrigSprite : img.sprite ? img.sprite.name : null;
+                var rt = img.rectTransform;
+                if (sprite == null || !sprite.StartsWith("darken", StringComparison.Ordinal) || (rt.anchorMin == Vector2.zero && rt.anchorMax == Vector2.one)) continue;
+                PanelSwap.Apply(img, sprite);
+                PanelDecor.Ensure(rt, "size.panel.pad", glass: true, plaque: false);
+            }
+            OnScreen.Ensure(window);
         }
 
         // Row templates instantiated by vanilla (world rows FejdStartup.cs:1319, server rows ServerListGui.cs:608):

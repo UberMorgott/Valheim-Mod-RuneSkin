@@ -494,8 +494,9 @@ namespace RuneSkin.GameScreens
 
     // Compendium (TextsDialog, mockup m6-dialogs-a): panel stack, topic list rows = row_recipe_* (selected child =
     // row_recipe_selected), names body sans, reading pane topic serif + body text. The row template is a child of the
-    // dialog (TextsDialog.FillTextList clones m_elementPrefab), so clones copy the look. AugaSkin's active effects page
-    // (AugaActiveEffects, a feature it keeps) and Epic Loot's own page parts are left to their owners.
+    // dialog (TextsDialog.FillTextList clones m_elementPrefab), so clones copy the look. The active effects page is
+    // RuneSkin's own list (ActiveEffectsPage, own registration; AugaSkin >= 2.2.21 yields its page); Epic Loot's own page
+    // parts are left to their owner.
     public static class CompendiumSkin
     {
         public const string ScreenId = "Compendium";
@@ -505,7 +506,10 @@ namespace RuneSkin.GameScreens
             GameScreenKit.Form(d.transform, ScreenId, OwnershipRegistry.Compendium, (ctx, r) =>
             {
                 foreach (var t in r.GetComponentsInChildren<Transform>(true))
-                    if (t.name == "AugaActiveEffects") ctx.Exclude(t, "AugaSkin active effects page (its own feature)");
+                {
+                    if (t.name == ActiveEffectsPage.RootName) ctx.Exclude(t, "active effects list (own registration Compendium.ActiveEffects)");
+                    else if (t.name == "AugaActiveEffects") ctx.Exclude(t, "older AugaSkin's active effects page (its own)");
+                }
                 // Search field focus glow (button_glow under searchField): vanilla highlight art, kept.
                 foreach (var img in r.GetComponentsInChildren<Image>(true))
                     if (img.name == "glow" && img.sprite && img.sprite.name.StartsWith("button_glow", StringComparison.Ordinal)) ctx.Role(img, "content", "search field focus glow (vanilla)");
@@ -598,6 +602,21 @@ namespace RuneSkin.GameScreens
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]
         private static void TextsSetup_Postfix(TextsDialog __instance) => Try("compendium refresh", OwnershipRegistry.Compendium, () => GameScreenKit.Restyle(__instance));
+
+        // Active effects page (ActiveEffectsPage): the TextInfo vanilla inserts, the list swap on ShowText (after Epic
+        // Loot's postfix, which turns the text area back on), hidden on close.
+        [HarmonyPatch(typeof(TextsDialog), nameof(TextsDialog.AddActiveEffects))]
+        [HarmonyPostfix]
+        private static void AddActiveEffects_Postfix(TextsDialog __instance) => Try("active effects", OwnershipRegistry.Compendium, () => ActiveEffectsPage.Added(__instance));
+
+        [HarmonyPatch(typeof(TextsDialog), nameof(TextsDialog.ShowText), typeof(TextsDialog.TextInfo))]
+        [HarmonyPostfix]
+        [HarmonyAfter("randyknapp.mods.epicloot")]
+        private static void ShowText_Postfix(TextsDialog __instance, TextsDialog.TextInfo text) => Try("active effects page", OwnershipRegistry.Compendium, () => ActiveEffectsPage.Shown(__instance, text));
+
+        [HarmonyPatch(typeof(TextsDialog), nameof(TextsDialog.OnClose))]
+        [HarmonyPostfix]
+        private static void TextsClose_Postfix() => Try("active effects close", OwnershipRegistry.Compendium, ActiveEffectsPage.Closed);
 
         [HarmonyPatch(typeof(AchievementUnlockPopup), nameof(AchievementUnlockPopup.Start))]
         [HarmonyPostfix]

@@ -27,3 +27,5 @@ m_recipeDecription = "m_recipeDecription"
 PlayerCustomizaton = "PlayerCustomizaton"
 # BossAwakening world boss bar object name BA_WorldBossBar (AugaSkin exemption), named in docs/screen-inventory.md.
 BA_WorldBossBar = "BA_WorldBossBar"
+# Vanilla method StatusEffect.GetRemaningTime (assembly_valheim StatusEffect.cs:204), active effects page.
+GetRemaningTime = "GetRemaningTime"

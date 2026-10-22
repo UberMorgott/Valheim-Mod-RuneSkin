@@ -34,5 +34,10 @@ namespace RuneSkin.GameScreens
 
         // A glyph centred in a round socket: glyph side from the socket side and its share (0..1).
         public static float GlyphSide(float socket, float share) => Math.Max(0f, socket) * Math.Max(0f, Math.Min(1f, share));
+
+        // Active effects row text: tooltip texts carry blank lines (SE_Stats separates its parts with "\n\n",
+        // SE_Stats.cs:483) that read as gaps inside a row: trimmed, every blank-line run collapsed to one break.
+        public static string Tidy(string text) =>
+            string.IsNullOrEmpty(text) ? "" : System.Text.RegularExpressions.Regex.Replace(text.Trim(), @"\s*\n\s*\n\s*", "\n");
     }
 }

@@ -2,6 +2,7 @@ using System;
 using HarmonyLib;
 using RuneSkin.Classify;
 using RuneSkin.Ownership;
+using RuneSkin.Restyle;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -84,6 +85,10 @@ namespace RuneSkin.GameScreens
                 foreach (var s in r.GetComponentsInChildren<Slider>(true))
                     foreach (var img in s.GetComponentsInChildren<Image>(true))
                         if (s.handleRect != img.rectTransform && s.targetGraphic != img) ctx.Role(img, "content", "barber colour slider gradient (vanilla)");
+                // Panel title (BarberGui/root/title, 20 px): under size.text.header.min, so the classifier took it for
+                // body text; panel titles are the rune face (0.7.1 rule, text.header).
+                foreach (var t in r.GetComponentsInChildren<TMP_Text>(true))
+                    if (t.name == "title" && !t.GetComponentInParent<Selectable>(true)) ctx.Role(t, "text.header", "barber panel title (rune face)");
                 ctx.Role(p.m_selectedHair, "text.body", "selected hair name");
                 ctx.Role(p.m_selectedBeard, "text.body", "selected beard name");
                 GameScreenKit.Primary(ctx, p.m_apply, "apply (button_selected)");
@@ -125,6 +130,8 @@ namespace RuneSkin.GameScreens
                 PopupSkin.Backdrops(ctx, r);
             });
             if (row) GameScreenKit.Form(row, "DevPanels.ConnectRow", OwnershipRegistry.DevPanels, (ctx, r) => PopupSkin.Backdrops(ctx, r), panels: false);
+            // The vanilla panel sits flush in the top-left corner; the panel stack reaches the pad beyond it.
+            OnScreen.Ensure(root as RectTransform);
         }
 
         // ---- Feedback ----
