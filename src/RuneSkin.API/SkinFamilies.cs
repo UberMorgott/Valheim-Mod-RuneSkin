@@ -1,7 +1,7 @@
 namespace RuneSkin.API
 {
     /// <summary>
-    /// Screen family names for <see cref="Skin.IsOwned"/> (ApiVersion 5). A family is the ownership unit: while RuneSkin
+    /// Screen family names for <see cref="Skin.IsOwned"/> (ApiVersion 6). A family is the ownership unit: while RuneSkin
     /// owns one, no other skin may style its screens. Names are stable strings; an older RuneSkin answers false for a
     /// family it does not know.
     /// </summary>
@@ -47,5 +47,17 @@ namespace RuneSkin.API
         public const string ShipHud = "ShipHud";
         /// <summary>Key hints (keyboard plates and labels; gamepad glyph art stays) (M6).</summary>
         public const string KeyHints = "KeyHints";
+        /// <summary>Black screens over the world: respawn tips, sleep and teleport (M6).</summary>
+        public const string LoadScreen = "LoadScreen";
+        /// <summary>Chat window, in-world chat texts and NPC / raven speech bubbles (M6).</summary>
+        public const string Chat = "Chat";
+        /// <summary>Small popups: achievement unlock, join code, session player list, closed captions (M6).</summary>
+        public const string Popups = "Popups";
+        /// <summary>Text input (signs, portal tags, pins, names) and text viewer (runestones, intro saga, raven) (M6).</summary>
+        public const string TextDialogs = "TextDialogs";
+        /// <summary>Compendium / lore dialog (TextsDialog) (M6).</summary>
+        public const string Compendium = "Compendium";
+        /// <summary>Split stack dialog (M6).</summary>
+        public const string SplitDialog = "SplitDialog";
     }
 }

@@ -152,7 +152,7 @@ namespace RuneSkin.Classify
         // Families whose screens are vanilla control forms (M5: main menu screens, settings, connection dialogs): the
         // controls are classified by their component wiring (art\README.md "M5 sprites": slider A, toggle = checkbox,
         // dropdown A, input = field_search). Older families keep their adapter-specific roles.
-        public static readonly HashSet<string> ControlFamilies = new HashSet<string> { "MainMenu", "Settings", "Connection", "BuildHud" };
+        public static readonly HashSet<string> ControlFamilies = new HashSet<string> { "MainMenu", "Settings", "Connection", "BuildHud", "LoadScreen", "Chat", "Popups", "TextDialogs", "Compendium", "SplitDialog" };
 
         private static bool Controls(string family) => family != null && ControlFamilies.Contains(family);
 

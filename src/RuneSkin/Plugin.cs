@@ -22,7 +22,7 @@ namespace RuneSkin
     [BepInProcess("valheim.exe")]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Version = "0.7.2";
+        public const string Version = "0.8.0";
 
         public static ManualLogSource Log { get; private set; }
         public static ConfigEntry<float> SkinScale { get; private set; }
@@ -35,6 +35,7 @@ namespace RuneSkin
         private static ConfigEntry<bool> _ownMenu, _ownTooltips, _ownHud, _ownInventory, _ownCrafting, _ownSkills, _ownTrophies, _ownAlmanac, _requireAssets;
         private static ConfigEntry<bool> _ownMinimap, _ownEnemyHud, _ownMessageHud, _ownDamageText, _ownMainMenu, _ownSettings, _ownConnection;
         private static ConfigEntry<bool> _ownBuildHud, _ownCrosshair, _ownActionHud, _ownShipHud, _ownKeyHints;
+        private static ConfigEntry<bool> _ownLoadScreen, _ownChat, _ownPopups, _ownTextDialogs, _ownCompendium, _ownSplitDialog;
         private Harmony _harmony;
 
         private void Awake()
@@ -80,6 +81,18 @@ namespace RuneSkin
                 "RuneSkin draws the ship HUD as a speed ladder with a rudder socket (wind stays on the minimap ring). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
             _ownKeyHints = Config.Bind("Ownership", "KeyHints", true,
                 "RuneSkin styles the key hints (key plates and labels; gamepad glyphs stay). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+            _ownLoadScreen = Config.Bind("Ownership", "LoadScreen", true,
+                "RuneSkin styles the black screens over the world (respawn tip banner + rune spinner, sleep, teleport ring). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+            _ownChat = Config.Bind("Ownership", "Chat", true,
+                "RuneSkin styles the chat window, in-world chat texts and NPC / raven speech bubbles. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+            _ownPopups = Config.Bind("Ownership", "Popups", true,
+                "RuneSkin styles the small popups (achievement unlock, join code, session player list, closed captions). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+            _ownTextDialogs = Config.Bind("Ownership", "TextDialogs", true,
+                "RuneSkin styles the text input (signs, portals, pins, names) and the text viewer (runestones, intro saga, raven). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+            _ownCompendium = Config.Bind("Ownership", "Compendium", true,
+                "RuneSkin styles the compendium / lore dialog. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownSplitDialog = Config.Bind("Ownership", "SplitDialog", true,
+                "RuneSkin styles the split stack dialog. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
             HudScale = Config.Bind("Hud", "Scale", 1f, new ConfigDescription(
                 "HUD cluster scale on top of the game's UI scale (fonts never go below the readable floor).",
                 new AcceptableValueRange<float>(0.75f, 1.5f)));
@@ -127,6 +140,12 @@ namespace RuneSkin
                 [OwnershipRegistry.ActionHud] = _ownActionHud.Value,
                 [OwnershipRegistry.ShipHud] = _ownShipHud.Value,
                 [OwnershipRegistry.KeyHints] = _ownKeyHints.Value,
+                [OwnershipRegistry.LoadScreen] = _ownLoadScreen.Value,
+                [OwnershipRegistry.Chat] = _ownChat.Value,
+                [OwnershipRegistry.Popups] = _ownPopups.Value,
+                [OwnershipRegistry.TextDialogs] = _ownTextDialogs.Value,
+                [OwnershipRegistry.Compendium] = _ownCompendium.Value,
+                [OwnershipRegistry.SplitDialog] = _ownSplitDialog.Value,
             }, _requireAssets.Value);
 
             ApiHost = new Host();
@@ -160,6 +179,7 @@ namespace RuneSkin
             if (OwnershipRegistry.IsOwned(OwnershipRegistry.BuildHud) || OwnershipRegistry.IsOwned(OwnershipRegistry.Crosshair) || OwnershipRegistry.IsOwned(OwnershipRegistry.ActionHud) ||
                 OwnershipRegistry.IsOwned(OwnershipRegistry.ShipHud) || OwnershipRegistry.IsOwned(OwnershipRegistry.KeyHints))
                 _harmony.PatchAll(typeof(WorldHud.PlayHudAdapter));
+            if (GameScreens.GameScreensAdapter.AnyOwned()) _harmony.PatchAll(typeof(GameScreens.GameScreensAdapter));
             Log.LogInfo($"[RuneSkin] {Version} ready (API v{Skin.ApiVersion})");
         }
 

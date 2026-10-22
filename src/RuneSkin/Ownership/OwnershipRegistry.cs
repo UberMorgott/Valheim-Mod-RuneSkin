@@ -53,7 +53,16 @@ namespace RuneSkin.Ownership
         public const string ShipHud = RuneSkin.API.SkinFamilies.ShipHud;
         public const string KeyHints = RuneSkin.API.SkinFamilies.KeyHints;
 
-        public static readonly string[] Known = { Menu, Tooltips, Hud, Inventory, Crafting, Skills, Trophies, Almanac, Minimap, EnemyHud, MessageHud, DamageText, MainMenu, Settings, Connection, BuildHud, Crosshair, ActionHud, ShipHud, KeyHints };
+        // M6 batch 2 (restyled in place, GameScreens\): black screens (respawn / sleep / teleport), chat + speech
+        // bubbles, small popups, text input / viewer (+ raven panel), compendium, split dialog.
+        public const string LoadScreen = RuneSkin.API.SkinFamilies.LoadScreen;
+        public const string Chat = RuneSkin.API.SkinFamilies.Chat;
+        public const string Popups = RuneSkin.API.SkinFamilies.Popups;
+        public const string TextDialogs = RuneSkin.API.SkinFamilies.TextDialogs;
+        public const string Compendium = RuneSkin.API.SkinFamilies.Compendium;
+        public const string SplitDialog = RuneSkin.API.SkinFamilies.SplitDialog;
+
+        public static readonly string[] Known = { Menu, Tooltips, Hud, Inventory, Crafting, Skills, Trophies, Almanac, Minimap, EnemyHud, MessageHud, DamageText, MainMenu, Settings, Connection, BuildHud, Crosshair, ActionHud, ShipHud, KeyHints, LoadScreen, Chat, Popups, TextDialogs, Compendium, SplitDialog };
 
         private static readonly HashSet<string> Owned = new HashSet<string>();
         public static bool Frozen { get; private set; }

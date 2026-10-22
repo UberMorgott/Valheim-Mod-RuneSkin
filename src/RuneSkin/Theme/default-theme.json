@@ -702,6 +702,12 @@
     { "role": "text.version", "font": "font.body", "textColor": "color.state.disabled" },
     { "role": "map.text", "font": "font.body", "textColor": "color.text.body" },
     { "role": "key.plate", "sprite": "sprite.hud.plate.key", "color": "color.frame", "imageType": "Sliced", "fillCenter": "true" },
+    { "role": "popup", "sprite": "sprite.frame.tooltip", "color": "color.frame", "imageType": "Sliced", "fillCenter": "true" },
+    { "role": "band.runes", "sprite": "sprite.band.runes", "color": "color.ornament", "imageType": "Tiled" },
+    { "role": "socket.round", "sprite": "sprite.button.round", "color": "color.frame", "imageType": "Simple", "preserveAspect": true },
+    { "role": "glyph.moon", "sprite": "sprite.glyph.time.moon", "color": "color.text.body", "imageType": "Simple", "preserveAspect": true },
+    { "role": "teleport.ring", "sprite": "sprite.minimap.ring", "color": "color.frame", "imageType": "Simple", "preserveAspect": true },
+    { "role": "teleport.swirl", "sprite": "sprite.glyph.teleport.swirl", "color": "color.hud.glyph", "imageType": "Simple", "preserveAspect": true },
     { "role": "skip" }
   ],
   "spriteRoles": [
@@ -743,6 +749,12 @@
     { "family": "Crosshair", "requires": [ "sprite.glyph.crosshair", "sprite.glyph.stealth.eye", "sprite.bar.skill.trough", "sprite.bar.skill.fill", "font.body" ] },
     { "family": "ActionHud", "requires": [ "sprite.bar.frame.action", "sprite.hud.bar.trough", "sprite.hud.bar.fill", "sprite.band.message", "font.display", "font.body" ] },
     { "family": "ShipHud", "requires": [ "sprite.glyph.ship.oar", "sprite.glyph.ship.sail.half", "sprite.glyph.ship.sail.full", "sprite.glyph.stop", "sprite.glyph.rudder", "sprite.slot.cell.selected", "sprite.button.round" ] },
-    { "family": "KeyHints", "requires": [ "sprite.hud.plate.key", "font.body" ] }
+    { "family": "KeyHints", "requires": [ "sprite.hud.plate.key", "font.body" ] },
+    { "family": "LoadScreen", "requires": [ "sprite.frame.panel", "sprite.fill.glass", "sprite.divider", "sprite.spinner.runes", "sprite.button.round", "sprite.glyph.time.moon", "sprite.minimap.ring", "sprite.glyph.teleport.swirl", "font.display", "font.body" ] },
+    { "family": "Chat", "requires": [ "sprite.frame.tooltip", "sprite.field.search", "font.display", "font.body" ] },
+    { "family": "Popups", "requires": [ "sprite.frame.tooltip", "sprite.frame.panel", "sprite.fill.glass", "sprite.button.normal", "font.display", "font.body" ] },
+    { "family": "TextDialogs", "requires": [ "sprite.frame.panel", "sprite.fill.glass", "sprite.frame.inset", "sprite.band.runes", "sprite.field.search", "sprite.button.normal", "sprite.button.selected", "font.display", "font.body" ] },
+    { "family": "Compendium", "requires": [ "sprite.frame.panel", "sprite.fill.glass", "sprite.frame.inset", "sprite.row.recipe.normal", "sprite.row.recipe.selected", "sprite.hud.frame.strip", "font.display", "font.body" ] },
+    { "family": "SplitDialog", "requires": [ "sprite.frame.panel", "sprite.fill.glass", "sprite.slot.recess", "sprite.slider.handle.normal", "sprite.bar.skill.trough", "sprite.button.normal", "font.display", "font.body" ] }
   ]
 }
