@@ -227,7 +227,7 @@ namespace RuneSkin.WorldHud
                 name.SetAsLastSibling();
                 if (name.TryGetComponent<TMP_Text>(out var text))
                 {
-                    var ok = TextLook.Apply(text, "font.rune", "boss");
+                    var ok = TextLook.Apply(text, "font.display", "boss");
                     text.color = ThemeTokens.GetColor("color.boss.name", new Color(0.851f, 0.863f, 0.878f));
                     text.alignment = TextAlignmentOptions.Center;
                     text.enableAutoSizing = true;
@@ -250,7 +250,7 @@ namespace RuneSkin.WorldHud
                         fm.SetFloat(ShaderUtilities.ID_UnderlayOffsetY, -0.6f);
                         fm.SetFloat(ShaderUtilities.ID_UnderlaySoftness, 0.25f);
                     }
-                    Art.Note(text, "boss.name", ok, "boss name in the boss-c plaque field (rune face)");
+                    Art.Note(text, "boss.name", ok, "boss name in the boss-c plaque field (Norsebold display face)");
                 }
             }
 
