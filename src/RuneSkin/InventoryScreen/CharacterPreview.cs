@@ -24,9 +24,12 @@ namespace RuneSkin.InventoryScreen
     //   rim lights culling only that layer); while it renders, the world's directional lights, fog and ambient are
     //   swapped for the rig's and restored right after: the preview looks the same at any time of day / weather.
     // - drag on the image turns the clone; the idle animation runs on the clone's Animator (no events, no root motion).
-    // - lifecycle: built when the inventory shows, torn down (camera, clone, lights, render texture, runtime materials)
-    //   when it hides, the player changes / logs out, or this component is disabled / destroyed. LiveClones /
-    //   LiveTextures count what exists (autotest leak check).
+    // - lifecycle: built when the inventory shows, torn down (camera, clone, lights, render texture, runtime materials
+    //   and meshes made while building) when it hides, the player changes / logs out, or this component is destroyed. A disable
+    //   while the inventory stays open (an ancestor toggled for a frame, e.g. by the panel animation when a close is
+    //   reverted mid-transition) keeps the clone: tearing down there rebuilt it on the re-enable (in-game run
+    //   20261022-181305: 11 builds in 10 open / close cycles). LiveClones / LiveTextures count what exists and
+    //   History lists the last builds / teardowns with their reason (autotest leak check).
     public sealed class CharacterPreview : MonoBehaviour, IBeginDragHandler, IDragHandler
     {
         public static CharacterPreview Instance { get; private set; }
@@ -39,6 +42,16 @@ namespace RuneSkin.InventoryScreen
         private static int _revision;
         public int Refreshes { get; private set; }
         public int Builds { get; private set; }
+
+        // Last lifecycle events ("f<frame> build" / "f<frame> teardown <reason>"), newest last (autotest diagnostics).
+        private static readonly Queue<string> Events = new Queue<string>();
+        public static string History => string.Join(" | ", Events);
+
+        private static void Note(string what)
+        {
+            if (Events.Count >= 24) Events.Dequeue();
+            Events.Enqueue($"f{Time.frameCount} {what}");
+        }
 
         public bool Live => _clone && _rt;
         public RenderTexture Texture => _rt;
@@ -62,6 +75,7 @@ namespace RuneSkin.InventoryScreen
         private bool _placed, _hidden, _failed, _alphaChecked;
         // Runtime materials created while this component built / refreshed the clone (destroyed on teardown).
         private readonly List<Material> _owned = new List<Material>();
+        private readonly List<Mesh> _ownedMeshes = new List<Mesh>();
         private static bool _ownedLogged;
         private static readonly int VisibleHash = Animator.StringToHash("visible");
         private static bool _opaqueClear;
@@ -95,7 +109,7 @@ namespace RuneSkin.InventoryScreen
         {
             if (_failed || !IsOpen())
             {
-                if (gameObject.activeSelf) Close();
+                if (gameObject.activeSelf) Close("place while closed");
                 return;
             }
             _placed = true;
@@ -113,20 +127,26 @@ namespace RuneSkin.InventoryScreen
         }
 
         // Hides and frees everything (inventory closed).
-        public void Close()
+        public void Close() => Close("inventory hidden");
+
+        private void Close(string why)
         {
             _placed = false;
-            Teardown();
+            Teardown(why);
             if (gameObject.activeSelf) gameObject.SetActive(false);
         }
 
         private void Awake() => Instance = this;
 
-        private void OnDisable() => Teardown();
+        // Closed (or no longer placed): free now. Still open: a transient disable, the clone is kept (header).
+        private void OnDisable()
+        {
+            if (!_placed || !IsOpen()) Teardown("disabled");
+        }
 
         private void OnDestroy()
         {
-            Teardown();
+            Teardown("destroyed");
             if (Instance == this) Instance = null;
         }
 
@@ -135,10 +155,10 @@ namespace RuneSkin.InventoryScreen
             var player = Player.m_localPlayer;
             if (!_placed || !IsOpen() || !player || player.IsDead())
             {
-                Close();
+                Close(!_placed ? "not placed" : !IsOpen() ? "inventory closed" : "no live player");
                 return;
             }
-            if (_clone && _player != player) Teardown();
+            if (_clone && _player != player) Teardown("player changed");
             if (!_clone && !Build(player)) return;
             if (_hidden)
             {
@@ -226,6 +246,7 @@ namespace RuneSkin.InventoryScreen
                     if (l && l.type == LightType.Directional && !l.transform.IsChildOf(_rig.transform)) _worldLights.Add(l);
                 _applied = -1;
                 Builds++;
+                Note("build");
                 Adopt(before);
                 return true;
             }
@@ -233,7 +254,7 @@ namespace RuneSkin.InventoryScreen
             {
                 Adopt(before);
                 Fail(e.ToString());
-                Teardown();
+                Teardown("build failed");
                 return false;
             }
         }
@@ -300,8 +321,9 @@ namespace RuneSkin.InventoryScreen
             LiveTextures--;
         }
 
-        private void Teardown()
+        private void Teardown(string why)
         {
+            if (_clone || _rt || _rig) Note("teardown " + why);
             FreeTexture();
             if (_clone)
             {
@@ -311,6 +333,9 @@ namespace RuneSkin.InventoryScreen
             foreach (var m in _owned)
                 if (m && !SharedWithPlayer(m)) Destroy(m);
             _owned.Clear();
+            foreach (var m in _ownedMeshes)
+                if (m) Destroy(m);
+            _ownedMeshes.Clear();
             if (_rig) Destroy(_rig);
             _rig = _clone = null;
             _vis = null;
@@ -368,11 +393,15 @@ namespace RuneSkin.InventoryScreen
         // Material ownership by creation window: every material that appears while this component synchronously
         // builds or refreshes the clone (renderer.material instances of VisEquipment / item scripts, copies made with
         // new Material(...) that keep the source name) is the clone's; Unity never frees them with the GameObject
-        // (in-game run 20261022-174939: +2 materials per build). Unity-internal (DontSave) ones are left alone.
+        // (in-game run 20261022-174939: +2 materials per build). Meshes the same way (MeshFilter.mesh /
+        // SkinnedMeshRenderer instancing by item scripts: "<mesh> Instance" copies). Unity-internal (DontSave) ones are
+        // left alone.
         private static HashSet<int> MaterialIds()
         {
             var ids = new HashSet<int>();
             foreach (var m in Resources.FindObjectsOfTypeAll<Material>())
+                if (m) ids.Add(m.GetInstanceID());
+            foreach (var m in Resources.FindObjectsOfTypeAll<Mesh>())
                 if (m) ids.Add(m.GetInstanceID());
             return ids;
         }
@@ -388,10 +417,17 @@ namespace RuneSkin.InventoryScreen
                     added++;
                     if (names.Count < 8) names.Add(m.name);
                 }
+            foreach (var m in Resources.FindObjectsOfTypeAll<Mesh>())
+                if (m && !before.Contains(m.GetInstanceID()) && (m.hideFlags & HideFlags.DontSave) == HideFlags.None && !_ownedMeshes.Contains(m))
+                {
+                    _ownedMeshes.Add(m);
+                    added++;
+                    if (names.Count < 8) names.Add("mesh " + m.name);
+                }
             if (added > 0 && !_ownedLogged)
             {
                 _ownedLogged = true;
-                Plugin.Log.LogInfo($"[RuneSkin] character preview owns {added} runtime material(s): {string.Join(", ", names)}");
+                Plugin.Log.LogInfo($"[RuneSkin] character preview owns {added} runtime material(s) / mesh(es): {string.Join(", ", names)}");
             }
         }
 
