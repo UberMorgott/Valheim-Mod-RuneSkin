@@ -190,3 +190,83 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 - [x] Bar values centred on every bar (HP was centred in the filled part, stamina / eitr right-aligned): one rule in BarView (TextAlignmentOptions.Center, box = window or the unlocked part, HudMath.ValueSpan).
 - [x] Bar edges: the breathing blurred front FX is off; crisp fill-end rim bar_edge (Codex image gen art/src/kit/edge.png + edge.prompt.txt, candidate 1 cut 6x48) tinted per bar (color.hud.edge.health / stamina / eitr / shield), on the HP / stamina / eitr fills, the shield band end and the action / stagger bars (PlayHud.EdgeRim). Theme float mode.hud.bar.edge 2 (0 = old FX, 1 = clean). Codex scores (cx.ps1; agent-link chat 11cdaf31 seat failed "directory name is invalid"): old FX 5, clean 7.5, rim 8 -> rim ships.
 - [x] Harness m1: icon-centre (18 cells, 1 px), bar-value-centre (1 px), bar-edge (shots ui-runeskin-m1-edge-0/1/2, rim on the fill end, no FX); m6-action checks the rim. Run tools\out\20261022-121144 (01 + m1 + m5 + m6) 69/69 PASS.
+
+## Plan: RuneSkin standalone, AugaSkin out of the pack (2026-10-22, audit of Auga-Fork 2.2.21 vs RuneSkin 0.9.1)
+
+Pack today: RuneSkin 0.9.1 + AugaSkin 2.2.21 ship together (client scope, mod-updaters-vps 00d841a). AugaSkin yields the
+families in its `Compat\RuneSkinOwnership.Skips` / `OwnsHudPart` / `OwnsInventoryPart` / `OwnsPopup`; everything below
+is what it still does with RuneSkin installed (derived from those gates + every Harmony class in Auga-Fork\Auga).
+
+Asset provenance (audit): every bundled sprite = Codex image gen (art/src/kit/*.prompt.txt, cut by art/tools); fonts =
+Cormorant 4.002 + PT Sans 2.003W (OFL, art/fonts/licenses); TMP shader + LiberationSans / EmojiOne in unity/Assets/TextMesh Pro
+= Unity ugui package (not shipped except the SDF shader, swapped at runtime to the game's); no Auga sprite, font, shader
+or code in the repo or the bundle (runeskin.contents.txt: 223 sprites + 2 RuneSkin-* fonts). Only runtime Auga asset =
+theme `font.rune` -> AugaSkin's loaded "Norsebold SDF" (default-theme.json:284). Code comments cite AugaSkin behaviour
+(FoodRow / HudMath checkerboard geometry idea, EffectTaxonomy from augaskin-engine-recon.md, Almanac/Menu ordering notes):
+design references, no copied code. Open: Codex style references `D:\tmp\cx-augaskin\mockup-1.png` / `work\ref\*` are gone
+from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the kit is a style derivative, not a copy).
+
+### Batch F - own rune face (blocked on a user decision)
+
+- [ ] Original Norse (Joel Carrouche, fontspace "Norse" zip, v1.001, 2011): 311 glyphs, 0 Cyrillic. EULA "free font licence
+      1.3": use + embed in applications OK, no modification, no redistribution of the font file. The Cyrillic Norse
+      (v2.20, 518 glyphs, 74 Cyrillic) exists only in Auga's AugaUnity\Assets\Fonts (not an original distribution).
+- [ ] Decide: (a) theme `font.rune` = vanilla runtime "Valheim-Norsebold" (source "loaded", nothing redistributed, Cyrillic
+      if the game's asset has it - verify with m5/m6-rune-font); or (b) bundle a SDF baked from Norse 1.001 (Latin + runes,
+      .otf gitignored, EULA text in art/fonts/licenses) with vanilla Norsebold as fallback for Cyrillic (harness
+      rune-font check demands no fallback - would need a rule change); or (c) an OFL runic/Norse face with Cyrillic.
+- [ ] Then: harness RuneFont.cs `RuneFaceAsset` + M6b/M6c `ThemeFace` / barber title font name, autotest 01 + m5 + m6,
+      bump, remove the "loaded AugaSkin font" comment in ThemeModel.cs.
+
+### Batch M7a - Epic Loot panels (families EpicLootEnchanting / EpicLootBoard / EpicLootTemper, AugaSkin yields)
+
+- [ ] Enchanting table: `EnchantingUI` prefab (EnchantingTableUI.Start), MultiSelectItemList ElementPrefab rows,
+      CraftSuccessDialog (AugaSkin Compat\EpicLootEnchanting.Init). Art m7 kit (glyph_ench_*, gem_rarity/setting).
+- [ ] Adventure board (MerchantPanel under StoreGui) + Hildir TemperPanel (AugaSkin Store_Setup Store_EpicLootPanels;
+      RuneSkin TradeScreens excludes them today).
+- [ ] AugaSkin side: gate EpicLootEnchanting.Init + Store_EpicLootPanels on the new families (Skips).
+
+### Batch M7b - mod HUD
+
+- [ ] hudroot mod parts AugaSkin restyles in Hud_Awake_ModParts: Epic Loot AbilityBar + DebugText, StarLevelSystem
+      NoMapLevelIndicator (any non-RuneSkin child except the Vaettir world boss bar); remaining hudroot children of owned clusters (GP root etc.).
+- [ ] Vaettir target panel + raid timer (BossAwakening UI\HudModes.cs copies the boss HUD template "after AugaSkin's
+      EnemyHud swap" - re-check its template with AugaSkin absent), Hamingja bleed-out + ally markers (art m7 modhud).
+- [ ] HudParts.Bars: GuiBar fills AugaSkin still reskins outside owned parts (mount bars if ActionHud off etc.); confirm none left.
+
+### Batch M7c - generic mod UI
+
+- [ ] Jotunn GUIManager role pass (AugaSkin Compat\JotunnGui: Create*/Apply*Style, colour/gradient pickers): StarLevelSystem
+      config UI + startup popups, VNEI BaseUI parts outside the crafting grid, Epic Loot CreateButton / CreateScrollView,
+      Jotunn ModCompatibility window.
+- [ ] IMGUI fonts (AugaSkin Compat\Imgui): ValheimBuildCamera DismantlePreview badge (shipped), DisplayBepInExInfo
+      (shipped); ConfigurationManager = dev only (skip).
+- [ ] Leftover vanilla bits AugaSkin restyles: InventoryGui achievements panel + m_achievementsElementPrefab, variant
+      dialog, m_dragItemPrefab; VanillaPanels RadialBase (radial menus: owned by the icons-in-radial-menus session),
+      EndCredits / ManageSavesMenu only when MainMenu is off; PotalMap portal list (kit, large-map rules); Chatter toggles
+      (only if installed).
+- [ ] Main menu foreign texts (AugaSkin FejdStartup_Awake_Patch features): DisplayBepInExInfo / V+ version lines,
+      StarLevelSystem "Mod Config" corner button overlap; cinematics button hidden; game font fallbacks linked.
+
+### Batch P - port AugaSkin features (non-style, still live with RuneSkin)
+
+- [ ] Pause menu Compendium entry (PauseMenu_Setup.AddCompendium + Menu_UpdateNavigation_Patch gamepad chain).
+- [ ] Character stats window: 5th Info button + panel (CharacterStatsPanel.cs, 568 lines; RuneSkin InfoTabs mirrors the button).
+- [ ] Summon frames under the hotbar (SummonFrames.cs, cfg Hud.ShowSummonFrames; RuneSkin LargeMap / MessageSkin already
+      leave room for them).
+- [ ] Other players' energy-shield strip under their overhead bars (EnergyShieldHud.cs, cfg Hud.ShowEnergyShield; MorgottTweaks
+      ShieldShare cfg text names AugaSkin) - into RuneSkin EnemyHud.
+- [ ] Custom cursor (Auga.ApplyCursor, bundle "Cursor2"): own cursor art or vanilla.
+- [ ] Drop with AugaSkin (Auga-only, no port): AugaLog message log + LastHitTracker, ComplexTooltip text patch, Text_Patch
+      AlwaysUpper/TitleCase, ButtonSfx_Patch (Auga bundle buttons), GuiBar_Patch (Filled fills; check RuneSkin bars do not
+      rely on it), AugaBindingDisplay, auga_audit console, MovableHudElement offsets of non-owned parts, translations.json.
+
+### Batch X - remove AugaSkin from the pack
+
+- [ ] Preconditions: F + M7a-c + P done, a run with plugins\AugaSkin parked (autotest -DisablePlugin AugaSkin) all PASS,
+      unknown = 0 in every family.
+- [ ] mod-updaters-vps: mods.json AugaSkin "disabled", drop `plugins\AugaSkin` + cfg from `$clientOnly`, add cfg to
+      `$orphanCfgs`; `-Only` never deletes a whole mod -> full `valheim-pack.ps1 -SkipUpdate -Upload` (user OK) removes it.
+- [ ] Clean references: RuneSkin HarmonyAfter("morgott.valheim.augaskin") (harmless, remove), Ownership comments, Plugin.cs
+      "another skin (AugaSkin) yields" cfg texts; MorgottTweaks HarmonyBefore / comments; Vaettir RarityFrames / HudModes
+      AugaSkin template notes; harness Auga layer.
