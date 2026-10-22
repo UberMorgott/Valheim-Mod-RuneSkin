@@ -22,12 +22,13 @@ namespace RuneSkin
     [BepInProcess("valheim.exe")]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Version = "0.9.2";
+        public const string Version = "0.9.3";
 
         public static ManualLogSource Log { get; private set; }
         public static ConfigEntry<float> SkinScale { get; private set; }
         public static Host ApiHost { get; private set; }
         public static ConfigEntry<float> HudScale { get; private set; }
+        public static ConfigEntry<float> MinimapScale { get; private set; }
         public static ConfigEntry<bool> UltrawideBox { get; private set; }
         public static ConfigEntry<KeyboardShortcut> StatusListKey { get; private set; }
         public static ConfigEntry<string> StatusListButton { get; private set; }
@@ -105,6 +106,9 @@ namespace RuneSkin
             HudScale = Config.Bind("Hud", "Scale", 1f, new ConfigDescription(
                 "HUD cluster scale on top of the game's UI scale (fonts never go below the readable floor).",
                 new AcceptableValueRange<float>(0.75f, 1.5f)));
+            MinimapScale = Config.Bind("Hud", "MinimapScale", 1f, new ConfigDescription(
+                "Minimap ring size on top of the theme size (size.minimap.ring) and Hud.Scale; its height cap (share.minimap.ring.h) scales with it. Applied live.",
+                new AcceptableValueRange<float>(0.6f, 1.6f)));
             UltrawideBox = Config.Bind("Hud", "UltrawideBox", true,
                 "On 21:9 and wider screens the HUD corners are those of a centred 16:9 box (off = true screen corners).");
             StatusListKey = Config.Bind("Hud", "StatusListKey", new KeyboardShortcut(UnityEngine.KeyCode.F7),

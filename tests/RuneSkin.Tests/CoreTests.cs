@@ -67,6 +67,19 @@ namespace RuneSkin.Tests
             Assert.Equal(valid, !ThemeSchema.Validate(f).Exists(e => e.Contains("source")));
         }
 
+        // The shipped minimap (0.9.3, user ask): ring 320 ref (was 220) capped at 26 % of the safe height (was 18 %).
+        [Fact]
+        public void DefaultThemeMinimapIsLarge()
+        {
+            using var s = typeof(ThemeSchema).Assembly.GetManifestResourceStream("RuneSkin.default-theme.json");
+            using var r = new System.IO.StreamReader(s!);
+            var f = ThemeJson.Parse(r.ReadToEnd());
+            Assert.Equal(320f, System.Array.Find(f.floats, x => x.token == "size.minimap.ring").value);
+            Assert.Equal(0.26f, System.Array.Find(f.floats, x => x.token == "share.minimap.ring.h").value, 3);
+            // 1080p: the cap (0.26 x 1080 = 280.8 px at scale 1) wins over the 320 ref size.
+            Assert.Equal(280.8f, RuneSkin.MapScreen.MinimapMath.RingSize(320f, 1080f, 1f, 0.26f), 1);
+        }
+
         // The shipped theme: three faces, the rune face bound late from a loaded asset, menu entries and headers on it.
         [Fact]
         public void DefaultThemeHasThreeFaces()

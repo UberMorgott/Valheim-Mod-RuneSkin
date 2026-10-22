@@ -267,3 +267,27 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
 - [ ] Clean references: RuneSkin HarmonyAfter("morgott.valheim.augaskin") (harmless, remove), Ownership comments, Plugin.cs
       "another skin (AugaSkin) yields" cfg texts; MorgottTweaks HarmonyBefore / comments; Vaettir RarityFrames / HudModes
       AugaSkin template notes; harness Auga layer.
+
+## 0.9.3 minimap fix (2026-10-22, user priority)
+
+- [x] Fog of war back on the small map. Root cause: the ring's Unity Mask draws the map RawImage with a stencil copy of
+      Minimap.m_mapSmallShader (StencilMaterial, made once); vanilla writes _zoom / _pixelSize / _mapCenter (CenterMap,
+      Minimap.cs:1280-1282) and _SharedFade (:737-748) on m_mapSmallShader only, the copy never got them (not in the
+      shader's property block) -> the fog shader read 0. MinimapSkin.SyncMapMaterial mirrors them onto materialForRendering
+      every LateUpdate (after Minimap.Update). Large map renders with the base material (no mask): was fine.
+- [x] Minimap larger: size.minimap.ring 220 -> 320, share.minimap.ring.h 0.18 -> 0.26 (1080p ring 194 -> 281 px,
+      1440p 259 -> 374 px); new cfg Hud.MinimapScale (0.6-1.6, live, scales size and cap). Test DefaultThemeMinimapIsLarge.
+- [x] Harness ui-runeskin-m4 state mapfn-<WxH> (tools AutotestDriver.RuneSkinMapFn.cs): m4-map-fog-small (rendered
+      material in sync + 12 unexplored / 4 explored screen pixels equal the mask-off vanilla render, 0.06/channel),
+      m4-map-zoom-small, m4-map-marker-small, m4-minimap-overlap (ring + plaque vs every other visible HUD graphic),
+      m4-map-fog-large, m4-map-zoom-large, m4-map-click-large (raycast at the map centre hits the map), m4-map-pin-large
+      (named pin + label). Before fix run tools\out\20261022-141046: fog-small / zoom-small FAIL (worst pixel diff 0.31,
+      rendered _zoom missing); after: 20261022-141304 m4 39/39 PASS, 20261022-141439 m1 15/15 PASS.
+
+## Full-coverage directive (user, 2026-10-22; into M7 after B1-B5, not started)
+
+- [ ] 100 % of the UI on RuneSkin: all fonts, buttons, menus, incl. ALL current and future mods (Epic Loot etc.) -> a
+      generic fallback restyler for unknown mod UIs (role pass on any foreign canvas), not only per-mod families.
+- [ ] Text starts exactly where it should everywhere (no left / right skew, correct alignment / padding).
+- [ ] Every icon with equal margins in its cell, counts / numbers below it always fitting.
+- (Global layout rules part = batch G, before B1.)

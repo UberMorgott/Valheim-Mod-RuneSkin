@@ -154,6 +154,7 @@ namespace RuneSkin.MapScreen
             if (_small && _small.gameObject.activeInHierarchy)
             {
                 if (!_maskChecked) CheckMask();
+                SyncMapMaterial();
                 Layout(false);
                 UpdateDials();
                 CullPins();
@@ -177,14 +178,33 @@ namespace RuneSkin.MapScreen
             _box = -1f; // re-layout with the map side for this mode
         }
 
+        // The Mask draws the map with a stencil copy of Minimap.m_mapSmallShader (StencilMaterial), made once. Vanilla
+        // writes its per-frame map values on m_mapSmallShader only (CenterMap _zoom / _pixelSize / _mapCenter,
+        // Minimap.cs:1280-1282; _SharedFade :737-748), and the copy does not even carry them (they are not in the
+        // shader's property block): the fog shader read 0 and the minimap lost its fog of war. Mirror them onto the
+        // material actually rendered, after Minimap.Update, before the canvas draws.
+        private static readonly int ZoomId = Shader.PropertyToID("_zoom"), PixelSizeId = Shader.PropertyToID("_pixelSize"),
+            CenterId = Shader.PropertyToID("_mapCenter"), FadeId = Shader.PropertyToID("_SharedFade");
+
+        private void SyncMapMaterial()
+        {
+            var src = _map.m_mapSmallShader;
+            var dst = _mapImage ? _mapImage.materialForRendering : null;
+            if (!src || !dst || dst == src) return;
+            dst.SetFloat(ZoomId, src.GetFloat(ZoomId));
+            dst.SetFloat(PixelSizeId, src.GetFloat(PixelSizeId));
+            dst.SetVector(CenterId, src.GetVector(CenterId));
+            dst.SetFloat(FadeId, src.GetFloat(FadeId));
+        }
+
         private void Layout(bool force)
         {
             var canvas = _canvas ? _canvas.rootCanvas : null;
             var pxPerRef = canvas ? canvas.scaleFactor : 1f;
             if (canvas) _art.SyncPpu(canvas.referencePixelsPerUnit);
             var safe = ResponsiveContext.SafeArea;
-            var box = MinimapMath.RingSize(ThemeTokens.GetFloat("size.minimap.ring", 220f) * (Plugin.HudScale?.Value ?? 1f),
-                safe.height, pxPerRef, ThemeTokens.GetFloat("share.minimap.ring.h", 0.18f));
+            var box = MinimapMath.RingSize(ThemeTokens.GetFloat("size.minimap.ring", 320f) * (Plugin.HudScale?.Value ?? 1f) * (Plugin.MinimapScale?.Value ?? 1f),
+                safe.height, pxPerRef, ThemeTokens.GetFloat("share.minimap.ring.h", 0.26f) * (Plugin.MinimapScale?.Value ?? 1f));
             HudMath.HudBox(safe.x, safe.width, safe.height, Plugin.UltrawideBox?.Value ?? true,
                 ThemeTokens.GetFloat("ratio.hud.ultrawide", 2.2f), out var boxX, out var boxW);
             var margin = ThemeTokens.GetFloat("size.hud.margin", 24f) * pxPerRef;
