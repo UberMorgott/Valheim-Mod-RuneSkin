@@ -80,6 +80,11 @@ namespace RuneSkin.ModScreens
                         if (tab != null && tab.m_button && tab.m_button.targetGraphic is Image tg && !ctx.AdapterRoles.ContainsKey(tg))
                         {
                             ctx.Role(tg, "craft.tab", "mod panel tab (TabHandler)");
+                            // The tab's own icon (Epic Loot *_tabicon) takes the M7 kit glyph of that tab.
+                            var glyph = family == OwnershipRegistry.EpicLootEnchanting ? ForeignMath.EnchantGlyph(tab.m_button.name) : ForeignMath.BoardGlyph(tab.m_button.name);
+                            foreach (var icon in tab.m_button.GetComponentsInChildren<Image>(true))
+                                if (icon != tg && icon.name.IndexOf("icon", StringComparison.OrdinalIgnoreCase) >= 0)
+                                    ctx.Role(icon, glyph != null && ThemeTokens.HasRole(glyph) ? glyph : "content", glyph != null ? "tab icon -> M7 kit glyph" : "tab icon (mod art kept)");
                             foreach (var t in tab.m_button.GetComponentsInChildren<TMP_Text>(true)) ctx.Role(t, "craft.tab.label", "tab label");
                             foreach (var t in tab.m_button.GetComponentsInChildren<Text>(true)) ctx.Role(t, "legacy.label", "tab label (legacy text)");
                         }
@@ -101,6 +106,9 @@ namespace RuneSkin.ModScreens
         public static void Generic(ScreenContext ctx, Transform root)
         {
             var header = ThemeTokens.GetFloat("size.text.header.min", 28f);
+            LegacyDropdowns(ctx, root);
+            WideToggles(ctx, root);
+            InsideControls(ctx, root);
             foreach (var img in root.GetComponentsInChildren<Image>(true))
             {
                 if (ctx.AdapterRoles.ContainsKey(img) || img.GetComponent<SkinMark>() is SkinMark m && m.Internal) continue;
@@ -118,6 +126,66 @@ namespace RuneSkin.ModScreens
                 if (input) { ctx.Role(t, input.placeholder == t ? "legacy.muted" : "legacy.body", "legacy input text"); continue; }
                 if (t.GetComponentInParent<Button>(true)) { ctx.Role(t, "legacy.label", "legacy button label"); continue; }
                 ctx.Role(t, t.fontSize >= header ? "legacy.title" : "legacy.body", t.fontSize >= header ? "legacy title (rune face)" : "legacy text (theme colour)");
+            }
+        }
+
+        // A toggle drawn as a wide labelled plate (Epic Loot rarity filters): the checkbox art would shrink the plate to
+        // a square under its label; it is a selectable row instead (its check mark stays a check, a full-size highlight
+        // is the row selection).
+        private static void WideToggles(ScreenContext ctx, Transform root)
+        {
+            foreach (var t in root.GetComponentsInChildren<Toggle>(true))
+            {
+                if (!(t.targetGraphic is Image box) || ctx.AdapterRoles.ContainsKey(box) || t.GetComponentInParent<Dropdown>(true) || t.GetComponentInParent<TMP_Dropdown>(true)) continue;
+                var r = box.rectTransform.rect;
+                if (r.height <= 0f || r.width < r.height * 1.6f) continue;
+                if (!t.GetComponentInChildren<Text>(true) && !t.GetComponentInChildren<TMP_Text>(true)) continue;
+                ctx.Role(box, "craft.row", "wide labelled toggle plate");
+                if (t.graphic is Image check && check != box)
+                {
+                    var c = check.rectTransform.rect;
+                    ctx.Role(check, c.width >= r.width * 0.8f ? "craft.row.selected" : "toggle.check", "wide toggle state");
+                }
+            }
+        }
+
+        // Legacy uGUI dropdowns (UnityEngine.UI.Dropdown; the classifier knows TMP_Dropdown): same roles.
+        private static void LegacyDropdowns(ScreenContext ctx, Transform root)
+        {
+            foreach (var d in root.GetComponentsInChildren<Dropdown>(true))
+            {
+                if (d.targetGraphic is Image field) ctx.Role(field, "dropdown.field", "legacy Dropdown.targetGraphic");
+                foreach (var img in d.GetComponentsInChildren<Image>(true))
+                {
+                    if (img == d.targetGraphic || ctx.AdapterRoles.ContainsKey(img)) continue;
+                    var inTemplate = d.template && img.transform.IsChildOf(d.template);
+                    if (d.template && img.rectTransform == d.template) ctx.Role(img, "dropdown.list", "legacy Dropdown.template");
+                    else if (inTemplate && img.GetComponentInParent<Toggle>(true) is Toggle t)
+                        ctx.Role(img, t.graphic == img ? "toggle.check" : t.targetGraphic == img ? "dropdown.item" : "content", "legacy dropdown item");
+                    else if (inTemplate && img.GetComponentInParent<Scrollbar>(true) is Scrollbar bar)
+                        ctx.Role(img, bar.targetGraphic == img ? "scrollbar.handle" : bar.gameObject == img.gameObject ? "scrollbar.track" : "content", "legacy dropdown list scrollbar");
+                    else if (inTemplate) ctx.Role(img, "skip", "legacy dropdown list structure");
+                    else if (img.name.IndexOf("Arrow", StringComparison.OrdinalIgnoreCase) >= 0) ctx.Role(img, "dropdown.arrow", "legacy Dropdown arrow");
+                }
+            }
+        }
+
+        // Images inside a control that are not its wired parts (target / check mark / handle / fill / track): state
+        // overlays (glow, focus), item icons, stars, lock marks - the mod's art, kept; a vanilla input backdrop is a field.
+        private static void InsideControls(ScreenContext ctx, Transform root)
+        {
+            foreach (var img in root.GetComponentsInChildren<Image>(true))
+            {
+                if (ctx.AdapterRoles.ContainsKey(img) || img.GetComponent<SkinMark>() is SkinMark m && m.Internal) continue;
+                var sel = img.GetComponentInParent<Selectable>(true);
+                if (!sel || sel.targetGraphic == img || img.GetComponentInParent<TMP_Dropdown>(true) || img.GetComponentInParent<Scrollbar>(true)) continue;
+                if (sel is Toggle tog && tog.graphic == img) continue;
+                if (sel is Slider sl && (sl.fillRect == img.rectTransform || sl.handleRect == img.rectTransform || sl.gameObject == img.gameObject)) continue;
+                if (img.GetComponent<Mask>() || img.GetComponent<RectMask2D>() || img.GetComponent<ScrollRect>()) continue;
+                var sprite = img.GetComponent<SkinMark>() is SkinMark sm && !string.IsNullOrEmpty(sm.OriginalSprite) ? sm.OriginalSprite : img.sprite ? img.sprite.name : null;
+                if (sprite == null || Classifier.BySprite(sprite, ctx.Family) != null || PreWorldKit.IsPanelSprite(sprite)) continue;
+                if (sprite.StartsWith("InputFieldBackground", StringComparison.Ordinal)) ctx.Role(img, "field", $"input backdrop '{sprite}'");
+                else ctx.Role(img, "content", $"mod art inside a control '{sprite}' (kept)");
             }
         }
 
@@ -142,6 +210,9 @@ namespace RuneSkin.ModScreens
         {
             if (role == null || !ThemeTokens.HasRole(role) || !(b.transform is RectTransform rt)) return;
             if (rt.Find(GlyphName)) return;
+            // The tab already has an icon of its own (it takes the kit glyph through its role).
+            foreach (var own in b.GetComponentsInChildren<Image>(true))
+                if (own != b.targetGraphic && own.name.IndexOf("icon", StringComparison.OrdinalIgnoreCase) >= 0) return;
             var r = rt.rect;
             var side = Mathf.Round(r.height * 0.6f);
             var pad = Mathf.Round(r.height * 0.2f);

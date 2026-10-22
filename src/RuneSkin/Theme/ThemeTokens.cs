@@ -103,6 +103,14 @@ namespace RuneSkin.Theme
 
         private static AssetBundle _bundle;
         private static readonly Dictionary<string, Sprite> BundleSprites = new Dictionary<string, Sprite>();
+
+        // A sprite from RuneSkin's own bundle (art a family drew in its own code; coverage diagnostics).
+        public static bool IsThemeSprite(Sprite s)
+        {
+            if (!s) return false;
+            var n = s.name.EndsWith("(Clone)", StringComparison.Ordinal) ? s.name.Substring(0, s.name.Length - 7) : s.name;
+            return BundleSprites.TryGetValue(n, out var own) && own == s;
+        }
         private static readonly Dictionary<string, TMP_FontAsset> BundleFonts = new Dictionary<string, TMP_FontAsset>();
         private static bool _fallbacksLinked;
         private static readonly List<SpriteAtlas> Atlases = new List<SpriteAtlas>();

@@ -42,10 +42,16 @@ namespace RuneSkin.Diagnostics
                 string status, reason;
                 if (mark && mark.Internal) { status = "own"; reason = "RuneSkin decor"; }
                 else if (mark && mark.Outcome == Outcome.Styled && mark.Role != null) { status = "styled"; reason = mark.Role; }
+                else if (hit.Value != null && hit.Value.Result.Outcome == Outcome.Styled) { status = "styled"; reason = hit.Value.Result.Reason; }
                 else if (hit.Value != null && (hit.Value.Result.Outcome == Outcome.Content || hit.Value.Result.Outcome == Outcome.Skipped)) { status = "explained"; reason = hit.Value.Result.Reason; }
                 else if (hit.Value != null) { status = "unstyled"; reason = $"{hit.Value.Result.Outcome}: {hit.Value.Result.Reason}"; }
                 else if (g is TMP_SubMeshUI || g is TMP_SelectionCaret) { status = "explained"; reason = "TMP sub-mesh / caret of a text"; }
                 else if (OwnObject(g.transform)) { status = "own"; reason = "RuneSkin object"; }
+                // Families that draw in their own code (messages, crosshair, minimap...) set theme faces / art without a
+                // role pass: a theme face or a bundle sprite is RuneSkin's look.
+                else if (g is TMP_Text ft && ft.font && (ft.font.name.StartsWith("RuneSkin", StringComparison.Ordinal) || Theme.ThemeTokens.IsLoadedFont(ft.font))) { status = "styled"; reason = "theme face (family code)"; }
+                else if (g is Image fi && Theme.ThemeTokens.IsThemeSprite(fi.sprite)) { status = "styled"; reason = "theme art (family code)"; }
+                else if (FamilyDrawn(g.transform)) { status = "explained"; reason = "content of a family drawn in code (message icon, map)"; }
                 else { status = "unstyled"; reason = "never classified (no family root, no fallback unit)"; }
                 if (screenId == null && mark) screenId = RootId(g.transform);
                 switch (status)
@@ -97,6 +103,13 @@ namespace RuneSkin.Diagnostics
             var b = (Vector2)RectTransformUtility.WorldToScreenPoint(cam, corners[2]);
             var r = Rect.MinMaxRect(Mathf.Min(a.x, b.x), Mathf.Min(a.y, b.y), Mathf.Max(a.x, b.x), Mathf.Max(a.y, b.y));
             return r.width >= 1f && r.height >= 1f && r.Overlaps(screen);
+        }
+
+        private static bool FamilyDrawn(Transform t)
+        {
+            bool Under(Component c, string family) => c && Ownership.OwnershipRegistry.IsOwned(family) && t.IsChildOf(c.transform);
+            return Under(MessageHud.instance, Ownership.OwnershipRegistry.MessageHud) || Under(Minimap.instance, Ownership.OwnershipRegistry.Minimap) ||
+                   Under(EnemyHud.instance, Ownership.OwnershipRegistry.EnemyHud) || Under(DamageText.instance, Ownership.OwnershipRegistry.DamageText);
         }
 
         private static bool OwnObject(Transform t)

@@ -23,9 +23,7 @@ namespace RuneSkin.ModScreens
             if (gui.m_achievementsPanel)
                 Form(gui.m_achievementsPanel.transform, "InventoryExtras.Achievements", OwnershipRegistry.InventoryExtras, (ctx, r) =>
                 {
-                    foreach (var img in r.GetComponentsInChildren<Image>(true))
-                        if (gui.m_achievementsElementPrefab && img.transform.IsChildOf(gui.m_achievementsElementPrefab.transform) && img.name.IndexOf("icon", StringComparison.OrdinalIgnoreCase) >= 0)
-                            ctx.Role(img, "content", "achievement icon");
+                    Icons(ctx, r);
                     PopupSkin.Backdrops(ctx, r);
                 });
             if (gui.m_achievementsElementPrefab && !gui.m_achievementsElementPrefab.transform.IsChildOf(gui.transform))
@@ -58,7 +56,9 @@ namespace RuneSkin.ModScreens
         private static void Icons(Classify.ScreenContext ctx, Transform r)
         {
             foreach (var img in r.GetComponentsInChildren<Image>(true))
-                if (img.name.IndexOf("icon", StringComparison.OrdinalIgnoreCase) >= 0 && !(img.GetComponentInParent<Selectable>(true) is Selectable s && s.targetGraphic == img))
+                // Also when the icon is the row's button target (achievement rows: a plate would turn the icon into a
+                // cell whose texts overflow it).
+                if (img.name.IndexOf("icon", StringComparison.OrdinalIgnoreCase) >= 0)
                     ctx.Role(img, "content", "icon (kept)");
         }
 
