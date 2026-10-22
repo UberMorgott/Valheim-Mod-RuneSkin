@@ -60,6 +60,8 @@ type Cut struct {
 	Despill     bool       `json:"despill,omitempty"`  // neutralise violet magenta spill (r and b both above g) to the glass hue
 	Hole        bool       `json:"hole,omitempty"`     // output = white opaque mask of the transparent region connected to the centre (ring hole -> circular map mask)
 	Bold        int        `json:"bold,omitempty"`     // alpha max-filter radius (output px): thickens thin white glyph masks
+	Sector      []int      `json:"sector,omitempty"`   // [index, count]: keep only pie sector index of count (clockwise from 12 o'clock, centred on index*360/count) around the output centre
+	Norm        bool       `json:"norm,omitempty"`     // scale alpha so the most opaque pixel is fully opaque (equal brightness across slices)
 	Border      Border     `json:"border"`
 	Pivot       [2]float64 `json:"pivot"`
 	ImageType   string     `json:"imageType"`
@@ -245,8 +247,49 @@ func renderCut(c Cut) *image.NRGBA {
 	if c.Bold > 0 {
 		img = boldAlpha(img, c.Bold)
 	}
+	if len(c.Sector) == 2 && c.Sector[1] > 0 {
+		sectorMask(img, c.Sector[0], c.Sector[1])
+	}
+	if c.Norm {
+		normAlpha(img)
+	}
 	adjust(img, c.Alpha, c.Gray, c.Bright)
 	return img
+}
+
+// sectorMask clears every pixel outside pie sector index of count around the image centre (angles clockwise from
+// 12 o'clock; sector index spans index*360/count +- 180/count degrees): one rune of a ring per slice.
+func sectorMask(img *image.NRGBA, index, count int) {
+	W, H := img.Bounds().Dx(), img.Bounds().Dy()
+	cx, cy := float64(W)/2, float64(H)/2
+	centre := float64(index) * 360 / float64(count)
+	half := 180 / float64(count)
+	for y := 0; y < H; y++ {
+		for x := 0; x < W; x++ {
+			a := math.Atan2(float64(x)+0.5-cx, cy-(float64(y)+0.5)) * 180 / math.Pi
+			d := math.Abs(math.Mod(a-centre+540, 360) - 180)
+			if d > half {
+				img.Pix[img.PixOffset(x, y)+3] = 0
+			}
+		}
+	}
+}
+
+// normAlpha scales alpha so the most opaque pixel becomes 255 (a dim slice of a graded ring at full strength).
+func normAlpha(img *image.NRGBA) {
+	m := uint8(0)
+	for i := 3; i < len(img.Pix); i += 4 {
+		if img.Pix[i] > m {
+			m = img.Pix[i]
+		}
+	}
+	if m == 0 || m == 255 {
+		return
+	}
+	k := 255 / float64(m)
+	for i := 3; i < len(img.Pix); i += 4 {
+		img.Pix[i] = uint8(math.Min(255, math.Round(float64(img.Pix[i])*k)))
+	}
 }
 
 // nineRebuild keeps the four corners of the scaled source and takes the edge/centre segments from

@@ -36,6 +36,22 @@ namespace RuneSkin.PlayerHud
         public static float StackStep(float lowerHeight, float lowerEdgeTop, float upperEdgeBottom, float gap) =>
             Math.Max(0f, lowerHeight - Math.Max(0f, lowerEdgeTop) - Math.Max(0f, upperEdgeBottom) + gap);
 
+        // Bar right end cap (0.10.2), bar-local: right after the window, over the rail band (frame height minus its
+        // transparent edge rows), capW wide on every bar - stacked rail to rail (StackStep, gap 0) the caps touch.
+        public static void CapBox(float insetL, float window, float capW, float height, float edgeTop, float edgeBottom,
+            out float x, out float y, out float w, out float h)
+        {
+            x = insetL + Math.Max(0f, window);
+            y = Math.Max(0f, edgeBottom);
+            w = Math.Max(0f, capW);
+            h = Math.Max(0f, height - Math.Max(0f, edgeTop) - Math.Max(0f, edgeBottom));
+        }
+
+        // Drawn width of a window layer (fill, lag, trough): one that reaches the window end runs `over` further, under
+        // the cap, where the window mask cuts it square (its rounded / fading end never shows before the cap).
+        public static float ClippedEnd(float width, float window, float over) =>
+            width >= window - 0.01f ? width + Math.Max(0f, over) : width;
+
         // Food diamonds (sockets = squares rotated 45 deg, the diamond touching the cell's edge midpoints), a
         // checkerboard row like AugaSkin's (equal diagonal steps, alternating low / high): centres step by s on both
         // axes, so facing edges are parallel along their whole length, perpendicular gap = (2s - cell) / sqrt 2.

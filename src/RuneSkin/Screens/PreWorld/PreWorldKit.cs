@@ -11,7 +11,7 @@ namespace RuneSkin.PreWorld
 {
     // Shared pieces of the M5 pre-world families (art\README.md "M5 sprites"): vanilla wood / backdrop panel images
     // become the RuneSkin panel stack (PanelDecor behind the panel's content, the vanilla image off), gamepad key hints
-    // and 3D viewports stay content, text buttons get a button plate, a rotating rune spinner.
+    // and 3D viewports stay content, text buttons get a button plate, a rune spinner (fixed runes, chasing glow).
     public static class PreWorldKit
     {
         public static bool IsPanelSprite(string sprite) => PreWorldMath.IsPanelSprite(sprite);
@@ -228,23 +228,78 @@ namespace RuneSkin.PreWorld
         }
     }
 
-    // Rune spinner (art: spinner_runes, tint rune glow): turns in 45 degree steps (8 runes on the ring), unscaled time
-    // so it also runs while loading stalls Time.timeScale.
+    // Rune spinner (0.10.2, user: the runes must not turn): the 8 runes stay FIXED on the ring (art spinner_rune_0..7 =
+    // mechanical sector slices of spinner_runes, same frame, tint rune glow), a light runs through them clockwise -
+    // each rune brightens as the head reaches it and fades over size.spinner.tail steps behind (PreWorldMath.RuneGlow). Per-rune
+    // CanvasRenderer alpha only: no rotation, no mesh rebuild, no per-frame allocation. Unscaled time (runs while
+    // loading stalls Time.timeScale). The spinner's own world rotation is held at its canvas' (an animated vanilla
+    // parent never turns it). Without the slices the whole ring stays still and breathes.
     public sealed class RuneSpinner : MonoBehaviour
     {
+        public const int Runes = 8;
         public float StepSeconds = 0.18f;
+        private readonly Image[] _runes = new Image[Runes];
+        private Image _base;
+        private Transform _canvas;
+        private bool _built, _sliced;
         private float _t;
-        private int _step;
+        private Color _shownColor;
+
+        public float Phase => _t / Mathf.Max(0.02f, ThemeTokens.GetFloat("time.spinner.step", StepSeconds));
+        public bool Sliced => _sliced;
 
         private void OnEnable() { _t = 0f; }
 
-        private void Update()
+        private void Build()
         {
+            _built = true;
+            _base = GetComponent<Image>();
+            var canvas = GetComponentInParent<Canvas>();
+            _canvas = canvas ? canvas.rootCanvas.transform : null;
+            for (var i = 0; i < Runes; i++)
+                if (!ThemeTokens.GetSprite("sprite.spinner.rune." + i)) return;
+            for (var i = 0; i < Runes; i++)
+            {
+                var go = new GameObject("Rune" + i, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                var rt = (RectTransform)go.transform;
+                rt.SetParent(transform, false);
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.one;
+                rt.offsetMin = rt.offsetMax = Vector2.zero;
+                var img = go.GetComponent<Image>();
+                img.sprite = ThemeTokens.GetSprite("sprite.spinner.rune." + i);
+                img.preserveAspect = true;
+                img.raycastTarget = false;
+                _runes[i] = img;
+            }
+            _sliced = true;
+        }
+
+        private void LateUpdate()
+        {
+            if (!_built) Build();
             _t += Time.unscaledDeltaTime;
-            if (_t < StepSeconds) return;
-            _t = 0f;
-            _step = (_step + 1) & 7;
-            transform.localRotation = Quaternion.Euler(0f, 0f, -45f * _step);
+            var phase = Phase;
+            var low = ThemeTokens.GetFloat("share.spinner.base", 0.22f);
+            if (_sliced)
+            {
+                if (_base && _base.enabled) _base.enabled = false;
+                var c = _base ? _base.color : Color.white;
+                var recolor = c != _shownColor;
+                _shownColor = c;
+                var tail = ThemeTokens.GetFloat("size.spinner.tail", 3f);
+                for (var i = 0; i < Runes; i++)
+                {
+                    var img = _runes[i];
+                    if (!img) continue;
+                    if (recolor) img.color = c;
+                    img.canvasRenderer.SetAlpha(PreWorldMath.RuneGlow(i, Runes, phase, tail, low));
+                }
+            }
+            else if (_base)
+                _base.canvasRenderer.SetAlpha(Mathf.Lerp(low, 1f, 0.5f + 0.5f * Mathf.Sin(phase * Mathf.PI * 2f / Runes)));
+            var want = _canvas ? _canvas.rotation : Quaternion.identity;
+            if (transform.rotation != want) transform.rotation = want;
         }
 
         public static Image Add(Transform parent, string name, float size)

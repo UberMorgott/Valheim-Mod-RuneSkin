@@ -213,7 +213,7 @@ namespace RuneSkin.Restyle
         private static void Layout(Graphic g, ResolvedRole role)
         {
             if (role == null) return;
-            if (g is Image image && role.Cell && role.ImageUsable) CellFit.Ensure(image);
+            if (g is Image image && role.Cell && role.ImageUsable) CellFit.Ensure(image, role.Zones);
             else if (g is TMP_Text text && role.FitInset <= 0f)
             {
                 if (text.TryGetComponent<PlateLabelFit>(out var stale) && !stale.Reverted) stale.Revert();

@@ -999,15 +999,23 @@ namespace RuneSkin.CraftingScreen
                 // docks above the highest active cell, never covers a label.
                 Geo.Place(_canvas, (RectTransform)go.transform, o.RequirementCells[slot++]);
                 SocketState(go);
+                FitName(go.transform, o.RequirementCells[slot - 1]);
             }
             var min = _gui.m_minStationLevelIcon;
-            if (min && min.gameObject.activeSelf && slot < o.RequirementCells.Length)
+            var levelSocket = min ? min.transform.parent as RectTransform : null;
+            if (levelSocket == Requirements()) levelSocket = null;
+            var levelShown = min && min.gameObject.activeSelf && slot < o.RequirementCells.Length;
+            // The "level" socket image (vanilla parent of MinLevel, restyled craft.socket) stays active when vanilla
+            // hides only MinLevel (recipe without a station level, InventoryGui.cs:1554): unplaced, it showed as an
+            // empty tile at its old spot over the first material cell (user screenshot 2026-10-22). Hidden with it.
+            if (levelSocket) Geo.SetScale(levelSocket, levelShown ? 1f : 0f);
+            if (levelShown)
             {
                 // Station level requirement: a socket like the materials (its "level" parent), the station's own icon
                 // (MinLevel) in the face, the level digit (level_text) in the count band.
                 var cell = o.RequirementCells[slot];
-                var socket = min.transform.parent as RectTransform;
-                if (socket && socket != Requirements()) Geo.Place(_canvas, socket, cell);
+                var socket = levelSocket;
+                if (socket) Geo.Place(_canvas, socket, cell);
                 if (_gui.m_craftingStationIcon && _gui.m_craftingStationIcon.sprite && min.sprite != _gui.m_craftingStationIcon.sprite) min.sprite = _gui.m_craftingStationIcon.sprite;
                 if (min.type != Image.Type.Simple) min.type = Image.Type.Simple;
                 if (!min.preserveAspect) min.preserveAspect = true;
@@ -1030,13 +1038,15 @@ namespace RuneSkin.CraftingScreen
                 switch (c.name)
                 {
                     case "res_name":
-                        Anchors(rt, new Vector2(0.03f, 0.67f), new Vector2(0.97f, 0.98f), Vector2.zero, Vector2.zero);
+                        Anchors(rt, new Vector2(0.06f, 0.67f), new Vector2(0.94f, 0.98f), Vector2.zero, Vector2.zero);
                         if (c.TryGetComponent<TMP_Text>(out var n))
                         {
-                            Label(n, TextAlignmentOptions.Center, ThemeTokens.GetFloat("size.craft.font.label", 13f) * k, 9f);
-                            // Long names (Кожаные обрывки) wrap to two lines instead of shrinking to micro text.
-                            if (n.textWrappingMode != TextWrappingModes.Normal) n.textWrappingMode = TextWrappingModes.Normal;
+                            // Size and lines from FitName (one line shrinking to the min token, then two lines).
+                            if (n.alignment != TextAlignmentOptions.Center) n.alignment = TextAlignmentOptions.Center;
+                            if (n.overflowMode != TextOverflowModes.Ellipsis) n.overflowMode = TextOverflowModes.Ellipsis;
+                            if (n.enableAutoSizing) n.enableAutoSizing = false;
                             if (n.maxVisibleLines != 2) n.maxVisibleLines = 2;
+                            _nameFit.Remove(n);
                         }
                         break;
                     case "res_icon":
@@ -1049,6 +1059,49 @@ namespace RuneSkin.CraftingScreen
                         break;
                 }
             }
+        }
+
+        private struct NameFitState
+        {
+            public string Text;
+            public float W, H, Max;
+        }
+
+        private readonly Dictionary<TMP_Text, NameFitState> _nameFit = new Dictionary<TMP_Text, NameFitState>();
+
+        // Material name above the icon (0.10.2, user screenshot 2026-10-22: "...анина" / "Одуванчи..." clipped): one
+        // line auto-sized from size.craft.font.label down to size.craft.font.label.min, then two lines at the best
+        // word split (LabelFit.NameSize), always inside the name box of the socket. Measured only when the text or the
+        // box changes (vanilla rewrites the same text every frame).
+        private void FitName(Transform cell, Box box)
+        {
+            var t = cell.Find("res_name");
+            if (box.IsEmpty || !t || !t.TryGetComponent<TMP_Text>(out var n) || !n.gameObject.activeInHierarchy) return;
+            var text = n.text;
+            var r = n.rectTransform.rect;
+            var w = r.width - n.margin.x - n.margin.z;
+            var h = r.height - n.margin.y - n.margin.w;
+            var max = ThemeTokens.GetFloat("size.craft.font.label", 13f) * _in.Scale;
+            if (_nameFit.TryGetValue(n, out var was) && string.Equals(was.Text, text, StringComparison.Ordinal) &&
+                Mathf.Abs(was.W - w) < 0.1f && Mathf.Abs(was.H - h) < 0.1f && Mathf.Abs(was.Max - max) < 0.01f) return;
+            _nameFit[n] = new NameFitState { Text = text, W = w, H = h, Max = max };
+            if (string.IsNullOrEmpty(text) || w <= 1f || h <= 1f) return;
+            var min = ThemeTokens.GetFloat("size.craft.font.label.min", 10f) * _in.Scale;
+            if (n.enableAutoSizing) n.enableAutoSizing = false;
+            var unit = Mathf.Max(0.01f, n.fontSize);
+            var one = n.GetPreferredValues(text, float.PositiveInfinity, float.PositiveInfinity);
+            var lineH = one.y / unit;
+            var oneW = one.x / unit;
+            var split = LabelFit.BestSplit(text, (i, j) => n.GetPreferredValues(text.Substring(i, j - i), float.PositiveInfinity, float.PositiveInfinity).x / unit, out var twoW);
+            // Two-line names set tight (theme size.craft.label.spacing, TMP em/100): the socket's name band is short.
+            var spacing = split > 0 ? ThemeTokens.GetFloat("size.craft.label.spacing", -22f) : 0f;
+            if (!Mathf.Approximately(n.lineSpacing, spacing)) n.lineSpacing = spacing;
+            var twoH = split > 0 ? n.GetPreferredValues(text.Substring(0, split) + "\n" + text.Substring(split + 1), float.PositiveInfinity, float.PositiveInfinity).y / unit * 1.04f : 0f;
+            var size = LabelFit.NameSize(max, min, w, h, lineH, oneW, twoW, out var lines, twoH);
+            n.fontSize = size;
+            if (lines == 1 && !Mathf.Approximately(n.lineSpacing, 0f)) n.lineSpacing = 0f;
+            var wrap = lines == 2 ? TextWrappingModes.Normal : TextWrappingModes.NoWrap;
+            if (n.textWrappingMode != wrap) n.textWrappingMode = wrap;
         }
 
         // Missing material. ValheimPlus' SetupRequirement replacement (CraftFromChest: counts nearby chests) writes

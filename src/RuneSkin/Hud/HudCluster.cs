@@ -100,12 +100,12 @@ namespace RuneSkin.PlayerHud
             _buffs = new StatusStrip(_art, _root, false, "BuffStrip");
             _gp = new GuardianSocket(_art, _root);
             _eitr = new BarView(_art, _root, "Eitr", false, "sprite.hud.bar.frame.slim", "color.hud.eitr",
-                ThemeTokens.GetFloat("scale.hud.bar.slim", 1f), glyphToken: "sprite.hud.glyph.eitr", frontToken: "sprite.hud.front.eitr", frontColorToken: "color.hud.front.eitr", frontCore: 0.2f);
+                ThemeTokens.GetFloat("scale.hud.bar.slim", 1f), glyphToken: "sprite.hud.glyph.eitr", frontToken: "sprite.hud.front.eitr", frontColorToken: "color.hud.front.eitr", frontCore: 0.2f, capToken: "sprite.hud.bar.cap");
             _adrenaline = new BarView(_art, _root, "Adrenaline", true, "sprite.hud.rail.frame.adrenaline", "color.hud.adrenaline");
             _stamina = new BarView(_art, _root, "Stamina", false, "sprite.hud.bar.frame.slim", "color.hud.stamina",
-                ThemeTokens.GetFloat("scale.hud.bar.slim", 1f), glyphToken: "sprite.hud.glyph.stamina", frontToken: "sprite.hud.front.stamina", frontColorToken: "color.hud.front.stamina", frontCore: 0.2f);
+                ThemeTokens.GetFloat("scale.hud.bar.slim", 1f), glyphToken: "sprite.hud.glyph.stamina", frontToken: "sprite.hud.front.stamina", frontColorToken: "color.hud.front.stamina", frontCore: 0.2f, capToken: "sprite.hud.bar.cap");
             _health = new BarView(_art, _root, "Health", false, "sprite.hud.bar.frame", "color.hud.health", 1f, mainValue: true,
-                frontToken: "sprite.hud.front.health", frontColorToken: "color.hud.front.health", frontCore: 0.5f);
+                frontToken: "sprite.hud.front.health", frontColorToken: "color.hud.front.health", frontCore: 0.5f, capToken: "sprite.hud.bar.cap.main");
             _es = new BarView(_art, _root, "EnergyShield", true, "sprite.hud.rail.frame.es", "color.hud.es");
             _food = new FoodRow(_art, _root);
             _plaque = HudArt.Rect("ConversionPlaque", _root);

@@ -59,6 +59,40 @@ namespace RuneSkin.Tests
         public void ClampOffsetKeepsTextsInside(float boxMin, float boxMax, float min, float max, float want) =>
             Assert.Equal(want, LayoutMath.ClampOffset(boxMin, boxMax, min, max), 3);
 
+        // Item cell zones (0.10.2): 64-unit inventory cell, share 0.18 -> band 11.52, icon 40.96 with equal margins;
+        // the floor wins on small cells, the 30 % cap on silly shares.
+        [Theory]
+        [InlineData(64f, 0.18f, 9f, 11.52f)]
+        [InlineData(40f, 0.18f, 9f, 9f)]
+        [InlineData(64f, 0.6f, 9f, 19.2f)]
+        [InlineData(64f, 0f, 0f, 0f)]
+        public void ZoneBandIsAShareOfTheCell(float side, float share, float floor, float want) =>
+            Assert.Equal(want, LayoutMath.ZoneBand(side, share, floor), 3);
+
+        [Fact]
+        public void ZoneIconKeepsTheBandOnEverySide()
+        {
+            var band = LayoutMath.ZoneBand(64f, 0.18f, 9f);
+            var icon = LayoutMath.ZoneIconSide(64f, band);
+            Assert.Equal(64f - 2f * band, icon, 3);
+            // Top band [64 - band, 64] and the icon [band, 64 - band] share no row: a count inside the band never
+            // overlaps the icon.
+            Assert.False(LayoutMath.Overlaps(64f - band, 64f, band, band + icon));
+            Assert.False(LayoutMath.Overlaps(0f, band, band, band + icon));
+            Assert.True(LayoutMath.Overlaps(0f, band + 1f, band, band + icon));
+        }
+
+        // Amount glyphs 11 tall at size 15 in a 9.5 band -> 12.95; already small -> back up to the screen's size,
+        // never below the floor.
+        [Theory]
+        [InlineData(15f, 15f, 11f, 9.52f, 8f, 12.98f)]
+        [InlineData(12.98f, 15f, 9.52f, 9.52f, 8f, 12.98f)]
+        [InlineData(10f, 15f, 5f, 9.52f, 8f, 15f)]
+        [InlineData(15f, 15f, 40f, 9.52f, 8f, 8f)]
+        [InlineData(6f, 6f, 20f, 9.52f, 8f, 6f)]
+        public void FitFontSizeFitsTheBand(float current, float original, float height, float avail, float floor, float want) =>
+            Assert.Equal(want, LayoutMath.FitFontSize(current, original, height, avail, floor), 2);
+
         [Theory]
         [InlineData(64f, 64f, true)]
         [InlineData(68f, 86f, true)]

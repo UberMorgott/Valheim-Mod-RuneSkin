@@ -59,6 +59,7 @@ namespace RuneSkin.Theme
         public bool preserveAspect;
         public bool keepColor;
         public bool cell; // graphic is a slot / socket cell: its icon is centred, its texts kept inside (Restyle.CellFit)
+        public bool zones; // item cell (with cell): icon inset by share.cell.zone, counts / quality / durability in the bands around it (CellFit)
         public string fillCenter; // "true" / "false" / empty = keep
         public string font;
         public string textColor;

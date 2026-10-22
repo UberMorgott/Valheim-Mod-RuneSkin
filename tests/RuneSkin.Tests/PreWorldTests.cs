@@ -16,6 +16,34 @@ namespace RuneSkin.Tests
         [InlineData(null, false)]
         public void PanelSprites(string sprite, bool expected) => Assert.Equal(expected, PreWorldMath.IsPanelSprite(sprite));
 
+        // Rune spinner glow chase (0.10.2): head at full, the tail fades over 3 steps, the next rune rises during the
+        // last step, the rest stay at the base level.
+        [Theory]
+        [InlineData(2, 2f, 1f)]
+        [InlineData(1, 2f, 0.7978f)]
+        [InlineData(0, 2f, 0.4222f)]
+        [InlineData(7, 2f, 0.22f)]
+        [InlineData(3, 2f, 0.22f)]
+        [InlineData(3, 2.5f, 0.61f)]
+        [InlineData(2, 10f, 1f)]
+        [InlineData(2, -6f, 1f)]
+        public void RuneGlowChasesClockwise(int rune, float phase, float want) =>
+            Assert.Equal(want, PreWorldMath.RuneGlow(rune, 8, phase, 3f, 0.22f), 3);
+
+        [Fact]
+        public void RuneGlowHeadMovesWithThePhase()
+        {
+            for (var p = 0f; p < 16f; p += 0.25f)
+            {
+                var head = PreWorldMath.RuneHead(8, p);
+                for (var i = 0; i < 8; i++)
+                    Assert.True(PreWorldMath.RuneGlow(head, 8, p, 3f, 0.22f) >= PreWorldMath.RuneGlow(i, 8, p, 3f, 0.22f) - 1e-4f);
+            }
+            Assert.Equal(1, PreWorldMath.RuneHead(8, 1.5f));
+            Assert.Equal(0, PreWorldMath.RuneHead(8, 8.2f));
+            Assert.Equal(7, PreWorldMath.RuneHead(8, -0.5f));
+        }
+
         [Theory]
         [InlineData("morgott", "M")]
         [InlineData("  эйрик", "Э")]

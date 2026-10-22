@@ -339,6 +339,56 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
 - [x] After: run tools\out\20261022-162224 m1 + m2 + m3 + info + m4 + m5 + m6 + m6b + m6c 269/269 PASS, 54 layout
       checks, 0 findings.
 
+## 0.10.2 (1/4) item cell zones (2026-10-22, user screenshot: stack count on the sword, swords touch the cell edges)
+
+- [x] Root cause: vanilla item icons fill the InventoryElement (count / quality anchored over the icon corners); batch G
+      CellFit and the harness took the full-cell m_dropFocus (Color.clear until a touch drag) as the cell icon, so the real
+      icon was never centred or checked.
+- [x] Fix: theme role flag `"zones"` (slot.cell, new slot.recess.item for EAQS doll cells): CellFit scales the icon to a
+      centred square inset by the band (LayoutMath.ZoneBand, share.cell.zone 0.18 / size.cell.zone.min 9, 64-unit cell ->
+      11.5 band, icon 41) on every side, upper texts (quality) into the top band, lower texts (amount) and the durability
+      GuiBar into the bottom band, texts shrunk to the band (LayoutMath.FitFontSize, floor size.cell.zone.font.min);
+      clear-colour images are never the icon. Journaled (positions, scale, font size + auto-size). HUD hotbar unchanged.
+- [x] Harness `<prefix>-layout`: zone cells -> icon margin >= band - 1, no text / GuiBar intersecting the icon; clear
+      images skipped. Run tools\out\20261022-170700: m2 layout 6/6 PASS (14 zone cells per state, 0 problems).
+
+## 0.10.2 (2/4) crafting requirement names and stray tile (2026-10-22, user screenshot: "...анина" / "Одуванчи...", tile)
+
+- [x] Stray tile = the vanilla `requirements/level` socket (parent of MinLevel, restyled craft.socket): vanilla hides
+      only MinLevel for a recipe without a station level (InventoryGui.cs:1554), the socket stayed active and unplaced at its
+      old spot over the first cell (the arrow in the screenshot = the mouse pointer). Now scaled to 0 unless MinLevel shows.
+- [x] Names: res_name fitted per text change (LabelFit.NameSize / BestSplit): one line from size.craft.font.label down
+      to size.craft.font.label.min (10), then two lines at the best word split, tight (size.craft.label.spacing -22) and
+      sized by the measured two-line block; below min only when nothing else fits (never clipped).
+- [x] Harness m3: names-<state>-<res> (whole, inside the cell, >= min), stray-<state>-<res> (no image outside the active
+      cells), new longnames state (DeerMeat / Dandelion / Mushroom / LeatherScraps, no station) + PNG. Run 20261022-170700:
+      stray 4/4 PASS, names FAIL ("Кожаные обрывки" second line dropped: 2 x one-line height < TMP's two-line block) ->
+      measured block + tight spacing; rerun tools\out\20261022-171358 m3 + m4 90/90 PASS (names 4/4, bar caps 2/2).
+
+## 0.10.2 (3/4) rune spinner glow chase (2026-10-22, user: the runes must not turn)
+
+- [x] Root cause: RuneSpinner rotated its transform in 45 deg steps; the respawn LoadingIndicator spinner (role spinner,
+      spinner_runes art) was turned by its vanilla animation.
+- [x] Fix: art spinner_rune_0..7 = mechanical 45 deg sector slices of spinner_runes at full brightness (art tool cut
+      options `sector` / `norm`); RuneSpinner fades them in sequence (PreWorldMath.RuneGlow, time.spinner.step 0.14,
+      size.spinner.tail 3, share.spinner.base 0.22): CanvasRenderer alpha only, world rotation held at the canvas'. The
+      respawn vanilla spinner is off (PanelSwap), RuneSkin_RespawnSpinner beside it fades with it (AlphaFollow). Teleport
+      swirl (SwirlSpin, a vortex glyph, no runes) still turns.
+- [x] Harness AutotestDriver.RuneSpinner.cs: two samples 0.35 s apart -> positions / rotations identical, head moved,
+      contrast >= 0.3. Run 20261022-170700: m5-spinner-connecting, m6b-spinner-sleep, m6b-spinner-respawn PASS.
+
+## 0.10.2 (4/4) HUD bar right end caps (2026-10-22, user: the leather ends are "убогие")
+
+- [x] Root cause: the right ends were part of bar_frame (rune block + leather strap, taller than the rails) and
+      bar_frame_slim (leather caps), different shapes and heights per frame, the fill's rounded end showing before them.
+- [x] Fix: frames cut open at the right (rails to the edge, window.*.right 0); one Codex cap per bar (bar_cap_main with
+      the rune knot, bar_cap), size.hud.bar.cap 34 wide, height = the bar's rail band (HudMath.CapBox), so the three caps
+      stack into one column; window ends at the cap and clips (RectMask2D), full fill / lag / trough run under the cap
+      (HudMath.ClippedEnd). Variants A / B / C crops in one launch (BarView.CapVariantOverride); Codex A 7, B 6, C 8 ->
+      C kept, A / B sprites, sheets and prompts dropped. Codex note for later: lighter empty medallions, thinner teal rim.
+- [x] Harness AutotestDriver.RuneBarCaps.cs: m4-bar-caps-<res> (equal widths, right edges aligned, gaps <= 1 px, window
+      end = cap left, mask) + crops ui-runeskin-m4-barcap-<v>-<res>. Run 20261022-170700: 2/2 + variants PASS.
+
 ## Full-coverage directive (user, 2026-10-22; into M7 after B1-B5, not started)
 
 - [ ] 100 % of the UI on RuneSkin: all fonts, buttons, menus, incl. ALL current and future mods (Epic Loot etc.) -> a

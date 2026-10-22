@@ -35,6 +35,7 @@ namespace RuneSkin.Theme
                     preserveAspect = Bool(o, "preserveAspect"),
                     keepColor = Bool(o, "keepColor"),
                     cell = Bool(o, "cell"),
+                    zones = Bool(o, "zones"),
                     fillCenter = Str(o, "fillCenter"),
                     font = Str(o, "font"),
                     textColor = Str(o, "textColor"),

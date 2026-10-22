@@ -5,6 +5,39 @@ using Xunit;
 
 namespace RuneSkin.Tests
 {
+    // Bar end caps (0.10.2): every cap capW wide right after its window, over the rail band; stacked rail to rail the
+    // caps of eitr / stamina / health touch (no gap, no step); full layers run under the cap, partial ones do not.
+    public class BarCapTests
+    {
+        [Fact]
+        public void CapsStackIntoOneColumn()
+        {
+            // slim: 46 sprite px x 1.4 / 2 = 32.2 ref, edges 0.7 / 0.7; HP: 43.5 ref, edges 6.5 top / 2 bottom.
+            const float slimH = 32.2f, slimT = 0.7f, slimB = 0.7f, hpH = 43.5f, hpT = 6.5f, hpB = 2f, capW = 34f;
+            HudMath.CapBox(49f, 355f, capW, slimH, slimT, slimB, out var ex, out var ey, out var ew, out var eh);
+            var staminaY = HudMath.StackStep(slimH, slimT, slimB, 0f);
+            HudMath.CapBox(49f, 355f, capW, slimH, slimT, slimB, out var sx, out var sy, out var sw, out var sh);
+            var healthY = staminaY + HudMath.StackStep(slimH, slimT, hpB, 0f);
+            HudMath.CapBox(47.5f, 356.5f, capW, hpH, hpT, hpB, out var hx, out var hy, out var hw, out var hh);
+            Assert.Equal(ey + eh, staminaY + sy, 3);
+            Assert.Equal(staminaY + sy + sh, healthY + hy, 3);
+            Assert.Equal(ew, sw, 3);
+            Assert.Equal(sw, hw, 3);
+            Assert.Equal(49f + 355f + capW, ex + ew, 3);
+            Assert.Equal(hx + hw, sx + sw, 3);
+            Assert.Equal(35f, hh, 3);
+            Assert.Equal(30.8f, sh, 3);
+        }
+
+        [Theory]
+        [InlineData(300f, 300f, 18f, 318f)]
+        [InlineData(299.995f, 300f, 18f, 317.995f)]
+        [InlineData(150f, 300f, 18f, 150f)]
+        [InlineData(300f, 300f, -4f, 300f)]
+        public void ClippedEndRunsUnderTheCapOnlyWhenFull(float width, float window, float over, float want) =>
+            Assert.Equal(want, HudMath.ClippedEnd(width, window, over), 3);
+    }
+
     public class FixedBarTests
     {
         [Theory]

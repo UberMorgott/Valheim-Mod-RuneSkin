@@ -533,13 +533,13 @@
       "name": "bar_frame",
       "file": "bar_frame.png",
       "size": [
-        480,
+        368,
         87
       ],
       "border": {
         "left": 128,
         "bottom": 24,
-        "right": 112,
+        "right": 0,
         "top": 24
       },
       "pivot": [
@@ -549,19 +549,19 @@
       "imageType": "Tiled",
       "fillCenter": false,
       "token": "bar.frame",
-      "notes": "HP bar frame 480x87 (hud-status-b): left knot block with cyan rune + leather wrap, right wrap + rune block, rails tile with period 240; window (trough/fill/DoT/reserve rect) = inset left 95, right 92, top 28, bottom 17 sprite px (height 42), transparent; no glyph socket (pool glyph optional, over the window start)"
+      "notes": "HP bar frame 368x87 (hud-status-b), OPEN right end (0.10.2): left knot block with cyan rune + leather wrap, rails tile with period 240 to the right edge, where the bar_cap_main end cap covers them; window (trough/fill/DoT/reserve rect) = inset left 95, top 28, bottom 17 sprite px (height 42), right = the cap; transparent; no glyph socket (pool glyph optional, over the window start)"
     },
     {
       "name": "bar_frame_slim",
       "file": "bar_frame_slim.png",
       "size": [
-        380,
+        336,
         46
       ],
       "border": {
         "left": 96,
         "bottom": 14,
-        "right": 44,
+        "right": 0,
         "top": 14
       },
       "pivot": [
@@ -571,7 +571,51 @@
       "imageType": "Tiled",
       "fillCenter": false,
       "token": "bar.frame.slim",
-      "notes": "NEW: slim stamina/eitr bar frame 380x46: leather grip ends, icon recess centre (49,23) r 12 for the pool glyph; window = inset left 70, right 36, top 13, bottom 11 (height 22), transparent; rails tile with period 240"
+      "notes": "slim stamina/eitr bar frame 336x46, OPEN right end (0.10.2): left grip end, icon recess centre (49,23) r 12 for the pool glyph, rails tile with period 240 to the right edge, where the bar_cap end cap covers them; window = inset left 70, top 13, bottom 11 (height 22), right = the cap; transparent"
+    },
+    {
+      "name": "bar_cap_main",
+      "file": "bar_cap_main.png",
+      "size": [
+        68,
+        70
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        1,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.bar.cap.main",
+      "notes": "0.10.2 HP bar right end cap (Codex pick C 8/10: riveted dark slate, teal rim, knot ring with the cyan rune): 34 x 35 ref = the HP rail band, same width as bar_cap; flat left edge over the open frame rails"
+    },
+    {
+      "name": "bar_cap",
+      "file": "bar_cap.png",
+      "size": [
+        68,
+        62
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        1,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.bar.cap",
+      "notes": "0.10.2 stamina / eitr bar right end cap (pick C: riveted slate, teal rim, faint knot line): 34 x 31 ref = the slim rail band; the three caps stack into one column"
     },
     {
       "name": "frame_strip",
@@ -4334,6 +4378,182 @@
       "fillCenter": true,
       "token": "spinner.runes",
       "notes": "M5 connecting / waiting indicator: ring of 8 Elder Futhark runes, brightest at top, comet tail fading clockwise; rotate in 45 deg steps; tint rune_glow"
+    },
+    {
+      "name": "spinner_rune_0",
+      "file": "spinner_rune_0.png",
+      "size": [
+        128,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "spinner.rune.0",
+      "notes": "0.10.2 rune 0 of spinner_runes (clockwise from 12 o'clock), mechanical 45 deg sector slice at full brightness, same 128 px frame: the 8 slices stacked = the ring; RuneSpinner fades them in sequence (glow chase), never rotates"
+    },
+    {
+      "name": "spinner_rune_1",
+      "file": "spinner_rune_1.png",
+      "size": [
+        128,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "spinner.rune.1",
+      "notes": "0.10.2 rune 1 of spinner_runes (clockwise from 12 o'clock), mechanical 45 deg sector slice at full brightness, same 128 px frame: the 8 slices stacked = the ring; RuneSpinner fades them in sequence (glow chase), never rotates"
+    },
+    {
+      "name": "spinner_rune_2",
+      "file": "spinner_rune_2.png",
+      "size": [
+        128,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "spinner.rune.2",
+      "notes": "0.10.2 rune 2 of spinner_runes (clockwise from 12 o'clock), mechanical 45 deg sector slice at full brightness, same 128 px frame: the 8 slices stacked = the ring; RuneSpinner fades them in sequence (glow chase), never rotates"
+    },
+    {
+      "name": "spinner_rune_3",
+      "file": "spinner_rune_3.png",
+      "size": [
+        128,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "spinner.rune.3",
+      "notes": "0.10.2 rune 3 of spinner_runes (clockwise from 12 o'clock), mechanical 45 deg sector slice at full brightness, same 128 px frame: the 8 slices stacked = the ring; RuneSpinner fades them in sequence (glow chase), never rotates"
+    },
+    {
+      "name": "spinner_rune_4",
+      "file": "spinner_rune_4.png",
+      "size": [
+        128,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "spinner.rune.4",
+      "notes": "0.10.2 rune 4 of spinner_runes (clockwise from 12 o'clock), mechanical 45 deg sector slice at full brightness, same 128 px frame: the 8 slices stacked = the ring; RuneSpinner fades them in sequence (glow chase), never rotates"
+    },
+    {
+      "name": "spinner_rune_5",
+      "file": "spinner_rune_5.png",
+      "size": [
+        128,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "spinner.rune.5",
+      "notes": "0.10.2 rune 5 of spinner_runes (clockwise from 12 o'clock), mechanical 45 deg sector slice at full brightness, same 128 px frame: the 8 slices stacked = the ring; RuneSpinner fades them in sequence (glow chase), never rotates"
+    },
+    {
+      "name": "spinner_rune_6",
+      "file": "spinner_rune_6.png",
+      "size": [
+        128,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "spinner.rune.6",
+      "notes": "0.10.2 rune 6 of spinner_runes (clockwise from 12 o'clock), mechanical 45 deg sector slice at full brightness, same 128 px frame: the 8 slices stacked = the ring; RuneSpinner fades them in sequence (glow chase), never rotates"
+    },
+    {
+      "name": "spinner_rune_7",
+      "file": "spinner_rune_7.png",
+      "size": [
+        128,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "spinner.rune.7",
+      "notes": "0.10.2 rune 7 of spinner_runes (clockwise from 12 o'clock), mechanical 45 deg sector slice at full brightness, same 128 px frame: the 8 slices stacked = the ring; RuneSpinner fades them in sequence (glow chase), never rotates"
     },
     {
       "name": "button_danger_normal",

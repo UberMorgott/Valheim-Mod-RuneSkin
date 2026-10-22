@@ -27,6 +27,17 @@ namespace RuneSkin.PlayerHud
         // older breathing front FX, 1 = clean end (no FX), 2 = rim. EdgeModeOverride (>= 0) wins: harness variants.
         private Image _edge, _shieldEdge;
         public static int EdgeModeOverride = -1;
+        // Right end cap (0.10.2, user: the brown leather ends were "убогие"): frames are open at the right (rails run to
+        // the edge), one dark-metal cap per bar covers the rail band there - equal width size.hud.bar.cap on every bar,
+        // height = the bar's rail band, so stacked caps form one column; the HP cap holds the rune knot. The window
+        // ends at the cap's flat left edge and clips (RectMask2D): a full fill / the trough run under the cap and end
+        // squarely there instead of showing their rounded end before it. CapVariantOverride ("a" / "b" / "c", null =
+        // theme default) swaps every cap to token "<cap token>.<variant>" live: harness variant crops.
+        private Image _cap;
+        private readonly string _capToken;
+        private string _shownCapVariant;
+        private float _capW, _overFill, _overTrough, _overLag;
+        public static string CapVariantOverride;
         private static int EdgeMode => EdgeModeOverride >= 0 ? EdgeModeOverride : (int)ThemeTokens.GetFloat("mode.hud.bar.edge", 2f);
         private float _frontCore, _frontClock;
         // Shield layer (health bar only): translucent shield-coloured strip over the fill, HudMath.ShieldOverlay wide.
@@ -58,7 +69,7 @@ namespace RuneSkin.PlayerHud
         // right-aligned.
         public BarView(HudArt art, Transform parent, string name, bool rail, string frameToken, string fillColorToken,
             float scale = 1f, bool mainValue = false, string glyphToken = null, string frontToken = null, string frontColorToken = null,
-            float frontCore = 0.5f)
+            float frontCore = 0.5f, string capToken = null)
         {
             _art = art;
             _rail = rail;
@@ -76,6 +87,12 @@ namespace RuneSkin.PlayerHud
             FrameEdges(frameToken, out var edgeT, out var edgeB);
             EdgeTop = edgeT * scale;
             EdgeBottom = edgeB * scale;
+            if (capToken != null && ThemeTokens.GetSprite(capToken))
+            {
+                _capToken = capToken;
+                _capW = ThemeTokens.GetFloat("size.hud.bar.cap", 34f);
+                _insetR = _capW;
+            }
             _window = HudArt.Rect("Window", Root);
             _window.anchoredPosition = new Vector2(_insetL, _insetB);
             _trough = art.Image("Trough", _window, rail ? "sprite.hud.rail.trough" : "sprite.hud.bar.trough", "color.hud.trough", Image.Type.Sliced);
@@ -116,6 +133,14 @@ namespace RuneSkin.PlayerHud
             _lock.gameObject.SetActive(false);
             _frame = art.Image("Frame", Root, frameToken, "color.hud.frame", Image.Type.Tiled);
             _frameColor = _frame.color;
+            if (_capToken != null)
+            {
+                _cap = art.Image("Cap", Root, _capToken, "color.hud.frame", Image.Type.Simple);
+                _window.gameObject.AddComponent<RectMask2D>();
+                _overFill = RightBorder(_fill, scale);
+                _overTrough = RightBorder(_trough, scale);
+                _overLag = RightBorder(_lag, scale);
+            }
             if (glyphToken != null) Glyph(frameToken, glyphToken, scale);
             if (!rail)
             {
@@ -196,6 +221,22 @@ namespace RuneSkin.PlayerHud
             bottom = ThemeTokens.GetFloat(key + ".bottom", 0f) * toRef;
         }
 
+        // Right border of a window sprite in reference px at the bar scale (how far its rounded / fading end reaches).
+        private static float RightBorder(Image img, float scale)
+        {
+            var s = img ? img.sprite : null;
+            return s ? s.border.z * 100f / Mathf.Max(1f, s.pixelsPerUnit) * scale : 0f;
+        }
+
+        // Cap variant swap (harness crops): restyles the cap when CapVariantOverride changed since the last frame.
+        private void SyncCap()
+        {
+            if (!_cap || _shownCapVariant == CapVariantOverride) return;
+            _shownCapVariant = CapVariantOverride;
+            var token = string.IsNullOrEmpty(CapVariantOverride) ? _capToken : _capToken + "." + CapVariantOverride;
+            _art.Restyle(_cap, ThemeTokens.GetSprite(token) ? token : _capToken, "color.hud.frame", Image.Type.Simple);
+        }
+
         // Right-aligned values keep clear of the frame's end cap (Codex band review: numbers lost in the caps).
 
         public float EdgeTop { get; }
@@ -233,6 +274,7 @@ namespace RuneSkin.PlayerHud
         // Per-frame animation clock (runs even when no value changed).
         public void Tick(float dt)
         {
+            SyncCap();
             if (_front && _front.gameObject.activeSelf)
             {
                 _frontClock += dt;
@@ -252,8 +294,16 @@ namespace RuneSkin.PlayerHud
             var l = Mathf.Max(0f, _length);
             Root.sizeDelta = new Vector2(l + _insetL + _insetR, Height);
             _window.sizeDelta = new Vector2(l, _h);
-            Full(_trough.rectTransform, l);
+            Full(_trough.rectTransform, _cap ? HudMath.ClippedEnd(l, l, _overTrough) : l);
             Stretch(_frame.rectTransform);
+            if (_cap)
+            {
+                var cr = _cap.rectTransform;
+                HudMath.CapBox(_insetL, l, _capW, Height, EdgeTop, EdgeBottom, out var cx, out var cy, out var cw, out var ch);
+                cr.anchorMin = cr.anchorMax = cr.pivot = Vector2.zero;
+                cr.anchoredPosition = new Vector2(cx, cy);
+                cr.sizeDelta = new Vector2(cw, ch);
+            }
             if (_glyph)
             {
                 var gr = _glyph.rectTransform;
@@ -310,7 +360,7 @@ namespace RuneSkin.PlayerHud
             }
             {
                 var fillW = l * cur / max;
-                Place(_fill, 0f, fillW, cur > 0f);
+                Place(_fill, 0f, HudMath.ClippedEnd(fillW, l, _overFill), cur > 0f);
                 var mode = EdgeMode;
                 if (_edge) Edge(_edge, fillW, 0f, _h, mode == 2 && cur > 0f && fillW < l - 0.5f);
                 if (_front && mode != 0 && _front.gameObject.activeSelf) _front.gameObject.SetActive(false);
@@ -330,7 +380,8 @@ namespace RuneSkin.PlayerHud
                         fr.anchoredPosition = new Vector2(fillW - fwid, 0f);
                     }
                 }
-                Place(_lag, 0f, l * _lagValue / max, _lagValue > cur + 0.01f);
+                var lagW = l * _lagValue / max;
+                Place(_lag, 0f, HudMath.ClippedEnd(lagW, l, _overLag), _lagValue > cur + 0.01f);
                 HudMath.Reserved(avail, max, l, out var rs, out var rw);
                 var reserve = rw >= 0.5f;
                 Place(_reserved, rs, rw, reserve);

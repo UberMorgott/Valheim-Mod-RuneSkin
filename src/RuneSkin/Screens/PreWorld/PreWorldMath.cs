@@ -25,6 +25,32 @@ namespace RuneSkin.PreWorld
             return trimmed.Length == 0 ? "?" : trimmed.Substring(0, 1).ToUpperInvariant();
         }
 
+        // Rune spinner glow chase (0.10.2): the runes stay fixed on the ring, a light head runs clockwise through them
+        // (phase = rune steps since start). Rune i of n lies d = (phase - i) mod n steps behind the head: full at the
+        // head, fading out over `tail` steps behind it, rising during the last step before the head reaches it;
+        // baseLevel = the unlit brightness. Smoothstep ease, result in [baseLevel, 1].
+        public static float RuneGlow(int i, int n, float phase, float tail, float baseLevel)
+        {
+            baseLevel = Math.Max(0f, Math.Min(1f, baseLevel));
+            if (n <= 0 || float.IsNaN(phase) || float.IsInfinity(phase)) return baseLevel;
+            var d = (phase - i) % n;
+            if (d < 0f) d += n;
+            float k;
+            if (d > n - 1f) k = d - (n - 1f);
+            else k = tail > 0f && d < tail ? 1f - d / tail : 0f;
+            k = Math.Max(0f, Math.Min(1f, k));
+            k = k * k * (3f - 2f * k);
+            return baseLevel + (1f - baseLevel) * k;
+        }
+
+        // Index of the brightest rune at phase (the head).
+        public static int RuneHead(int n, float phase)
+        {
+            if (n <= 0 || float.IsNaN(phase) || float.IsInfinity(phase)) return 0;
+            var h = (int)Math.Floor(phase) % n;
+            return h < 0 ? h + n : h;
+        }
+
         // Vertical category column: y offset (down from the column top) of tab i.
         public static float TabOffset(int index, float height, float gap) => index * (height + gap);
 

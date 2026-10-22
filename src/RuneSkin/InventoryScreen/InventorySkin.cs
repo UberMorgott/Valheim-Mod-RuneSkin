@@ -290,7 +290,7 @@ namespace RuneSkin.InventoryScreen
         private static void ElementRoles(ScreenContext ctx, InventoryElement e, bool hotbar, bool doll = false)
         {
             if (e.m_button && e.m_button.targetGraphic)
-                ctx.Role(e.m_button.targetGraphic, doll ? "slot.recess" : "slot.cell", doll ? "EAQS doll cell (recessed)" : "InventoryElement.m_button target (slot cell)");
+                ctx.Role(e.m_button.targetGraphic, doll ? "slot.recess.item" : "slot.cell", doll ? "EAQS doll cell (recessed, item zones)" : "InventoryElement.m_button target (slot cell)");
             ctx.Role(e.m_icon, "content", "InventoryElement.m_icon (item icon)");
             ctx.Role(e.m_equiped, "slot.marker.equipped", "InventoryElement.m_equiped marker (InventoryGrid.cs:334)");
             ctx.Role(e.m_queued, "content", "InventoryElement.m_queued marker");

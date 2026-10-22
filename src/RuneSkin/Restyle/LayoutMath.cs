@@ -58,6 +58,28 @@ namespace RuneSkin.Restyle
             return 0f;
         }
 
+        // Item cell zones (0.10.2): band = the strip along the top (quality, markers) and the bottom (amount,
+        // durability) of a cell of side `side`; the icon is inset by the band on every side, so the band contents can
+        // never overlap it. share = theme share.cell.zone, floor = size.cell.zone.min (cell units).
+        public static float ZoneBand(float side, float share, float floor) =>
+            Math.Min(side * 0.3f, Math.Max(Math.Max(0f, floor), side * Math.Max(0f, share)));
+
+        // Icon side inside a cell with equal margins of band on every side.
+        public static float ZoneIconSide(float side, float band) => Math.Max(0f, side - 2f * band);
+
+        // Font size that makes a text of rendered height `height` (at `current` size) fit `avail`, never above the
+        // size the screen set (`original`) and never below `floor`; grows back when room returns.
+        public static float FitFontSize(float current, float original, float height, float avail, float floor)
+        {
+            if (!(height > 0f) || !(current > 0f)) return current;
+            var want = current * Math.Max(0f, avail) / height;
+            return Math.Max(Math.Min(floor, original), Math.Min(original, want));
+        }
+
+        // True when the open spans [aMin, aMax] and [bMin, bMax] overlap by more than tol.
+        public static bool Overlaps(float aMin, float aMax, float bMin, float bMax, float tol = 0f) =>
+            Math.Min(aMax, bMax) - Math.Max(aMin, bMin) > tol;
+
         // A cell is a square-ish box (slots, sockets, icon buttons): width and height in [16, 240], aspect 0.7-1.45.
         public static bool IsCellShape(float width, float height)
         {

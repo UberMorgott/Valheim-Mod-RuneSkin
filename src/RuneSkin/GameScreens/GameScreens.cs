@@ -223,6 +223,18 @@ namespace RuneSkin.GameScreens
             // takes the rune glow, so its fades keep the theme colour.
             var glow = ThemeTokens.GetColor("color.minimap.rune", spinner.color);
             AccessTools.Field(typeof(LoadingIndicator), "m_spinnerOriginalColor")?.SetValue(ind, glow);
+            // The vanilla spinner image turns (its animation): off; the RuneSkin rune spinner (fixed runes, chasing
+            // glow, 0.10.2) takes its place and fades with it (AlphaFollow reads the vanilla colour fade).
+            if (sr.parent.Find("RuneSkin_RespawnSpinner")) return;
+            PanelSwap.Apply(spinner, spinner.sprite ? spinner.sprite.name : null);
+            var rune = RuneSpinner.Add(sr.parent, "RuneSkin_RespawnSpinner", Mathf.Max(sr.rect.width, sr.rect.height));
+            var ro = rune.rectTransform;
+            ro.SetSiblingIndex(sr.GetSiblingIndex() + 1);
+            ro.anchorMin = sr.anchorMin;
+            ro.anchorMax = sr.anchorMax;
+            ro.pivot = sr.pivot;
+            ro.anchoredPosition = sr.anchoredPosition;
+            AlphaFollow.Ensure(rune.gameObject, spinner);
         }
 
         private static void Sleep(Hud hud)

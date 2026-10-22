@@ -22,6 +22,7 @@ namespace RuneSkin.Theme
         public bool PreserveAspect;
         public bool KeepColor;
         public bool Cell;
+        public bool Zones;
         public string FontToken;
         public TMP_FontAsset Font;
         public Color? TextColor;
@@ -351,6 +352,7 @@ namespace RuneSkin.Theme
                     PreserveAspect = r.preserveAspect,
                     KeepColor = r.keepColor,
                     Cell = r.cell,
+                    Zones = r.cell && r.zones,
                     FontToken = string.IsNullOrEmpty(r.font) ? null : r.font,
                     Font = string.IsNullOrEmpty(r.font) ? null : Fonts[r.font],
                     TextColor = C(r.textColor),
