@@ -3,6 +3,7 @@ using RuneSkin.Api;
 using RuneSkin.API;
 using RuneSkin.Diagnostics;
 using RuneSkin.Responsive;
+using RuneSkin.Restyle;
 using RuneSkin.Theme;
 using UnityEngine;
 using UnityEngine.UI;

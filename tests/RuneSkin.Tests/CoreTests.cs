@@ -222,7 +222,7 @@ namespace RuneSkin.Tests
             ability.Dispose();
             Assert.Equal("dispose:ability:dash", host.Calls[host.Calls.Count - 1]);
             Assert.Throws<ArgumentNullException>(() => Skin.RegisterAbilitySlot("test.owner", new AbilitySlotDescriptor { Id = "x" }));
-            Assert.Equal(10, Skin.ApiVersion);
+            Assert.Equal(11, Skin.ApiVersion);
 
             Assert.Throws<ArgumentNullException>(() => Skin.RegisterSlot("", new SlotDescriptor { Id = "x" }));
             Assert.Throws<InvalidOperationException>(() => Skin.Attach(host));
