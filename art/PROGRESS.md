@@ -67,4 +67,10 @@
 - [x] Pick (Codex, user asleep; D:\tmp\cx-augaskin\work\m45\pick-m4.out.md): minimap A (matches hud-v2-a), boss A (no per-boss portrait), enemy bars B (tier read from frame shape+colour), damage A (compact), notifications A, centre message B (readable over bright sky), banner B (open composition), map A (side legend scales to any pin/player count)
 - [x] Kit sheets m4ring (ring, rune stone, wind socket, pin ring), m4bars (boss frame, 4 Vaettir tier frames, banner rule, message band), m45glyphs (sun, moon, wind, chevron, bar fill mask); build options `hole`, `fadeV`
 - [x] compare-m4: Codex 3 rounds -> 8 of 9 groups 8/10; map legend bottom (zoom slider) 7 (handle switched to the hover state after the cap, not re-scored)
-- [x] Bundle BUILD OK 192/192 (M4 state)
+
+## M5 pre-world screens (2026-10-22)
+
+- [x] Mockups m5-{menu,char,world,load,settings}-{a,b}; pick (Codex, pick-m5.out.md): all A (vertical menu takes mod entries, list scales to any character count, one-panel world select needs fewest vanilla changes, compact connecting + bar, vertical settings tabs take mod tabs); toggle = checkbox (Unity Toggle, no thumb animation); dropdown A (TMP_Dropdown); keybind A (one binding per action as vanilla)
+- [x] Kit sheets m5kit (danger buttons, slider diamond x3, checkbox), spinner2 (rune spinner); reuse: frame_boss as loading frame, plate_key keybinds, tab_* categories
+- [x] compare-m5: Codex 3 rounds -> 8 of 10 groups >= 8; connecting spinner 7.5 (tail glow weak), loading fill 7.5 (flat) - round cap
+- [x] Bundle BUILD OK 200/200

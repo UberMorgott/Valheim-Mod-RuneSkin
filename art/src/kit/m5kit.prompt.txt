@@ -1,0 +1,6 @@
+Use the image_gen tool. First load with view_image: D:\tmp\cx-augaskin\work\ref\m1-btn.png (APPROVED craft button: dark slate plaque with carved knot ends and bronze tips) and D:\tmp\cx-augaskin\work\ref\mock1-small.png (style).
+Draw on a perfectly flat pure MAGENTA #FF00FF background (no shadows on the magenta, pieces separated by at least 80 px of magenta, orthographic flat front view, NO text at all), canvas 1536x1024, same painted cool blue-grey carved slate (#2a343b) as the references:
+(1) top, two copies side by side, each about 660x130: the craft BUTTON exactly as in m1-btn.png but as a DANGER/DELETE variant: (a) normal: the inner line around the plain interior is a thin dull ember-red #c0392b line, bronze tips; (b) hover: the ember-red inner line glowing brighter with a soft red glow;
+(2) bottom-left: a SLIDER HANDLE: a small carved slate DIAMOND (rhombus) about 150x150 with a raised bevelled rim and a tiny glowing cyan #4fe0e6 rune dot in its centre; next to it the same diamond in a HOVER state with the rim edged by a soft cyan glow; next to it the same diamond DISABLED (dim, grey, no glow);
+(3) bottom-right: a CHECKBOX: a small square carved slate box about 140x140 with a sunken dark interior (empty, unchecked).
+Save PNG to: D:\tmp\cx-augaskin\work\kit\m5kit.png

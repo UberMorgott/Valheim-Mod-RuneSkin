@@ -9,6 +9,7 @@
 //	go run ./art/tools compare-m3       art/review/compare-{crafting,groups}-m3.png (crafting kit)
 //	go run ./art/tools compare-m3s      art/review/compare-{skills,trophies}-m3.png + compare-groups-m3s.png
 //	go run ./art/tools compare-m4       art/review/compare-{hud-m4a,hud-m4b,map-m4,groups-m4}.png
+//	go run ./art/tools compare-m5       art/review/compare-{menu,char,world,load,settings,groups}-m5.png
 //	go run ./art/tools sheet           art/review/contact-sheet.png
 //	go run ./art/tools zoom IN x,y,w,h SCALE OUT    inspection crop
 //	go run ./art/tools sample IN x,y [x,y...]       print pixel hex
@@ -46,6 +47,8 @@ func main() {
 		cmdCompareM3S()
 	case "compare-m4":
 		cmdCompareM4()
+	case "compare-m5":
+		cmdCompareM5()
 	case "sheet":
 		cmdSheet()
 	case "compare":

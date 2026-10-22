@@ -100,3 +100,15 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 - [x] Skills / trophies: in-panel info tab row (InfoTabs: mirrors InventoryGui.m_info buttons, own tab selected, click = close; tab_strip ledge), title knots, close buttons hidden; skills summary well (death glyph + skill loss, sort toggles level / name, InfoMath.SkillOrder), full-screen closer + ListRoot no longer painted (button / scrim roles were filling the screen)
 - [x] Crafting polish: craft button role craft.button (redrawn button_*), round repair only while repairable (else craft spans the row), long descriptions scroll (own clipped ScrollRect view), RecipeChains box capped (size.craft.chain.max / .min) with a scrolling tree, VNEI grid sized to the body (BaseUI.SetSize by reflection, CraftingMath.VneiCells), rows 40 / font 15, Ranged / Magic category glyphs
 - [ ] Final small fixes after the last run unverified in game: skills title backdrop + total text, trophy count / boss label prefix / boss icon fill / one-row strip, level-requirement socket station icon, 2-line ingredient labels
+
+## M4 art (2026-10-22) - minimap, enemy HUD, messages, damage text
+
+- Picks (Codex, user asleep; mockups D:\tmp\cx-augaskin\m4-*.png, reasons in art\PROGRESS.md): minimap = m4-hud-a (round knotwork ring, N/E/S/W rune stones, wind socket, sun/moon on the top arc, biome plate); boss bar = A (symmetric, no per-boss portrait, unique tier); enemy bars = m4-hud-b (rarity read from frame shape + colour: Vaettir normal/magic/rare/unique); damage text = A (compact, font only); notifications = A; centre message = B (soft dark band); biome banner = B (open: knotwork rules, no plate); large map = m4-map-a (side legend scales to any pin type/player count, Jotunn pins with their own icons, scrolls).
+- Rejected: minimap B (runes cut in the ring, curved leather ribbon), boss B (needs a portrait per boss), enemy A fills, map B (bottom toolbar overflows with mod pin types).
+- Code pickup: art\README.md "M4 sprites" (minimap_mask = Unity Mask; VT_Frame = frame_enemy_* Sliced over Health; damage text body font + Bold/dilate).
+
+## M5 art (2026-10-22) - pre-world screens
+
+- Picks (Codex): main menu = m5-menu-a (vertical button column takes mod entries; news secondary, hidden when no room); character = m5-char-a (scrolling list; delete confirm as a centred modal, initial focus Cancel; vanilla appearance controls kept); world/server = m5-world-a (one panel with tabs, simple join/password dialog, only data the game has); connecting/loading = m5-load-a (spinner when no real progress, bar only with progress); settings = m5-settings-a (vertical category list incl. mod tabs, separate scroll for categories and content, pinned bottom buttons). Controls: slider A (diamond handle), toggle = checkbox (Unity Toggle), dropdown A (TMP_Dropdown, opens upward when needed), keybind A (one plate per action as vanilla).
+- Rejected: menu B (bottom rail overflows), char B carousel, world B (invented server data), load B (fixed rune sequence), settings B (two-column, second binding not supported by vanilla).
+- Code pickup: art\README.md "M5 sprites".

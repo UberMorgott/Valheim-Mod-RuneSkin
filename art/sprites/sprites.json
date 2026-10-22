@@ -4268,6 +4268,182 @@
       "fillCenter": true,
       "token": "glyph.wind",
       "notes": "M4 wind rune-arrow (points up = wind toward north); rotate; tint rune_glow"
+    },
+    {
+      "name": "glyph_chevron_down",
+      "file": "glyph_chevron_down.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.chevron.down",
+      "notes": "M5 dropdown chevron; tint text_body (open: rune_glow, flip v)"
+    },
+    {
+      "name": "spinner_runes",
+      "file": "spinner_runes.png",
+      "size": [
+        128,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "spinner.runes",
+      "notes": "M5 connecting / waiting indicator: ring of 8 Elder Futhark runes, brightest at top, comet tail fading clockwise; rotate in 45 deg steps; tint rune_glow"
+    },
+    {
+      "name": "button_danger_normal",
+      "file": "button_danger_normal.png",
+      "size": [
+        328,
+        70
+      ],
+      "border": {
+        "left": 84,
+        "bottom": 18,
+        "right": 84,
+        "top": 18
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "button.danger.normal",
+      "notes": "M5 delete / destructive confirm button (ember-red inner line); same geometry as button_*; pressed/disabled reuse button_pressed/button_disabled"
+    },
+    {
+      "name": "button_danger_hover",
+      "file": "button_danger_hover.png",
+      "size": [
+        328,
+        70
+      ],
+      "border": {
+        "left": 84,
+        "bottom": 18,
+        "right": 84,
+        "top": 18
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "button.danger.hover",
+      "notes": "M5 danger button hover/focus (glowing ember line)"
+    },
+    {
+      "name": "slider_handle_normal",
+      "file": "slider_handle_normal.png",
+      "size": [
+        64,
+        64
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "slider.handle.normal",
+      "notes": "M5 Slider handle diamond (32 ref visible, hit area \u003e= 44 ref via a larger transparent parent), idle, cyan rune dot; track = bar_skill_trough, fill = bar_skill_fill tint rune_glow"
+    },
+    {
+      "name": "slider_handle_hover",
+      "file": "slider_handle_hover.png",
+      "size": [
+        64,
+        64
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "slider.handle.hover",
+      "notes": "M5 Slider handle diamond (32 ref visible, hit area \u003e= 44 ref via a larger transparent parent), hover/pressed/focus: cyan glow rim; track = bar_skill_trough, fill = bar_skill_fill tint rune_glow"
+    },
+    {
+      "name": "slider_handle_disabled",
+      "file": "slider_handle_disabled.png",
+      "size": [
+        64,
+        64
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "slider.handle.disabled",
+      "notes": "M5 Slider handle diamond (32 ref visible, hit area \u003e= 44 ref via a larger transparent parent), disabled: grey; track = bar_skill_trough, fill = bar_skill_fill tint rune_glow"
+    },
+    {
+      "name": "checkbox_box",
+      "file": "checkbox_box.png",
+      "size": [
+        56,
+        56
+      ],
+      "border": {
+        "left": 14,
+        "bottom": 14,
+        "right": 14,
+        "top": 14
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "checkbox.box",
+      "notes": "M5 Toggle background (28 ref); checkmark = glyph_check tint rune_glow ~70%; off = empty box; focus = ring_select"
     }
   ]
 }

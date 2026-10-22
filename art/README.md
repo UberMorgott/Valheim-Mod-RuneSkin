@@ -17,7 +17,7 @@ graphics device ("Unsupported Format 0", editor crash).
 Review aids (not part of the build, output in `art/review/`, git-ignored):
 `go -C art/tools run . compare` -> `compare-inventory.png`, `compare-hud.png`, `compare-corner.png`,
 `compare-groups.png` ([mockup | ours] rebuilt from our sprites with Unity Sliced/Tiled rules; mockups in
-`D:\tmp\cx-augaskin`); `go -C art/tools run . sheet` -> `contact-sheet.png`. M2/M3: `compare-m2`, `compare-m3` (crafting: `compare-crafting-m3.png`, `compare-groups-m3.png`), `compare-m3s` (skills/trophies: `compare-skills-m3.png`, `compare-trophies-m3.png`, `compare-groups-m3s.png`), `compare-m4` (`compare-hud-m4a/b.png`, `compare-map-m4.png`, `compare-groups-m4.png`).
+`D:\tmp\cx-augaskin`); `go -C art/tools run . sheet` -> `contact-sheet.png`. M2/M3: `compare-m2`, `compare-m3` (crafting: `compare-crafting-m3.png`, `compare-groups-m3.png`), `compare-m3s` (skills/trophies: `compare-skills-m3.png`, `compare-trophies-m3.png`, `compare-groups-m3s.png`), `compare-m4` (`compare-hud-m4a/b.png`, `compare-map-m4.png`, `compare-groups-m4.png`), `compare-m5` (`compare-{menu,char,world,load,settings}-m5.png`, `compare-groups-m5.png`).
 
 ## Rule: Codex makes the pixels
 
@@ -126,3 +126,25 @@ damage text A, notifications A, centre message B, biome banner B, large map `m4-
   toggles, `tab_*` filter, `divider`, `field_search` name, zoom `button_round` + `glyph_plus/minus` + vertical
   `bar_skill_trough`/`bar_skill_fill` + `slider_handle_*`; selected pin `ring_pin_select` + `tooltip_frame` label.
 
+## M5 sprites (main menu, character, world/server, connecting/loading, settings)
+
+Picks (Codex): all variant A (`m5-menu-a`, `m5-char-a`, `m5-world-a`, `m5-load-a`, `m5-settings-a`); toggle = checkbox (B);
+delete confirm centred modal (from B). Menu entries / characters / worlds / servers / settings tabs / keybinds are lists of any
+count (scroll).
+- Menu: vertical `button_*` column (hover = `button_hover`), news = panel + `header_plaque` + `scroll_*` + `button_normal`;
+  link buttons `button_icon_*` + glyphs; version text text_disabled.
+- Character: list rows = `frame_inset` wells (selected + `row_recipe_selected`), portrait `slot_cell_recess`; delete
+  `button_icon_*` + `glyph_trash`; confirm modal = panel (or popup) + `button_danger_normal|hover` (ember line; pressed/disabled
+  reuse `button_pressed|disabled`) + `button_normal`. Create panel: `field_search` name, body type `tab_square_*`, style cells
+  `slot_cell_recess|selected`, colour sliders = `bar_skill_trough` + vanilla gradient + `slider_handle_*`.
+- World/server: `tab_*` on `tab_strip`, rows as above with thumbnail in `slot_cell_recess`, modifiers `button_icon_*`,
+  `checkbox_box`, `field_search` (password), primary `button_*` gold text. Join/password dialog = panel + `field_search` +
+  `button_selected` (primary) / `button_normal`. Server list refresh `glyph_refresh`.
+- Connecting: panel + `spinner_runes` (tint rune_glow, rotate in 45 deg steps or smoothly) + `button_normal` cancel.
+  Loading: `frame_boss` reused as the progress frame + `rail_fill` (tint rune_glow) + `bar_end_line` leading edge (only with
+  real progress, else spinner); tip on `frame_strip`.
+- Settings: category list `tab_normal|tab_selected` (vertical, scroll), content `frame_inset`, rows `divider`; Slider = track
+  `bar_skill_trough`, fill `bar_skill_fill` tint rune_glow, handle `slider_handle_normal|hover|disabled` (32 ref visible,
+  hit >= 44); Toggle = `checkbox_box` + `glyph_check`; TMP_Dropdown = `field_search` + `glyph_chevron_down`, list
+  `frame_inset` + `row_recipe_selected` item highlight (opens upward when no room); keybind = label + `plate_key` field,
+  waiting = `ring_select` tint rune_glow + "Нажмите клавишу..."; bottom `button_*` (Apply gold text).
