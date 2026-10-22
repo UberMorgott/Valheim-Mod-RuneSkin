@@ -50,5 +50,32 @@ namespace RuneSkin.MapScreen
         // Wind glyph angle (deg, UI z) from the wind direction's compass heading (deg, 0 = north, clockwise), as
         // Minimap.UpdateWindMarker (Minimap.cs:1702-1706) writes it.
         public static float WindAngle(float headingDeg) => -headingDeg;
+
+        // Large map zoom slider (legend): Minimap.LargeZoom is the visible map share (m_minZoom close .. m_maxZoom
+        // whole map), scaled geometrically by the wheel; the slider runs on its log so a step feels even.
+        // 0 = whole map (max), 1 = closest (min).
+        public static float ZoomToSlider(float zoom, float min, float max)
+        {
+            if (!(min > 0f) || !(max > min)) return 0f;
+            zoom = Math.Max(min, Math.Min(max, zoom));
+            var v = 1.0 - (Math.Log(zoom) - Math.Log(min)) / (Math.Log(max) - Math.Log(min));
+            return (float)Math.Max(0.0, Math.Min(1.0, v));
+        }
+
+        public static float SliderToZoom(float v, float min, float max)
+        {
+            if (!(min > 0f) || !(max > min)) return max;
+            v = Math.Max(0f, Math.Min(1f, v));
+            return (float)Math.Exp(Math.Log(min) + (1.0 - v) * (Math.Log(max) - Math.Log(min)));
+        }
+
+        // Legend row height: preferred, shrunk to fit `count` rows into `available`, never below the floor (then the
+        // column overflows into the scroll of later sections: the pin list is laid out first).
+        public static float RowHeight(float available, int count, float preferred, float floor)
+        {
+            if (count <= 0) return preferred;
+            var fit = available / count;
+            return Math.Max(floor, Math.Min(preferred, fit));
+        }
     }
 }

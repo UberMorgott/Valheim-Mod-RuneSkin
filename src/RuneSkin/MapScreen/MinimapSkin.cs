@@ -219,7 +219,7 @@ namespace RuneSkin.MapScreen
             // Upper-right on the band (45 deg), socket 60x74 sprite px, glyph recess centre at (45 %, 58 %).
             var diag = band * 0.7071f;
             Center(_windSocket.rectTransform, new Vector2(diag, diag), new Vector2(w, w * 74f / 60f));
-            var gs = w * 0.62f;
+            var gs = w * ThemeTokens.GetFloat("ratio.minimap.wind.glyph", 0.82f);
             var g = _windGlyph.rectTransform;
             g.anchorMin = g.anchorMax = new Vector2(0.45f, 0.58f);
             g.pivot = new Vector2(0.5f, 0.5f);

@@ -285,6 +285,9 @@ namespace RuneSkin.WorldHud
             foreach (var go in list)
             {
                 if (!go || !_unlocks.Add(go.GetInstanceID())) continue;
+                // Below the top-left notification row (moved down by size.message.notify.drop; run 20261022-043546: the
+                // unlock plate covered it). Vanilla sets the slot position once at Instantiate (UpdateUnlockMsg :337-341).
+                if (go.transform is RectTransform urt) urt.anchoredPosition -= new Vector2(0f, ThemeTokens.GetFloat("size.message.unlock.drop", 72f));
                 foreach (var img in go.GetComponentsInChildren<Image>(true))
                 {
                     if (img.name == "UnlockIcon") continue;
@@ -296,6 +299,10 @@ namespace RuneSkin.WorldHud
                     var title = t.name == "UnlockTitle";
                     _art.Note(t, title ? "unlock.title" : "unlock.text", TextLook.Apply(t, title ? "font.display" : "font.body", "notify"), "unlock message text");
                     t.color = ThemeTokens.GetColor(title ? "color.text.item.title" : "color.text.body", t.color);
+                    // Clear of the plate's right rim (frame_small border; Codex r3: the body reached it), long texts shrink.
+                    var tr = t.rectTransform;
+                    tr.offsetMax -= new Vector2(ThemeTokens.GetFloat("size.message.unlock.inset", 14f), 0f);
+                    if (!title) { t.enableAutoSizing = true; t.fontSizeMax = t.fontSize; t.fontSizeMin = Mathf.Max(10f, t.fontSize * 0.7f); t.overflowMode = TextOverflowModes.Ellipsis; }
                 }
             }
             if (_unlocks.Count > 256) _unlocks.Clear();

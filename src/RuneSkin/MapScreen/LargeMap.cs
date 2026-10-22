@@ -23,13 +23,12 @@ namespace RuneSkin.MapScreen
         private static readonly string[] LegendPanels = { "IconPanel", "IconPanel2", "IconPingPanel" };
         private static readonly string[] TogglePanels = { "PublicPanel", "SharedPanel" };
 
-        private RectTransform _large, _legend, _title, _sockets;
-        private readonly System.Collections.Generic.List<Image> _socketImages = new System.Collections.Generic.List<Image>();
-        private readonly System.Collections.Generic.List<Image> _iconScratch = new System.Collections.Generic.List<Image>();
+        private RectTransform _large, _legend, _title;
+
         private Image _legendImage, _titleImage;
         private PanelDecor _decor;
         private bool _largeDirty = true;
-        private float _inset = -1f;
+        private float _inset = -1f, _hintBand = -1f;
 
         public void MarkLargeDirty() => _largeDirty = true;
 
@@ -46,10 +45,10 @@ namespace RuneSkin.MapScreen
             _legendImage.raycastTarget = true; // clicks on the legend never fall through to the map
             foreach (var panel in LegendPanels) Hide(_large.Find(panel));
             foreach (var panel in TogglePanels) Hide(_large.Find(panel));
-            // Recessed cells behind the pin-type icons (Codex r1), own container under the panels.
-            _sockets = HudArtRect("RuneSkin_Sockets", _legend);
+
             foreach (var panel in LegendPanels) Adopt(panel);
             foreach (var panel in TogglePanels) Adopt(panel);
+            BuildLegendRows();
 
             _title = HudArtRect("RuneSkin_MapTitle", _large);
             _titleImage = _title.gameObject.AddComponent<Image>();
@@ -108,14 +107,16 @@ namespace RuneSkin.MapScreen
             var inset = _decor ? _decor.ContentInset() : 0f;
             var legendW = ThemeTokens.GetFloat("size.map.legend", 300f);
             var gap = ThemeTokens.GetFloat("size.map.gap", 12f);
-            if (!Mathf.Approximately(inset, _inset))
+            var band = HintBand();
+            if (!Mathf.Approximately(inset, _inset) || !Mathf.Approximately(band, _hintBand))
             {
                 _inset = inset;
+                _hintBand = band;
                 var map = _map.m_mapImageLarge.rectTransform;
                 map.anchorMin = Vector2.zero;
                 map.anchorMax = Vector2.one;
                 map.pivot = new Vector2(0.5f, 0.5f);
-                map.offsetMin = new Vector2(inset, inset);
+                map.offsetMin = new Vector2(inset, inset + HintBand());
                 map.offsetMax = new Vector2(-(inset + legendW + gap), -inset);
                 _legend.anchorMin = new Vector2(1f, 0f);
                 _legend.anchorMax = Vector2.one;
@@ -134,8 +135,7 @@ namespace RuneSkin.MapScreen
                     _map.m_biomeNameLarge.color = ThemeTokens.GetColor("color.text.header", Color.white);
                 }
             }
-            StackLegend(gap);
-            Sockets();
+            LegendRows(inset);
             // Title plaque: cursor biome, else the player's biome (small map text) when the cursor is off the map.
             var big = _map.m_biomeNameLarge;
             if (big && string.IsNullOrEmpty(big.text) && _map.m_biomeNameSmall) big.text = _map.m_biomeNameSmall.text;
@@ -149,83 +149,20 @@ namespace RuneSkin.MapScreen
         private void HideHudCluster(bool hide)
         {
             if (hide == _clusterHidden) return;
-            var cluster = PlayerHud.HudCluster.Instance;
-            if (!cluster) { _clusterHidden = false; return; }
-            if (!_clusterGroup && !cluster.TryGetComponent(out _clusterGroup)) _clusterGroup = cluster.gameObject.AddComponent<CanvasGroup>();
-            _clusterGroup.alpha = hide ? 0f : 1f;
             _clusterHidden = hide;
-        }
-
-        private void Sockets()
-        {
-            _iconScratch.Clear();
-            foreach (var panel in LegendPanels)
+            var cluster = PlayerHud.HudCluster.Instance;
+            if (cluster)
             {
-                var t = _legend.Find(panel);
-                if (!t || !t.gameObject.activeSelf) continue;
-                foreach (var b in t.GetComponentsInChildren<Button>(false))
-                    if (b.targetGraphic is Image img && img.sprite) _iconScratch.Add(img);
+                if (!_clusterGroup && !cluster.TryGetComponent(out _clusterGroup)) _clusterGroup = cluster.gameObject.AddComponent<CanvasGroup>();
+                _clusterGroup.alpha = hide ? 0f : 1f;
             }
-            var sprite = ThemeTokens.GetSprite("sprite.slot.recess");
-            while (_socketImages.Count < _iconScratch.Count)
+            // The hotbar (and the summon frames riding it) sits outside the map frame top-left (run 20261022-043546):
+            // hidden with the cluster, as in mockup m4-map-a.
+            foreach (var bar in UnityEngine.Object.FindObjectsByType<HotkeyBar>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
-                var rt = HudArtRect("Socket", _sockets);
-                var img = rt.gameObject.AddComponent<Image>();
-                img.raycastTarget = false;
-                _socketImages.Add(img);
-            }
-            var k = _legend.lossyScale.x > 0f ? 1f / _legend.lossyScale.x : 1f;
-            for (var i = 0; i < _socketImages.Count; i++)
-            {
-                var s = _socketImages[i];
-                var on = i < _iconScratch.Count && sprite;
-                if (s.gameObject.activeSelf != on) s.gameObject.SetActive(on);
-                if (!on) continue;
-                if (s.sprite != sprite)
-                {
-                    s.sprite = sprite;
-                    s.type = Image.Type.Sliced;
-                    s.pixelsPerUnitMultiplier = Restyler.CanvasPpuFactor(s);
-                }
-                var icon = _iconScratch[i].rectTransform;
-                var size = icon.rect.size * (icon.lossyScale.x * k) * ThemeTokens.GetFloat("ratio.map.socket", 1.2f);
-                var rt = s.rectTransform;
-                rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
-                if ((rt.sizeDelta - size).sqrMagnitude > 0.25f) rt.sizeDelta = size;
-                var world = icon.TransformPoint(icon.rect.center);
-                if ((rt.position - world).sqrMagnitude > 1e-4f) rt.position = world;
-            }
-        }
-
-        // Pin panels side by side on top (each keeps its own size: mods add filters), toggle panels stacked below.
-        private void StackLegend(float gap)
-        {
-            var pad = ThemeTokens.GetFloat("size.craft.well.pad", 16f);
-            var rowW = 0f;
-            var rowH = 0f;
-            var n = 0;
-            foreach (var panel in LegendPanels)
-            {
-                var t = _legend.Find(panel) as RectTransform;
-                if (!t || !t.gameObject.activeSelf) continue;
-                rowW += t.rect.width + (n++ > 0 ? gap : 0f);
-                rowH = Mathf.Max(rowH, t.rect.height);
-            }
-            var x = -rowW * 0.5f;
-            foreach (var panel in LegendPanels)
-            {
-                var t = _legend.Find(panel) as RectTransform;
-                if (!t || !t.gameObject.activeSelf) continue;
-                Place(t, new Vector2(x + t.rect.width * 0.5f, -pad));
-                x += t.rect.width + gap;
-            }
-            var y = -pad - rowH - gap * 2f;
-            foreach (var panel in TogglePanels)
-            {
-                var t = _legend.Find(panel) as RectTransform;
-                if (!t || !t.gameObject.activeSelf) continue;
-                Place(t, new Vector2(0f, y));
-                y -= t.rect.height + gap;
+                if (!bar.TryGetComponent<CanvasGroup>(out var g)) g = bar.gameObject.AddComponent<CanvasGroup>();
+                g.alpha = hide ? 0f : 1f;
+                g.blocksRaycasts = !hide;
             }
         }
 
@@ -239,7 +176,9 @@ namespace RuneSkin.MapScreen
         private ScreenContext Context(Transform root)
         {
             var ctx = new ScreenContext(ScreenId + ".Large", OwnershipRegistry.Minimap);
-            if (_sockets) ctx.Exclude(_sockets, "RuneSkin legend sockets (own slot_cell_recess graphics)");
+
+            if (_rows) ctx.Exclude(_rows, "RuneSkin legend rows (own sockets, names, checkboxes, players, zoom)");
+            if (_footer) ctx.Exclude(_footer, "RuneSkin map key hint line");
             if (_legendImage) ctx.Role(_legendImage, "craft.well", "map legend column");
             if (_titleImage) ctx.Role(_titleImage, "decor.plaque", "map title plaque (cursor biome)");
             var mapImage = _map.m_mapImageLarge ? _map.m_mapImageLarge.transform : null;

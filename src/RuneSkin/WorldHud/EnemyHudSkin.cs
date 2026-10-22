@@ -70,6 +70,7 @@ namespace RuneSkin.WorldHud
             var health = t.Find("Health") as RectTransform;
             if (health)
             {
+                if (framed) Grow(t, health, ThemeTokens.GetFloat(boss ? "size.boss.bar.h" : "size.enemy.bar.h", 0f));
                 var bkg = health.Find("bkg") as RectTransform;
                 if (bkg && bkg.TryGetComponent<Image>(out var trough) && Art.Reskin(trough, "sprite.hud.bar.trough", "color.frame", "enemy bar trough"))
                     bkg.offsetMin = bkg.offsetMax = Vector2.zero; // trough = bar rect, the frame rim covers the edge
@@ -87,7 +88,8 @@ namespace RuneSkin.WorldHud
                 if (framed)
                 {
                     var frame = NewFrame(health);
-                    SetFrame(frame, health, boss ? "sprite.frame.boss" : "sprite.frame.enemy.normal");
+                    var fit = SetFrame(frame, health, boss ? "sprite.frame.boss" : "sprite.frame.enemy.normal", boss);
+                    if (!boss) ClearName(t, health, fit.Top);
                     Art.Note(frame, boss ? "frame.boss" : "frame.enemy.normal", frame.sprite, "RuneSkin enemy frame around Health (off while a Vaettir VT_Frame shows)");
                 }
             }
@@ -124,6 +126,33 @@ namespace RuneSkin.WorldHud
             }
         }
 
+        // Taller Health bar (template, every clone inherits it). GuiBar only writes the horizontal size of its m_bar
+        // (GuiBar.cs SetBar / SetWidth: SetSizeWithCurrentAnchors(Horizontal)), so the vertical geometry is free: the
+        // Health rect grows to the token height around its pivot, every non-stretched descendant (bkg, darken,
+        // health_* and their bar) scales its height and y position by the same factor, stretched ones follow the
+        // parent (ClearName then lifts the name above the frame). Vaettir's VT_Frame
+        // sizes itself from health.rect.height (RarityFrames.cs:245) and is refitted by SetFrame, so tiers keep working.
+        private static void Grow(Transform hud, RectTransform health, float target)
+        {
+            var old = health.rect.height;
+            var k = EnemyHudMath.BarGrowth(old, target);
+            Plugin.Log.LogInfo($"[RuneSkin] enemy HUD '{hud.name}' Health height {old:0.#} -> {old * k:0.#} (x{k:0.##})");
+            if (k <= 1.001f) return;
+            var delta = old * (k - 1f);
+            if (Mathf.Approximately(health.anchorMin.y, health.anchorMax.y)) health.sizeDelta += new Vector2(0f, delta);
+            else
+            {
+                health.offsetMin -= new Vector2(0f, delta * health.pivot.y);
+                health.offsetMax += new Vector2(0f, delta * (1f - health.pivot.y));
+            }
+            foreach (var rt in health.GetComponentsInChildren<RectTransform>(true))
+            {
+                if (rt == health || !Mathf.Approximately(rt.anchorMin.y, rt.anchorMax.y)) continue;
+                rt.sizeDelta = new Vector2(rt.sizeDelta.x, rt.sizeDelta.y * k);
+                rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, rt.anchoredPosition.y * k);
+            }
+        }
+
         private static void BossPlaque(RectTransform name)
         {
             if (!name || !name.parent) return;
@@ -157,16 +186,17 @@ namespace RuneSkin.WorldHud
         }
 
         // Frame window fitted to the Health rect (EnemyHudMath.Fit): borders spill outside the bar.
-        private static void SetFrame(Image frame, RectTransform health, string token)
+        private static FrameFit SetFrame(Image frame, RectTransform health, string token, bool boss)
         {
             var sprite = ThemeTokens.GetSprite(token);
             if (!sprite)
             {
                 frame.enabled = false;
-                return;
+                return default;
             }
             var b = sprite.border; // x = L, y = B, z = R, w = T
-            var fit = EnemyHudMath.Fit(health.rect.height, sprite.rect.height, b.x, b.z, b.w, b.y, sprite.pixelsPerUnit);
+            var fit = EnemyHudMath.Fit(health.rect.height, sprite.rect.height, b.x, b.z, b.w, b.y, sprite.pixelsPerUnit,
+                boss ? 0f : ThemeTokens.GetFloat("scale.enemy.frame.border", 0f));
             var rt = frame.rectTransform;
             rt.anchorMin = Vector2.zero;
             rt.anchorMax = Vector2.one;
@@ -179,6 +209,25 @@ namespace RuneSkin.WorldHud
             frame.color = Color.white;
             frame.pixelsPerUnitMultiplier = fit.PpuMultiplier * _canvasFactor;
             frame.enabled = true;
+            return fit;
+        }
+
+        // The enemy name (and star rows) sit above the frame top (the frame spills fit.Top over the bar): moved up
+        // until their rect bottom clears it by size.enemy.name.gap.
+        private static void ClearName(Transform hud, RectTransform health, float frameTop)
+        {
+            var top = health.rect.yMax + frameTop + ThemeTokens.GetFloat("size.enemy.name.gap", 2f);
+            var topInHud = hud.InverseTransformPoint(health.TransformPoint(new Vector3(0f, top, 0f))).y;
+            var name = hud.Find("Name") as RectTransform;
+            if (!name) return;
+            var bottom = hud.InverseTransformPoint(name.TransformPoint(new Vector3(0f, name.rect.yMin, 0f))).y;
+            if (bottom >= topInHud) return;
+            var up = topInHud - bottom;
+            for (var i = 0; i < hud.childCount; i++)
+            {
+                var c = hud.GetChild(i) as RectTransform;
+                if (c && (c == name || c.name.StartsWith("level_", StringComparison.Ordinal))) c.anchoredPosition += new Vector2(0f, up);
+            }
         }
 
         // After Vaettir's UpdateHuds postfix: its VT_Frame keeps the tier, RuneSkin draws the tier art.
@@ -207,7 +256,7 @@ namespace RuneSkin.WorldHud
                 var vtOn = s.Vt && s.Vt.enabled && s.Vt.sprite;
                 if (vtOn && s.Vt.sprite != s.VtSet)
                 {
-                    SetFrame(s.Vt, s.Health, EnemyHudMath.TierToken(s.Vt.sprite.name, s.Boss));
+                    SetFrame(s.Vt, s.Health, EnemyHudMath.TierToken(s.Vt.sprite.name, s.Boss), s.Boss);
                     s.VtSet = s.Vt.sprite;
                 }
                 if (s.Own && s.Own.enabled == vtOn) s.Own.enabled = !vtOn && s.Own.sprite;

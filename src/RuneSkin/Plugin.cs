@@ -22,7 +22,7 @@ namespace RuneSkin
     [BepInProcess("valheim.exe")]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Version = "0.5.0";
+        public const string Version = "0.5.1";
 
         public static ManualLogSource Log { get; private set; }
         public static ConfigEntry<float> SkinScale { get; private set; }
@@ -111,6 +111,8 @@ namespace RuneSkin
 
             _harmony = new Harmony(Skin.PluginGuid);
             _harmony.PatchAll(typeof(ConsoleCommands));
+            _harmony.PatchAll(typeof(Theme.WordsPatch));
+            Theme.Words.ApplyExisting();
             if (OwnershipRegistry.IsOwned(OwnershipRegistry.Menu)) _harmony.PatchAll(typeof(MenuAdapter));
             if (OwnershipRegistry.IsOwned(OwnershipRegistry.Tooltips)) _harmony.PatchAll(typeof(TooltipAdapter));
             if (OwnershipRegistry.IsOwned(OwnershipRegistry.Hud)) _harmony.PatchAll(typeof(PlayerHud.HudAdapter));
