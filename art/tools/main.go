@@ -88,6 +88,10 @@ func main() {
 		cmdHud4M2(os.Args[2:])
 	case "hud4edit":
 		cmdHud4Edit(os.Args[2:])
+	case "compare-hud4":
+		cmdCompareHud4()
+	case "compare-gauges":
+		cmdCompareGauges()
 	case "compare-hud2-shot":
 		cmdCompareHud2Shot(os.Args[2])
 	case "sheet":
