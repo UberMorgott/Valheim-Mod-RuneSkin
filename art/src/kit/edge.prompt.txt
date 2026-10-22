@@ -1,0 +1,14 @@
+Use the image_gen tool. Create a production UI sprite-mask candidate kit sheet. Canvas exactly 1024x512 pixels. Grayscale only, white-on-black masks, perfectly flat pure BLACK #000000 background, fully opaque canvas. Orthographic front view, pixel-aligned geometry, no perspective, no text, no labels.
+
+Place FOUR isolated narrow vertical bar-end bevel rim candidates side by side, centered at x=128, 384, 640, 896 and y=256. Each candidate occupies a 24x128 pixel tile, with generous pure black empty space between candidates. The actual visible rim must be extremely narrow inside its tile, not a filled 24-pixel-wide rectangle.
+
+These are right-hand endpoints for horizontal resource bars: filled area lies to the LEFT, empty trough lies to the RIGHT. Each rim consists of a crisp bright vertical highlight with a faint darker parallel line immediately to its LEFT, inside the filled side. Use white or light gray for the highlight and subdued gray for the inner companion line. Black means zero mask coverage. No blur, bloom, glow, haze, feathered halo, sparks, smoke, texture noise, ornaments, horizontal caps, outlines around the tile, or rounded luminous blobs.
+
+Candidate 1: straight 4-pixel-wide white highlight, adjacent 4-pixel-wide dark-gray inner line.
+Candidate 2: straight 4-pixel-wide light-gray highlight, adjacent 4-pixel-wide very-dark-gray inner line; restrained contrast.
+Candidate 3: straight 6-pixel-wide white highlight, adjacent 4-pixel-wide dark-gray inner line.
+Candidate 4: straight 4-pixel-wide highlight with a subtle vertical grayscale variation from white at the top to light gray at the bottom, adjacent 4-pixel-wide dark-gray inner line.
+
+All four visible strips exactly 128 pixels tall, with sharp clean endpoints. Precision technical UI mask artwork, understated premium finish. Designed to be cropped individually and reduced to a final 1–2 pixel highlight in the game HUD.
+
+Save PNG to: D:\tmp\cx-augaskin\work\kit\edge.png

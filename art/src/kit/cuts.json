@@ -138,6 +138,8 @@
      "token": "front.health", "notes": "HP fill-end glow front: soft vertical core at 50 % width + top glossy highlight; white mask, tint color.hud.front.health; height = bar window"},
     {"name": "front_stamina", "sheet": "fx2.png", "rect": [415, 200, 490, 245], "key": "luma", "size": [96, 48], "border": {"left": 0, "bottom": 0, "right": 0, "top": 0}, "pivot": [0.5, 0.5], "imageType": "Simple", "fillCenter": true,
      "token": "front.stamina", "notes": "stamina fill-end sheen: core at ~20 % width, streaks fade right into the empty trough; white mask"},
+    {"name": "bar_edge", "sheet": "edge.png", "rect": [206, 272, 34, 342], "key": "luma", "size": [6, 48], "border": {"left": 0, "bottom": 0, "right": 0, "top": 0}, "pivot": [0.5, 0.5], "imageType": "Simple", "fillCenter": true,
+     "token": "bar.edge", "notes": "crisp fill-end rim (M6 edge pass, Codex candidate 1): faint inner line + bright highlight on the right edge, no glow; white mask tinted per bar (color.hud.edge.*), height = bar window, right edge on the fill end"},
     {"name": "front_eitr", "sheet": "fx2.png", "rect": [970, 195, 515, 265], "key": "luma", "size": [96, 50], "border": {"left": 0, "bottom": 0, "right": 0, "top": 0}, "pivot": [0.5, 0.5], "imageType": "Simple", "fillCenter": true,
      "token": "front.eitr", "notes": "eitr fill-end wisps: core at ~20 % width, lightning wisps + sparkles fading right; white mask"},
     {"name": "gp_socket", "sheet": "gp.png", "rect": [140, 250, 490, 495], "key": "magenta", "trim": true, "size": [112, 112], "border": {"left": 0, "bottom": 0, "right": 0, "top": 0}, "pivot": [0.5, 0.5], "imageType": "Simple", "fillCenter": true,

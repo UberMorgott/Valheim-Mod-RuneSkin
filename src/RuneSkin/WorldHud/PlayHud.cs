@@ -68,6 +68,24 @@ namespace RuneSkin.WorldHud
             if (colorToken != null) bar.m_originalColor = img.color;
         }
 
+        // Crisp fill-end rim (bar_edge, M6 edge pass) as a child of a GuiBar fill, anchored on its right edge: it follows
+        // GuiBar's width changes without per-frame code. Theme mode.hud.bar.edge 2 only.
+        internal static void EdgeRim(HudArt art, GuiBar bar, string colorToken)
+        {
+            if (!bar || !bar.m_bar || ThemeTokens.GetFloat("mode.hud.bar.edge", 2f) < 2f || !ThemeTokens.GetSprite("sprite.hud.bar.edge")) return;
+            var fill = bar.m_bar;
+            if (fill.Find("RuneSkin_Edge")) return;
+            var img = art.Image("RuneSkin_Edge", fill, "sprite.hud.bar.edge", colorToken, Image.Type.Simple);
+            var rt = img.rectTransform;
+            rt.anchorMin = new Vector2(1f, 0f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(1f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
+            var s = img.sprite;
+            var h = fill.rect.height > 0f ? fill.rect.height : 20f;
+            rt.sizeDelta = new Vector2(PlayerHud.HudMath.EdgeWidth(s ? s.rect.width : 0f, s ? s.rect.height : 0f, h), 0f);
+        }
+
         // An Image named `name` directly under `parent`.
         internal static Image Child(Transform parent, string name) =>
             parent && parent.Find(name) is Transform t && t.TryGetComponent<Image>(out var img) ? img : null;
@@ -255,6 +273,7 @@ namespace RuneSkin.WorldHud
             var bkg = PlayHud.Child(root, "bkg");
             if (bkg && _art.Reskin(bkg, "sprite.hud.bar.trough", "color.hud.trough", $"{what} trough")) bkg.type = Image.Type.Sliced;
             PlayHud.Fill(_art, bar, "sprite.hud.bar.fill", fillColor, $"{what} fill");
+            PlayHud.EdgeRim(_art, bar, "color.hud.edge");
             if (bkg)
             {
                 var frame = PlayHud.FrameAround(_art, "RuneSkin_ActionFrame", bkg.rectTransform, bar && bar.m_bar ? bar.m_bar : null, "sprite.bar.frame.action",

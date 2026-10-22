@@ -292,5 +292,31 @@ namespace RuneSkin.PlayerHud
             if (s < 600) return (s / 60).ToString(System.Globalization.CultureInfo.InvariantCulture) + ":" + (s % 60).ToString("00", System.Globalization.CultureInfo.InvariantCulture);
             return ((s + 59) / 60).ToString(System.Globalization.CultureInfo.InvariantCulture) + "m";
         }
+
+        // Bar value box width from the window's left edge: the whole window, or only the unlocked part when a reserve
+        // locks the end (never over the hatch); the value is centred in it.
+        public static float ValueSpan(float windowWidth, float reserveStart, bool reserve) =>
+            Math.Max(0f, reserve ? Math.Min(windowWidth, reserveStart) : windowWidth);
+
+        // Icon in a square cell: side = cell x share, centred on the cell (offset from the cell centre is zero on both
+        // axes whatever the timer text does).
+        public static float IconSide(float cell, float share) => Math.Max(0f, cell) * Math.Max(0f, Math.Min(1f, share));
+
+        // Timer band at the bottom of a status cell: height of the free space under a centred icon (at least minH).
+        public static float TimerBand(float cell, float share, float minH) => Math.Max(minH, (Math.Max(0f, cell) - IconSide(cell, share)) * 0.5f);
+
+        // Fill-end rim width for a window of height h: the sprite's aspect, rounded to whole px, at least 2 (a thinner
+        // rim would vanish under filtering); 0 without a sprite.
+        public static float EdgeWidth(float spriteW, float spriteH, float h)
+        {
+            if (!(spriteW > 0f) || !(spriteH > 0f) || !(h > 0f)) return 0f;
+            return Math.Max(2f, (float)Math.Round(h * spriteW / spriteH));
+        }
+
+        // Rim tint token for a fill colour token: color.hud.<bar> -> color.hud.edge.<bar>; anything else -> the generic one.
+        public static string EdgeColorToken(string fillToken) =>
+            fillToken != null && fillToken.StartsWith("color.hud.", StringComparison.Ordinal)
+                ? "color.hud.edge" + fillToken.Remove(0, "color.hud".Length)
+                : "color.hud.edge";
     }
 }

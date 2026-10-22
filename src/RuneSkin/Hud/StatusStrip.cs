@@ -293,10 +293,11 @@ namespace RuneSkin.PlayerHud
                 c.Icon = _art.Image("Icon", c.Root, null, "color.frame", Image.Type.Simple);
                 c.Icon.preserveAspect = true;
                 var ir = c.Icon.rectTransform;
-                ir.anchorMin = new Vector2(0.5f, 1f);
-                ir.anchorMax = new Vector2(0.5f, 1f);
-                ir.pivot = new Vector2(0.5f, 1f);
-                ir.sizeDelta = new Vector2(size * IconShare, size * IconShare);
+                // Centred on both axes (user call 2026-10-22: the icon sat at the top of the 62 px cell); the timer is a
+                // band at the cell bottom and never moves it.
+                ir.anchorMin = ir.anchorMax = ir.pivot = new Vector2(0.5f, 0.5f);
+                var side = HudMath.IconSide(size, IconShare);
+                ir.sizeDelta = new Vector2(side, side);
                 ir.anchoredPosition = Vector2.zero;
             }
             Image plate = null;
@@ -312,7 +313,7 @@ namespace RuneSkin.PlayerHud
             var tr = c.Timer.rectTransform;
             // Timer / icon text inside the cell under the icon (cell sized for WorstText); anything longer shrinks
             // (auto-size down to the timer floor) instead of running into the neighbour.
-            tr.sizeDelta = more ? new Vector2(size, size) : new Vector2(size, size * (1f - IconShare));
+            tr.sizeDelta = more ? new Vector2(size, size) : new Vector2(size, HudMath.TimerBand(size, IconShare, ThemeTokens.GetFloat("size.hud.status.timer.band", 17f)));
             tr.anchoredPosition = Vector2.zero;
             if (!more)
             {

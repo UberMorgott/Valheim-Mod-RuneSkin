@@ -1036,6 +1036,28 @@
       "notes": "stamina fill-end sheen: core at ~20 % width, streaks fade right into the empty trough; white mask"
     },
     {
+      "name": "bar_edge",
+      "file": "bar_edge.png",
+      "size": [
+        6,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "bar.edge",
+      "notes": "crisp fill-end rim (M6 edge pass, Codex candidate 1): faint inner line + bright highlight on the right edge, no glow; white mask tinted per bar (color.hud.edge.*), height = bar window, right edge on the fill end"
+    },
+    {
       "name": "front_eitr",
       "file": "front_eitr.png",
       "size": [

@@ -22,6 +22,12 @@ namespace RuneSkin.PlayerHud
         // Fill-end effect (mockup: HP glossy glow front, stamina sheen, eitr wisps): one Simple image riding the fill
         // end, its core at frontCore of its width; alpha breathes (canvasRenderer alpha: no mesh rebuild).
         private Image _front;
+        // Fill-end rim (M6 edge pass, Codex pick B: crisp 1-2 px bright bevel, no glow): bar_edge mask tinted per bar,
+        // its right edge on the fill end (and on the shield band's end). Theme float mode.hud.bar.edge: 0 = the
+        // older breathing front FX, 1 = clean end (no FX), 2 = rim. EdgeModeOverride (>= 0) wins: harness variants.
+        private Image _edge, _shieldEdge;
+        public static int EdgeModeOverride = -1;
+        private static int EdgeMode => EdgeModeOverride >= 0 ? EdgeModeOverride : (int)ThemeTokens.GetFloat("mode.hud.bar.edge", 2f);
         private float _frontCore, _frontClock;
         // Shield layer (health bar only): translucent shield-coloured strip over the fill, HudMath.ShieldOverlay wide.
         private Image _shield;
@@ -75,6 +81,11 @@ namespace RuneSkin.PlayerHud
             _trough = art.Image("Trough", _window, rail ? "sprite.hud.rail.trough" : "sprite.hud.bar.trough", "color.hud.trough", Image.Type.Sliced);
             _lag = art.Image("Lag", _window, rail ? "sprite.hud.rail.fill" : "sprite.hud.bar.lag", "color.hud.lag", Image.Type.Sliced);
             _fill = art.Image("Fill", _window, rail ? "sprite.hud.rail.fill" : "sprite.hud.bar.fill", fillColorToken, Image.Type.Sliced);
+            if (!rail && ThemeTokens.GetSprite("sprite.hud.bar.edge"))
+            {
+                _edge = art.Image("Edge", _window, "sprite.hud.bar.edge", HudMath.EdgeColorToken(fillColorToken), Image.Type.Simple);
+                _edge.gameObject.SetActive(false);
+            }
             if (frontToken != null && ThemeTokens.GetSprite(frontToken))
             {
                 _front = art.Image("Front", _window, frontToken, frontColorToken, Image.Type.Simple);
@@ -91,6 +102,11 @@ namespace RuneSkin.PlayerHud
             {
                 _shield = art.Image("Shield", _window, "sprite.hud.bar.fill", "color.hud.shield", Image.Type.Sliced);
                 _shield.gameObject.SetActive(false);
+                if (_edge)
+                {
+                    _shieldEdge = art.Image("ShieldEdge", _window, "sprite.hud.bar.edge", HudMath.EdgeColorToken("color.hud.shield"), Image.Type.Simple);
+                    _shieldEdge.gameObject.SetActive(false);
+                }
             }
             _reserved = art.Image("Reserved", _window, "sprite.hud.reserved", "color.hud.reserve", Image.Type.Tiled);
             _reservedEdge = art.Image("ReservedEdge", _window, "sprite.hud.reserved.edge", "color.hud.reserve.edge", Image.Type.Simple);
@@ -117,7 +133,7 @@ namespace RuneSkin.PlayerHud
             // Values in the body sans (lining digits; the display serif has old-style ones) with a dark outline and a
             // slight dilate, readable on any fill (user call 2026-10-22, as the damage numbers).
             _number = art.Text("Value", Root, "font.body", "color.hud.text", numberSize,
-                mainValue ? TextAlignmentOptions.Center : TextAlignmentOptions.MidlineRight);
+                TextAlignmentOptions.Center); // every bar: value centred in the window, both axes (user call 2026-10-22)
             WorldHud.TextLook.Apply(_number, "font.body", "hudvalue", ThemeTokens.GetFloat("size.hud.value.dilate", 0.2f));
             _number.richText = mainValue;
             _textColor = _number.color;
@@ -181,7 +197,6 @@ namespace RuneSkin.PlayerHud
         }
 
         // Right-aligned values keep clear of the frame's end cap (Codex band review: numbers lost in the caps).
-        private static float ValueInset => ThemeTokens.GetFloat("size.hud.value.inset", 4f);
 
         public float EdgeTop { get; }
         public float EdgeBottom { get; }
@@ -250,7 +265,7 @@ namespace RuneSkin.PlayerHud
             if (_overlay) PlaceOverlay();
             var nr = _number.rectTransform;
             nr.anchoredPosition = new Vector2(_insetL, _insetB);
-            nr.sizeDelta = new Vector2(_main ? l : l - ValueInset, _h);
+            nr.sizeDelta = new Vector2(l, _h);
             var ar = _aux.rectTransform;
             ar.anchoredPosition = new Vector2(_insetL + 4f, _insetB);
             ar.sizeDelta = new Vector2(Mathf.Max(0f, l - 8f), _h);
@@ -296,7 +311,10 @@ namespace RuneSkin.PlayerHud
             {
                 var fillW = l * cur / max;
                 Place(_fill, 0f, fillW, cur > 0f);
-                if (_front)
+                var mode = EdgeMode;
+                if (_edge) Edge(_edge, fillW, 0f, _h, mode == 2 && cur > 0f && fillW < l - 0.5f);
+                if (_front && mode != 0 && _front.gameObject.activeSelf) _front.gameObject.SetActive(false);
+                if (_front && mode == 0)
                 {
                     var fs = _front.sprite;
                     var fwid = fs ? _h * fs.rect.width / Mathf.Max(1f, fs.rect.height) : _h;
@@ -326,9 +344,9 @@ namespace RuneSkin.PlayerHud
                     lr.anchoredPosition = new Vector2(rs + (rw - lockSize) / 2f, (_h - lockSize) / 2f);
                 }
                 if (_lock.gameObject.activeSelf != lockOn) _lock.gameObject.SetActive(lockOn);
-                // The number ends before the locked segment (never over the hatch or the lock rune).
-                // Main value: centred in the filled part (mockup), never narrower than the text itself.
-                var nw = _main && !reserve ? Mathf.Clamp(fillW, Mathf.Min(l, _number.preferredWidth + 24f), l) : Mathf.Max(0f, (reserve ? rs : l) - ValueInset);
+                // Value centred in the window on every bar (user call 2026-10-22: HP centred in the fill, the others
+                // right-aligned read inconsistent); with a locked segment, centred in the unlocked part.
+                var nw = HudMath.ValueSpan(l, rs, reserve);
                 var nr = _number.rectTransform;
                 if (Mathf.Abs(nr.sizeDelta.x - nw) > 0.5f) nr.sizeDelta = new Vector2(nw, _h);
             }
@@ -382,6 +400,7 @@ namespace RuneSkin.PlayerHud
                     sr.anchoredPosition = new Vector2(sx, sy);
                     sr.sizeDelta = new Vector2(sw, sh);
                 }
+                if (_shieldEdge) Edge(_shieldEdge, sx + sw, sy, sh, son && EdgeMode == 2 && sx + sw < l - 0.5f);
             }
             var extra = showAvail ? avail : -1f;
             var shieldShown = _shield ? Mathf.Ceil(Mathf.Max(0f, _shieldValue)) : 0f;
@@ -455,6 +474,21 @@ namespace RuneSkin.PlayerHud
         {
             var a = dim ? 0.45f : 1f;
             if (!Mathf.Approximately(_fill.canvasRenderer.GetAlpha(), a)) _fill.canvasRenderer.SetAlpha(a);
+        }
+
+        // Rim ending at window x (its right edge), from y up h; width from the sprite's aspect, whole ref px.
+        private void Edge(Image img, float x, float y, float h, bool on)
+        {
+            var s = img.sprite;
+            var w = HudMath.EdgeWidth(s ? s.rect.width : 0f, s ? s.rect.height : 0f, h);
+            on = on && w > 0f && x >= w;
+            if (img.gameObject.activeSelf != on) img.gameObject.SetActive(on);
+            if (!on) return;
+            var rt = img.rectTransform;
+            var pos = new Vector2(Mathf.Round(x - w), y);
+            var size = new Vector2(w, h);
+            if (rt.anchoredPosition != pos) rt.anchoredPosition = pos;
+            if (rt.sizeDelta != size) rt.sizeDelta = size;
         }
 
         // Window-local horizontal strip [x, x+w] of the full window height.
