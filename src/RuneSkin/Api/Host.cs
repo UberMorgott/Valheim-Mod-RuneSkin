@@ -80,7 +80,7 @@ namespace RuneSkin.Api
         public bool IsOwned(string family) => OwnershipRegistry.IsOwned(family);
 
         // HUD rendering capabilities exist only while RuneSkin owns the HUD family.
-        private static readonly HashSet<string> HudCapabilities = new HashSet<string> { "effect.render", "resource.render", "capacity.render" };
+        private static readonly HashSet<string> HudCapabilities = new HashSet<string> { "effect.render", "resource.render", "capacity.render", "ability.render" };
 
         // Inventory rendering capabilities exist only while RuneSkin owns the inventory family.
         private static readonly HashSet<string> InventoryCapabilities = new HashSet<string> { "panel.dock", "slot.render", "panel.action", "slot.overlay" };
@@ -172,6 +172,7 @@ namespace RuneSkin.Api
 
         public IDisposable RegisterHoldPrompt(string owner, string id, Func<Player, HoldPromptState> provider) =>
             new Handle(Providers.AddHold(owner, id, provider));
+        public IDisposable RegisterAbilitySlot(string owner, AbilitySlotDescriptor descriptor) => new Handle(Providers.AddAbility(owner, descriptor));
 
         public IDisposable RegisterPanelAction(string owner, PanelActionDescriptor descriptor) => new Handle(InventoryScreen.InventoryRegistry.AddAction(owner, descriptor));
 

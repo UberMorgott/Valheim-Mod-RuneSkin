@@ -160,7 +160,9 @@ namespace RuneSkin.MapScreen
                 _clusterGroup.alpha = hide ? 0f : 1f;
             }
             // The hotbar (and the summon frames riding it) sits outside the map frame top-left (run 20261022-043546):
-            // hidden with the cluster, as in mockup m4-map-a.
+            // hidden with the cluster, as in mockup m4-map-a. With the HUD strip the vanilla bars are never drawn (the strip
+            // owns the hotbar, HudCluster.HideForeign): leave them alone.
+            if (cluster) return;
             foreach (var bar in UnityEngine.Object.FindObjectsByType<HotkeyBar>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 if (!bar.TryGetComponent<CanvasGroup>(out var g)) g = bar.gameObject.AddComponent<CanvasGroup>();

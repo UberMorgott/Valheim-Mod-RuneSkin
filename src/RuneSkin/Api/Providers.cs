@@ -50,6 +50,64 @@ namespace RuneSkin.Api
 
         public static bool TryEffect(int hash, out StatusEffectDescriptor d) => Effects.TryGetValue(hash, out d);
 
+        // Ability zone slots (RuneSkin.API RegisterAbilitySlot), kept sorted by Order (stable: registration order on
+        // ties). AbilityRevision changes on every add / remove, so the strip re-lays out only then.
+        private sealed class Ability
+        {
+            public string Owner;
+            public AbilitySlotDescriptor D;
+            public int Faults;
+        }
+
+        private static readonly List<Ability> Abilities = new List<Ability>();
+
+        public static int AbilityRevision { get; private set; }
+
+        public static int AbilitySlotCount => Abilities.Count;
+
+        public static Action AddAbility(string owner, AbilitySlotDescriptor d)
+        {
+            var a = new Ability { Owner = owner, D = d };
+            var at = Abilities.Count;
+            while (at > 0 && Abilities[at - 1].D.Order > d.Order) at--;
+            Abilities.Insert(at, a);
+            AbilityRevision++;
+            Plugin.Log.LogInfo($"[RuneSkin] ability slot '{d.Id}' (order {d.Order}) from {owner}");
+            return () =>
+            {
+                if (Abilities.Remove(a)) AbilityRevision++;
+            };
+        }
+
+        // Slot i in order; false = faulted (hidden) or out of range.
+        public static bool TryAbility(int i, Player player, out AbilitySlotState state, out bool round)
+        {
+            state = default;
+            round = false;
+            if (i < 0 || i >= Abilities.Count) return false;
+            var a = Abilities[i];
+            round = a.D.Round;
+            if (a.Faults >= MaxFaults) return false;
+            try
+            {
+                state = a.D.GetState(player);
+                return state.Valid;
+            }
+            catch (Exception ex)
+            {
+                a.Faults++;
+                Plugin.Log.LogError($"[RuneSkin] ability slot '{a.D.Id}' from {a.Owner} failed ({a.Faults}/{MaxFaults}): {ex}");
+                return false;
+            }
+        }
+
+        public static void ActivateAbility(int i, Player player)
+        {
+            if (i < 0 || i >= Abilities.Count || Abilities[i].D.Activate == null || Abilities[i].Faults >= MaxFaults) return;
+            try { Abilities[i].D.Activate(player); }
+            catch (Exception ex) { Plugin.Log.LogError($"[RuneSkin] ability slot '{Abilities[i].D.Id}' activate failed: {ex}"); }
+        }
+
         private static Action Add<T>(List<Entry<T>> list, string owner, string key, Func<Player, T> get)
         {
             var e = new Entry<T> { Owner = owner, Key = key, Get = get };
@@ -107,6 +165,7 @@ namespace RuneSkin.Api
             foreach (var e in Resources) yield return $"resource {e.Key} from {e.Owner} faults={e.Faults}";
             foreach (var e in Capacities) yield return $"capacity {e.Key} from {e.Owner} faults={e.Faults}";
             foreach (var p in EffectOwners) yield return $"effect {p.Key} from {p.Value}";
+            foreach (var a in Abilities) yield return $"ability {a.D.Id} order={a.D.Order} from {a.Owner} faults={a.Faults}";
         }
 
         private static Entry<T> Latest<T>(List<Entry<T>> list, string key)

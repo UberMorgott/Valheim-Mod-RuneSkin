@@ -150,7 +150,7 @@ namespace RuneSkin.InventoryScreen
             t.InnerGap = F("size.inv.inner.gap", t.InnerGap); t.PanelActionsH = F("size.inv.panel.actions", t.PanelActionsH);
             t.HudBand = F("size.inv.hud.band", t.HudBand); t.HeaderH = F("size.inv.header", t.HeaderH); t.FooterH = F("size.inv.footer", t.FooterH);
             t.PanelHeaderH = F("size.inv.panel.header", t.PanelHeaderH); t.PanelPad = F("size.inv.panel.pad", t.PanelPad);
-            t.GridCell = F("size.inv.cell", t.GridCell); t.GridGap = F("size.inv.cell.gap", t.GridGap); t.HotbarHeaderH = F("size.inv.hotbar.header", t.HotbarHeaderH);
+            t.GridCell = F("size.inv.cell", t.GridCell); t.GridGap = F("size.inv.cell.gap", t.GridGap); t.HotbarHeaderH = StripHotbar ? 0f : F("size.inv.hotbar.header", t.HotbarHeaderH);
             t.ContainerCell = F("size.inv.container.cell", t.ContainerCell); t.ContainerGap = F("size.inv.container.gap", t.ContainerGap);
             t.DollCell = F("size.inv.doll.cell", t.DollCell); t.DollGap = F("size.inv.doll.gap", t.DollGap);
             t.DollColumns = F("size.inv.doll.columns", t.DollColumns); t.DollPad = F("size.inv.doll.pad", t.DollPad); t.DollFigureGap = F("size.inv.doll.figure.gap", t.DollFigureGap);
@@ -389,7 +389,7 @@ namespace RuneSkin.InventoryScreen
                 h = h * 31 + ResponsiveContext.SkinScale.GetHashCode();
                 h = h * 31 + Screen.safeArea.GetHashCode();
                 var inv = Player.m_localPlayer.GetInventory();
-                h = h * 31 + inv.GetWidth() * 101 + EaqsBridge.VisibleRows(inv.GetHeight());
+                h = h * 31 + inv.GetWidth() * 101 + EaqsBridge.VisibleRows(inv.GetHeight()) + (StripHotbar ? 7919 : 0);
                 var c = ContainerInventory();
                 h = h * 31 + (c != null ? c.GetHashCode() ^ (c.GetWidth() * 101 + c.GetHeight()) : 0);
                 h = h * 31 + (ContainerIsBackpack() ? 7 : 0);
@@ -473,7 +473,8 @@ namespace RuneSkin.InventoryScreen
             i.PhysPerUnit = scale;
             i.SkinScale = ResponsiveContext.SkinScale;
             i.GridW = inv.GetWidth();
-            i.GridH = EaqsBridge.VisibleRows(inv.GetHeight());
+            // HUD strip: its hotbar IS row 0, so the grid shows the rows under it only (user call 2026-10-22).
+            i.GridH = EaqsBridge.VisibleRows(inv.GetHeight()) - (StripHotbar ? 1 : 0);
             var chest = ContainerIsBackpack() ? null : ContainerInventory();
             var pack = ContainerIsBackpack() ? ContainerInventory() : _packInventory;
             i.ChestW = chest?.GetWidth() ?? 0;
@@ -579,7 +580,8 @@ namespace RuneSkin.InventoryScreen
             var inner = Inset(o.Grid, pad, pad);
             var gridBox = new Box(inner.X, inner.Y + headerH, inner.W, Mathf.Max(0f, inner.H - headerH));
             if (_gui.m_playerGrid) Geo.Place(_canvas, (RectTransform)_gui.m_playerGrid.transform, gridBox);
-            if (_hotbarHeader)
+            if (_hotbarHeader && _hotbarHeader.gameObject.activeSelf != !StripHotbar) _hotbarHeader.gameObject.SetActive(!StripHotbar);
+            if (_hotbarHeader && !StripHotbar)
             {
                 var w = o.Player.Columns * o.Player.Pitch - _tokens.GridGap;
                 var x = gridBox.X + (gridBox.W - o.Player.Columns * o.Player.Pitch) / 2f;
@@ -940,6 +942,7 @@ namespace RuneSkin.InventoryScreen
                     if (owner) ScreenRegistry.Restyle(owner);
                 }
             }
+            for (var i = 0; i < grid.m_elements.Count; i++) CellMarks(grid.m_elements[i]);
             var inv = grid.GetInventory();
             if (rebuilt || s.OverlayRevision != InventoryRegistry.OverlayRevision || !ReferenceEquals(s.Inventory, inv) || s.ThemeRevision != ThemeTokens.Revision)
             {
@@ -954,6 +957,55 @@ namespace RuneSkin.InventoryScreen
         // The layout vanilla gives the cells (InventoryGrid.cs:267-275: row-major from the top, pitch m_elementSpace,
         // centred horizontally), measured from the live grid root so it holds for any anchors and a scrolled
         // container (the root is the ScrollRect content). Applied once per pitch / width / rebuild.
+        // Markers never cover the icon (user call 2026-10-22, screenshot: a gold 4-point star hid an equipped sword). Epic
+        // Loot re-dresses each cell on every UpdateGui (ItemBackgroundHelper): ApplyEquippedSprite puts its equipped sprite
+        // at texture size over the cell centre (only skipped with Auga), "magicItem" = rarity glow behind the icon, "setItem"
+        // = the set sprite 64 x 64 as the LAST sibling (over the icon). After it (this postfix runs last): equipped = our
+        // small marker in the bottom-left corner, rarity = a rim in Epic Loot's colour on the cell edge, set = a small
+        // corner gem top-right.
+        private static void CellMarks(InventoryElement e)
+        {
+            if (!e) return;
+            var cell = (RectTransform)e.transform;
+            var side = Mathf.Min(cell.rect.width, cell.rect.height);
+            if (!(side > 1f)) return;
+            var mark = side * ThemeTokens.GetFloat("share.inv.cell.mark", 0.24f);
+            if (e.m_equiped && e.m_equiped.TryGetComponent<Image>(out var eq))
+                Corner(eq, "sprite.marker.equipped", "color.marker.equipped", new Vector2(0f, 0f), mark);
+            if (e.transform.Find("setItem") is RectTransform set && set.TryGetComponent<Image>(out var si))
+                Corner(si, "sprite.gem.rarity", null, new Vector2(1f, 1f), mark);
+            if (e.transform.Find("magicItem") is RectTransform magic && magic.TryGetComponent<Image>(out var mi))
+            {
+                var rim = ThemeTokens.GetSprite("sprite.hud.strip.rim");
+                if (rim && mi.sprite != rim) { mi.sprite = rim; mi.type = Image.Type.Sliced; mi.preserveAspect = false; }
+                if (magic.anchorMin != Vector2.zero || magic.anchorMax != Vector2.one)
+                {
+                    magic.anchorMin = Vector2.zero;
+                    magic.anchorMax = Vector2.one;
+                    magic.pivot = new Vector2(0.5f, 0.5f);
+                    magic.offsetMin = magic.offsetMax = Vector2.zero;
+                }
+            }
+        }
+
+        private static void Corner(Image img, string token, string colorToken, Vector2 corner, float size)
+        {
+            var s = ThemeTokens.GetSprite(token);
+            if (s && img.sprite != s) img.sprite = s;
+            img.type = Image.Type.Simple;
+            img.preserveAspect = true;
+            if (colorToken != null) img.color = ThemeTokens.GetColor(colorToken, img.color);
+            var rt = img.rectTransform;
+            var inset = new Vector2(corner.x > 0.5f ? -2f : 2f, corner.y > 0.5f ? -2f : 2f);
+            if (rt.anchorMin != corner || rt.anchorMax != corner) { rt.anchorMin = rt.anchorMax = rt.pivot = corner; }
+            if (rt.anchoredPosition != inset) rt.anchoredPosition = inset;
+            var sz = new Vector2(size, size);
+            if (rt.sizeDelta != sz) rt.sizeDelta = sz;
+        }
+
+        // RuneSkin owns the HUD strip: the inventory's hotbar row is the strip's hotbar.
+        private static bool StripHotbar => PlayerHud.HudCluster.Instance;
+
         private void Reposition(InventoryGrid grid, int visibleCount, float scale)
         {
             if (!grid.m_gridRoot) return;
@@ -963,13 +1015,20 @@ namespace RuneSkin.InventoryScreen
             var unit = Geo.WorldPerUnit(_canvas);
             var pitch = grid.m_elementSpace * grid.m_gridRoot.lossyScale.x / Mathf.Max(unit, 1e-6f); // canvas units
             var x0 = view.X + (view.W - w * pitch) / 2f;
+            // Player grid under the HUD strip: row 0 lives in the strip (its hotbar), the grid starts at row 1.
+            var skipRow = StripHotbar && grid == _gui.m_playerGrid ? 1 : 0;
             for (var i = 0; i < grid.m_elements.Count && i < visibleCount; i++)
             {
                 var e = grid.m_elements[i];
                 if (!e) continue;
                 var pos = e.Position;
+                if (pos.y < skipRow)
+                {
+                    Geo.SetScale(e.transform, 0f);
+                    continue;
+                }
                 Geo.SetScale(e.transform, scale);
-                Geo.SetTopLeft((RectTransform)e.transform, Geo.World(_canvas, x0 + pos.x * pitch, root.Y + pos.y * pitch));
+                Geo.SetTopLeft((RectTransform)e.transform, Geo.World(_canvas, x0 + pos.x * pitch, root.Y + (pos.y - skipRow) * pitch));
             }
         }
 
@@ -1271,7 +1330,8 @@ namespace RuneSkin.InventoryScreen
         {
             // Stays hidden under the large map (LargeMap hides every HotkeyBar; this per-frame restore showed the
             // EAQS quick-slot bar over the open map, run 20261022-071214).
-            var a = Minimap.IsOpen() ? 0f : 1f;
+            // With the HUD strip the quick bar is never drawn (the strip's potion cells show its items).
+            var a = Minimap.IsOpen() || PlayerHud.HudCluster.Instance ? 0f : 1f;
             if (_quickGroup && _quickGroup.alpha != a) _quickGroup.alpha = a;
         }
 

@@ -3,20 +3,20 @@ using RuneSkin.Api;
 using RuneSkin.API;
 using RuneSkin.Diagnostics;
 using RuneSkin.Responsive;
-using RuneSkin.Restyle;
 using RuneSkin.Theme;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace RuneSkin.PlayerHud
 {
-    // RuneSkin's player HUD (family "Hud", hud-resource-states.md): bottom-left cluster in the safe area (or the
-    // corners of a centred 16:9 box on ultrawide), top-down: food row (+ EAQS quick slots, guardian power) -> ES rail
-    // -> health -> stamina -> adrenaline rail -> eitr / conversion plaque -> status strip. Lives under Hud.m_rootObject,
-    // so Hud.SetVisible / the user hide toggle (Hud.cs:436) apply; one nested Canvas isolates its rebuilds.
-    // The vanilla bars keep running untouched (no transpilers) inside a CanvasGroup wrapper at alpha 0.
-    // Values are sampled in LateUpdate, after Hud.Update ran this frame (Hud.cs:467-543); providers add the
-    // reservation / conversion / energy-shield data (Skin.RegisterResourceProvider).
+    // RuneSkin's player HUD (family "Hud"): one strip along the bottom of the safe area (or of a centred 16:9 box on
+    // ultrawide), Track H / mockup hud-2-final: food wing | hotbar + ability zone over the HP / shield bar and the
+    // stamina | eitr halves | potion wing, status rows centred above it. Lives under Hud.m_rootObject, so Hud.SetVisible
+    // / the user hide toggle (Hud.cs:436) apply; one nested Canvas isolates its rebuilds. The vanilla bars, the vanilla
+    // hotbar, the EAQS quick bar and Epic Loot's AbilityBar keep running untouched (input, state) but are not drawn: the
+    // strip renders their data. Values are sampled in LateUpdate, after Hud.Update ran this frame (Hud.cs:467-543);
+    // providers add the reservation / conversion / energy-shield data (Skin.RegisterResourceProvider). Geometry is
+    // recomputed only when its inputs change (StripKey); per-frame work = values and cell contents, change-only writes.
     public sealed class HudCluster : MonoBehaviour
     {
         public static HudCluster Instance { get; private set; }
@@ -25,27 +25,21 @@ namespace RuneSkin.PlayerHud
         private Canvas _canvas;
         private HudArt _art;
         private RectTransform _root;
-        private BarView _es, _health, _stamina, _adrenaline, _eitr;
-        private RectTransform _plaque, _bandPanel;
+        private BarView _health, _stamina, _adrenaline, _eitr;
+        private RectTransform _plaque;
         private TMPro.TMP_Text _plaqueText;
         private string _plaqueShown;
-        private FoodRow _food;
         private StatusStrip _strip, _buffs;
-        private GuardianSocket _gp;
+        private HudStrip _hudStrip;
         private readonly List<StatusEffect> _hudEffects = new List<StatusEffect>(16);
         private bool _fed;
         private readonly List<KeyValuePair<int, float>> _pending = new List<KeyValuePair<int, float>>(4);
         private readonly HudMath.Stripe[] _stripes = new HudMath.Stripe[BarView.MaxStripes];
         private readonly int[] _stripeKinds = new int[BarView.MaxStripes];
-        private readonly Vector3[] _corners = new Vector3[4];
-        private readonly List<RectTransform> _rects = new List<RectTransform>(32);
-        private Transform _quickBar;
-        private float _quickSearchAt;
-        private CanvasGroup _hotbarGroup;
-        private Transform _hotbar;
-        private Player _player;
-        private bool _wasBroken;
-        private float _breakPulse;
+        private HotkeyBar _hotbar;
+        private HotkeyBar _quickBar;
+        private Transform _abilityBar;
+        private float _foreignSearchAt;
 
         public static void Attach(Hud hud)
         {
@@ -66,19 +60,18 @@ namespace RuneSkin.PlayerHud
             _root.pivot = Vector2.zero;
             _canvas = gameObject.AddComponent<Canvas>(); // nested: own rebuild batch, inherits sorting
             _canvas.overrideSorting = false;
-            gameObject.AddComponent<GraphicRaycaster>(); // "+N" cell
+            gameObject.AddComponent<GraphicRaycaster>(); // "+N" cell, strip cells (drop / click)
             BuildViews();
             Suppress();
-            _hotbar = _hud.GetComponentInChildren<HotkeyBar>(true)?.transform;
-            if (_hotbar && !_hotbar.TryGetComponent(out _hotbarGroup))
-                _hotbarGroup = _hotbar.gameObject.AddComponent<CanvasGroup>();
-            Plugin.Log.LogInfo("[RuneSkin] HUD cluster built");
+            _hotbar = _hud.GetComponentInChildren<HotkeyBar>(true);
+            GuardianAbility.Register();
+            EpicLootBridge.RegisterAbilities();
+            Plugin.Log.LogInfo("[RuneSkin] HUD strip built");
         }
 
         private int _themeRevision = -1;
 
-        // Theme reload (runeskin_reload): every HUD graphic is ours, so the views are rebuilt from the new tokens
-        // (sprites, colours, sprite-derived geometry); the vanilla suppression stays.
+        // Theme reload (runeskin_reload): every HUD graphic is ours, so the views are rebuilt from the new tokens.
         private void RebuildViews()
         {
             foreach (var c in Children.Of(_root)) Destroy(c.gameObject);
@@ -92,22 +85,27 @@ namespace RuneSkin.PlayerHud
             _themeRevision = ThemeTokens.Revision;
             _childrenOn = true;
             _plaqueShown = null;
-            // Band housing first: behind every view (inventory band profile only).
-            _bandPanel = HudArt.Rect("BandPanel", _root);
-            PanelDecor.Ensure(_bandPanel, "size.panel.glass.inset", glass: true, plaque: false);
-            _bandPanel.gameObject.SetActive(false);
+            _stripKey = int.MinValue;
+            // Draw order: strip panels + captions -> status rows -> bars -> strip cells.
+            _hudStrip = new HudStrip(_art, _root);
             _strip = new StatusStrip(_art, _root, true, "StatusStrip");
             _buffs = new StatusStrip(_art, _root, false, "BuffStrip");
-            _gp = new GuardianSocket(_art, _root);
-            _eitr = new BarView(_art, _root, "Eitr", false, "sprite.hud.bar.frame.slim", "color.hud.eitr",
-                ThemeTokens.GetFloat("scale.hud.bar.slim", 1f), glyphToken: "sprite.hud.glyph.eitr", frontToken: "sprite.hud.front.eitr", frontColorToken: "color.hud.front.eitr", frontCore: 0.2f, capToken: "sprite.hud.bar.cap");
+            // Bars as in mockup hud-3: pill well, fills and rounded right end cut from it (strip3_*), mockup trough grey.
+            var frame = "sprite.hud.strip3.bar.frame";
+            var cap = "sprite.hud.strip3.bar.cap";
+            var capW = "size.hud.strip.bar.cap";
+            var trough = "color.hud.strip.trough";
+            var hpScale = FrameScale(frame, ThemeTokens.GetFloat("size.hud.strip.bar.hp", 24f));
+            var slimScale = FrameScale(frame, ThemeTokens.GetFloat("size.hud.strip.bar.slim", 24f));
+            _eitr = new BarView(_art, _root, "Eitr", false, frame, "color.hud.strip.fill.eitr", slimScale,
+                capToken: cap, fillToken: "sprite.hud.strip3.fill.ei", troughColorToken: trough, capWidthToken: capW, troughToken: "sprite.hud.bar.fill");
             _adrenaline = new BarView(_art, _root, "Adrenaline", true, "sprite.hud.rail.frame.adrenaline", "color.hud.adrenaline");
-            _stamina = new BarView(_art, _root, "Stamina", false, "sprite.hud.bar.frame.slim", "color.hud.stamina",
-                ThemeTokens.GetFloat("scale.hud.bar.slim", 1f), glyphToken: "sprite.hud.glyph.stamina", frontToken: "sprite.hud.front.stamina", frontColorToken: "color.hud.front.stamina", frontCore: 0.2f, capToken: "sprite.hud.bar.cap");
-            _health = new BarView(_art, _root, "Health", false, "sprite.hud.bar.frame", "color.hud.health", 1f, mainValue: true,
-                frontToken: "sprite.hud.front.health", frontColorToken: "color.hud.front.health", frontCore: 0.5f, capToken: "sprite.hud.bar.cap.main");
-            _es = new BarView(_art, _root, "EnergyShield", true, "sprite.hud.rail.frame.es", "color.hud.es");
-            _food = new FoodRow(_art, _root);
+            _stamina = new BarView(_art, _root, "Stamina", false, frame, "color.hud.strip.fill.stamina", slimScale,
+                capToken: cap, fillToken: "sprite.hud.strip3.fill.st", troughColorToken: trough, capWidthToken: capW, troughToken: "sprite.hud.bar.fill");
+            _health = new BarView(_art, _root, "Health", false, frame, "color.hud.strip.fill.health", hpScale, mainValue: true,
+                capToken: cap, fillToken: "sprite.hud.strip3.fill.hp", troughColorToken: trough, capWidthToken: capW, troughToken: "sprite.hud.bar.fill", shieldToken: "sprite.hud.strip3.shield");
+            _health.Plain = _stamina.Plain = _eitr.Plain = true;
+            _health.ShieldLine = true;
             _plaque = HudArt.Rect("ConversionPlaque", _root);
             var seal = _art.Image("Seal", _plaque, "sprite.hud.plaque.seal", "color.frame", Image.Type.Sliced);
             seal.rectTransform.anchorMin = Vector2.zero;
@@ -119,6 +117,15 @@ namespace RuneSkin.PlayerHud
             _plaqueText.rectTransform.offsetMin = new Vector2(20f, 0f);
             _plaqueText.rectTransform.offsetMax = Vector2.zero;
             _plaque.gameObject.SetActive(false);
+            _hudStrip.BuildFront();
+        }
+
+        // Bar scale that gives the frame sprite the wanted outer height (reference px).
+        private static float FrameScale(string token, float height)
+        {
+            BarView.FrameGeometry(token, out _, out _, out var b, out var t, out var h);
+            var natural = h + b + t;
+            return natural > 0f ? height / natural : 1f;
         }
 
         private readonly List<Transform> _suppressedRoots = new List<Transform>();
@@ -184,6 +191,37 @@ namespace RuneSkin.PlayerHud
             }
         }
 
+        // Vanilla hotbar, EAQS quick bar (hudroot/QuickSlotsHotkeyBar) and Epic Loot's AbilityBar: alpha 0, no raycasts,
+        // their code keeps running (gamepad selection, ability input). Written per frame (LargeMap re-shows hotbars when
+        // the map closes), only when off.
+        private void HideForeign()
+        {
+            if ((!_quickBar || !_abilityBar) && Time.unscaledTime >= _foreignSearchAt)
+            {
+                _foreignSearchAt = Time.unscaledTime + 2f;
+                var root = _hud.m_rootObject.transform;
+                if (!_quickBar) { var q = root.Find("QuickSlotsHotkeyBar"); if (q) _quickBar = q.GetComponent<HotkeyBar>(); }
+                if (!_abilityBar)
+                    for (var i = 0; i < root.childCount; i++)
+                    {
+                        var c = root.GetChild(i);
+                        if (c.name.StartsWith("AbilityBar", System.StringComparison.Ordinal)) { _abilityBar = c; break; }
+                    }
+            }
+            Hide(_hotbar ? _hotbar.transform : null);
+            Hide(_quickBar ? _quickBar.transform : null);
+            Hide(_abilityBar);
+        }
+
+        private static void Hide(Transform t)
+        {
+            if (!t) return;
+            if (!t.TryGetComponent<CanvasGroup>(out var g)) g = t.gameObject.AddComponent<CanvasGroup>();
+            if (g.alpha != 0f) g.alpha = 0f;
+            if (g.blocksRaycasts) g.blocksRaycasts = false;
+            if (g.interactable) g.interactable = false;
+        }
+
         // ---- frame ---------------------------------------------------------------------------------------------
 
         private void LateUpdate()
@@ -193,17 +231,16 @@ namespace RuneSkin.PlayerHud
             var visible = player && !player.IsDead() && _hud.IsVisible() && _hud.m_healthPanel && _hud.m_healthPanel.localScale.x > 0f;
             if (_themeRevision != ThemeTokens.Revision) RebuildViews();
             if (_canvas) _art.SyncPpu(_canvas.referencePixelsPerUnit);
-            if (_player != player)
-            {
-                _player = player;
-            }
             SetChildrenActive(visible);
-            HotbarVisibility();
+            HideForeign();
+            AboveInventory();
             if (!visible) return;
             var dt = Time.deltaTime;
             StatusKeys();
+            _hudStrip.Counts(player);
             Sample(player, dt);
-            ArrangeAndPlace(player);
+            Arrange(player);
+            _hudStrip.Fill(player, _hotbar, _quickBar);
             _strip.Tick(dt);
             _buffs.Tick(dt);
             // No periodic Record: a full report (paths, descriptions, GetComponentsInChildren) every 300 frames was a GC
@@ -212,20 +249,33 @@ namespace RuneSkin.PlayerHud
 
         private bool _childrenOn = true;
 
+        // While the inventory is open the strip sorts above the GUI canvas (its hotbar is the inventory's row 0 and a
+        // drop target): otherwise InventoryGui's full-screen root/dropButton (drop to the ground) takes the press over
+        // the strip (run 20261022-194551: raycast top = root/dropButton).
+        private void AboveInventory()
+        {
+            if (!_canvas) return;
+            var want = InventoryGui.IsVisible();
+            if (_canvas.overrideSorting == want) return;
+            _canvas.overrideSorting = want;
+            if (want && _canvas.transform.parent)
+            {
+                var root = _canvas.transform.parent.GetComponentInParent<Canvas>();
+                var top = root ? root.rootCanvas : null;
+                var order = top ? top.sortingOrder : 0;
+                if (InventoryGui.instance && InventoryGui.instance.GetComponentInParent<Canvas>() is Canvas inv)
+                    order = Mathf.Max(order, inv.rootCanvas.sortingOrder);
+                _canvas.sortingOrder = order + 1;
+                if (top) _canvas.sortingLayerID = top.sortingLayerID;
+            }
+        }
+
         private void SetChildrenActive(bool on)
         {
             if (_childrenOn == on) return;
             _childrenOn = on;
             foreach (var c in Children.Of(_root)) c.gameObject.SetActive(on);
-        }
-
-        private void HotbarVisibility()
-        {
-            if (!_hotbarGroup) return;
-            // Hidden under the inventory and under the large map (LargeMap hides it too; this per-frame write put it
-            // back over the open map, run 20261022-064153).
-            var a = InventoryGui.IsVisible() || Minimap.IsOpen() ? 0f : 1f;
-            if (!Mathf.Approximately(_hotbarGroup.alpha, a)) _hotbarGroup.alpha = a;
+            if (on) _stripKey = int.MinValue; // views re-enabled: re-apply their visibility
         }
 
         private void StatusKeys()
@@ -260,94 +310,74 @@ namespace RuneSkin.PlayerHud
             return sum;
         }
 
+        // Bar widths come from the last strip layout (stable until the layout key changes).
+        private float _hpOuter = 600f, _halfOuter = 298f;
+
         private void Sample(Player p, float dt)
         {
-            // One outer width for every main bar (mockup hud-status-b; the max is the number, not the length). The
-            // inventory band profile stretches them to the rest of the band (last frame's band layout, stable while open).
-            var outerW = _bandActive && _bandBarOuter > 0f ? _bandBarOuter : ThemeTokens.GetFloat("size.hud.bar.outer", 438f);
-
-            // Energy shield (mod pool): rail above health, or the main bar while it carries the player.
+            // Energy shield (mod pool) as the main bar while it carries the player.
             var esOn = Providers.TryResource(ResourcePools.EnergyShield, p, true, out var es) && es.Max > 0f;
             var esMain = esOn && es.MainBar;
 
-            // Health.
             var hp = p.GetHealth();
             var hpC = p.GetMaxHealth();
-            var hpB = Extension(ResourcePools.Health, p, hpC, out var hpRes);
-            CollectDots(p, hp);
-            // Health fill stays red: effects show only as pending-DoT stripes, frame overlays and strip icons.
+            var hpB = Extension(ResourcePools.Health, p, hpC, out _);
+            CollectDots(p);
             FrameOverlayOf(p, out var overlaySprite, out var overlayColor);
+            _health.SetOuterWidth(_hpOuter);
+            _health.Tick(dt);
             if (esMain)
             {
-                _health.SetOuterWidth(outerW);
-                _health.Tick(dt);
                 _health.Render(es.Current, es.Max, es.Available, _stripes, 0, _stripeKinds, "color.hud.es", overlaySprite, overlayColor, es.Inert, dt, es.Available < es.Max - 0.5f);
                 _health.Aux(0);
             }
             else
             {
-                _health.SetOuterWidth(outerW);
-                _health.Tick(dt);
                 var count = HudMath.Stripes(_pending, hp, hpB, _health.WindowLength, ThemeTokens.GetFloat("size.hud.stripe.min", 4f), BarView.MaxStripes, _stripes);
                 for (var i = 0; i < count; i++) _stripeKinds[i] = _stripes[i].Key < 0 ? (int)DotKind.Other : _stripes[i].Key;
-                // Shield = MorgottTweaks energy shield (provider pool) + vanilla staff shields (SE_Shield), one layer
-                // over the HP fill, label "HP + shield" (user call 2026-10-22; the ES rail is gone).
+                // Shield = MorgottTweaks energy shield (provider pool) + vanilla staff shields (SE_Shield): the upper band
+                // of the HP window, label "HP + shield" (user calls 2026-10-22).
                 _health.SetShield((esOn ? Mathf.Max(0f, es.Current) : 0f) + VanillaShield(p));
                 _health.Render(hp, hpB, hpC, _stripes, count, _stripeKinds, null, overlaySprite, overlayColor, false, dt, false);
             }
 
-            // ES rail: same outer width as the health frame (rail window = health window + inset difference).
-            var railOn = false;
-            _es.SetVisible(railOn);
-            if (railOn)
-            {
-                _es.SetOuterWidth(outerW);
-                _es.Tick(dt);
-                var broken = es.Phase == ResourcePhase.Broken;
-                if (broken && !_wasBroken) _breakPulse = ThemeTokens.GetFloat("time.hud.break.pulse", 0.35f);
-                _wasBroken = broken;
-                if (_breakPulse > 0f) _breakPulse -= dt;
-                var dim = es.Phase == ResourcePhase.RechargeDelay || broken;
-                _es.Render(es.Current, es.Max, es.Available, _stripes, 0, _stripeKinds,
-                    _breakPulse > 0f ? "color.text.accent" : dim ? "color.hud.es.dim" : null, null, null, es.Inert, dt, false);
-                _es.Aux(es.Phase == ResourcePhase.RechargeDelay ? Mathf.CeilToInt(es.PhaseSeconds) : 0);
-            }
-
-            // Stamina (+ adrenaline rail riding on it, Hud.cs:1147-1160: vanilla hides it at 0).
+            // Stamina (+ adrenaline rail between the rows, Hud.cs:1147-1160: vanilla hides it at 0).
             var st = p.GetStamina();
             var stC = p.GetMaxStamina();
             var stB = Extension(ResourcePools.Stamina, p, stC, out var stRes);
-            _stamina.SetOuterWidth(outerW);
+            _stamina.SetOuterWidth(_halfOuter);
             _stamina.Tick(dt);
             _stamina.Render(st, stB, stC, _stripes, 0, _stripeKinds, null, null, null, false, dt, stRes);
             var adMax = p.GetMaxAdrenaline();
             var ad = p.GetAdrenaline();
-            var adOn = adMax > 0f && ad > 0f;
-            _adrenaline.SetVisible(adOn);
-            if (adOn)
+            _adrenalineOn = adMax > 0f && ad > 0f;
+            _adrenaline.SetVisible(_adrenalineOn);
+            if (_adrenalineOn)
             {
-                _adrenaline.SetOuterWidth(outerW);
+                _adrenaline.SetOuterWidth(_hpOuter);
                 _adrenaline.Tick(dt);
                 _adrenaline.Render(ad, adMax, adMax, _stripes, 0, _stripeKinds, null, null, null, false, dt, false);
             }
 
-            // Eitr: vanilla hides it at max 0 (no plaque); a chosen conversion collapses it to the sealed plaque.
+            // Eitr: vanilla hides it at max 0; a chosen conversion collapses it to the sealed plaque (same box).
             var ei = p.GetEitr();
             var eiC = p.GetMaxEitr();
             Providers.TryResource(ResourcePools.Eitr, p, false, out var eiState);
             var converted = eiState.Valid && !string.IsNullOrEmpty(eiState.ConversionTarget);
             var eiB = Extension(ResourcePools.Eitr, p, eiC, out var eiRes);
-            var eitrOn = !converted && eiB > 0f;
-            _eitr.SetVisible(eitrOn);
-            if (eitrOn)
+            _eitrOn = !converted && eiB > 0f;
+            _eitr.SetVisible(_eitrOn);
+            if (_eitrOn)
             {
-                _eitr.SetOuterWidth(outerW);
+                _eitr.SetOuterWidth(_halfOuter);
                 _eitr.Tick(dt);
                 _eitr.Render(ei, eiB, eiC, _stripes, 0, _stripeKinds, null, null, null, false, dt, eiRes);
                 _eitr.Paused(eiState.Valid && eiState.RegenBlocked);
             }
             Plaque(converted ? eiState.ConversionTarget : null);
         }
+
+        private bool _adrenalineOn, _eitrOn;
 
         // B for a vanilla pool: the provider's pre-reservation max when its C matches the game's max, else C.
         private static float Extension(string pool, Player p, float gameMax, out bool reserved)
@@ -376,7 +406,7 @@ namespace RuneSkin.PlayerHud
         // the HUD list: iconless effects still hurt, SEMan.cs:328-335).
         private readonly float[] _kinds = new float[5];
 
-        private void CollectDots(Player p, float hp)
+        private void CollectDots(Player p)
         {
             for (var i = 0; i < _kinds.Length; i++) _kinds[i] = 0f;
             foreach (var se in p.GetSEMan().GetStatusEffects())
@@ -408,358 +438,202 @@ namespace RuneSkin.PlayerHud
 
         // ---- layout ----------------------------------------------------------------------------------------------
 
+        private int _stripKey = int.MinValue;
+        private float _pxPerUnit = 1f;
+        private float _reservedTop;
 
-        private void HudBox(out float x, out float w)
+        // Everything that changes the strip geometry: counts, bar rows, screen / safe area / GUI scale, config, theme.
+        private int StripKey()
         {
-            var safe = ResponsiveContext.SafeArea;
-            HudMath.HudBox(safe.x, safe.width, safe.height, Plugin.UltrawideBox?.Value ?? true,
-                ThemeTokens.GetFloat("ratio.hud.ultrawide", 2.2f), out x, out w);
-        }
-
-        // ---- inventory band profile -----------------------------------------------------------------------------
-
-        private bool _bandWanted, _bandActive;
-        private float _bandLeftPx, _bandRightPx, _bandBarOuter;
-        private int _bandQuickSlots;
-
-        // InventorySkin (on each inventory layout change): the column block spans [leftPx, rightPx] screen pixels;
-        // the cluster lays out as one band under it while the inventory is open. Same views, second layout profile.
-        public void SetBand(float leftPx, float rightPx, int quickSlots)
-        {
-            _bandWanted = rightPx > leftPx;
-            _bandLeftPx = leftPx;
-            _bandRightPx = rightPx;
-            _bandQuickSlots = Mathf.Max(0, quickSlots);
-        }
-
-        // Inventory closed: back to the stacked cluster (M1 profile).
-        public void ClearBand() => _bandWanted = false;
-
-        public bool BandActive => _bandActive && _childrenOn && isActiveAndEnabled;
-
-        public bool BandWanted => _bandWanted;
-
-        // Bars bottom-up rail to rail (HudMath.StackStep, whole physical pixels) from y0. place = false measures only.
-        // Returns the stack height (bottom of the lowest frame to the top of the highest).
-        private float StackBars(Player p, float x, float y0, float gap, float barW, bool place)
-        {
-            var pxPerUnit = _root.lossyScale.y;
-            var stacked = false;
-            float y = y0, prevY = y0, prevH = 0f, prevEdge = 0f;
-            void One(RectTransform rt, float height, float edgeBottom, float edgeTop)
+            unchecked
             {
-                if (stacked) y = prevY + HudMath.StackStep(prevH, prevEdge, edgeBottom, gap);
-                y = HudMath.Snap(y, pxPerUnit);
-                if (place) rt.anchoredPosition = new Vector2(x, y);
-                stacked = true;
-                prevY = y;
-                prevH = height;
-                prevEdge = edgeTop;
+                var h = _hudStrip.LayoutKey();
+                h = h * 31 + (_adrenalineOn ? 1 : 0) + (_eitrOn ? 2 : 0) + (_plaque.gameObject.activeSelf ? 4 : 0);
+                h = h * 31 + Screen.width;
+                h = h * 31 + Screen.height;
+                h = h * 31 + Screen.safeArea.GetHashCode();
+                h = h * 31 + ResponsiveContext.GuiFactor.GetHashCode();
+                // Canvas scale too: after a resolution change the CanvasScaler updates a frame later, and PlaceAtScreen
+                // converts screen px through it (run 20261022-194038: strip laid out at the old 2560 scale, 1391 px wide).
+                h = h * 31 + (_root.parent ? _root.parent.lossyScale.x : 0f).GetHashCode();
+                h = h * 31 + (_canvas && _canvas.rootCanvas ? _canvas.rootCanvas.scaleFactor : 0f).GetHashCode();
+                h = h * 31 + (Plugin.HudScale?.Value ?? 1f).GetHashCode();
+                h = h * 31 + (Plugin.StripWidth?.Value ?? 0.99f).GetHashCode();
+                h = h * 31 + (Plugin.StripHeight?.Value ?? 130f).GetHashCode();
+                h = h * 31 + (Plugin.UltrawideBox?.Value ?? true ? 1 : 0);
+                h = h * 31 + ThemeTokens.Revision;
+                return h;
             }
-            if (_eitr.Root.gameObject.activeSelf) One(_eitr.Root, _eitr.Height, _eitr.EdgeBottom, _eitr.EdgeTop);
-            if (_plaque.gameObject.activeSelf)
-            {
-                var h = _health.Height;
-                if (place) _plaque.sizeDelta = new Vector2(Mathf.Max(120f, barW * ThemeTokens.GetFloat("share.hud.plaque", 0.34f)), h);
-                One(_plaque, h, 0f, 0f);
-            }
-            if (_adrenaline.Root.gameObject.activeSelf || p.GetMaxAdrenaline() > 0f)
-                One(_adrenaline.Root, _adrenaline.Height, _adrenaline.EdgeBottom, _adrenaline.EdgeTop);
-            One(_stamina.Root, _stamina.Height, _stamina.EdgeBottom, _stamina.EdgeTop);
-            One(_health.Root, _health.Height, _health.EdgeBottom, _health.EdgeTop);
-            if (_es.Root.gameObject.activeSelf) One(_es.Root, _es.Height, _es.EdgeBottom, _es.EdgeTop);
-            return prevY + prevH - y0;
         }
 
-
-        // Band under the inventory column block (layout-a2.png): [food | GP | quick] [bars], status row below
-        // (buffs under the left block, debuffs under the bars, one row each, "+N"). Its height never depends on the
-        // effect count, so the columns above it never jump. False = does not fit, the caller keeps the stack.
-        // Compact (user call 2026-10-22): the band is as tall as its content - the left block is one row of
-        // size.hud.band.cell sockets (food diamonds side by side, GP, Z/V/B, mockup ratios), as tall as the bar stack,
-        // and the status row is one cell plus its pads.
-        private bool ArrangeBand(Player p)
+        private void Arrange(Player p)
         {
-            var gap = ThemeTokens.GetFloat("size.hud.gap", 5f);
-            var statusPad = ThemeTokens.GetFloat("size.hud.status.pad", 6f);
-            var cell = StatusStrip.CellSize;
-            var foodPad = ThemeTokens.GetFloat("size.hud.food.pad", 8f);
-            var itemGap = ThemeTokens.GetFloat("size.hud.food.gap", 6f) * 2f;
-            var blockGap = ThemeTokens.GetFloat("size.hud.band.gap", 16f);
-            var bandCell = ThemeTokens.GetFloat("size.hud.band.cell", 76f);
-            var quickGap = ThemeTokens.GetFloat("size.hud.band.quick.gap", 6f);
+            var exclude = GuardianAbility.ActiveHash;
+            _strip.ExcludeHash = _buffs.ExcludeHash = exclude;
+            if (_fed) { _strip.Feed(_hudEffects); _buffs.Feed(_hudEffects); }
+            var key = StripKey();
+            if (key != _stripKey)
+            {
+                _stripKey = key;
+                Relayout();
+            }
+            Status();
+        }
+
+        // Geometry pass (inputs changed): strip layout, bars, scale and screen placement.
+        private void Relayout()
+        {
+            var barGap = ThemeTokens.GetFloat("size.hud.strip.bar.gap", 4f);
+            var plaqueOn = _plaque.gameObject.activeSelf;
+            var adrH = _adrenalineOn ? _adrenaline.Height + barGap : 0f;
+            var barsH = _stamina.Height + barGap + adrH + _health.Height;
+
+            // Screen box and scale: reference px x HUD scale (font floors win), times the configured strip height
+            // over the natural one; the width is a share of the box in screen px, converted to strip units.
             var safe = ResponsiveContext.SafeArea;
-            // Scale: the canvas / HUD scale with the font floors, no share-of-screen shrink (the band width is given).
+            HudMath.HudBox(safe.x, safe.width, safe.height, Plugin.UltrawideBox?.Value ?? true, ThemeTokens.GetFloat("ratio.hud.ultrawide", 2.2f), out var boxX, out var boxW);
             var s = HudMath.ClusterScale(ResponsiveContext.GuiFactor, Plugin.HudScale?.Value ?? 1f, 0f, 0f, 0f, 0f, 0f, 0f,
                 ThemeTokens.GetFloat("size.hud.font.number", 16f), ThemeTokens.GetFloat("floor.text.number.px", 14f),
                 ThemeTokens.GetFloat("size.hud.font.timer", 13f), ThemeTokens.GetFloat("floor.text.timer.px", 12f));
-            if (!(s > 0f)) return false;
-            // Shared housing (Codex M2 review: one module): a panel stack (glass + carved frame + corner caps) over the
-            // whole band; the stack reaches size.panel.glass.inset beyond its host, the content keeps the cap keep-out.
-            var framePad = ThemeTokens.GetFloat("size.panel.glass.inset", 0f);
-            var decor = PanelDecor.Ensure(_bandPanel, "size.panel.glass.inset", glass: true, plaque: false);
-            // Host = the band box, so the stack (reaching framePad beyond the host) lines up with the column panels'
-            // stacks above it. Content: pad above / below, and past the corner caps at both ends (a cap reaches
-            // CapWidth - framePad into the host, PanelDecor.CapWidth), so nothing runs under one whatever its height.
-            var pad = ThemeTokens.GetFloat("size.hud.band.pad", 12f);
-            var ox = Mathf.Max(pad, decor ? decor.CapWidth() - framePad : 0f);
-            var o = pad;
-            var outerW = (_bandRightPx - _bandLeftPx) / s;
-            var bandW = outerW - 2f * ox;
+            // Mockup hud-3 proportions scaled uniformly: height = Hud.Height (12 % of 1080 by default), width = the
+            // design width (size.hud.strip.width, the mockup's panel) at that scale, capped by Hud.Width of the box.
+            var probe = _hudStrip.Input(ThemeTokens.GetFloat("size.hud.strip.width", 1900f), barsH);
+            var natural = StripMath.Compute(probe).Height;
+            var k = StripMath.HeightScale((Plugin.StripHeight?.Value ?? 130f) * (Plugin.HudScale?.Value ?? 1f), natural);
+            _pxPerUnit = s * k;
+            var widthPx = Mathf.Min(ThemeTokens.GetFloat("size.hud.strip.width", 1900f) * _pxPerUnit, StripMath.WidthPx(boxW, Plugin.StripWidth?.Value ?? 0.99f));
+            var input = _hudStrip.Input(widthPx / _pxPerUnit, barsH);
+            var l = StripMath.Compute(input);
+            _hudStrip.Apply(l, input);
 
-            _gp.Update(p);
-            _strip.ExcludeHash = _buffs.ExcludeHash = _gp.Visible ? _gp.ActiveHash : 0;
-            if (_fed) { _strip.Feed(_hudEffects); _buffs.Feed(_hudEffects); }
+            // Bars, bottom-up inside the bar block: stamina | eitr row, adrenaline rail, HP row.
+            var pxPerUnitY = _root.lossyScale.y;
+            var y = l.BarsY;
+            var halfW = (l.BarsW - barGap) / 2f;
+            _hpOuter = l.BarsW;
+            _halfOuter = halfW;
+            _stamina.SetOuterWidth(halfW);
+            _eitr.SetOuterWidth(halfW);
+            _health.SetOuterWidth(l.BarsW);
+            _stamina.Root.anchoredPosition = new Vector2(l.BarsX, HudMath.Snap(y, pxPerUnitY));
+            var eitrX = l.BarsX + halfW + barGap;
+            _eitr.Root.anchoredPosition = new Vector2(eitrX, HudMath.Snap(y, pxPerUnitY));
+            if (plaqueOn)
+            {
+                _plaque.anchoredPosition = new Vector2(eitrX, y);
+                _plaque.sizeDelta = new Vector2(halfW, _stamina.Height);
+            }
+            var slimY = y;
+            y += _stamina.Height + barGap;
+            if (_adrenalineOn)
+            {
+                _adrenaline.SetOuterWidth(l.BarsW);
+                _adrenaline.Root.anchoredPosition = new Vector2(l.BarsX, HudMath.Snap(y, pxPerUnitY));
+                y += _adrenaline.Height + barGap;
+            }
+            _health.Root.anchoredPosition = new Vector2(l.BarsX, HudMath.Snap(y, pxPerUnitY));
+            _hudStrip.BarKnots(new Rect(l.BarsX, l.BarsY, l.BarsW, y + _health.Height - l.BarsY));
 
-            // Left block, one row at the band cell: food sockets in a straight row (group frame reaches foodPad around
-            // it), guardian power, EAQS quick sockets. Food / GP keep their own geometry, scaled to the cell.
-            var foodK = bandCell / Mathf.Max(1f, ThemeTokens.GetFloat("size.hud.food.cell", 56f));
-            SetScale(_food.Root, foodK);
-            _food.Update(p, 0f, zigzag: false);
-            // The round GP socket reads lighter than the diamonds at the same box: a little larger (Codex band review).
-            var gs = _gp.Visible ? bandCell * ThemeTokens.GetFloat("share.hud.band.gp", 1.12f) : 0f;
-            SetScale(_gp.Root, bandCell * ThemeTokens.GetFloat("share.hud.band.gp", 1.12f) / Mathf.Max(1f, _gp.Size));
-            var x = foodPad;
-            var foodX = x;
-            x += _food.Width * foodK;
-            var gpX = x + itemGap;
-            if (_gp.Visible) x = gpX + gs;
-            var quickX = x + itemGap;
-            var quickN = _bandQuickSlots;
-            var quickW = quickN > 0 ? quickN * bandCell + (quickN - 1) * quickGap : 0f;
-            if (quickW > 0f) x = quickX + quickW;
-            var leftW = x + foodPad;
-            // Timers hang under the sockets (food: last minute only; GP cooldown): reserved so they never clip.
-            var timerDrop = _food.TimerDrop * foodK;
-            var leftH = timerDrop + foodPad + bandCell + foodPad;
-
-            var barsH = StackBars(p, 0f, 0f, gap, _health.Width, false);
-            var statusH = cell + 2f * statusPad + ThemeTokens.GetFloat("size.hud.band.status.gap", 4f);
-            var band = HudMath.BandLayout(bandW, leftW, leftH, barsH, statusH, blockGap,
-                ThemeTokens.GetFloat("size.hud.band.bar.min", 280f), 0f);
-            if (!band.Fits) return false;
-            _bandBarOuter = band.BarOuter;
-
-            // Status row: one row per strip, top edge at statusPad + cell (strips lay out downwards from their root).
-            var stripTop = statusPad + cell;
-            _buffs.Arrange(Mathf.Max(cell, leftW - 2f * statusPad), cell);
-            _buffs.Root.anchoredPosition = new Vector2(ox + statusPad, o + stripTop);
-            _strip.Arrange(Mathf.Max(cell, band.BarOuter - 2f * statusPad), cell);
-            _strip.Root.anchoredPosition = new Vector2(ox + band.BarsX + statusPad, o + stripTop);
-
-            // Bars right of the left block.
-            StackBars(p, ox + band.BarsX, o + band.BarsY, gap, _health.Width, true);
-
-            // Left block: sockets bottom-aligned above the timers and the frame pad.
-            var rowY = o + band.LeftY + timerDrop + foodPad;
-            _food.Root.anchoredPosition = new Vector2(ox + foodX, rowY);
-            if (_gp.Visible) _gp.Root.anchoredPosition = new Vector2(ox + gpX, rowY + (bandCell - gs) / 2f);
-            var totalH = band.Height + 2f * o;
-            if (!_bandPanel.gameObject.activeSelf) _bandPanel.gameObject.SetActive(true);
-            _bandPanel.anchoredPosition = Vector2.zero;
-            _bandPanel.sizeDelta = new Vector2(Mathf.Max(0f, outerW), Mathf.Max(0f, totalH));
-
-            var margin = ThemeTokens.GetFloat("size.hud.margin", 24f) * s;
+            // Screen placement: centred in the box, the bottom margin above the safe area.
+            var margin = ThemeTokens.GetFloat("size.hud.strip.margin", 8f) * s;
             var bottom = safe.y + margin;
-            PlaceAtScreen(_root, new Vector2(_bandLeftPx, bottom), s);
-            // The frame reaches framePad above the band box: the columns' gap starts above it.
-            _reservedTop = bottom + (totalH + framePad) * s;
-
-            // Quick sockets: the inventory's EAQS quick cells sit on these boxes (BandQuickCell); the hidden HUD bar
-            // follows to the same corner.
-            _bandQuickX = ox + quickX;
-            _bandQuickY = rowY;
-            _bandQuickCell = bandCell;
-            _bandQuickGap = quickGap;
-            var quickAnchor = _root.TransformPoint(new Vector3(_bandQuickX, rowY, 0f));
-            QuickAnchor = quickAnchor;
-            HasQuickAnchor = true;
-            PlaceBlock(QuickBar(), quickAnchor, false);
-            return true;
+            var left = boxX + (boxW - widthPx) / 2f;
+            PlaceAtScreen(_root, new Vector2(left, bottom), _pxPerUnit);
+            _stripWidth = input.Width;
+            _statusBase = l.Height + ThemeTokens.GetFloat("size.hud.strip.status.gap", 8f) + ThemeTokens.GetFloat("size.hud.status.pad", 6f);
+            // The inventory docks on the strip top (InventoryMath keeps its standard gap above the HUD top).
+            // The column panels' stacks reach size.panel.glass.inset beyond their box: counted, so the visible gap is
+            // InventoryMath's standard gap (size.inv.gap) from the strip top.
+            _reservedTop = bottom + l.Height * _pxPerUnit + ThemeTokens.GetFloat("size.panel.glass.inset", 0f) * s;
+            Plugin.Log.LogInfo($"[RuneSkin] HUD strip layout: width {widthPx:0}px scale {_pxPerUnit:0.###} (k {k:0.###}) height {l.Height:0} units = {l.Height * _pxPerUnit:0} px " +
+                               $"({100f * l.Height * _pxPerUnit / Mathf.Max(1f, Screen.height):0.0} % of {Screen.height}), food {_hudStrip.FoodCount} potions {_hudStrip.PotionCount} abilities {_hudStrip.AbilityCount}{(l.Fits ? "" : " (tight)")}");
         }
 
-        private float _bandQuickX, _bandQuickY, _bandQuickCell, _bandQuickGap;
+        private float _stripWidth, _statusBase;
 
-        // Band profile: quick socket i as a box of the cluster root (bottom-left world point, size in root units =
-        // reference px). False while the band is not shown.
+        // Status groups above the strip (user call 2026-10-22): buffs on one side, debuffs on the other (Hud.BuffSide),
+        // Hud.StatusPerRow cells a row, rows growing upward (Hud.StatusRows, then "+N"); hidden while the inventory is open
+        // (it docks on the strip top).
+        private void Status()
+        {
+            var cell = StatusStrip.CellSize;
+            var gap = ThemeTokens.GetFloat("size.hud.status.gap", 4f);
+            var pad = ThemeTokens.GetFloat("size.hud.status.pad", 6f);
+            var show = !InventoryGui.IsVisible();
+            if (_buffs.Root.gameObject.activeSelf != show) _buffs.Root.gameObject.SetActive(show);
+            if (_strip.Root.gameObject.activeSelf != show) _strip.Root.gameObject.SetActive(show);
+            if (!show) return;
+            var perRow = Mathf.Clamp(Plugin.StatusPerRow?.Value ?? 10, 1, 30);
+            var rows = Mathf.Clamp(Plugin.StatusRows?.Value ?? 2, 1, 6);
+            var rowW = StripMath.RowWidth(perRow, cell, gap);
+            var buffsLeft = (Plugin.BuffSide?.Value ?? "Left") != "Right";
+            var leftGroup = buffsLeft ? _buffs : _strip;
+            var rightGroup = buffsLeft ? _strip : _buffs;
+            leftGroup.Upward = rightGroup.Upward = true;
+            leftGroup.AlignRight = false;
+            rightGroup.AlignRight = true;
+            var budget = rows * (cell + gap);
+            leftGroup.Arrange(rowW, budget);
+            rightGroup.Arrange(rowW, budget);
+            var inset = ThemeTokens.GetFloat("size.hud.strip.knot", 40f) * StripMath.KnotReserve + pad;
+            var lp = new Vector2(inset, _statusBase);
+            if (leftGroup.Root.anchoredPosition != lp) leftGroup.Root.anchoredPosition = lp;
+            var rp = new Vector2(_stripWidth - inset - rightGroup.Root.sizeDelta.x, _statusBase);
+            if (rightGroup.Root.anchoredPosition != rp) rightGroup.Root.anchoredPosition = rp;
+        }
+        // ---- inventory contract (InventorySkin) ------------------------------------------------------------------
+
+        // The strip stays at the bottom while the inventory is open (decisions 2026-10-22: the strip with its hotbar
+        // remains visible, items move between the grid and the strip hotbar). The band request of the older layout
+        // only marks the inventory as open; the inventory's EAQS quick cells sit on the strip's potion cells.
+        private bool _bandWanted;
+
+        public void SetBand(float leftPx, float rightPx, int quickSlots) => _bandWanted = rightPx > leftPx;
+
+        public void ClearBand() => _bandWanted = false;
+
+        public bool BandWanted => _bandWanted;
+
+        public bool BandActive => _bandWanted && InventoryGui.IsVisible() && _childrenOn && isActiveAndEnabled;
+
+        // Potion cell i as a box of the strip root (bottom-left world point, size in root units).
         public bool BandQuickCell(int i, out Transform space, out Vector3 bottomLeft, out Vector2 size)
         {
             space = _root;
             bottomLeft = default;
             size = default;
-            if (!BandActive || i < 0 || !(_bandQuickCell > 0f)) return false;
-            bottomLeft = _root.TransformPoint(new Vector3(_bandQuickX + i * (_bandQuickCell + _bandQuickGap), _bandQuickY, 0f));
-            size = new Vector2(_bandQuickCell, _bandQuickCell);
+            if (!BandActive || !_hudStrip.PotionBox(i, out var bl, out var side)) return false;
+            bottomLeft = _root.TransformPoint(new Vector3(bl.x, bl.y, 0f));
+            size = new Vector2(side, side);
             return true;
         }
 
-        private static void SetScale(Transform t, float k)
-        {
-            var v = new Vector3(k, k, 1f);
-            if ((t.localScale - v).sqrMagnitude > 1e-8f) t.localScale = v;
-        }
+        // Bottom-left world point of the potion zone (the inventory puts its quick cells there when it has no box).
+        public Vector3 QuickAnchor => _root.TransformPoint(new Vector3(_hudStrip.L.PotionX, _hudStrip.L.PotionY, 0f));
 
-        private void ArrangeAndPlace(Player p)
-        {
-            // Stacked profile below writes x = 0 for every view it places, so leaving the band needs no reset.
-            _bandActive = _bandWanted && InventoryGui.IsVisible() && ArrangeBand(p);
-            if (_bandActive) return;
-            if (_bandPanel.gameObject.activeSelf) _bandPanel.gameObject.SetActive(false);
-            SetScale(_food.Root, 1f);
-            SetScale(_gp.Root, 1f);
-            var gap = ThemeTokens.GetFloat("size.hud.gap", 5f);
-            var barW = Mathf.Max(_health.Width, Mathf.Max(_stamina.Width, _eitr.Root.gameObject.activeSelf ? _eitr.Width : 0f));
-            if (_es.Root.gameObject.activeSelf) barW = Mathf.Max(barW, _es.Width);
-            var y = 0f;
-            var stripBudget = ThemeTokens.GetFloat("size.hud.status.budget", 84f);
-            var statusPad = ThemeTokens.GetFloat("size.hud.status.pad", 6f);
-            _gp.Update(p);
-            _strip.ExcludeHash = _buffs.ExcludeHash = _gp.Visible ? _gp.ActiveHash : 0;
-            if (_fed) { _strip.Feed(_hudEffects); _buffs.Feed(_hudEffects); }
-            // Debuff strip under the bars: as tall as its rows, nothing at all without debuffs.
-            // The bars keep one strip row reserved, so they never jump when the first debuff arrives.
-            var used = _strip.Arrange(barW, stripBudget);
-            var rowH = StatusStrip.CellSize + ThemeTokens.GetFloat("size.hud.status.gap", 4f);
-            y += statusPad + Mathf.Max(used, rowH);
-            _strip.Root.anchoredPosition = new Vector2(0f, y);
-            y += gap + statusPad; // the strip panel reaches pad above its cells
-            // Bars bottom-up, rail to rail: each frame starts where the one below ends minus both transparent rail
-            // margins (HudMath.StackStep; mockup hud-status-b has no gaps), on whole physical pixels.
-            var pxPerUnit = _root.lossyScale.y;
-            var stacked = false;
-            float prevY = 0f, prevH = 0f, prevEdge = 0f;
-            void Place(RectTransform rt, float height, float edgeBottom, float edgeTop)
-            {
-                if (stacked) y = prevY + HudMath.StackStep(prevH, prevEdge, edgeBottom, gap);
-                y = HudMath.Snap(y, pxPerUnit);
-                rt.anchoredPosition = new Vector2(0f, y);
-                stacked = true;
-                prevY = y;
-                prevH = height;
-                prevEdge = edgeTop;
-            }
-            if (_eitr.Root.gameObject.activeSelf) Place(_eitr.Root, _eitr.Height, _eitr.EdgeBottom, _eitr.EdgeTop);
-            if (_plaque.gameObject.activeSelf)
-            {
-                var h = _health.Height;
-                _plaque.sizeDelta = new Vector2(Mathf.Max(120f, barW * ThemeTokens.GetFloat("share.hud.plaque", 0.34f)), h);
-                Place(_plaque, h, 0f, 0f);
-            }
-            if (_adrenaline.Root.gameObject.activeSelf || p.GetMaxAdrenaline() > 0f)
-                Place(_adrenaline.Root, _adrenaline.Height, _adrenaline.EdgeBottom, _adrenaline.EdgeTop);
-            Place(_stamina.Root, _stamina.Height, _stamina.EdgeBottom, _stamina.EdgeTop);
-            Place(_health.Root, _health.Height, _health.EdgeBottom, _health.EdgeTop);
-            if (_es.Root.gameObject.activeSelf) Place(_es.Root, _es.Height, _es.EdgeBottom, _es.EdgeTop);
-            y = prevY + prevH + gap;
-            _food.Update(p, barW);
-            y += _food.TimerDrop + ThemeTokens.GetFloat("size.hud.food.pad", 8f); // timers + group frame below the sockets
-            _food.Root.anchoredPosition = new Vector2(0f, y);
-            var rowTop = y + _food.Height;
-            // Width to fit: the bars, or the food row plus the foreign blocks placed after it (EAQS quick slots,
-            // guardian power), measured in reference px from their visible bounds (last frame's cluster scale).
-            var foreignW = 0f;
-            var perRef = _root.lossyScale.x;
-            // Guardian power socket right after the food row (own art, vanilla m_gpRoot suppressed), then EAQS.
-            var foodGap = ThemeTokens.GetFloat("size.hud.food.gap", 6f) * 2f;
-            if (_gp.Visible)
-            {
-                var gs = _gp.Size;
-                _gp.Root.anchoredPosition = new Vector2(_food.Width + foodGap, y + Mathf.Max(0f, (_food.Height - gs) / 2f));
-                foreignW += gs + foodGap;
-                rowTop = Mathf.Max(rowTop, y + gs);
-            }
-            var quickX = _food.Width + foodGap + foreignW;
-            if (perRef > 0f)
-            {
-                var quick = QuickBar();
-                if (quick && Bounds(quick, out var qMin, out var qMax)) foreignW += (qMax.x - qMin.x) / perRef + gap * 2f;
-            }
-            // Buff row above the food: one row, same dynamic-length frame, "+N" overflow.
-            var cellB = StatusStrip.CellSize;
-            var buffTop = rowTop + ThemeTokens.GetFloat("size.hud.food.pad", 8f) + statusPad + gap;
-            var usedB = _buffs.Arrange(barW, cellB + ThemeTokens.GetFloat("size.hud.status.gap", 4f));
-            _buffs.Root.anchoredPosition = new Vector2(0f, buffTop + usedB);
-            if (usedB > 0f) rowTop = buffTop + usedB + statusPad;
-            var clusterW = Mathf.Max(barW, _food.Width + gap * 2f + foreignW);
-            var clusterH = rowTop;
+        public bool HasQuickAnchor => _stripKey != int.MinValue;
 
-            // Scale and place the cluster at the safe/box bottom-left corner.
-            HudBox(out var boxX, out var boxW);
-            var safe = ResponsiveContext.SafeArea;
-            var s = HudMath.ClusterScale(ResponsiveContext.GuiFactor, Plugin.HudScale?.Value ?? 1f, clusterW, clusterH,
-                boxW, safe.height, ThemeTokens.GetFloat("share.hud.cluster.w", 0.34f), ThemeTokens.GetFloat("share.hud.cluster.h", 0.3f),
-                ThemeTokens.GetFloat("size.hud.font.number", 16f), ThemeTokens.GetFloat("floor.text.number.px", 14f),
-                ThemeTokens.GetFloat("size.hud.font.timer", 13f), ThemeTokens.GetFloat("floor.text.timer.px", 12f));
-            var margin = ThemeTokens.GetFloat("size.hud.margin", 24f) * s;
-            PlaceAtScreen(_root, new Vector2(boxX + margin, safe.y + margin), s);
-            // Top of the cluster with the buff row always reserved (it comes and goes with buffs): the inventory
-            // columns end above it (InventoryMath HudTop), so they never jump when the first buff arrives.
-            _reservedTop = safe.y + margin + Mathf.Max(clusterH, buffTop + cellB + statusPad) * s;
-
-            // Foreign blocks: EAQS quick slots right of the food row, guardian power after them, hotbar top-left.
-            var food = _root.TransformPoint(new Vector3(quickX, y, 0f));
-            QuickAnchor = food;
-            HasQuickAnchor = true;
-            PlaceBlock(QuickBar(), food, false);
-            if (_hotbar)
-            {
-                var top = ThemeTokens.GetFloat("size.hud.hotbar.top", 24f) * s;
-                var target = ScreenToWorld(_root.parent as RectTransform, new Vector2(boxX + margin, safe.yMax - top));
-                PlaceBlock(_hotbar, target, true);
-            }
-        }
-
-        // Bottom-left world point of the EAQS quick-slot block right of the food row (HUD canvas); the inventory puts
-        // its quick cells there when the bar has no elements to measure.
-        public Vector3 QuickAnchor { get; private set; }
-
-        // Screen y (pixels, bottom-up) of the cluster top incl. a reserved buff row; 0 while the cluster is hidden.
+        // Screen y (pixels, bottom-up) of the strip top incl. a reserved status row; 0 while the HUD is hidden.
         public float ReservedScreenTop => _childrenOn && isActiveAndEnabled ? _reservedTop : 0f;
 
-        private float _reservedTop;
-        public bool HasQuickAnchor { get; private set; }
+        // Strip hotbar cell i (harness, drop tests).
+        public RectTransform HotbarCell(int i) => _hudStrip?.HotbarRect(i);
 
-        private Transform QuickBar()
+        // Summon frames ride in the buff side area (SummonFrames.Place): parented to the strip root on first call.
+        public bool PlaceSummons(RectTransform rt, float h)
         {
-            if (_quickBar) return _quickBar;
-            if (Time.unscaledTime < _quickSearchAt) return null;
-            _quickSearchAt = Time.unscaledTime + 2f;
-            // EquipmentAndQuickSlots adds its bar under hudroot (autotest 20-hud: hudroot/QuickSlotsHotkeyBar).
-            _quickBar = _hud.m_rootObject.transform.Find("QuickSlotsHotkeyBar");
-            return _quickBar;
-        }
-
-        // Moves a foreign block so the bounds of its visible rects start at `anchor` (bottom-left, or top-left when
-        // fromTop). Returns the world point right after the block. Writes only when off by more than half a pixel.
-        private Vector3 PlaceBlock(Transform block, Vector3 anchor, bool fromTop)
-        {
-            if (!block) return anchor;
-            if (!Bounds(block, out var min, out var max)) return anchor;
-            var current = fromTop ? new Vector3(min.x, max.y, 0f) : new Vector3(min.x, min.y, 0f);
-            var delta = anchor - current;
-            delta.z = 0f;
-            if (delta.sqrMagnitude > 0.25f) block.position += delta;
-            var gap = ThemeTokens.GetFloat("size.hud.gap", 5f) * _root.lossyScale.x * 2f;
-            return new Vector3(anchor.x + (max.x - min.x) + gap, anchor.y, anchor.z);
-        }
-
-        private bool Bounds(Transform block, out Vector3 min, out Vector3 max)
-        {
-            min = new Vector3(float.MaxValue, float.MaxValue);
-            max = new Vector3(float.MinValue, float.MinValue);
-            _rects.Clear();
-            block.GetComponentsInChildren(false, _rects);
-            var any = false;
-            foreach (var r in _rects)
-            {
-                if (r == block && _rects.Count > 1) continue;
-                if (!r.TryGetComponent<Graphic>(out var g) || !g.enabled) continue;
-                r.GetWorldCorners(_corners);
-                min = Vector3.Min(min, _corners[0]);
-                max = Vector3.Max(max, _corners[2]);
-                any = true;
-            }
-            return any;
+            if (!_root || _stripKey == int.MinValue) return false;
+            if (rt.parent != _root) rt.SetParent(_root, false);
+            rt.anchorMin = rt.anchorMax = Vector2.zero;
+            rt.pivot = new Vector2(0f, 1f);
+            // In the buff side area (mockup hud-3: side groups above the strip), over the buff rows.
+            var buffsLeft = (Plugin.BuffSide?.Value ?? "Left") != "Right";
+            var inset = ThemeTokens.GetFloat("size.hud.strip.knot", 40f) * StripMath.KnotReserve + ThemeTokens.GetFloat("size.hud.status.pad", 6f);
+            var x = buffsLeft ? inset : _stripWidth - inset - rt.sizeDelta.x;
+            var want = new Vector2(x, _statusBase + _buffs.Root.sizeDelta.y + ThemeTokens.GetFloat("size.hud.gap", 5f) * 2f + h);
+            if ((rt.anchoredPosition - want).sqrMagnitude > 0.25f) rt.anchoredPosition = want;
+            if (rt.localScale != Vector3.one) rt.localScale = Vector3.one;
+            return true;
         }
 
         private static Vector3 ScreenToWorld(RectTransform plane, Vector2 screen)

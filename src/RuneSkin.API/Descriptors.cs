@@ -188,6 +188,47 @@ namespace RuneSkin.API
         public string Caption;
     }
 
+    /// <summary>
+    /// One frame of an ability slot in the HUD strip's ability zone (ApiVersion 11). Returned by value from
+    /// <see cref="AbilitySlotDescriptor.GetState"/> every frame the HUD is shown: keep it allocation-free.
+    /// </summary>
+    public struct AbilitySlotState
+    {
+        /// <summary>False = the slot is empty and not drawn (empty capacity cells are hidden).</summary>
+        public bool Valid;
+        /// <summary>Icon of the ability (null = empty socket art only).</summary>
+        public Sprite Icon;
+        /// <summary>Key label drawn top-left (e.g. "F", "Q"), null or empty = none.</summary>
+        public string Key;
+        /// <summary>Seconds until the ability can be used again, 0 = ready.</summary>
+        public float CooldownLeft;
+        /// <summary>Full cooldown in seconds (sweep fraction = left / total), 0 = no sweep.</summary>
+        public float CooldownTotal;
+        /// <summary>Seconds the ability's effect still runs (active ring), 0 = not active.</summary>
+        public float ActiveLeft;
+        /// <summary>Full active time in seconds.</summary>
+        public float ActiveTotal;
+    }
+
+    /// <summary>
+    /// An ability slot in the HUD strip's ability zone (ApiVersion 11): Epic Loot abilities, the guardian power, any
+    /// mod's active skill. Slots are drawn in ascending <see cref="Order"/>; at most theme <c>count.hud.ability.max</c>
+    /// (4) valid slots show, empty ones collapse. Copied when registered.
+    /// </summary>
+    public sealed class AbilitySlotDescriptor
+    {
+        /// <summary>Slot id, unique per owner.</summary>
+        public string Id;
+        /// <summary>Order in the zone, ascending (RuneSkin: Epic Loot abilities 100-102, guardian power 1000).</summary>
+        public int Order;
+        /// <summary>True = round socket (guardian power family), false = square cell.</summary>
+        public bool Round;
+        /// <summary>State for the local player; called once per frame on the main thread. Required.</summary>
+        public Func<Player, AbilitySlotState> GetState;
+        /// <summary>Pointer activation (click on the cell), or null.</summary>
+        public Action<Player> Activate;
+    }
+
     /// <summary>Panel an action button belongs to.</summary>
     public enum PanelKind
     {

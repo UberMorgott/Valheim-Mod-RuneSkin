@@ -20,8 +20,11 @@ func (c *canvas) textOutline(s, file string, size float64, col string, x, y, o f
 	d := &font.Drawer{Face: fc}
 	w := d.MeasureString(s).Round()
 	px := int(x * c.K)
-	if align == 1 {
+	switch align {
+	case 1:
 		px -= w / 2
+	case 2:
+		px -= w
 	}
 	py := int(y*c.K + size*c.K*0.34)
 	k := int(math.Round(o * c.K))

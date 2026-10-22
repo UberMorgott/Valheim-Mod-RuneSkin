@@ -39,7 +39,7 @@ namespace RuneSkin.API
         /// Whether the running RuneSkin renders a capability. Known names: "root.restyle", "bind", "invalidate",
         /// "theme.read", "ownership" (M0); "effect.render", "resource.render", "capacity.render" (M1, true while
         /// RuneSkin owns the HUD); "panel.dock", "slot.render", "panel.action", "slot.overlay" (M2, true while RuneSkin owns the inventory); "hold.render" (ApiVersion 10, true while
-        /// RuneSkin owns the ActionHud family).
+        /// RuneSkin owns the ActionHud family); "ability.render" (ApiVersion 11, true while RuneSkin owns the HUD).
         /// </summary>
         public static bool Supports(string capability) => _host != null && capability != null && _host.Supports(capability);
 
@@ -136,6 +136,19 @@ namespace RuneSkin.API
             if (string.IsNullOrEmpty(list)) throw new ArgumentNullException(nameof(list));
             if (provider == null) throw new ArgumentNullException(nameof(provider));
             return Track(h => h.RegisterCapacityProvider(owner, list, provider));
+        }
+
+        /// <summary>
+        /// Adds a slot to the HUD strip's ability zone (ApiVersion 11, rendered while <c>Supports("ability.render")</c>).
+        /// One registration = one slot; the zone lays out its valid slots (0..4) live and hides empty ones.
+        /// Same call and fault rules as <see cref="RegisterResourceProvider"/>.
+        /// </summary>
+        public static IDisposable RegisterAbilitySlot(string owner, AbilitySlotDescriptor descriptor)
+        {
+            CheckOwner(owner);
+            if (descriptor == null || string.IsNullOrEmpty(descriptor.Id) || descriptor.GetState == null) throw new ArgumentNullException(nameof(descriptor));
+            var copy = new AbilitySlotDescriptor { Id = descriptor.Id, Order = descriptor.Order, Round = descriptor.Round, GetState = descriptor.GetState, Activate = descriptor.Activate };
+            return Track(h => h.RegisterAbilitySlot(owner, copy));
         }
 
         /// <summary>Registers an inventory panel action button. Rendered since M2 (<c>Supports("panel.action")</c>).</summary>
@@ -334,6 +347,7 @@ namespace RuneSkin.API
         IDisposable RegisterResourceProvider(string owner, string pool, Func<Player, ResourceState> provider);
         IDisposable RegisterCapacityProvider(string owner, string list, Func<Player, CapacityState> provider);
         IDisposable RegisterPanelAction(string owner, PanelActionDescriptor descriptor);
+        IDisposable RegisterAbilitySlot(string owner, AbilitySlotDescriptor descriptor);
         IDisposable SetSlotOverlay(string owner, Inventory inventory, int x, int y, string glyphToken);
         IDisposable RegisterHoldPrompt(string owner, string id, Func<Player, HoldPromptState> provider);
         bool TryGetColor(string token, out Color color);

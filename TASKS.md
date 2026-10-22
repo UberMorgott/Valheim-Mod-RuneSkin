@@ -713,3 +713,35 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
 - [x] Centre message contrast on white: solid sprite-less dark backing (0.16.1, run 20261023-032312 m5-center-contrast PASS).
 - [x] Settings stepper value: the one-shot floor never saw the per-tab panel; ReadableSweep measures in screen px every 30 frames (0.16.1, run 20261023-032312 PASS).
 - [ ] Character creation sex toggle labels (SexPanel/FemaleToggle|MaleToggle/Label) still 15.5 px (run 20261023-032312): most likely plate labels (PlateLabelFit shrinks them to the plate, the floor exempts plate labels); fix = wider plates for that pair, not a floor on plate labels (a floor truncated other plates).
+- [ ] Centre message contrast on white 3.7 (needs 4.5): band sprite tint does not darken under the glyphs; use a solid sprite-less backing or material outline (m5-center-contrast).
+- [ ] Settings stepper value (CommonSettings/InputLayout/GUIStepper/Value/Text) renders 14.9 px despite the readable floor; diagnose (plate-label exemption / later scaling / autosize max).
+- [ ] Character creation sex toggle labels (SexPanel/FemaleToggle|MaleToggle/Label) render 15.5 px; same diagnosis.
+## 0.15.0 Track H - HUD strip (2026-10-22, mockup hud-2-final, decisions.md)
+
+- [x] HudCluster = one bottom strip (HudStrip + pure StripMath, StripLayoutTests): wings food | potions with knot ends and
+      shoulders, centre block hotbar (inventory row 0, 8 bowl cells) + ability zone 0..4 over HP / shield, stamina | eitr
+      (BarView, canonical caps / rim / centred values / shield band / lag ghost), captions ($runeskin_strip_*), status rows
+      centred above. Cfg Hud.StripWidth (0.96 of the safe / 16:9 box), Hud.StripHeight (290 ref px), Hud.StripCaptions.
+      Old stacked + inventory band profiles, FoodRow and GuardianSocket removed (HudMath.BandLayout + tests gone).
+- [x] Cells (StripCell, pooled): recess, teal halo + select ring = equipped / queued / gamepad cursor, Epic Loot rarity rim
+      (EpicLootBridge: IsMagic / GetRarityColor incl. Mythic + Ancient, re-read on item change or 1 s), set gem, key top-left,
+      count bottom-right, durability pill (low red, broken blink); food = round bowls + time arc + timer text; potions =
+      EAQS quick cells (EaqsBridge.ReadQuick), count = capacity list "potions" (MorgottTweaks PotionSlotCount); abilities
+      via API v10 Skin.RegisterAbilitySlot (AbilitySlotDescriptor / AbilitySlotState): guardian power (round, key from the
+      "GP" binding path, Latin), Epic Loot AbilityController slots 0-2 (cooldown sweep + timer, click = TryActivate).
+- [x] Vanilla hotbar, EAQS quick bar, Epic Loot AbilityBar hidden (alpha 0, code runs); summon frames ride above the food
+      wing; strip relayout only on a key change (counts, screen, canvas scale, config, theme), change-only writes.
+- [x] Drop target: StripInput routes presses on a strip hotbar cell to the player grid's m_onSelected / m_onRightClick at
+      (i, 0) while the inventory is open; the strip canvas sorts above the GUI canvas then (root/dropButton took the press).
+- [x] Art (Codex image gen, refs = hud-2-final crops): art/src/kit/strip.png, strip2.png (heavy panel, bar well,
+      shoulders), stripmask.png; offline composite `go -C art/tools run . compare-hud2` (Codex fidelity 5.5 -> 6.5 -> 7 ->
+      7.5 -> 8), in-game crop `compare-hud2-shot <png>`.
+- [x] Harness ui-runeskin-hud2 (tools): strip-width (+0.80 live), cells, rarity-rims, durability, counts-live, drop; m1 /
+      m4 bar-caps / P adapted to the strip. Runs tools\out\20261022-194038 (95/100: stale canvas scale after a resolution
+      change -> StripKey has the canvas scale; harness glow / parsed-text / free-slot fixes), -194551 (97/100).
+- [ ] Unverified in game (after run -194551): drop over the inventory (canvas sorting), counts-live via BaseSlots +1, halo /
+      caption / frame tint polish; in-game Codex fidelity 6.5 (wing silhouette, frame material, halo, food bowl language,
+      caption weight) - needs one run + art pass.
+- [ ] Epic Loot belt with PotionSlots 1 equipped did not raise PotionSlotCount.Max (3 -> 3, belt equipped=True): MorgottTweaks
+      side (45r count-live), the strip follows the API in every state.
+- [ ] Harness m2 no-mirrors reads RuneSkinDollFigure, inactive since the 0.13.0 live preview (figure rect 0): pre-existing.

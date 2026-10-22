@@ -27,36 +27,6 @@ namespace RuneSkin.Tests
             InventoryMath.Compute(new InventoryInput { CanvasW = 1920f, CanvasH = 1080f, ChestW = cw, ChestH = ch, HudTop = hudTop }, t);
 
         [Fact]
-        public void BandSpansTheGivenWidthBarsRightOfTheLeftBlock()
-        {
-            var b = HudMath.BandLayout(1856f, 420f, 110f, 96f, 58f, 16f, 280f, 0f);
-            Assert.True(b.Fits);
-            Assert.Equal(436f, b.BarsX, 2);
-            Assert.Equal(1856f, b.BarsX + b.BarOuter, 2); // right edge = block right edge
-            Assert.Equal(110f, b.BodyH, 2);
-            Assert.Equal(58f + 110f, b.Height, 2);
-            Assert.Equal(58f, b.LeftY, 2);                 // taller block sits on the status row
-            Assert.Equal(58f + 7f, b.BarsY, 2);            // shorter one centred on the body
-        }
-
-        [Fact]
-        public void BandTooNarrowKeepsTheStack()
-        {
-            Assert.False(HudMath.BandLayout(600f, 420f, 110f, 96f, 58f, 16f, 280f, 0f).Fits);
-            Assert.False(HudMath.BandLayout(0f, 0f, 0f, 0f, 0f, 0f, 1f, 0f).Fits);
-            Assert.False(HudMath.BandLayout(float.PositiveInfinity, 10f, 1f, 1f, 1f, 1f, 1f, 0f).Fits);
-        }
-
-        [Fact]
-        public void BandHeightIgnoresEffectCount()
-        {
-            // Status row reserved as one row: same band for 0 and many effects (the strips overflow into "+N").
-            var a = HudMath.BandLayout(1856f, 420f, 110f, 96f, 58f, 16f, 280f, 0f);
-            var b = HudMath.BandLayout(1856f, 420f, 110f, 96f, 58f, 16f, 280f, 0f);
-            Assert.Equal(a.Height, b.Height);
-        }
-
-        [Fact]
         public void ShortBandGivesTheColumnsTheirHeightBack()
         {
             var t = Theme();

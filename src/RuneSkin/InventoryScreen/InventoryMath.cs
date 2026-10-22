@@ -141,6 +141,9 @@ namespace RuneSkin.InventoryScreen
             // The band is the live HUD cluster top when known (it sits bottom-left, under the dock), else the token.
             var bottom = i.HudTop > 0f ? Math.Min(safe.Bottom - margin, i.HudTop - gap) : safe.Bottom - t.HudBand * k;
             var panelH = Math.Max(0f, Math.Min(t.PanelMaxH * k, bottom - top));
+            // Docked on the HUD strip (Track H, user call 2026-10-22): with a known HUD top the block sits on it, the
+            // standard gap above the strip, and any height left over by PanelMaxH goes above the block, not below.
+            if (i.HudTop > 0f) top = bottom - panelH;
             var centerH = panelH;
             o.Workspace = new Box(wsX, top, wsW, panelH);
             // No chest and no backpack: no dock column, centre + crafting re-centre (inventory-layout.md section 9).

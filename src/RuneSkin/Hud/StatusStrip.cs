@@ -59,6 +59,10 @@ namespace RuneSkin.PlayerHud
         private readonly bool _harmful;
         public int ExcludeHash;
 
+        // HUD strip groups (user call 2026-10-22): rows grow UPWARD from the root (root = bottom-left of the lowest row;
+        // a full row wraps into a new row above), right-aligned for the group on the right side.
+        public bool Upward, AlignRight;
+
         // Cell side (ref px): the theme's size.hud.status.cell grown until the worst-case timer / icon text
         // (size.hud.status.sample width in the timer font, e.g. "88m 88s" from mods' GetIconText) fits inside the
         // cell under the icon (HudMath.StatusCell). Measured once per theme revision with a TMP probe.
@@ -132,7 +136,7 @@ namespace RuneSkin.PlayerHud
             var flow = HudMath.Wrap(_entries.Count, cell, gap, width, HudMath.MaxRows(budget, cell, gap));
             Layout = flow;
             Root.sizeDelta = new Vector2(width, flow.Rows * (cell + gap));
-            var panelOn = flow.Rows > 0;
+            var panelOn = flow.Rows > 0 && !Upward; // strip groups (mockup hud-3): bare socket cells, no plate
             if (_panel.gameObject.activeSelf != panelOn) _panel.gameObject.SetActive(panelOn);
             if (panelOn)
             {
@@ -140,8 +144,10 @@ namespace RuneSkin.PlayerHud
                 // Frame length follows the drawn cells (never empty cells); the tiled frame grows with the count.
                 var cols = Mathf.Min(flow.Columns, flow.Visible + (flow.MoreCell ? 1 : 0));
                 // Extra room at the end: timer text is wider than its cell (h:mm:ss) and must clear the frame edge.
-                _panel.sizeDelta = new Vector2(cols * (cell + gap) - gap + 2f * pad + ThemeTokens.GetFloat("size.hud.status.pad.end", 0f), flow.Rows * (cell + gap) - gap + 2f * pad);
-                _panel.anchoredPosition = new Vector2(-pad, -flow.Rows * (cell + gap) + gap - pad);
+                var pw = cols * (cell + gap) - gap + 2f * pad + ThemeTokens.GetFloat("size.hud.status.pad.end", 0f);
+                _panel.sizeDelta = new Vector2(pw, flow.Rows * (cell + gap) - gap + 2f * pad);
+                var px = AlignRight ? flow.Columns * (cell + gap) - gap - (pw - pad) : -pad;
+                _panel.anchoredPosition = new Vector2(px, Upward ? -pad : -flow.Rows * (cell + gap) + gap - pad);
             }
             Separators(flow, cell, gap);
             var shown = flow.Visible;
@@ -152,7 +158,7 @@ namespace RuneSkin.PlayerHud
                 var c = _cells[i];
                 if (c.Root.gameObject.activeSelf != on) c.Root.gameObject.SetActive(on);
                 if (!on) { c.Effect = null; continue; }
-                Position(c.Root, i, flow.Columns, cell, gap);
+                Place(c.Root, CellPos(i, flow, cell, gap));
                 Bind(c, _entries[i]);
             }
             var more = flow.MoreCell;
@@ -170,7 +176,7 @@ namespace RuneSkin.PlayerHud
                 if (_more.Root.gameObject.activeSelf != more) _more.Root.gameObject.SetActive(more);
                 if (more)
                 {
-                    Position(_more.Root, shown, flow.Columns, cell, gap);
+                    Place(_more.Root, CellPos(shown, flow, cell, gap));
                     if (_moreShown != flow.Overflow)
                     {
                         _moreShown = flow.Overflow;
@@ -206,9 +212,8 @@ namespace RuneSkin.PlayerHud
                 var sep = _separators[n++];
                 if (!sep.gameObject.activeSelf) sep.gameObject.SetActive(true);
                 var size = sep.rectTransform.sizeDelta;
-                var col = i % flow.Columns;
-                var row = i / flow.Columns;
-                var pos = new Vector2((col + 1) * (cell + gap) - gap / 2f - size.x / 2f, -(row + 1) * (cell + gap) + gap + (cell - size.y) / 2f);
+                var at = CellPos(i, flow, cell, gap);
+                var pos = new Vector2(AlignRight ? at.x - gap / 2f - size.x / 2f : at.x + cell + gap / 2f - size.x / 2f, at.y + (cell - size.y) / 2f);
                 if (sep.rectTransform.anchoredPosition != pos) sep.rectTransform.anchoredPosition = pos;
             }
             for (var i = n; i < _separators.Count; i++)
@@ -256,8 +261,8 @@ namespace RuneSkin.PlayerHud
             var columns = (_entries.Count + rows - 1) / rows;
             var h = rows * (cell + gap) - gap + 2f * pad;
             _popup.sizeDelta = new Vector2(columns * width, h);
-            // Right of the cluster, bottom-aligned with the strip, growing upward (never over the bars).
-            _popup.anchoredPosition = new Vector2(Root.sizeDelta.x + 12f, -Root.sizeDelta.y);
+            // Beside the group (right of a left group, left of a right group), bottom-aligned with it, growing upward.
+            _popup.anchoredPosition = new Vector2(AlignRight ? -columns * width - 12f : Root.sizeDelta.x + 12f, Upward ? 0f : -Root.sizeDelta.y);
             for (var i = 0; i < _popupRows.Count; i++)
             {
                 var on = i < _entries.Count;
@@ -286,7 +291,9 @@ namespace RuneSkin.PlayerHud
             var c = new Cell { Root = HudArt.Rect(name, parent) };
             c.Root.sizeDelta = new Vector2(size, size);
             // Effect cells are bare icons on the strip (mockup); only the "+N" cell has its socket art.
-            c.Back = _art.Image("Socket", c.Root, more ? "sprite.hud.status.more" : null, more ? "color.frame" : "color.hud.clear", Image.Type.Simple, raycast: more);
+            // Strip groups (mockup hud-3): each effect in a small glass socket, teal rim for buffs, crimson for debuffs.
+            c.Back = _art.Image("Socket", c.Root, more ? "sprite.hud.status.more" : Upward ? "sprite.hud.status.cell" : null,
+                more ? "color.frame" : Upward ? (_harmful ? "color.hud.status.debuff" : "color.hud.status.buff") : "color.hud.clear", Image.Type.Simple, raycast: more);
             Stretch(c.Back.rectTransform, 0f);
             if (!more)
             {
@@ -394,11 +401,20 @@ namespace RuneSkin.PlayerHud
             if (plate && plate.gameObject.activeSelf != on) plate.gameObject.SetActive(on);
         }
 
-        private static void Position(RectTransform rt, int index, int columns, float cell, float gap)
+        // Bottom-left of cell `index`: rows top-down from the root (classic) or bottom-up (Upward); columns from the
+        // left, or from the right edge of the full row width (AlignRight; the row width = flow.Columns cells).
+        private Vector2 CellPos(int index, HudMath.Flow flow, float cell, float gap)
         {
+            var columns = Mathf.Max(1, flow.Columns);
             var col = index % columns;
             var row = index / columns;
-            var pos = new Vector2(col * (cell + gap), -(row + 1) * (cell + gap) + gap);
+            var x = AlignRight ? (columns - 1 - col) * (cell + gap) : col * (cell + gap);
+            var y = Upward ? row * (cell + gap) : -(row + 1) * (cell + gap) + gap;
+            return new Vector2(x, y);
+        }
+
+        private static void Place(RectTransform rt, Vector2 pos)
+        {
             if (rt.anchoredPosition != pos) rt.anchoredPosition = pos;
         }
 

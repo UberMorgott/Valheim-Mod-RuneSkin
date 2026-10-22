@@ -167,6 +167,7 @@ namespace RuneSkin.Tests
             public IDisposable RegisterResourceProvider(string owner, string pool, Func<Player, ResourceState> p) => Rec("resource:" + pool);
             public IDisposable RegisterCapacityProvider(string owner, string list, Func<Player, CapacityState> p) => Rec("capacity:" + list);
             public IDisposable RegisterPanelAction(string owner, PanelActionDescriptor d) => Rec("action:" + d.Id);
+            public IDisposable RegisterAbilitySlot(string owner, AbilitySlotDescriptor d) => Rec("ability:" + d.Id);
             public IDisposable SetSlotOverlay(string owner, Inventory inventory, int x, int y, string glyphToken) => Rec($"overlay:{x},{y}");
             public IDisposable RegisterHoldPrompt(string owner, string id, Func<Player, HoldPromptState> p) => Rec("hold:" + id);
             public bool TryGetColor(string token, out Color color) { color = Color.white; return true; }
@@ -215,6 +216,13 @@ namespace RuneSkin.Tests
             live.Dispose(); // idempotent
             kept.Dispose();
             Assert.Equal(new[] { "slot:ring", "resource:es", "effect:7", "dispose:effect:7", "dispose:slot:ring" }, host.Calls);
+
+            var ability = Skin.RegisterAbilitySlot("test.owner", new AbilitySlotDescriptor { Id = "dash", Order = 5, GetState = _ => default });
+            Assert.Equal("ability:dash", host.Calls[host.Calls.Count - 1]);
+            ability.Dispose();
+            Assert.Equal("dispose:ability:dash", host.Calls[host.Calls.Count - 1]);
+            Assert.Throws<ArgumentNullException>(() => Skin.RegisterAbilitySlot("test.owner", new AbilitySlotDescriptor { Id = "x" }));
+            Assert.Equal(10, Skin.ApiVersion);
 
             Assert.Throws<ArgumentNullException>(() => Skin.RegisterSlot("", new SlotDescriptor { Id = "x" }));
             Assert.Throws<InvalidOperationException>(() => Skin.Attach(host));

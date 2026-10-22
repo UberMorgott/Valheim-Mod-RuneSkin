@@ -93,6 +93,45 @@ namespace RuneSkin.InventoryScreen
             }
         }
 
+        // Quick cells (Quick1..QuickN, EAQS Slots.GetQuickSlots order) with their inventory grid position (Slot.GridPosition)
+        // and key label (Slot.GetShortcutText). Allocates: call on a layout change / every few seconds.
+        public struct QuickInfo
+        {
+            public Vector2i Pos;
+            public string Key;
+            public bool Active;
+        }
+
+        private static PropertyInfo _gridPos;
+        private static MethodInfo _shortcutText;
+
+        public static void ReadQuick(List<QuickInfo> into)
+        {
+            into.Clear();
+            if (!Available) return;
+            try
+            {
+                var slots = (Array)_slots.GetValue(null);
+                var slotType = _slots.FieldType.GetElementType();
+                if (_gridPos == null) _gridPos = AccessTools.Property(slotType, "GridPosition");
+                if (_shortcutText == null) _shortcutText = AccessTools.Method(slotType, "GetShortcutText");
+                if (_gridPos == null) return;
+                foreach (var slot in slots)
+                {
+                    // Every quick cell (active or not): the potion count comes from MorgottTweaks live and EAQS turns
+                    // the cells on a moment later.
+                    if (slot == null || !(bool)_isQuick.GetValue(slot)) continue;
+                    var key = _shortcutText != null ? _shortcutText.Invoke(slot, null) as string : null;
+                    into.Add(new QuickInfo { Pos = (Vector2i)_gridPos.GetValue(slot), Key = key, Active = (bool)_isActive.GetValue(slot) });
+                }
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogWarning($"[RuneSkin] EAQS quick slot read failed: {e.Message}");
+                into.Clear();
+            }
+        }
+
         // Doll placement of an EAQS cell: glyph type + order (layout A, inventory-layout.md section 9: 3x3 storage
         // helmet, back, light / chest, belt, necklace / legs, ring, ring; other custom cells append).
         public static void Describe(string id, out string glyph, out int order, out string tooltipKey)

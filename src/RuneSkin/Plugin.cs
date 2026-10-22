@@ -32,6 +32,11 @@ namespace RuneSkin
         public static ConfigEntry<float> HudScale { get; private set; }
         public static ConfigEntry<float> MinimapScale { get; private set; }
         public static ConfigEntry<bool> UltrawideBox { get; private set; }
+        public static ConfigEntry<float> StripWidth { get; private set; }
+        public static ConfigEntry<float> StripHeight { get; private set; }
+        public static ConfigEntry<int> StatusPerRow { get; private set; }
+        public static ConfigEntry<int> StatusRows { get; private set; }
+        public static ConfigEntry<string> BuffSide { get; private set; }
         public static ConfigEntry<KeyboardShortcut> StatusListKey { get; private set; }
         public static ConfigEntry<string> StatusListButton { get; private set; }
         public static ConfigEntry<KeyboardShortcut> StatsKey { get; private set; }
@@ -156,6 +161,16 @@ namespace RuneSkin
                 new AcceptableValueRange<float>(0.6f, 1.6f)));
             UltrawideBox = Config.Bind("Hud", "UltrawideBox", true,
                 "On 21:9 and wider screens the HUD corners are those of a centred 16:9 box (off = true screen corners).");
+            StripWidth = Config.Bind("HudStrip", "Width", 0.99f, new ConfigDescription(
+                "Widest the bottom HUD strip may get, as a share of the screen (or of the centred 16:9 box on ultrawide); its width follows its height in the mockup's proportions.", new AcceptableValueRange<float>(0.5f, 1f)));
+            StripHeight = Config.Bind("HudStrip", "Height", 130f, new ConfigDescription(
+                "Height of the bottom HUD strip in reference pixels at 1080p (130 = 12 % of the screen height; scaled with the screen and Hud.Scale).", new AcceptableValueRange<float>(80f, 320f)));
+            StatusPerRow = Config.Bind("HudStrip", "StatusPerRow", 10, new ConfigDescription(
+                "Status effect icons per row above the HUD strip (buffs on one side, debuffs on the other); a full row wraps upward.", new AcceptableValueRange<int>(1, 30)));
+            StatusRows = Config.Bind("HudStrip", "StatusRows", 2, new ConfigDescription(
+                "Rows of status icons per side before the rest folds into \"+N\" (F7 lists all).", new AcceptableValueRange<int>(1, 6)));
+            BuffSide = Config.Bind("HudStrip", "BuffSide", "Left", new ConfigDescription(
+                "Side of the HUD strip the buffs grow from (debuffs take the other side).", new AcceptableValueList<string>("Left", "Right")));
             StatusListKey = Config.Bind("Hud", "StatusListKey", new KeyboardShortcut(UnityEngine.KeyCode.F7),
                 "Opens / closes the full list of status effects when the strip shows a +N cell.");
             StatusListButton = Config.Bind("Hud", "StatusListGamepadButton", "JoyDPadDown",

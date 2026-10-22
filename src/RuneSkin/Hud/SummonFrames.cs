@@ -193,6 +193,10 @@ namespace RuneSkin.PlayerHud
             var size = Size;
             var h = size + BarH + 3f;
             _rt.sizeDelta = new Vector2(SummonMath.FrameX(SummonMath.MaxFrames, size, Gap), h);
+            // HUD strip (Track H): the vanilla hotbar is replaced by the strip's own cells and stays hidden, so the row
+            // moves under the strip root, above the food wing (hidden with the HUD: large map, HUD fade).
+            var cluster = HudCluster.Instance;
+            if (cluster && cluster.PlaceSummons(_rt, h)) return;
             var elemH = _bar.m_elementPrefab && _bar.m_elementPrefab.transform is RectTransform e ? e.rect.height : 64f;
             var canvas = _bar.GetComponentInParent<Canvas>();
             var cam = canvas && canvas.rootCanvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.rootCanvas.worldCamera : null;
