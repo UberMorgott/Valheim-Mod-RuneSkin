@@ -60,6 +60,7 @@ public static class BuildBundles
             var fonts = BakeFonts();
             fonts.AddRange(ImportLegacyFonts());
             fonts.AddRange(ImportTextures());
+            fonts.AddRange(ImportShaders());
             foreach (var p in sprites.Select(AssetDatabase.GetAssetPath).Distinct().Append(AtlasPath).Concat(fonts))
                 AssetImporter.GetAtPath(p).SetAssetBundleNameAndVariant(BundleName, "");
             AssetDatabase.SaveAssets();
@@ -177,11 +178,12 @@ public static class BuildBundles
             st.spritePixelsPerUnit = man.pixelsPerUnit;
             st.spriteGenerateFallbackPhysicsShape = false;
             ti.SetTextureSettings(st);
-            ti.mipmapEnabled = false;
+            ti.mipmapEnabled = true; // ART PIPELINE: 4x art shown small (the atlas carries the mips; the source matches for previews)
+            ti.mipMapBias = -0.5f;
             ti.alphaIsTransparency = true;
             ti.sRGBTexture = true;
             ti.wrapMode = TextureWrapMode.Clamp;
-            ti.filterMode = FilterMode.Bilinear;
+            ti.filterMode = FilterMode.Trilinear;
             ti.isReadable = false;
             ti.textureCompression = TextureImporterCompression.Uncompressed; // the atlas decides the shipped format
             ti.SaveAndReimport();
@@ -205,15 +207,15 @@ public static class BuildBundles
         atlas.Remove(atlas.GetPackables());
         atlas.SetPackingSettings(new SpriteAtlasPackingSettings
         {
-            blockOffset = 1, padding = 4, enableRotation = false, enableTightPacking = false, enableAlphaDilation = true,
+            blockOffset = 1, padding = 8, enableRotation = false, enableTightPacking = false, enableAlphaDilation = true,
         });
         atlas.SetTextureSettings(new SpriteAtlasTextureSettings
         {
-            readable = false, generateMipMaps = false, sRGB = true, filterMode = FilterMode.Bilinear, anisoLevel = 0,
+            readable = false, generateMipMaps = true, sRGB = true, filterMode = FilterMode.Trilinear, anisoLevel = 0,
         });
         var ps = atlas.GetPlatformSettings("Standalone");
         ps.overridden = true;
-        ps.maxTextureSize = 2048;
+        ps.maxTextureSize = 4096; // ART PIPELINE: 4x redraws, mipmapped (padding 8 keeps the mips from bleeding)
         ps.format = TextureImporterFormat.BC7;
         ps.textureCompression = TextureImporterCompression.CompressedHQ;
         atlas.SetPlatformSettings(ps);
@@ -345,6 +347,28 @@ public static class BuildBundles
     // Loads the built file back and lists what the game will get; fails if a sprites.json entry or a font is absent.
     public static void List() => List(JsonUtility.FromJson<Manifest>(File.ReadAllText(Path.Combine(Art, "sprites", "sprites.json"))));
 
+    const string ShaderDir = Root + "/Shaders";
+
+    // art/shaders/*.shader -> Assets/RuneSkin/Shaders, compiled into the bundle (UI effect shaders the game cannot compile
+    // at runtime; RuneSkin loads them by asset name, Shader.Find then resolves them for other mods). A shader error fails the build.
+    static List<string> ImportShaders()
+    {
+        var dir = Path.Combine(Art, "shaders");
+        var files = Directory.Exists(dir) ? Directory.GetFiles(dir, "*.shader").Select(Path.GetFileName).ToList() : new List<string>();
+        Sync(dir, files, ShaderDir);
+        var paths = new List<string>();
+        foreach (var f in files)
+        {
+            var path = $"{ShaderDir}/{f}";
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+            var sh = AssetDatabase.LoadAssetAtPath<Shader>(path) ?? throw new Exception("no shader at " + path);
+            if (ShaderUtil.ShaderHasError(sh))
+                throw new Exception($"shader {sh.name} has errors: " + string.Join("; ", ShaderUtil.GetShaderMessages(sh).Select(m => m.message)));
+            paths.Add(path);
+        }
+        return paths;
+    }
+
     static void List(Manifest man)
     {
         AssetBundle.UnloadAllAssetBundles(true);
@@ -359,6 +383,8 @@ public static class BuildBundles
                 Line(sb, $"Sprite {s.name}: rect {s.rect.width}x{s.rect.height} border(L,B,R,T)={s.border} ppu {s.pixelsPerUnit} pivot {s.pivot} packed {s.packed} tex {s.texture?.name}");
             foreach (var a in all.OfType<SpriteAtlas>())
                 Line(sb, $"SpriteAtlas {a.name}: {a.spriteCount} sprites");
+            foreach (var sh in all.OfType<Shader>())
+                Line(sb, $"Shader {sh.name}: supported {sh.isSupported}");
             foreach (var t in all.OfType<Texture2D>())
                 Line(sb, $"Texture2D {t.name}: {t.width}x{t.height} {t.format} readable {t.isReadable}");
             var charset = File.ReadAllText(Path.Combine(Art, "fonts", "charset-ru-en.txt"), Encoding.UTF8).Replace("\n", "");
