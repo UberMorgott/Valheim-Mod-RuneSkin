@@ -172,8 +172,12 @@ func ebStack(rows []*image.NRGBA) *image.NRGBA {
 // its own mirror), rows above / below the window repeat the edge rows (the strip drifts +-0.012 v). Mechanical only.
 func cmdStrip() {
 	src := crop(loadPNG(os.Args[2]), parseRect(os.Args[3]))
-	const W, H = 1536, 128
-	y0, wh := int(math.Round(0.325*H)), int(math.Round(0.35*H))
+	// args: SRC RECT OUT [H]: H = strip height (128 for the original Vaettir strips, 512 for the HD boss-c fills)
+	W, H := 1536, 128
+	if len(os.Args) > 5 {
+		H = parseInts(os.Args[5])[0]
+	}
+	y0, wh := int(math.Round(0.325*float64(H))), int(math.Round(0.35*float64(H)))
 	seg := resize(src, int(math.Round(float64(src.Bounds().Dx())*float64(wh)/float64(src.Bounds().Dy()))), wh)
 	mir := flip(seg, true, false)
 	out := image.NewNRGBA(image.Rect(0, 0, W, H))
@@ -193,4 +197,177 @@ func cmdStrip() {
 	}
 	savePNG(os.Args[4], out)
 	fmt.Println("wrote", os.Args[4])
+}
+
+// cmdRowMatch: SRC RECT MOCK MOCKRECT OUT. Shifts each row of the SRC crop so its mean colour follows the MOCK crop's
+// row profile at the same relative height (the Codex fill keeps its texture, the shading becomes the mockup's: an even
+// glossy cylinder instead of a wide highlight band). Writes the corrected crop.
+func cmdRowMatch() {
+	src := crop(loadPNG(os.Args[2]), parseRect(os.Args[3]))
+	mock := crop(loadPNG(os.Args[4]), parseRect(os.Args[5]))
+	mean := func(img *image.NRGBA, y int) [3]float64 {
+		b := img.Bounds()
+		var s [3]float64
+		for x := b.Min.X; x < b.Max.X; x++ {
+			i := img.PixOffset(x, y)
+			s[0] += float64(img.Pix[i])
+			s[1] += float64(img.Pix[i+1])
+			s[2] += float64(img.Pix[i+2])
+		}
+		n := float64(b.Dx())
+		return [3]float64{s[0] / n, s[1] / n, s[2] / n}
+	}
+	sb, mb := src.Bounds(), mock.Bounds()
+	for y := sb.Min.Y; y < sb.Max.Y; y++ {
+		t := (float64(y-sb.Min.Y) + 0.5) / float64(sb.Dy())
+		my := mb.Min.Y + min(mb.Dy()-1, int(t*float64(mb.Dy())))
+		want, have := mean(mock, my), mean(src, y)
+		for x := sb.Min.X; x < sb.Max.X; x++ {
+			i := src.PixOffset(x, y)
+			for k := 0; k < 3; k++ {
+				v := float64(src.Pix[i+k]) - have[k] + want[k]
+				src.Pix[i+k] = uint8(math.Max(0, math.Min(255, v)))
+			}
+		}
+	}
+	savePNG(os.Args[6], src)
+	fmt.Println("wrote", os.Args[6])
+}
+
+// cmdMetalMatch: SRC MOCK MOCKRECT OUT [GAIN]. Removes the colour cast Codex puts on dark metal: the mean colour of SRC's
+// dark pixels (luma < 0.35, not magenta / transparent) is moved to the mean of the mockup crop's dark pixels, weighted
+// toward the darkest pixels (gold trim, glowing runes and highlights keep their colour). GAIN (default 1) scales the
+// overall darkness toward the mockup's too.
+func cmdMetalMatch() {
+	src := loadPNG(os.Args[2])
+	mock := crop(loadPNG(os.Args[3]), parseRect(os.Args[4]))
+	luma := func(r, g, b float64) float64 { return 0.2126*r + 0.7152*g + 0.0722*b }
+	isKey := func(r, g, b float64, a uint8) bool { return a < 128 || (r > 0.75 && b > 0.75 && g < 0.35) }
+	mean := func(img *image.NRGBA) [3]float64 {
+		var s [3]float64
+		n := 0.0
+		for i := 0; i < len(img.Pix); i += 4 {
+			r, g, b := float64(img.Pix[i])/255, float64(img.Pix[i+1])/255, float64(img.Pix[i+2])/255
+			if isKey(r, g, b, img.Pix[i+3]) || luma(r, g, b) >= 0.35 || r-b > 0.08 {
+				continue
+			}
+			s[0] += r
+			s[1] += g
+			s[2] += b
+			n++
+		}
+		return [3]float64{s[0] / n, s[1] / n, s[2] / n}
+	}
+	want, have := mean(mock), mean(src)
+	gain := 1.0
+	if len(os.Args) > 6 {
+		if _, err := fmt.Sscanf(os.Args[6], "%g", &gain); err != nil {
+			gain = 1
+		}
+	}
+	// the mockup metal's tint (chroma per unit luma) replaces the source's on cool, non-glowing pixels
+	wl := luma(want[0], want[1], want[2])
+	tint := [3]float64{want[0] / wl, want[1] / wl, want[2] / wl}
+	for i := 0; i < len(src.Pix); i += 4 {
+		r, g, b := float64(src.Pix[i])/255, float64(src.Pix[i+1])/255, float64(src.Pix[i+2])/255
+		if isKey(r, g, b, src.Pix[i+3]) {
+			continue
+		}
+		l := luma(r, g, b)
+		warm := clamp01((r - b - 0.05) / 0.15)
+		bright := clamp01((l - 0.45) / 0.2) // highlights and the glowing runes stay
+		w := (1 - warm) * (1 - bright)
+		c := [3]float64{r, g, b}
+		for k := 0; k < 3; k++ {
+			target := l * tint[k] * gain
+			v := c[k] + (target-c[k])*w
+			src.Pix[i+k] = uint8(math.Max(0, math.Min(255, v*255)))
+		}
+	}
+	savePNG(os.Args[5], src)
+	fmt.Printf("wrote %s (dark mean %.3f,%.3f,%.3f -> %.3f,%.3f,%.3f)\n", os.Args[5], have[0], have[1], have[2], want[0], want[1], want[2])
+}
+
+// cmdPairDiff: MOCK OURS OUT. Same-size same-scale crops -> SSIM (luma, 8x8 windows) and CIE76 dE (Lab) stats, and a
+// heatmap OUT (left: dE per pixel, 0 black .. 30+ red/yellow; right: 1-SSIM per window).
+func cmdPairDiff() {
+	a, b := loadPNG(os.Args[2]), loadPNG(os.Args[3])
+	w, h := min(a.Bounds().Dx(), b.Bounds().Dx()), min(a.Bounds().Dy(), b.Bounds().Dy())
+	lab := func(img *image.NRGBA, x, y int) (float64, float64, float64, float64) {
+		i := img.PixOffset(img.Bounds().Min.X+x, img.Bounds().Min.Y+y)
+		lin := func(v uint8) float64 {
+			c := float64(v) / 255
+			if c <= 0.04045 {
+				return c / 12.92
+			}
+			return math.Pow((c+0.055)/1.055, 2.4)
+		}
+		r, g, bl := lin(img.Pix[i]), lin(img.Pix[i+1]), lin(img.Pix[i+2])
+		X := (0.4124*r + 0.3576*g + 0.1805*bl) / 0.95047
+		Y := 0.2126*r + 0.7152*g + 0.0722*bl
+		Z := (0.0193*r + 0.1192*g + 0.9505*bl) / 1.08883
+		f := func(t float64) float64 {
+			if t > 0.008856 {
+				return math.Cbrt(t)
+			}
+			return 7.787*t + 16.0/116
+		}
+		L := 116*f(Y) - 16
+		return L, 500 * (f(X) - f(Y)), 200 * (f(Y) - f(Z)), Y
+	}
+	out := image.NewNRGBA(image.Rect(0, 0, w*2+8, h))
+	heat := func(t float64) color.NRGBA {
+		t = clamp01(t)
+		return color.NRGBA{uint8(255 * clamp01(t*2)), uint8(255 * clamp01(t*2-1)), 0, 255}
+	}
+	sumDE := 0.0
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			L1, a1, b1, _ := lab(a, x, y)
+			L2, a2, b2, _ := lab(b, x, y)
+			de := math.Sqrt((L1-L2)*(L1-L2) + (a1-a2)*(a1-a2) + (b1-b2)*(b1-b2))
+			sumDE += de
+			out.SetNRGBA(x, y, heat(de/30))
+		}
+	}
+	const win = 8
+	ssimSum, n := 0.0, 0
+	for y := 0; y+win <= h; y += win {
+		for x := 0; x+win <= w; x += win {
+			var ma, mb, va, vb, cov float64
+			for j := 0; j < win; j++ {
+				for i := 0; i < win; i++ {
+					_, _, _, ya := lab(a, x+i, y+j)
+					_, _, _, yb := lab(b, x+i, y+j)
+					ma += ya
+					mb += yb
+				}
+			}
+			ma /= win * win
+			mb /= win * win
+			for j := 0; j < win; j++ {
+				for i := 0; i < win; i++ {
+					_, _, _, ya := lab(a, x+i, y+j)
+					_, _, _, yb := lab(b, x+i, y+j)
+					va += (ya - ma) * (ya - ma)
+					vb += (yb - mb) * (yb - mb)
+					cov += (ya - ma) * (yb - mb)
+				}
+			}
+			va /= win * win
+			vb /= win * win
+			cov /= win * win
+			const c1, c2 = 0.0001, 0.0009
+			s := ((2*ma*mb + c1) * (2*cov + c2)) / ((ma*ma + mb*mb + c1) * (va + vb + c2))
+			ssimSum += s
+			n++
+			for j := 0; j < win; j++ {
+				for i := 0; i < win; i++ {
+					out.SetNRGBA(w+8+x+i, y+j, heat(1-s))
+				}
+			}
+		}
+	}
+	savePNG(os.Args[4], out)
+	fmt.Printf("SSIM %.3f  mean dE %.1f  %s\n", ssimSum/float64(max(1, n)), sumDE/float64(w*h), os.Args[4])
 }

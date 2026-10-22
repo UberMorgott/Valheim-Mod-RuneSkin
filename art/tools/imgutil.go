@@ -73,7 +73,8 @@ func keyMagenta(img *image.NRGBA) {
 			r, g, bl := float64(img.Pix[i])/255, float64(img.Pix[i+1])/255, float64(img.Pix[i+2])/255
 			// magenta-ness: r and b high, g low
 			m := math.Min(r, bl) - g
-			a := clamp01(1 - (m-0.25)/0.45)
+			// threshold low enough to catch the dark magenta fringe Codex leaves along dark outlines
+			a := clamp01(1 - (m-0.1)/0.5)
 			if a <= 0 {
 				img.Pix[i+3] = 0
 				img.Pix[i], img.Pix[i+1], img.Pix[i+2] = 0, 0, 0

@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+
+	"golang.org/x/image/draw"
 )
 
 // Repo-relative paths (run from the repo root).
@@ -40,7 +42,8 @@ type Cut struct {
 	Trim   bool       `json:"trim,omitempty"` // crop to alpha bbox after keying
 	Pad    int        `json:"pad,omitempty"`  // transparent padding after trim (output px)
 	Scale  float64    `json:"scale,omitempty"`
-	Size   [2]int     `json:"size,omitempty"` // final size (non-nine)
+	ScaleY float64    `json:"scaleY,omitempty"` // extra vertical factor after Scale (a rail painted thicker than the mockup's)
+	Size   [2]int     `json:"size,omitempty"`   // final size (non-nine)
 	Nine   *Nine      `json:"nine,omitempty"`
 	CellH  int        `json:"cellH,omitempty"`  // period cell height (non-uniform resize)
 	Period int        `json:"period,omitempty"` // horizontal repeat: crop is one period, output = Size
@@ -52,28 +55,33 @@ type Cut struct {
 	ClearInterior []int `json:"keepBlock,omitempty"`
 	OnlyCyan      bool  `json:"onlyCyan,omitempty"` // emissive extraction: keep cyan glow as white mask
 	// ClearWindow: output rect made transparent except leather (bar windows: fill shows through, strap stays on top)
-	ClearWindow []int      `json:"clearWindow,omitempty"`
-	Leather     [2]float64 `json:"leather,omitempty"`  // leather-only grade: saturation keep, brightness
-	Fade        [2]int     `json:"fade,omitempty"`     // alpha ramp at the left/right ends (px)
-	FadeV       [2]int     `json:"fadeV,omitempty"`    // alpha ramp at the top/bottom ends (px)
-	Flip        string     `json:"flip,omitempty"`     // mirror the crop: h | v | hv
-	FlatEnds    [2]int     `json:"flatEnds,omitempty"` // left/right output columns whose RGB is replaced by the centre column (same row), alpha kept
-	Despill     bool       `json:"despill,omitempty"`  // neutralise violet magenta spill (r and b both above g) to the glass hue
-	Hole        bool       `json:"hole,omitempty"`     // output = white opaque mask of the transparent region connected to the centre (ring hole -> circular map mask)
-	Bold        int        `json:"bold,omitempty"`     // alpha max-filter radius (output px): thickens thin white glyph masks
-	Sector      []int      `json:"sector,omitempty"`   // [index, count]: keep only pie sector index of count (clockwise from 12 o'clock, centred on index*360/count) around the output centre
-	Norm        bool       `json:"norm,omitempty"`     // scale alpha so the most opaque pixel is fully opaque (equal brightness across slices)
-	BgTol       float64    `json:"bgTol,omitempty"`    // key "bg": colour step that still counts as the smooth background (keyBackground)
-	BgSides     string     `json:"bgSides,omitempty"`  // key "bg": crop sides the background flood starts from (default tlrb)
-	Clear       [][4]int   `json:"clear,omitempty"`    // crop-space rects made transparent after keying (bar windows)
-	Clone       []int      `json:"clone,omitempty"`    // [x, y, w, h, srcX, srcW] crop space: fill the rect with mirror-tiled source columns srcX..+srcW of the same rows (clear a baked caption off a plate field)
-	KeyRed      bool       `json:"keyRed,omitempty"`   // also key out saturated HP-fill red (R > 110, G and B < 60): a cap cut beside a mockup fill
-	Border      Border     `json:"border"`
-	Pivot       [2]float64 `json:"pivot"`
-	ImageType   string     `json:"imageType"`
-	FillCenter  bool       `json:"fillCenter"`
-	Token       string     `json:"token"`
-	Notes       string     `json:"notes"`
+	ClearWindow []int        `json:"clearWindow,omitempty"`
+	Leather     [2]float64   `json:"leather,omitempty"`     // leather-only grade: saturation keep, brightness
+	Fade        [2]int       `json:"fade,omitempty"`        // alpha ramp at the left/right ends (px)
+	FadeV       [2]int       `json:"fadeV,omitempty"`       // alpha ramp at the top/bottom ends (px)
+	Flip        string       `json:"flip,omitempty"`        // mirror the crop: h | v | hv
+	FlatEnds    [2]int       `json:"flatEnds,omitempty"`    // left/right output columns whose RGB is replaced by the centre column (same row), alpha kept
+	Despill     bool         `json:"despill,omitempty"`     // neutralise violet magenta spill (r and b both above g) to the glass hue
+	Hole        bool         `json:"hole,omitempty"`        // output = white opaque mask of the transparent region connected to the centre (ring hole -> circular map mask)
+	Bold        int          `json:"bold,omitempty"`        // alpha max-filter radius (output px): thickens thin white glyph masks
+	Sector      []int        `json:"sector,omitempty"`      // [index, count]: keep only pie sector index of count (clockwise from 12 o'clock, centred on index*360/count) around the output centre
+	Norm        bool         `json:"norm,omitempty"`        // scale alpha so the most opaque pixel is fully opaque (equal brightness across slices)
+	BgTol       float64      `json:"bgTol,omitempty"`       // key "bg": colour step that still counts as the smooth background (keyBackground)
+	BgSides     string       `json:"bgSides,omitempty"`     // key "bg": crop sides the background flood starts from (default tlrb)
+	Clear       [][4]int     `json:"clear,omitempty"`       // crop-space rects made transparent after keying (bar windows)
+	Clone       []int        `json:"clone,omitempty"`       // [x, y, w, h, srcX, srcW] crop space: fill the rect with mirror-tiled source columns srcX..+srcW of the same rows (clear a baked caption off a plate field)
+	SquashRight [][4]float64 `json:"squashRight,omitempty"` // [y0, y1, factor, x0]: rows y0..y1 resampled only for columns >= x0, re-centred (a bar window thinner next to a round socket that keeps its shape)
+	Squash      [][3]float64 `json:"squash,omitempty"`      // crop-space row bands [y0, y1, factor] resampled vertically (a rail painted thicker than the mockup's)
+	Holes       [][][2]int   `json:"holes,omitempty"`       // crop-space polygons made transparent after keying (gaps inside a knot where the fill must show)
+	Solid       [][2]int     `json:"solid,omitempty"`       // crop-space polygon forced opaque after keying (a dark blade the bg flood ate)
+	MirrorLeft  int          `json:"mirrorLeft,omitempty"`  // crop space, after clear/clone: the leftmost N columns become the mirror of the rightmost N (a socket-less bar gets the right end cap at both ends)
+	KeyRed      bool         `json:"keyRed,omitempty"`      // also key out saturated HP-fill red (R > 110, G and B < 60): a cap cut beside a mockup fill
+	Border      Border       `json:"border"`
+	Pivot       [2]float64   `json:"pivot"`
+	ImageType   string       `json:"imageType"`
+	FillCenter  bool         `json:"fillCenter"`
+	Token       string       `json:"token"`
+	Notes       string       `json:"notes"`
 }
 
 type Spec struct {
@@ -129,6 +137,10 @@ func renderCut(c Cut) *image.NRGBA {
 		keyMagenta(src)
 	case "bg":
 		keyBackground(src, c.BgTol, c.BgSides)
+	case "black":
+		keyBlack(src)
+	case "green":
+		keyGreen(src)
 	case "shade":
 		shadeMask(src)
 	case "luma":
@@ -143,6 +155,21 @@ func renderCut(c Cut) *image.NRGBA {
 	}
 	if len(c.Clone) == 6 {
 		cloneColumns(src, c.Clone)
+	}
+	for _, q := range c.SquashRight {
+		squashRight(src, int(q[0]), int(q[1]), q[2], int(q[3]))
+	}
+	for i := len(c.Squash) - 1; i >= 0; i-- {
+		src = squashRows(src, int(c.Squash[i][0]), int(c.Squash[i][1]), c.Squash[i][2])
+	}
+	for _, h := range c.Holes {
+		polygonAlpha(src, h, 0)
+	}
+	if len(c.Solid) >= 3 {
+		solidPolygon(src, c.Solid)
+	}
+	if c.MirrorLeft > 0 {
+		mirrorLeft(src, c.MirrorLeft)
 	}
 	if c.KeyRed {
 		keyRed(src)
@@ -168,6 +195,9 @@ func renderCut(c Cut) *image.NRGBA {
 	img := src
 	if c.Scale > 0 && c.Scale != 1 {
 		img = resize(img, int(math.Round(float64(img.Bounds().Dx())*c.Scale)), int(math.Round(float64(img.Bounds().Dy())*c.Scale)))
+	}
+	if c.ScaleY > 0 && c.ScaleY != 1 {
+		img = resize(img, img.Bounds().Dx(), int(math.Round(float64(img.Bounds().Dy())*c.ScaleY)))
 	}
 	switch {
 	case c.Nine != nil:
@@ -625,6 +655,125 @@ func cmdBlobs(path, key string, minArea int) {
 }
 
 var _ = color.NRGBA{}
+
+// keyGreen keys a flat pure-green background (purple smoke cannot sit on magenta) with the same unblend as keyMagenta.
+func keyGreen(img *image.NRGBA) {
+	for i := 0; i < len(img.Pix); i += 4 {
+		r, g, b := float64(img.Pix[i])/255, float64(img.Pix[i+1])/255, float64(img.Pix[i+2])/255
+		m := g - math.Max(r, b)
+		a := clamp01(1 - (m-0.1)/0.5)
+		if a <= 0 {
+			img.Pix[i], img.Pix[i+1], img.Pix[i+2], img.Pix[i+3] = 0, 0, 0, 0
+			continue
+		}
+		if a < 1 {
+			// observed = a*fg + (1-a)*green -> fg
+			img.Pix[i] = uint8(255 * clamp01(r/a))
+			img.Pix[i+1] = uint8(255 * clamp01((g-(1-a))/a))
+			img.Pix[i+2] = uint8(255 * clamp01(b/a))
+		}
+		img.Pix[i+3] = uint8(255 * a)
+		// despill: no green left in the smoke (green-over-violet fringes read teal)
+		// violet smoke: green stays well below red and blue; semi-transparent fringe pixels take the violet hue
+		if gg, lim := img.Pix[i+1], uint8(min(int(img.Pix[i]), int(img.Pix[i+2]))*55/100); gg > lim {
+			img.Pix[i+1] = lim
+		}
+		if a < 0.9 && int(img.Pix[i]) > int(img.Pix[i+2])*8/10 {
+			img.Pix[i] = uint8(int(img.Pix[i+2]) * 8 / 10)
+		}
+	}
+}
+
+// keyBlack turns a glow drawn on flat black into straight alpha (alpha = brightest channel, colour un-premultiplied),
+// so an additive-looking effect sheet blends with the default UI material.
+func keyBlack(img *image.NRGBA) {
+	const blackFloor = 10 // generated "pure black" carries noise: below this it is background
+	for i := 0; i < len(img.Pix); i += 4 {
+		r, g, b := img.Pix[i], img.Pix[i+1], img.Pix[i+2]
+		m := max(r, g, b)
+		if m <= blackFloor {
+			img.Pix[i], img.Pix[i+1], img.Pix[i+2], img.Pix[i+3] = 0, 0, 0, 0
+			continue
+		}
+		img.Pix[i] = uint8(int(r) * 255 / int(m))
+		img.Pix[i+1] = uint8(int(g) * 255 / int(m))
+		img.Pix[i+2] = uint8(int(b) * 255 / int(m))
+		img.Pix[i+3] = uint8((int(m) - blackFloor) * 255 / (255 - blackFloor))
+	}
+}
+
+// squashRows resamples rows [y0, y1) of img (crop space) to factor x their height; the rows above / below stay.
+func squashRows(img *image.NRGBA, y0, y1 int, factor float64) *image.NRGBA {
+	b := img.Bounds()
+	W := b.Dx()
+	band := crop(img, image.Rect(b.Min.X, b.Min.Y+y0, b.Max.X, b.Min.Y+y1))
+	nh := max(1, int(math.Round(float64(y1-y0)*factor)))
+	band = resize(band, W, nh)
+	out := image.NewNRGBA(image.Rect(0, 0, W, b.Dy()-(y1-y0)+nh))
+	draw.Draw(out, image.Rect(0, 0, W, y0), img, b.Min, draw.Src)
+	draw.Draw(out, image.Rect(0, y0, W, y0+nh), band, band.Bounds().Min, draw.Src)
+	draw.Draw(out, image.Rect(0, y0+nh, W, out.Bounds().Dy()), img, image.Pt(b.Min.X, b.Min.Y+y1), draw.Src)
+	return out
+}
+
+// squashRight resamples rows [y0, y1) to factor x their height for the columns >= x0 only, padding the removed height
+// half above / half below with transparency so that part stays centred on the untouched left part.
+func squashRight(img *image.NRGBA, y0, y1 int, factor float64, x0 int) {
+	b := img.Bounds()
+	H := b.Dy()
+	nh := max(1, int(math.Round(float64(y1-y0)*factor)))
+	d := (y1 - y0) - nh
+	top := d / 2
+	right := crop(img, image.Rect(b.Min.X+x0, b.Min.Y, b.Max.X, b.Max.Y))
+	W := right.Bounds().Dx()
+	band := resize(crop(right, image.Rect(right.Bounds().Min.X, right.Bounds().Min.Y+y0, right.Bounds().Max.X, right.Bounds().Min.Y+y1)), W, nh)
+	col := image.NewNRGBA(image.Rect(0, 0, W, H))
+	draw.Draw(col, image.Rect(0, top, W, top+y0), right, right.Bounds().Min, draw.Src)
+	draw.Draw(col, image.Rect(0, top+y0, W, top+y0+nh), band, band.Bounds().Min, draw.Src)
+	draw.Draw(col, image.Rect(0, top+y0+nh, W, top+H-d), right, image.Pt(right.Bounds().Min.X, right.Bounds().Min.Y+y1), draw.Src)
+	draw.Draw(img, image.Rect(b.Min.X+x0, b.Min.Y, b.Max.X, b.Max.Y), col, image.Point{}, draw.Src)
+}
+
+// solidPolygon makes every pixel inside the polygon (crop space, even-odd rule, pixel centres) fully opaque.
+func solidPolygon(img *image.NRGBA, poly [][2]int) { polygonAlpha(img, poly, 255) }
+
+// polygonAlpha sets the alpha of every pixel inside the polygon (crop space, even-odd rule, pixel centres).
+func polygonAlpha(img *image.NRGBA, poly [][2]int, alpha uint8) {
+	b := img.Bounds()
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		py := float64(y-b.Min.Y) + 0.5
+		for x := b.Min.X; x < b.Max.X; x++ {
+			px := float64(x-b.Min.X) + 0.5
+			in := false
+			for i, j := 0, len(poly)-1; i < len(poly); j, i = i, i+1 {
+				xi, yi := float64(poly[i][0]), float64(poly[i][1])
+				xj, yj := float64(poly[j][0]), float64(poly[j][1])
+				if (yi > py) != (yj > py) && px < (xj-xi)*(py-yi)/(yj-yi)+xi {
+					in = !in
+				}
+			}
+			if in {
+				img.Pix[img.PixOffset(x, y)+3] = alpha
+			}
+		}
+	}
+}
+
+// mirrorLeft overwrites the leftmost n columns with the rightmost n columns mirrored (RGBA, every row).
+func mirrorLeft(img *image.NRGBA, n int) {
+	b := img.Bounds()
+	W := b.Dx()
+	if n > W/2 {
+		n = W / 2
+	}
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := 0; x < n; x++ {
+			d := img.PixOffset(b.Min.X+x, y)
+			s := img.PixOffset(b.Min.X+W-1-x, y)
+			copy(img.Pix[d:d+4], img.Pix[s:s+4])
+		}
+	}
+}
 
 func flip(src *image.NRGBA, h, v bool) *image.NRGBA {
 	W, H := src.Bounds().Dx(), src.Bounds().Dy()

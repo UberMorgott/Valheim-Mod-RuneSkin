@@ -60,6 +60,12 @@ func main() {
 		cmdCompareEB()
 	case "strip":
 		cmdStrip()
+	case "rowmatch":
+		cmdRowMatch()
+	case "metalmatch":
+		cmdMetalMatch()
+	case "pairdiff":
+		cmdPairDiff()
 	case "sheet":
 		cmdSheet()
 	case "compare":

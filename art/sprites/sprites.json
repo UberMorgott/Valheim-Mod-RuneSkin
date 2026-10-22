@@ -2646,7 +2646,7 @@
       "file": "tab_square_normal.png",
       "size": [
         99,
-        96
+        95
       ],
       "border": {
         "left": 16,
@@ -4116,99 +4116,11 @@
       "notes": "M4 boss bar frame (unique tier: gold-bronze rim, rune blocks + leather straps at the ends); ~640x34 ref top-centre; window transparent: bar_trough + bar_enemy_fill (tint pool health) inside inset L 154 R 154 T 34 B 34 (sprite px); boss name on header_plaque above"
     },
     {
-      "name": "frame_enemy_normal",
-      "file": "frame_enemy_normal.png",
+      "name": "fx_stagger_0",
+      "file": "fx_stagger_0.png",
       "size": [
-        117,
-        56
-      ],
-      "border": {
-        "left": 70,
-        "bottom": 12,
-        "right": 15,
-        "top": 23
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Sliced",
-      "fillCenter": false,
-      "token": "frame.enemy.normal",
-      "notes": "cut from the approved mockup enemy-b (user pick 2026-10-22), IDLE 3x NORMAL bar: emblem socket + rail + chevron cap in one Sliced sprite, socket inside the left border, window cut transparent (live trough / fill / shield / stagger show through), background keyed (bg flood); fitted to the Health bar like every enemy frame"
-    },
-    {
-      "name": "frame_enemy_magic",
-      "file": "frame_enemy_magic.png",
-      "size": [
-        123,
-        62
-      ],
-      "border": {
-        "left": 76,
-        "bottom": 15,
-        "right": 15,
-        "top": 25
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Sliced",
-      "fillCenter": false,
-      "token": "frame.enemy.magic",
-      "notes": "cut from mockup enemy-b IDLE 3x MAGIC bar (blue triquetra socket)"
-    },
-    {
-      "name": "frame_enemy_rare",
-      "file": "frame_enemy_rare.png",
-      "size": [
-        136,
-        66
-      ],
-      "border": {
-        "left": 83,
-        "bottom": 17,
-        "right": 21,
-        "top": 27
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Sliced",
-      "fillCenter": false,
-      "token": "frame.enemy.rare",
-      "notes": "cut from mockup enemy-b IDLE 3x RARE bar (gold spiked socket, gold cap)"
-    },
-    {
-      "name": "frame_enemy_unique",
-      "file": "frame_enemy_unique.png",
-      "size": [
-        142,
-        95
-      ],
-      "border": {
-        "left": 88,
-        "bottom": 33,
-        "right": 22,
-        "top": 39
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Sliced",
-      "fillCenter": false,
-      "token": "frame.enemy.unique",
-      "notes": "cut from mockup enemy-b IDLE 3x UNIQUE bar (ember star socket, ember cap); the 3x caption under it cleared"
-    },
-    {
-      "name": "bar_enemy_fill_b",
-      "file": "bar_enemy_fill_b.png",
-      "size": [
-        65,
-        15
+        768,
+        128
       ],
       "border": {
         "left": 0,
@@ -4218,19 +4130,19 @@
       },
       "pivot": [
         0,
-        0.5
+        0.29
       ],
-      "imageType": "Simple",
+      "imageType": "Filled",
       "fillCenter": true,
-      "token": "bar.enemy.fill.b",
-      "notes": "the red HP fill cut from mockup enemy-b (bevelled top highlight, darker base), untinted (white), stretched Simple over the enemy health_fast bar: straight cut end"
+      "token": "fx.stagger.0",
+      "notes": "Codex image gen (fx_stagger_sparks.prompt.txt, refs: enemy-b STAGGERED column) frame 1/4: white-hot stagger line (at 0.29 of the height) with gold glow and rising ember sparks, black keyed to alpha; cycled + cross-faded over the staggered drain"
     },
     {
-      "name": "bar_enemy_lag_b",
-      "file": "bar_enemy_lag_b.png",
+      "name": "fx_stagger_1",
+      "file": "fx_stagger_1.png",
       "size": [
-        5,
-        15
+        768,
+        128
       ],
       "border": {
         "left": 0,
@@ -4240,19 +4152,19 @@
       },
       "pivot": [
         0,
-        0.5
+        0.29
       ],
-      "imageType": "Simple",
+      "imageType": "Filled",
       "fillCenter": true,
-      "token": "bar.enemy.lag.b",
-      "notes": "the pale lag segment cut from mockup enemy-b, untinted, stretched over health_slow"
+      "token": "fx.stagger.1",
+      "notes": "Codex image gen (fx_stagger_sparks.prompt.txt, refs: enemy-b STAGGERED column) frame 2/4: white-hot stagger line (at 0.29 of the height) with gold glow and rising ember sparks, black keyed to alpha; cycled + cross-faded over the staggered drain"
     },
     {
-      "name": "bar_enemy_trough_b",
-      "file": "bar_enemy_trough_b.png",
+      "name": "fx_stagger_2",
+      "file": "fx_stagger_2.png",
       "size": [
-        25,
-        15
+        768,
+        128
       ],
       "border": {
         "left": 0,
@@ -4261,42 +4173,20 @@
         "top": 0
       },
       "pivot": [
-        0.5,
-        0.5
+        0,
+        0.29
       ],
-      "imageType": "Simple",
+      "imageType": "Filled",
       "fillCenter": true,
-      "token": "bar.enemy.trough.b",
-      "notes": "the black trough cut from mockup enemy-b, untinted, stretched over the Health bkg"
+      "token": "fx.stagger.2",
+      "notes": "Codex image gen (fx_stagger_sparks.prompt.txt, refs: enemy-b STAGGERED column) frame 3/4: white-hot stagger line (at 0.29 of the height) with gold glow and rising ember sparks, black keyed to alpha; cycled + cross-faded over the staggered drain"
     },
     {
-      "name": "boss_frame",
-      "file": "boss_frame.png",
+      "name": "fx_stagger_3",
+      "file": "fx_stagger_3.png",
       "size": [
-        72,
-        36
-      ],
-      "border": {
-        "left": 4,
-        "bottom": 8,
-        "right": 4,
-        "top": 8
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Tiled",
-      "fillCenter": false,
-      "token": "boss.frame",
-      "notes": "cut from the approved mockup boss-c (user pick 2026-10-22): an unoccluded rail stretch (dark forged iron, gold rim lines), window cut transparent, background keyed; square ends under the spear caps; BossAwakening world bar frame via RuneSkin.API Theme.TryGetSprite"
-    },
-    {
-      "name": "boss_cap",
-      "file": "boss_cap.png",
-      "size": [
-        143,
-        59
+        768,
+        128
       ],
       "border": {
         "left": 0,
@@ -4305,20 +4195,20 @@
         "top": 0
       },
       "pivot": [
-        1,
-        0.5
+        0,
+        0.29
       ],
-      "imageType": "Simple",
+      "imageType": "Filled",
       "fillCenter": true,
-      "token": "boss.cap",
-      "notes": "cut from mockup boss-c: left spear cap (steel tip, teal chevron runes, gold collar, knotwork block) up to the bar start (its right edge); the right cap is mirrored"
+      "token": "fx.stagger.3",
+      "notes": "Codex image gen (fx_stagger_sparks.prompt.txt, refs: enemy-b STAGGERED column) frame 4/4: white-hot stagger line (at 0.29 of the height) with gold glow and rising ember sparks, black keyed to alpha; cycled + cross-faded over the staggered drain"
     },
     {
-      "name": "boss_plaque",
-      "file": "boss_plaque.png",
+      "name": "fx_gas_0",
+      "file": "fx_gas_0.png",
       "size": [
-        238,
-        49
+        768,
+        128
       ],
       "border": {
         "left": 0,
@@ -4327,20 +4217,20 @@
         "top": 0
       },
       "pivot": [
-        0.5,
-        0
+        0,
+        0.47
       ],
-      "imageType": "Simple",
+      "imageType": "Filled",
       "fillCenter": true,
-      "token": "boss.plaque",
-      "notes": "cut whole from mockup boss-c: name plaque with its stepped top, crest diamond and knotwork wings (Simple, native aspect); the mockup caption cloned over by the field texture of the gap between its words; name field = theme rect.boss.plaque.field (x 0.236..0.783, y 0.30..0.75 of the plaque from the bottom)"
+      "token": "fx.gas.0",
+      "notes": "Codex image gen (fx_gas_haze.prompt.txt, ref: boss-c GAS DRAIN row) frame 1/4: violet smoke wisps above and below an empty band (the bar channel: rows 110-162 of 256, centre at 0.47 from the bottom), black keyed to alpha; cycled + cross-faded over Vaettir's gas fill"
     },
     {
-      "name": "boss_marker",
-      "file": "boss_marker.png",
+      "name": "fx_gas_1",
+      "file": "fx_gas_1.png",
       "size": [
-        19,
-        61
+        768,
+        128
       ],
       "border": {
         "left": 0,
@@ -4349,13 +4239,57 @@
         "top": 0
       },
       "pivot": [
-        0.5,
-        0.89
+        0,
+        0.47
       ],
-      "imageType": "Simple",
+      "imageType": "Filled",
       "fillCenter": true,
-      "token": "boss.marker",
-      "notes": "cut from mockup boss-c: ivory fang phase marker (red fill around it keyed)"
+      "token": "fx.gas.1",
+      "notes": "Codex image gen (fx_gas_haze.prompt.txt, ref: boss-c GAS DRAIN row) frame 2/4: violet smoke wisps above and below an empty band (the bar channel: rows 110-162 of 256, centre at 0.47 from the bottom), black keyed to alpha; cycled + cross-faded over Vaettir's gas fill"
+    },
+    {
+      "name": "fx_gas_2",
+      "file": "fx_gas_2.png",
+      "size": [
+        768,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0,
+        0.47
+      ],
+      "imageType": "Filled",
+      "fillCenter": true,
+      "token": "fx.gas.2",
+      "notes": "Codex image gen (fx_gas_haze.prompt.txt, ref: boss-c GAS DRAIN row) frame 3/4: violet smoke wisps above and below an empty band (the bar channel: rows 110-162 of 256, centre at 0.47 from the bottom), black keyed to alpha; cycled + cross-faded over Vaettir's gas fill"
+    },
+    {
+      "name": "fx_gas_3",
+      "file": "fx_gas_3.png",
+      "size": [
+        768,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0,
+        0.47
+      ],
+      "imageType": "Filled",
+      "fillCenter": true,
+      "token": "fx.gas.3",
+      "notes": "Codex image gen (fx_gas_haze.prompt.txt, ref: boss-c GAS DRAIN row) frame 4/4: violet smoke wisps above and below an empty band (the bar channel: rows 110-162 of 256, centre at 0.47 from the bottom), black keyed to alpha; cycled + cross-faded over Vaettir's gas fill"
     },
     {
       "name": "bar_enemy_fill",
@@ -5324,6 +5258,666 @@
       "fillCenter": true,
       "token": "gem.setting",
       "notes": "M7 selected rarity mount: iron rhombus ring drawn around gem_rarity (1.4x the gem); focus adds ring_select tint rune_glow"
+    },
+    {
+      "name": "boss_cap",
+      "file": "boss_cap.png",
+      "size": [
+        957,
+        401
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        1,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "boss.cap",
+      "notes": "ART PIPELINE: Codex redraw at 4x of the boss-c LEFT end (hd_boss_cap.prompt.txt, ref crop of boss-c): dark steel spear head with teal chevron rune, gold riveted collar, interlaced knot with gold trim + centre diamond; right edge = straight cut where the rails join; magenta keyed, CatmullRom down to ~400 px tall (2x its 4K display)"
+    },
+    {
+      "name": "boss_frame",
+      "file": "boss_frame.png",
+      "size": [
+        144,
+        218
+      ],
+      "border": {
+        "left": 8,
+        "bottom": 48,
+        "right": 8,
+        "top": 50
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": false,
+      "token": "boss.frame",
+      "notes": "ART PIPELINE / FRAMES: the straight rail stretch cut from Codex's 4x repaint of a boss-c frame section (knot + rails with their relief and gold trim line, hd_boss_knotrail.prompt.txt); tiled 9-slice only along the rail, window keyed transparent"
+    },
+    {
+      "name": "boss_plaque",
+      "file": "boss_plaque.png",
+      "size": [
+        1485,
+        315
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "boss.plaque",
+      "notes": "ART PIPELINE: Codex redraw at 4x of the boss-c name plaque (stepped knotwork top, gold diamonds, empty recessed field 0.171-0.819 x 0.150-0.748); magenta keyed"
+    },
+    {
+      "name": "fx_weld_0",
+      "file": "fx_weld_0.png",
+      "size": [
+        192,
+        256
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.39,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "fx.weld.0",
+      "notes": "ART PIPELINE: Codex flipbook frame 1/8 of boss-c's hot damage edge (hd_fx_weld.prompt.txt, frame 1 = the mockup crop): crackling white-hot edge at x 150 of the cell spanning y 96..416, red glow, spark spray to the right; black keyed"
+    },
+    {
+      "name": "fx_weld_1",
+      "file": "fx_weld_1.png",
+      "size": [
+        192,
+        256
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.39,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "fx.weld.1",
+      "notes": "ART PIPELINE: Codex flipbook frame 2/8 of boss-c's hot damage edge (hd_fx_weld.prompt.txt, frame 1 = the mockup crop): crackling white-hot edge at x 150 of the cell spanning y 96..416, red glow, spark spray to the right; black keyed"
+    },
+    {
+      "name": "fx_weld_2",
+      "file": "fx_weld_2.png",
+      "size": [
+        192,
+        256
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.39,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "fx.weld.2",
+      "notes": "ART PIPELINE: Codex flipbook frame 3/8 of boss-c's hot damage edge (hd_fx_weld.prompt.txt, frame 1 = the mockup crop): crackling white-hot edge at x 150 of the cell spanning y 96..416, red glow, spark spray to the right; black keyed"
+    },
+    {
+      "name": "fx_weld_3",
+      "file": "fx_weld_3.png",
+      "size": [
+        192,
+        256
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.39,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "fx.weld.3",
+      "notes": "ART PIPELINE: Codex flipbook frame 4/8 of boss-c's hot damage edge (hd_fx_weld.prompt.txt, frame 1 = the mockup crop): crackling white-hot edge at x 150 of the cell spanning y 96..416, red glow, spark spray to the right; black keyed"
+    },
+    {
+      "name": "fx_weld_4",
+      "file": "fx_weld_4.png",
+      "size": [
+        192,
+        256
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.39,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "fx.weld.4",
+      "notes": "ART PIPELINE: Codex flipbook frame 5/8 of boss-c's hot damage edge (hd_fx_weld.prompt.txt, frame 1 = the mockup crop): crackling white-hot edge at x 150 of the cell spanning y 96..416, red glow, spark spray to the right; black keyed"
+    },
+    {
+      "name": "fx_weld_5",
+      "file": "fx_weld_5.png",
+      "size": [
+        192,
+        256
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.39,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "fx.weld.5",
+      "notes": "ART PIPELINE: Codex flipbook frame 6/8 of boss-c's hot damage edge (hd_fx_weld.prompt.txt, frame 1 = the mockup crop): crackling white-hot edge at x 150 of the cell spanning y 96..416, red glow, spark spray to the right; black keyed"
+    },
+    {
+      "name": "fx_weld_6",
+      "file": "fx_weld_6.png",
+      "size": [
+        192,
+        256
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.39,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "fx.weld.6",
+      "notes": "ART PIPELINE: Codex flipbook frame 7/8 of boss-c's hot damage edge (hd_fx_weld.prompt.txt, frame 1 = the mockup crop): crackling white-hot edge at x 150 of the cell spanning y 96..416, red glow, spark spray to the right; black keyed"
+    },
+    {
+      "name": "fx_weld_7",
+      "file": "fx_weld_7.png",
+      "size": [
+        192,
+        256
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.39,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "fx.weld.7",
+      "notes": "ART PIPELINE: Codex flipbook frame 8/8 of boss-c's hot damage edge (hd_fx_weld.prompt.txt, frame 1 = the mockup crop): crackling white-hot edge at x 150 of the cell spanning y 96..416, red glow, spark spray to the right; black keyed"
+    },
+    {
+      "name": "fx_gasend_0",
+      "file": "fx_gasend_0.png",
+      "size": [
+        384,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.26,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "fx.gasend.0",
+      "notes": "ART PIPELINE: Codex flipbook frame 1/8 of boss-c's gas-end smoke (hd_fx_gasend.prompt.txt, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; green keyed"
+    },
+    {
+      "name": "fx_gasend_1",
+      "file": "fx_gasend_1.png",
+      "size": [
+        384,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.26,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "fx.gasend.1",
+      "notes": "ART PIPELINE: Codex flipbook frame 2/8 of boss-c's gas-end smoke (hd_fx_gasend.prompt.txt, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; green keyed"
+    },
+    {
+      "name": "fx_gasend_2",
+      "file": "fx_gasend_2.png",
+      "size": [
+        384,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.26,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "fx.gasend.2",
+      "notes": "ART PIPELINE: Codex flipbook frame 3/8 of boss-c's gas-end smoke (hd_fx_gasend.prompt.txt, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; green keyed"
+    },
+    {
+      "name": "fx_gasend_3",
+      "file": "fx_gasend_3.png",
+      "size": [
+        384,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.26,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "fx.gasend.3",
+      "notes": "ART PIPELINE: Codex flipbook frame 4/8 of boss-c's gas-end smoke (hd_fx_gasend.prompt.txt, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; green keyed"
+    },
+    {
+      "name": "fx_gasend_4",
+      "file": "fx_gasend_4.png",
+      "size": [
+        384,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.26,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "fx.gasend.4",
+      "notes": "ART PIPELINE: Codex flipbook frame 5/8 of boss-c's gas-end smoke (hd_fx_gasend.prompt.txt, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; green keyed"
+    },
+    {
+      "name": "fx_gasend_5",
+      "file": "fx_gasend_5.png",
+      "size": [
+        384,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.26,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "fx.gasend.5",
+      "notes": "ART PIPELINE: Codex flipbook frame 6/8 of boss-c's gas-end smoke (hd_fx_gasend.prompt.txt, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; green keyed"
+    },
+    {
+      "name": "fx_gasend_6",
+      "file": "fx_gasend_6.png",
+      "size": [
+        384,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.26,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "fx.gasend.6",
+      "notes": "ART PIPELINE: Codex flipbook frame 7/8 of boss-c's gas-end smoke (hd_fx_gasend.prompt.txt, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; green keyed"
+    },
+    {
+      "name": "fx_gasend_7",
+      "file": "fx_gasend_7.png",
+      "size": [
+        384,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.26,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "fx.gasend.7",
+      "notes": "ART PIPELINE: Codex flipbook frame 8/8 of boss-c's gas-end smoke (hd_fx_gasend.prompt.txt, frame 1 = the mockup crop): dark-violet cloud around the fill end, wisps, sparkles; green keyed"
+    },
+    {
+      "name": "boss_marker",
+      "file": "boss_marker.png",
+      "size": [
+        89,
+        329
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.78
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "boss.marker",
+      "notes": "ART PIPELINE: Codex redraw at 4x of the boss-c ivory fang phase marker; magenta keyed"
+    },
+    {
+      "name": "boss_flare",
+      "file": "boss_flare.png",
+      "size": [
+        155,
+        380
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "boss.flare",
+      "notes": "ART PIPELINE: Codex redraw of boss-c's hot damage edge (hd_boss_burst.prompt.txt): a tall vertical white-hot crackling burst spanning the bar height with radiating red spark streaks, on black keyed to straight alpha; centred on the HP edge, flickers / pulses, bursts bigger on a hit"
+    },
+    {
+      "name": "bar_boss_fill_c",
+      "file": "bar_boss_fill_c.png",
+      "size": [
+        1084,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "bar.boss.fill.c",
+      "notes": "ART PIPELINE: Codex 4x redraw of the boss-c red HP fill as a glossy cylinder (crimson edges, pink-red highlight band, marbled), stretched Simple over the boss health_fast"
+    },
+    {
+      "name": "bar_boss_trough_c",
+      "file": "bar_boss_trough_c.png",
+      "size": [
+        1054,
+        129
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "bar.boss.trough.c",
+      "notes": "ART PIPELINE: Codex 4x redraw of the boss-c empty trough (dark teal glass, faint highlight line)"
+    },
+    {
+      "name": "frame_enemy_normal",
+      "file": "frame_enemy_normal.png",
+      "size": [
+        174,
+        94
+      ],
+      "border": {
+        "left": 55,
+        "bottom": 20,
+        "right": 55,
+        "top": 20
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": false,
+      "token": "frame.enemy.normal",
+      "notes": "ART PIPELINE / FRAMES: Codex 4x repaint of the enemy-b NORMAL frame WITHOUT the emblem socket (rail + knotted chevron cap at both ends, symmetric); 9-slice along the rail only, window keyed transparent"
+    },
+    {
+      "name": "frame_enemy_magic",
+      "file": "frame_enemy_magic.png",
+      "size": [
+        303,
+        172
+      ],
+      "border": {
+        "left": 184,
+        "bottom": 63,
+        "right": 55,
+        "top": 59
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": false,
+      "token": "frame.enemy.magic",
+      "notes": "ART PIPELINE / FRAMES: Codex 4x repaint of the enemy-b MAGIC frame (steel socket with the blue triquetra, rail, chevron cap); 9-slice along the rail only"
+    },
+    {
+      "name": "frame_enemy_rare",
+      "file": "frame_enemy_rare.png",
+      "size": [
+        318,
+        193
+      ],
+      "border": {
+        "left": 201,
+        "bottom": 74,
+        "right": 53,
+        "top": 71
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": false,
+      "token": "frame.enemy.rare",
+      "notes": "ART PIPELINE / FRAMES: Codex 4x repaint of the enemy-b RARE frame (gold socket with the triangle-knot rune, rail, chevron cap); 9-slice along the rail only"
+    },
+    {
+      "name": "frame_enemy_unique",
+      "file": "frame_enemy_unique.png",
+      "size": [
+        321,
+        207
+      ],
+      "border": {
+        "left": 205,
+        "bottom": 82,
+        "right": 52,
+        "top": 79
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": false,
+      "token": "frame.enemy.unique",
+      "notes": "ART PIPELINE / FRAMES: Codex 4x repaint of the enemy-b UNIQUE frame (spiked socket with the orange-red rune, rail, chevron cap); 9-slice along the rail only"
+    },
+    {
+      "name": "bar_enemy_fill_b",
+      "file": "bar_enemy_fill_b.png",
+      "size": [
+        502,
+        60
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "bar.enemy.fill.b",
+      "notes": "ART PIPELINE: Codex 4x redraw of the enemy-b red HP fill (glossy cylinder), stretched Simple over health_fast"
+    },
+    {
+      "name": "bar_enemy_lag_b",
+      "file": "bar_enemy_lag_b.png",
+      "size": [
+        502,
+        63
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "bar.enemy.lag.b",
+      "notes": "ART PIPELINE: Codex 4x redraw of the enemy-b light grey lag segment"
+    },
+    {
+      "name": "bar_enemy_trough_b",
+      "file": "bar_enemy_trough_b.png",
+      "size": [
+        502,
+        62
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "bar.enemy.trough.b",
+      "notes": "ART PIPELINE: Codex 4x redraw of the enemy-b dark empty trough"
     }
   ]
 }
