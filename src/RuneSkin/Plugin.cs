@@ -22,7 +22,7 @@ namespace RuneSkin
     [BepInProcess("valheim.exe")]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Version = "0.6.5";
+        public const string Version = "0.7.0";
 
         public static ManualLogSource Log { get; private set; }
         public static ConfigEntry<float> SkinScale { get; private set; }
@@ -34,6 +34,7 @@ namespace RuneSkin
 
         private static ConfigEntry<bool> _ownMenu, _ownTooltips, _ownHud, _ownInventory, _ownCrafting, _ownSkills, _ownTrophies, _ownAlmanac, _requireAssets;
         private static ConfigEntry<bool> _ownMinimap, _ownEnemyHud, _ownMessageHud, _ownDamageText, _ownMainMenu, _ownSettings, _ownConnection;
+        private static ConfigEntry<bool> _ownBuildHud, _ownCrosshair, _ownActionHud, _ownShipHud, _ownKeyHints;
         private Harmony _harmony;
 
         private void Awake()
@@ -69,6 +70,16 @@ namespace RuneSkin
                 "RuneSkin styles the Settings window (category list, sliders, checkboxes, dropdowns, key bindings). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
             _ownConnection = Config.Bind("Ownership", "Connection", true,
                 "RuneSkin styles the server password and connecting dialogs. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+            _ownBuildHud = Config.Bind("Ownership", "BuildHud", true,
+                "RuneSkin styles the build menu, the selected-piece strip and the hovered-piece author window. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+            _ownCrosshair = Config.Bind("Ownership", "Crosshair", true,
+                "RuneSkin styles the crosshair, hover text, piece health bar and the stealth eye. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+            _ownActionHud = Config.Bind("Ownership", "ActionHud", true,
+                "RuneSkin styles the action progress and stagger bars, the event / raid line and the mount panel. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+            _ownShipHud = Config.Bind("Ownership", "ShipHud", true,
+                "RuneSkin draws the ship HUD as a speed ladder with a rudder socket (wind stays on the minimap ring). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownKeyHints = Config.Bind("Ownership", "KeyHints", true,
+                "RuneSkin styles the key hints (key plates and labels; gamepad glyphs stay). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
             HudScale = Config.Bind("Hud", "Scale", 1f, new ConfigDescription(
                 "HUD cluster scale on top of the game's UI scale (fonts never go below the readable floor).",
                 new AcceptableValueRange<float>(0.75f, 1.5f)));
@@ -111,6 +122,11 @@ namespace RuneSkin
                 [OwnershipRegistry.MainMenu] = _ownMainMenu.Value,
                 [OwnershipRegistry.Settings] = _ownSettings.Value,
                 [OwnershipRegistry.Connection] = _ownConnection.Value,
+                [OwnershipRegistry.BuildHud] = _ownBuildHud.Value,
+                [OwnershipRegistry.Crosshair] = _ownCrosshair.Value,
+                [OwnershipRegistry.ActionHud] = _ownActionHud.Value,
+                [OwnershipRegistry.ShipHud] = _ownShipHud.Value,
+                [OwnershipRegistry.KeyHints] = _ownKeyHints.Value,
             }, _requireAssets.Value);
 
             ApiHost = new Host();
@@ -141,6 +157,9 @@ namespace RuneSkin
             if (OwnershipRegistry.IsOwned(OwnershipRegistry.MainMenu)) _harmony.PatchAll(typeof(PreWorld.MainMenuAdapter));
             if (OwnershipRegistry.IsOwned(OwnershipRegistry.Settings)) _harmony.PatchAll(typeof(PreWorld.SettingsAdapter));
             if (OwnershipRegistry.IsOwned(OwnershipRegistry.Connection)) _harmony.PatchAll(typeof(PreWorld.ConnectionAdapter));
+            if (OwnershipRegistry.IsOwned(OwnershipRegistry.BuildHud) || OwnershipRegistry.IsOwned(OwnershipRegistry.Crosshair) || OwnershipRegistry.IsOwned(OwnershipRegistry.ActionHud) ||
+                OwnershipRegistry.IsOwned(OwnershipRegistry.ShipHud) || OwnershipRegistry.IsOwned(OwnershipRegistry.KeyHints))
+                _harmony.PatchAll(typeof(WorldHud.PlayHudAdapter));
             Log.LogInfo($"[RuneSkin] {Version} ready (API v{Skin.ApiVersion})");
         }
 
@@ -160,6 +179,7 @@ namespace RuneSkin
             WorldHud.EnemyHudSkin.Record();
             WorldHud.MessageSkin.Instance?.Record();
             WorldHud.DamageTextSkin.Record();
+            WorldHud.PlayHud.Record();
             return SkinDiagnostics.Dump(string.IsNullOrEmpty(screen) ? null : screen).ToArray();
         }
     }

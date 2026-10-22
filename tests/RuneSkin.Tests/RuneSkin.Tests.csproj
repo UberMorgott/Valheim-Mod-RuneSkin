@@ -35,6 +35,8 @@
     <Compile Include="..\..\src\RuneSkin\InfoScreens\InfoMath.cs" Link="Linked\InfoMath.cs" />
     <Compile Include="..\..\src\RuneSkin\MapScreen\MinimapMath.cs" Link="Linked\MinimapMath.cs" />
     <Compile Include="..\..\src\RuneSkin\WorldHud\EnemyHudMath.cs" Link="Linked\EnemyHudMath.cs" />
+    <Compile Include="..\..\src\RuneSkin\WorldHud\PlayHudMath.cs" Link="Linked\PlayHudMath.cs" />
+    <Compile Include="..\..\src\RuneSkin.API\SkinFamilies.cs" Link="Linked\SkinFamilies.cs" />
     <Compile Include="..\..\src\RuneSkin\Screens\PreWorld\PreWorldMath.cs" Link="Linked\PreWorldMath.cs" />
     <Compile Include="..\..\src\RuneSkin\Hud\EffectTaxonomy.cs" Link="Linked\EffectTaxonomy.cs" />
     <Compile Include="..\..\src\RuneSkin\Hud\ResourceCheck.cs" Link="Linked\ResourceCheck.cs" />

@@ -307,7 +307,7 @@ namespace RuneSkin.PlayerHud
                 pr.anchoredPosition = new Vector2(size * 0.1f, -size * 0.12f);
                 plate.gameObject.SetActive(false);
             }
-            c.Timer = _art.Text("Timer", c.Root, more ? "font.display" : "font.body", "color.hud.timer",
+            c.Timer = _art.Text("Timer", c.Root, "font.body", "color.hud.timer", // values = body font, "+N" too
                 ThemeTokens.GetFloat(more ? "size.hud.font.number" : "size.hud.font.status", 15f), TextAlignmentOptions.Center);
             var tr = c.Timer.rectTransform;
             // Timer / icon text inside the cell under the icon (cell sized for WorstText); anything longer shrinks

@@ -147,6 +147,13 @@ namespace RuneSkin.PlayerHud
             return true;
         }
 
+        // Diagnostics row for a vanilla graphic deliberately kept as it is (icons, controller glyph art, fills whose
+        // colour vanilla drives): explained content, never unknown.
+        public void Content(Graphic g, string reason)
+        {
+            if (g) Set(g, new Classification { Role = _screenId.ToLowerInvariant() + ":content", Outcome = Outcome.Content, Reason = reason });
+        }
+
         public void Suppressed(Transform t, string reason) => _suppressed.Add(new KeyValuePair<Transform, string>(t, reason));
 
         private void Set(Graphic g, Classification c)

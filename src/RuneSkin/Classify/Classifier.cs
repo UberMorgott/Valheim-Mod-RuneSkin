@@ -136,8 +136,12 @@ namespace RuneSkin.Classify
                         return Classification.Of("menu.entry", "TMP is the Button's targetGraphic (text-only entry)");
                     return Classification.Of("button.label", "TMP inside Button");
                 }
-                if (selectable is TMP_InputField)
-                    return Classification.Of("content", "input field text (user content)");
+                // Input text and placeholder take the body font like every other RuneSkin text (left as content they kept
+                // the vanilla Norse / Averia fonts: a third and fourth face next to the theme's two).
+                if (selectable is TMP_InputField input)
+                    return input.placeholder == g
+                        ? Classification.Of("text.muted", "input field placeholder (body font, muted)")
+                        : Classification.Of("text.body", "input field text (body font)");
                 var header = ThemeTokens.GetFloat("size.text.header.min", float.MaxValue);
                 return Classification.Of(text.fontSize >= header ? "text.header" : "text.body",
                     text.fontSize >= header ? "TMP size >= size.text.header.min" : "TMP body text");
@@ -148,7 +152,7 @@ namespace RuneSkin.Classify
         // Families whose screens are vanilla control forms (M5: main menu screens, settings, connection dialogs): the
         // controls are classified by their component wiring (art\README.md "M5 sprites": slider A, toggle = checkbox,
         // dropdown A, input = field_search). Older families keep their adapter-specific roles.
-        public static readonly HashSet<string> ControlFamilies = new HashSet<string> { "MainMenu", "Settings", "Connection" };
+        public static readonly HashSet<string> ControlFamilies = new HashSet<string> { "MainMenu", "Settings", "Connection", "BuildHud" };
 
         private static bool Controls(string family) => family != null && ControlFamilies.Contains(family);
 

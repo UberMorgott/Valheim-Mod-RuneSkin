@@ -44,7 +44,16 @@ namespace RuneSkin.Ownership
         public const string Settings = "Settings";
         public const string Connection = "Connection";
 
-        public static readonly string[] Known = { Menu, Tooltips, Hud, Inventory, Crafting, Skills, Trophies, Almanac, Minimap, EnemyHud, MessageHud, DamageText, MainMenu, Settings, Connection };
+        // M6 in-game vanilla screens (restyled in place, art\README.md "M6 sprites"): build menu + selected-piece strip,
+        // crosshair / hover / piece health / stealth eye, action progress / stagger / event line / mount panel, ship
+        // HUD (speed ladder, rudder), key hints. Names shared with RuneSkin.API.SkinFamilies.
+        public const string BuildHud = RuneSkin.API.SkinFamilies.BuildHud;
+        public const string Crosshair = RuneSkin.API.SkinFamilies.Crosshair;
+        public const string ActionHud = RuneSkin.API.SkinFamilies.ActionHud;
+        public const string ShipHud = RuneSkin.API.SkinFamilies.ShipHud;
+        public const string KeyHints = RuneSkin.API.SkinFamilies.KeyHints;
+
+        public static readonly string[] Known = { Menu, Tooltips, Hud, Inventory, Crafting, Skills, Trophies, Almanac, Minimap, EnemyHud, MessageHud, DamageText, MainMenu, Settings, Connection, BuildHud, Crosshair, ActionHud, ShipHud, KeyHints };
 
         private static readonly HashSet<string> Owned = new HashSet<string>();
         public static bool Frozen { get; private set; }

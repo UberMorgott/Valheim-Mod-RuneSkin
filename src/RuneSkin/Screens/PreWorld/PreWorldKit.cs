@@ -70,7 +70,13 @@ namespace RuneSkin.PreWorld
                 if (ctx.AdapterRoles.ContainsKey(g)) continue;
                 if (g.GetComponent<SkinMark>() is SkinMark m && m.Internal) continue;
                 if (g is RawImage) { ctx.Role(g, "content", "raw image (3D viewport / render)"); continue; }
-                if (IsKeyHint(g.transform, root)) { ctx.Role(g, "content", "gamepad key hint (controller glyph art)"); continue; }
+                if (IsKeyHint(g.transform, root))
+                {
+                    // Glyph art stays; the hint's text takes the body font (vanilla Averia otherwise).
+                    if (g is TMP_Text) ctx.Role(g, "text.body", "key hint label (body font)");
+                    else ctx.Role(g, "content", "gamepad key hint (controller glyph art)");
+                    continue;
+                }
                 if (g is Image img && img.TryGetComponent<PanelSwap>(out _)) { ctx.Role(g, "skip", "vanilla panel image (RuneSkin panel stack replaces it, off)"); continue; }
                 if (g is Image well && well.GetComponent<WellMark>()) { ctx.Role(g, "well", "nested vanilla panel -> recessed well (frame_inset)"); continue; }
                 if (g is TMP_Text t && t.GetComponentInParent<Button>(true) is Button b && b.targetGraphic != g && b.GetComponent<ButtonPlate>())

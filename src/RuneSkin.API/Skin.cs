@@ -23,7 +23,7 @@ namespace RuneSkin.API
         /// Version of the installed API surface (a property, not a const, so you read the installed value at runtime).
         /// Bumped on every public change; check it before using newer members.
         /// </summary>
-        public static int ApiVersion => 4;
+        public static int ApiVersion => 5;
 
         private static IHost _host;
         private static int _mainThread = -1;
@@ -43,7 +43,7 @@ namespace RuneSkin.API
         public static bool Supports(string capability) => _host != null && capability != null && _host.Supports(capability);
 
         /// <summary>
-        /// Whether RuneSkin owns a screen family (e.g. "Menu", "Tooltips") in this session. Frozen at startup;
+        /// Whether RuneSkin owns a screen family (names in <see cref="SkinFamilies"/>, e.g. "Menu", "BuildHud") in this session. Frozen at startup;
         /// only families whose assets loaded count. Other skins must not style an owned family.
         /// </summary>
         public static bool IsOwned(string family) => _host != null && family != null && _host.IsOwned(family);

@@ -8,6 +8,7 @@
     { "token": "color.text.active", "value": "#E8B64AFF" },
     { "token": "color.text.missing", "value": "#E0413AFF" },
     { "token": "color.text.ok", "value": "#9FD66BFF" },
+    { "token": "color.text.ember", "value": "#F08A3AFF" },
     { "token": "color.text.stat", "value": "#8AB4F0FF" },    { "token": "color.glass", "value": "#FFFFFFFF" },
     { "token": "color.scrim", "value": "#04070ACC" },
     { "token": "color.panel.backing", "value": "#101C22FF" },
@@ -259,6 +260,16 @@
     { "token": "sprite.button.danger.normal", "asset": "button_danger_normal" },
     { "token": "sprite.button.danger.hover", "asset": "button_danger_hover" },
     { "token": "sprite.spinner.runes", "asset": "spinner_runes" },
+    { "token": "sprite.glyph.stealth.eye", "asset": "glyph_stealth_eye" },
+    { "token": "sprite.glyph.crosshair", "asset": "glyph_crosshair" },
+    { "token": "sprite.glyph.ship.oar", "asset": "glyph_ship_oar" },
+    { "token": "sprite.glyph.ship.sail.half", "asset": "glyph_ship_sail_half" },
+    { "token": "sprite.glyph.ship.sail.full", "asset": "glyph_ship_sail_full" },
+    { "token": "sprite.glyph.rudder", "asset": "glyph_rudder" },
+    { "token": "sprite.glyph.teleport.swirl", "asset": "glyph_teleport_swirl" },
+    { "token": "sprite.glyph.stop", "asset": "glyph_stop" },
+    { "token": "sprite.band.runes", "asset": "band_runes" },
+    { "token": "sprite.bar.frame.action", "asset": "bar_frame_action" },
     { "token": "sprite.glyph.chevron.down", "asset": "glyph_chevron_down" },
     { "token": "sprite.glyph.refresh", "asset": "glyph_refresh" }
   ],
@@ -677,6 +688,7 @@
     { "role": "tab", "sprite": "sprite.button.normal", "color": "color.frame", "imageType": "Sliced", "fillCenter": "true", "spriteHover": "sprite.button.hover", "spritePressed": "sprite.button.pressed", "spriteSelected": "sprite.button.hover", "spriteDisabled": "sprite.button.selected" },
     { "role": "text.version", "font": "font.body", "textColor": "color.state.disabled" },
     { "role": "map.text", "font": "font.body", "textColor": "color.text.body" },
+    { "role": "key.plate", "sprite": "sprite.hud.plate.key", "color": "color.frame", "imageType": "Sliced", "fillCenter": "true" },
     { "role": "skip" }
   ],
   "spriteRoles": [
@@ -691,6 +703,7 @@
     { "match": "button", "role": "button" },
     { "match": "BraidLineHorisontalMedium", "role": "divider" },
     { "match": "panel_separator", "role": "divider" },
+    { "match": "key_base", "role": "key.plate" },
     { "match": "BraidKnotMedium", "role": "ornament.knot" },
     { "match": "darken_blob", "role": "scrim" },
     { "match": "point", "role": "scrim" },
@@ -712,6 +725,11 @@
     { "family": "DamageText", "requires": [ "font.body" ] },
     { "family": "MainMenu", "requires": [ "sprite.frame.panel", "sprite.fill.glass", "sprite.button.normal", "sprite.button.danger.normal", "sprite.field.search", "sprite.spinner.runes", "font.display", "font.body" ] },
     { "family": "Settings", "requires": [ "sprite.frame.panel", "sprite.fill.glass", "sprite.tab.normal", "sprite.checkbox.box", "sprite.slider.handle.normal", "sprite.bar.skill.trough", "sprite.field.search", "font.display", "font.body" ] },
-    { "family": "Connection", "requires": [ "sprite.frame.panel", "sprite.fill.glass", "sprite.button.normal", "sprite.field.search", "sprite.spinner.runes", "font.display", "font.body" ] }
+    { "family": "Connection", "requires": [ "sprite.frame.panel", "sprite.fill.glass", "sprite.button.normal", "sprite.field.search", "sprite.spinner.runes", "font.display", "font.body" ] },
+    { "family": "BuildHud", "requires": [ "sprite.frame.panel", "sprite.fill.glass", "sprite.tab.normal", "sprite.slot.recess", "sprite.field.search", "sprite.frame.inset", "font.display", "font.body" ] },
+    { "family": "Crosshair", "requires": [ "sprite.glyph.crosshair", "sprite.glyph.stealth.eye", "sprite.bar.skill.trough", "sprite.bar.skill.fill", "font.body" ] },
+    { "family": "ActionHud", "requires": [ "sprite.bar.frame.action", "sprite.hud.bar.trough", "sprite.hud.bar.fill", "sprite.band.message", "font.display", "font.body" ] },
+    { "family": "ShipHud", "requires": [ "sprite.glyph.ship.oar", "sprite.glyph.ship.sail.half", "sprite.glyph.ship.sail.full", "sprite.glyph.stop", "sprite.glyph.rudder", "sprite.slot.cell.selected", "sprite.button.round" ] },
+    { "family": "KeyHints", "requires": [ "sprite.hud.plate.key", "font.body" ] }
   ]
 }

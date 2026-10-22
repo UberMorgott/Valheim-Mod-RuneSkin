@@ -7,7 +7,7 @@
   <PropertyGroup>
     <AssemblyName>RuneSkin.API</AssemblyName>
     <RootNamespace>RuneSkin.API</RootNamespace>
-    <Version>2.0.0</Version>
+    <Version>2.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
