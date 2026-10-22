@@ -51,6 +51,27 @@ namespace RuneSkin.InventoryScreen
         [HarmonyPostfix]
         private static void Hide_Postfix() => InventorySkin.Instance?.OnHide();
 
+        // Character preview refresh events (CharacterPreview.MarkDirty), local player only: every equipment change
+        // ends in Humanoid.SetupEquipment -> Player.SetupVisEquipment(m_visEquipment, false) (equip, unequip, hide /
+        // show hand items, SetHair / SetBeard; Humanoid.cs:1428-1432, :1957); model and colours change through
+        // Player.SetPlayerModel / SetSkinColor / SetHairColor (Player.cs:6012-6042). The preview's own call (its clone's
+        // VisEquipment) is not an event.
+        [HarmonyPatch(typeof(Player), nameof(Player.SetupVisEquipment))]
+        [HarmonyPostfix]
+        private static void SetupVisEquipment_Postfix(Player __instance, VisEquipment visEq)
+        {
+            if (__instance == Player.m_localPlayer && visEq == __instance.m_visEquipment) CharacterPreview.MarkDirty();
+        }
+
+        [HarmonyPatch(typeof(Player), nameof(Player.SetPlayerModel))]
+        [HarmonyPatch(typeof(Player), nameof(Player.SetSkinColor))]
+        [HarmonyPatch(typeof(Player), nameof(Player.SetHairColor))]
+        [HarmonyPostfix]
+        private static void Appearance_Postfix(Player __instance)
+        {
+            if (__instance == Player.m_localPlayer) CharacterPreview.MarkDirty();
+        }
+
         private static int _faults;
 
         private static void Fault(System.Exception e)

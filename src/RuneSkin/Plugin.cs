@@ -22,10 +22,11 @@ namespace RuneSkin
     [BepInProcess("valheim.exe")]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Version = "0.11.0";
+        public const string Version = "0.12.0";
 
         public static ManualLogSource Log { get; private set; }
         public static ConfigEntry<float> SkinScale { get; private set; }
+        public static ConfigEntry<bool> CharacterPreview { get; private set; }
         public static Host ApiHost { get; private set; }
         public static ConfigEntry<float> HudScale { get; private set; }
         public static ConfigEntry<float> MinimapScale { get; private set; }
@@ -138,6 +139,8 @@ namespace RuneSkin
             SkinScale = Config.Bind("Layout", "SkinScale", 1f, new ConfigDescription(
                 "Extra scale of RuneSkin panels on top of the game's UI scale.",
                 new AcceptableValueRange<float>(ResponsiveContext.MinSkinScale, ResponsiveContext.MaxSkinScale)));
+            CharacterPreview = Config.Bind("Layout", "CharacterPreview", true,
+                "Live 3D preview of your character in the inventory (off = carved silhouette). Applies on the next game start.");
 
             if (!ThemeTokens.Load())
             {

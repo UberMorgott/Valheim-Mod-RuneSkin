@@ -389,6 +389,27 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
 - [x] Harness AutotestDriver.RuneBarCaps.cs: m4-bar-caps-<res> (equal widths, right edges aligned, gaps <= 1 px, window
       end = cap left, mask) + crops ui-runeskin-m4-barcap-<v>-<res>. Run 20261022-170700: 2/2 + variants PASS.
 
+## 0.12.0 live 3D character preview (2026-10-22)
+
+- [x] CharacterPreview (InventoryScreen): self-contained RawImage placed by a theme rect (share.inv.preview.x/y/w/h +
+      size.inv.preview.inset inside the doll figure box, PreviewMath.Place) - movable for the full-screen inventory
+      redesign; replaces the silhouette (silhouette = fallback: Layout.CharacterPreview off, no free layer, build error).
+- [x] Visual-only clone (FejdStartup.SetupCharacterPreview approach: player prefab + ZNetView.m_forceDisableInit),
+      stripped before activation to renderers / animator / VisEquipment / particles / cloth; filled by
+      Player.SetupVisEquipment(clone, false) (ragdoll path: armour, hands + back, cape, utility, trinket, hair / beard,
+      model, colours, mod items); refresh on Player.SetupVisEquipment / SetPlayerModel / SetSkinColor / SetHairColor of
+      the local player only; no ZDO written (MP-neutral).
+- [x] Own layer (first unnamed, 30 in game) + manual camera + key / fill / rim rig; world directional lights, fog,
+      ambient swapped only for its render (noon vs midnight luma 0.350 / 0.351); drag rotates; idle (wake-up skipped).
+- [x] Teardown on close / logout / player change: RT, rig, clone, runtime materials (creation-window ownership;
+      PlayerMaterial / _Fem copies leaked 2 per build before). Open state from the animator (IsVisible lags 1 frame).
+- [x] Tests PreviewMathTests (placement, texture size, camera fit, yaw, layer pick).
+- [x] Runs 20261022-174939 / 20261022-175538 (ui-runeskin-preview): live, nonempty, isolated, time, helmet, drag PASS;
+      leak: LiveClones / LiveTextures / RTs / rigs 0, materials 5770 -> 5770.
+- [ ] Open: leak check builds 11 / 10 cycles (one extra rebuild somewhere) and memory +20 MB measured without GC
+      (harness now collects first) - re-check on the next run.
+- [ ] Open: ui-runeskin-m0 tooltip live=False (cursor target not on the hovered cell; harness logs element / target now).
+
 ## Full-coverage directive (user, 2026-10-22; into M7 after B1-B5, not started)
 
 - [ ] 100 % of the UI on RuneSkin: all fonts, buttons, menus, incl. ALL current and future mods (Epic Loot etc.) -> a

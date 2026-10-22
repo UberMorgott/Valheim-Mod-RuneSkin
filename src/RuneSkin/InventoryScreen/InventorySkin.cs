@@ -43,6 +43,9 @@ namespace RuneSkin.InventoryScreen
         private RectTransform _canvas;
         private Canvas _rootCanvas;
         private RectTransform _decor, _centerHost, _chestHost, _packHost, _doll, _hotbarHeader, _backdrop, _silhouette;
+        private CharacterPreview _preview;
+        // Theme rect of the live preview inside the figure box (PreviewMath.Place): normalized x, y, w, h + inset.
+        private float _previewX, _previewY, _previewW = 1f, _previewH = 1f, _previewInset = 8f;
         private readonly InventoryTokens _tokens = new InventoryTokens();
         private readonly InventoryInput _input = new InventoryInput();
         private InventoryLayout _layout;
@@ -152,6 +155,9 @@ namespace RuneSkin.InventoryScreen
             t.DollColumns = F("size.inv.doll.columns", t.DollColumns); t.DollPad = F("size.inv.doll.pad", t.DollPad); t.DollFigureGap = F("size.inv.doll.figure.gap", t.DollFigureGap);
             t.DollFigureAspect = F("share.inv.doll.figure", t.DollFigureAspect); t.HeaderMinH = F("size.inv.header.min", t.HeaderMinH); t.InnerGapMin = F("size.inv.inner.gap.min", t.InnerGapMin);
             t.ScrollbarW = F("size.inv.scrollbar", t.ScrollbarW); t.MinCellPhysPx = F("floor.cell.px", t.MinCellPhysPx);
+            _previewX = F("share.inv.preview.x", 0f); _previewY = F("share.inv.preview.y", 0f);
+            _previewW = F("share.inv.preview.w", 1f); _previewH = F("share.inv.preview.h", 1f);
+            _previewInset = F("size.inv.preview.inset", 8f);
         }
 
         // ---------------------------------------------------------------- build
@@ -198,7 +204,12 @@ namespace RuneSkin.InventoryScreen
             if (_gui.m_playerGrid) _hotbarHeader.SetSiblingIndex(_gui.m_playerGrid.transform.GetSiblingIndex());
 
             _backdrop = Decor("RuneSkinDollBackdrop", "doll.backdrop", "doll alcove behind the silhouette");
-            _silhouette = Decor("RuneSkinDollFigure", "doll.silhouette", "carved warrior silhouette (no 3D preview yet)");
+            _silhouette = Decor("RuneSkinDollFigure", "doll.silhouette", "carved warrior silhouette (fallback when the live preview is off)");
+            if (Plugin.CharacterPreview == null || Plugin.CharacterPreview.Value)
+            {
+                _preview = CharacterPreview.Create(_doll, "RuneSkinCharacterPreview");
+                _preview.transform.SetSiblingIndex(_silhouette.GetSiblingIndex());
+            }
         }
 
         private RectTransform Decor(string name, string role, string reason)
@@ -363,6 +374,7 @@ namespace RuneSkin.InventoryScreen
 
         public void OnHide()
         {
+            if (_preview) _preview.Close();
             RestoreQuickBar();
             ClearBand();
         }
@@ -1106,7 +1118,10 @@ namespace RuneSkin.InventoryScreen
             var figure = strip.Figure;
 
             if (_backdrop) Show(_backdrop, figure.W >= d.Cell ? figure : default);
-            if (_silhouette) Show(_silhouette, figure.W >= d.Cell ? Inset(figure, 8f, 8f) : default);
+            var fits = figure.W >= d.Cell;
+            var live = _preview && !_preview.Failed;
+            if (_preview) _preview.Place(_canvas, fits && live ? PreviewMath.Place(figure, _previewX, _previewY, _previewW, _previewH, _previewInset * k) : default);
+            if (_silhouette) Show(_silhouette, fits && !live ? Inset(figure, 8f, 8f) : default);
 
             PlaceQuickCells(grid);
         }
