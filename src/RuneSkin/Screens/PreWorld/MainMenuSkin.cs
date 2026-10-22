@@ -111,12 +111,15 @@ namespace RuneSkin.PreWorld
         {
             if (!fejd.m_changeLog) return;
             var window = (RectTransform)fejd.m_changeLog.transform;
+            var min = ThemeTokens.GetFloat("size.preworld.panel.min", 120f);
             foreach (var img in window.GetComponentsInChildren<Image>(true))
             {
                 if (img.GetComponent<SkinMark>() is SkinMark m && m.Internal) continue;
                 var sprite = img.TryGetComponent<PanelSwap>(out var swapped) ? swapped.OrigSprite : img.sprite ? img.sprite.name : null;
                 var rt = img.rectTransform;
-                if (sprite == null || !sprite.StartsWith("darken", StringComparison.Ordinal) || (rt.anchorMin == Vector2.zero && rt.anchorMax == Vector2.one)) continue;
+                // Stretched over the window (anchors 0..1, run 20261022-130906), so the size floor of the panel pass
+                // tells it from an icon, not the anchors.
+                if (sprite == null || !sprite.StartsWith("darken", StringComparison.Ordinal) || rt.rect.width < min || rt.rect.height < min) continue;
                 PanelSwap.Apply(img, sprite);
                 PanelDecor.Ensure(rt, "size.panel.pad", glass: true, plaque: false);
             }
