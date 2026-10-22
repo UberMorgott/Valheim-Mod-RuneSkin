@@ -190,9 +190,9 @@ namespace RuneSkin.ModScreens
             if (t.parent == root && t.name == "bkg") { reason = "Almanac window background (replaced by the panel stack)"; return "skip"; }
             if (t.parent == root && t.name == "darken") { reason = "Almanac transparent-mode dim (kept)"; return "skip"; }
             // Grid / text viewports: clip graphic drawn with the vanilla dark field (InputFieldBackground) -> the well.
-            if (image.GetComponent<Mask>() is Mask mask && mask.showMaskGraphic && image.sprite && image.sprite.name.StartsWith("InputFieldBackground", StringComparison.Ordinal))
+            if ((image.GetComponent<Mask>() is Mask mask && mask.showMaskGraphic || image.GetComponent<RectMask2D>()) && image.sprite && image.sprite.name.StartsWith("InputFieldBackground", StringComparison.Ordinal))
             {
-                reason = "grid / text viewport (shown mask graphic) as a well";
+                reason = "grid / text viewport (drawn clip graphic: RectMask2D or shown Mask) as a well";
                 return "craft.well";
             }            // Structure (masks, viewports, scrollbars) goes to component semantics.
             if (image.GetComponent<Mask>() || image.GetComponent<RectMask2D>() || image.GetComponentInParent<Scrollbar>(true) || image.GetComponent<ScrollRect>()) return null;
