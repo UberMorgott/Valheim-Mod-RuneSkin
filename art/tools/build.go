@@ -25,9 +25,10 @@ type Border struct {
 }
 
 type Nine struct {
-	Src    Border `json:"src"`    // borders measured on the scaled crop (sprite px)
-	Center [2]int `json:"center"` // centre segment size in the output
-	Tile   bool   `json:"tile"`   // make edge/centre segments periodic (cross-fade)
+	Src    Border `json:"src"`            // borders measured on the scaled crop (sprite px)
+	Center [2]int `json:"center"`         // centre segment size in the output
+	Tile   bool   `json:"tile"`           // make edge/centre segments periodic (cross-fade)
+	MidX   int    `json:"midX,omitempty"` // source x of the horizontal middle segment (0 = centred), e.g. to skip a centred ornament cut as its own sprite
 }
 
 type Cut struct {
@@ -62,6 +63,11 @@ type Cut struct {
 	Bold        int        `json:"bold,omitempty"`     // alpha max-filter radius (output px): thickens thin white glyph masks
 	Sector      []int      `json:"sector,omitempty"`   // [index, count]: keep only pie sector index of count (clockwise from 12 o'clock, centred on index*360/count) around the output centre
 	Norm        bool       `json:"norm,omitempty"`     // scale alpha so the most opaque pixel is fully opaque (equal brightness across slices)
+	BgTol       float64    `json:"bgTol,omitempty"`    // key "bg": colour step that still counts as the smooth background (keyBackground)
+	BgSides     string     `json:"bgSides,omitempty"`  // key "bg": crop sides the background flood starts from (default tlrb)
+	Clear       [][4]int   `json:"clear,omitempty"`    // crop-space rects made transparent after keying (bar windows)
+	Clone       []int      `json:"clone,omitempty"`    // [x, y, w, h, srcX, srcW] crop space: fill the rect with mirror-tiled source columns srcX..+srcW of the same rows (clear a baked caption off a plate field)
+	KeyRed      bool       `json:"keyRed,omitempty"`   // also key out saturated HP-fill red (R > 110, G and B < 60): a cap cut beside a mockup fill
 	Border      Border     `json:"border"`
 	Pivot       [2]float64 `json:"pivot"`
 	ImageType   string     `json:"imageType"`
@@ -121,6 +127,8 @@ func renderCut(c Cut) *image.NRGBA {
 	switch c.Key {
 	case "magenta":
 		keyMagenta(src)
+	case "bg":
+		keyBackground(src, c.BgTol, c.BgSides)
 	case "shade":
 		shadeMask(src)
 	case "luma":
@@ -129,6 +137,15 @@ func renderCut(c Cut) *image.NRGBA {
 			bw = [2]float64{0.04, 0.95}
 		}
 		lumaMask(src, bw[0], bw[1])
+	}
+	if len(c.Clear) > 0 {
+		clearRects(src, c.Clear)
+	}
+	if len(c.Clone) == 6 {
+		cloneColumns(src, c.Clone)
+	}
+	if c.KeyRed {
+		keyRed(src)
 	}
 	switch c.Flip {
 	case "v":
@@ -312,6 +329,9 @@ func nineRebuild(s *image.NRGBA, n Nine) *image.NRGBA {
 		}
 	}
 	mx := l + (W-l-r-cw-kx)/2 // start of the horizontal middle segment
+	if n.MidX > 0 {
+		mx = n.MidX
+	}
 	my := t + (H-t-b-ch-ky)/2
 	if mx < l || my < t {
 		must(fmt.Errorf("nine: source %dx%d too small for centre %dx%d", W, H, cw, ch))

@@ -41,6 +41,141 @@ namespace RuneSkin.WorldHud
             return Math.Max(1f, target / current);
         }
 
+        // ---------------------------------------------------------------- visibility (spec E1, unit tested)
+
+        // Why a creature's overhead bar may show; higher wins (hud-design spec 1).
+        public enum Reason { None = 0, Threat = 1, Engaged = 2, Aimed = 3 }
+
+        // Score of one HUD: Aimed (now or within `linger` s after the crosshair left) 1000; Engaged (local player hit it
+        // or it hit the local player within `engaged` s) 500 + remaining s x 10; Threat (alerted, within `threatDist` m)
+        // 100 - distance, +50 when it targets the local player. sinceX < 0 = never.
+        public static float Score(float sinceAimed, float linger, float sinceEngaged, float engaged, bool alerted,
+            float distance, float threatDist, bool targetsLocal, out Reason reason)
+        {
+            if (sinceAimed >= 0f && sinceAimed <= linger)
+            {
+                reason = Reason.Aimed;
+                return 1000f + (linger - sinceAimed);
+            }
+            if (sinceEngaged >= 0f && sinceEngaged <= engaged)
+            {
+                reason = Reason.Engaged;
+                return 500f + (engaged - sinceEngaged) * 10f;
+            }
+            if (alerted && distance <= threatDist)
+            {
+                reason = Reason.Threat;
+                return Math.Max(1f, 100f - distance) + (targetsLocal ? 50f : 0f);
+            }
+            reason = Reason.None;
+            return 0f;
+        }
+
+        // Picks the shown bars: candidates [0, count) sorted by score (insertion sort, in place, no allocation), the top
+        // `cap` survive with at most `threatCap` of reason Threat; picked[i] (index into the sorted arrays) set.
+        // Returns the number picked. Scores <= 0 never show.
+        public static int Pick(float[] scores, Reason[] reasons, int[] ids, int count, int cap, int threatCap, bool[] picked)
+        {
+            for (var i = 1; i < count; i++)
+            {
+                var s = scores[i];
+                var r = reasons[i];
+                var id = ids[i];
+                var j = i - 1;
+                while (j >= 0 && scores[j] < s)
+                {
+                    scores[j + 1] = scores[j];
+                    reasons[j + 1] = reasons[j];
+                    ids[j + 1] = ids[j];
+                    j--;
+                }
+                scores[j + 1] = s;
+                reasons[j + 1] = r;
+                ids[j + 1] = id;
+            }
+            int shown = 0, threats = 0;
+            for (var i = 0; i < count; i++)
+            {
+                var ok = scores[i] > 0f && shown < cap && (reasons[i] != Reason.Threat || threats < threatCap);
+                picked[i] = ok;
+                if (!ok) continue;
+                shown++;
+                if (reasons[i] == Reason.Threat) threats++;
+            }
+            return shown;
+        }
+
+        // Target alpha of a picked bar: aimed / engaged full, threats at `lowAlpha`; not picked = 0.
+        public static float TargetAlpha(bool picked, Reason reason, float lowAlpha) =>
+            !picked ? 0f : reason == Reason.Threat ? lowAlpha : 1f;
+
+        // Linear fade towards target: fadeIn s from 0 to 1, fadeOut s from 1 to 0 (unscaled time).
+        public static float FadeStep(float current, float target, float dt, float fadeIn, float fadeOut)
+        {
+            var rising = target > current;
+            var span = rising ? fadeIn : fadeOut;
+            if (!(span > 0f)) return target;
+            var step = dt / span;
+            return rising ? Math.Min(target, current + step) : Math.Max(target, current - step);
+        }
+
+        // Distance shrink: x1 at <= near m, xMin at >= far m, linear between, quantised to `quantum` steps.
+        public static float DistanceScale(float distance, float near, float far, float min, float quantum = 0.02f)
+        {
+            if (!(far > near)) return 1f;
+            var t = Math.Min(1f, Math.Max(0f, (distance - near) / (far - near)));
+            var s = 1f + (min - 1f) * t;
+            return quantum > 0f ? (float)Math.Round(s / quantum) * quantum : s;
+        }
+
+        // ---------------------------------------------------------------- stagger (spec E4, unit tested)
+
+        public enum StaggerPhase { Hidden = 0, Building = 1, Active = 2 }
+
+        public struct StaggerState
+        {
+            public StaggerPhase Phase;
+            public float Fill;      // shown fill 0..1
+            public float Idle;      // s at fill 0 while not staggering
+            public float Flash;     // s left of the trigger flash
+            public bool Was;        // staggering last step
+        }
+
+        // One step. canStagger false (m_staggerDamageFactor <= 0) = hidden. build = GetStaggerPercentage (owner) or the
+        // synced value, < 0 = unknown (non-owner without data: build-up not shown). staggering = IsStaggering();
+        // remaining = 1 - normalizedTime of the stagger animator state (0..1). Building eases to the value over `ease` s
+        // (exponential), Active shows the remaining time directly; hidden after `hideAfter` s at zero (Hud.cs:791-797).
+        public static StaggerState StaggerStep(StaggerState s, bool canStagger, float build, bool staggering, float remaining,
+            float dt, float ease = 0.15f, float hideAfter = 1f, float flash = 0.2f)
+        {
+            if (!canStagger) return default;
+            s.Flash = Math.Max(0f, s.Flash - dt);
+            if (staggering)
+            {
+                if (!s.Was) s.Flash = flash;
+                s.Was = true;
+                s.Phase = StaggerPhase.Active;
+                s.Fill = Math.Min(1f, Math.Max(0f, remaining));
+                s.Idle = 0f;
+                return s;
+            }
+            s.Was = false;
+            var target = build >= 0f ? Math.Min(1f, build) : 0f;
+            var k = ease > 0f ? 1f - (float)Math.Exp(-dt / ease) : 1f;
+            s.Fill = s.Phase == StaggerPhase.Active ? target : s.Fill + (target - s.Fill) * k;
+            if (Math.Abs(s.Fill - target) < 0.002f) s.Fill = target;
+            if (s.Fill > 0.001f) s.Idle = 0f;
+            else s.Idle += dt;
+            // Hidden stays hidden at zero (a fresh creature shows nothing); a shown bar lingers hideAfter s at zero.
+            if (s.Fill > 0.001f) s.Phase = StaggerPhase.Building;
+            else if (s.Phase != StaggerPhase.Hidden && s.Idle >= hideAfter) s.Phase = StaggerPhase.Hidden;
+            else if (s.Phase == StaggerPhase.Active) s.Phase = StaggerPhase.Building;
+            return s;
+        }
+
+        // Remaining stagger fraction from the animator state's normalizedTime (speed independent; > 1 = ended).
+        public static float StaggerRemaining(float normalizedTime) => Math.Min(1f, Math.Max(0f, 1f - normalizedTime));
+
         // Vaettir rarity frame sprite name (UI\Resources\vt_frame_<tier>.png, RarityFrames.cs Files) -> RuneSkin token.
         public static string TierToken(string vtSprite, bool boss)
         {

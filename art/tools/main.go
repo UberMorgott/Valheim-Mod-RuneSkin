@@ -11,6 +11,7 @@
 //	go run ./art/tools compare-m4       art/review/compare-{hud-m4a,hud-m4b,map-m4,groups-m4}.png
 //	go run ./art/tools compare-m5       art/review/compare-{menu,char,world,load,settings,groups}-m5.png
 //	go run ./art/tools compare-m6       art/review/compare-{build,trader,text,load,ship,dialogs,groups}-m6.png
+//	go run ./art/tools compare-eb ME MB BLOOD OUT  enemy-b tiers + boss-c bar from the sprites next to the mockups
 //	go run ./art/tools compare-m7       art/review/compare-{ench,board,modhud,groups}-m7.png
 //	go run ./art/tools sheet           art/review/contact-sheet.png
 //	go run ./art/tools zoom IN x,y,w,h SCALE OUT    inspection crop
@@ -55,6 +56,10 @@ func main() {
 		cmdCompareM6()
 	case "compare-m7":
 		cmdCompareM7()
+	case "compare-eb":
+		cmdCompareEB()
+	case "strip":
+		cmdStrip()
 	case "sheet":
 		cmdSheet()
 	case "compare":

@@ -4119,14 +4119,14 @@
       "name": "frame_enemy_normal",
       "file": "frame_enemy_normal.png",
       "size": [
-        136,
-        44
+        117,
+        56
       ],
       "border": {
-        "left": 36,
-        "bottom": 14,
-        "right": 36,
-        "top": 14
+        "left": 70,
+        "bottom": 12,
+        "right": 15,
+        "top": 23
       },
       "pivot": [
         0.5,
@@ -4135,20 +4135,20 @@
       "imageType": "Sliced",
       "fillCenter": false,
       "token": "frame.enemy.normal",
-      "notes": "M4 enemy health bar frame, Vaettir tier Normal (level 1): thin dark iron; Sliced over the Health bar (VT_Frame), window transparent, fill inset L 36 R 36 T 14 B 14; all four tiers share size/borders"
+      "notes": "cut from the approved mockup enemy-b (user pick 2026-10-22), IDLE 3x NORMAL bar: emblem socket + rail + chevron cap in one Sliced sprite, socket inside the left border, window cut transparent (live trough / fill / shield / stagger show through), background keyed (bg flood); fitted to the Health bar like every enemy frame"
     },
     {
       "name": "frame_enemy_magic",
       "file": "frame_enemy_magic.png",
       "size": [
-        136,
-        44
+        123,
+        62
       ],
       "border": {
-        "left": 36,
-        "bottom": 14,
-        "right": 36,
-        "top": 14
+        "left": 76,
+        "bottom": 15,
+        "right": 15,
+        "top": 25
       },
       "pivot": [
         0.5,
@@ -4157,20 +4157,20 @@
       "imageType": "Sliced",
       "fillCenter": false,
       "token": "frame.enemy.magic",
-      "notes": "M4 enemy frame, Vaettir Magic (level 2): brass, knot caps, teal inner line"
+      "notes": "cut from mockup enemy-b IDLE 3x MAGIC bar (blue triquetra socket)"
     },
     {
       "name": "frame_enemy_rare",
       "file": "frame_enemy_rare.png",
       "size": [
         136,
-        44
+        66
       ],
       "border": {
-        "left": 36,
-        "bottom": 14,
-        "right": 36,
-        "top": 14
+        "left": 83,
+        "bottom": 17,
+        "right": 21,
+        "top": 27
       },
       "pivot": [
         0.5,
@@ -4179,20 +4179,20 @@
       "imageType": "Sliced",
       "fillCenter": false,
       "token": "frame.enemy.rare",
-      "notes": "M4 enemy frame, Vaettir Rare (level 3): spiked black iron, ember inner line"
+      "notes": "cut from mockup enemy-b IDLE 3x RARE bar (gold spiked socket, gold cap)"
     },
     {
       "name": "frame_enemy_unique",
       "file": "frame_enemy_unique.png",
       "size": [
-        136,
-        44
+        142,
+        95
       ],
       "border": {
-        "left": 36,
-        "bottom": 14,
-        "right": 36,
-        "top": 14
+        "left": 88,
+        "bottom": 33,
+        "right": 22,
+        "top": 39
       },
       "pivot": [
         0.5,
@@ -4201,7 +4201,161 @@
       "imageType": "Sliced",
       "fillCenter": false,
       "token": "frame.enemy.unique",
-      "notes": "M4 enemy frame, Vaettir Unique (boss EnemyHud bars): gold-bronze runic rim"
+      "notes": "cut from mockup enemy-b IDLE 3x UNIQUE bar (ember star socket, ember cap); the 3x caption under it cleared"
+    },
+    {
+      "name": "bar_enemy_fill_b",
+      "file": "bar_enemy_fill_b.png",
+      "size": [
+        65,
+        15
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "bar.enemy.fill.b",
+      "notes": "the red HP fill cut from mockup enemy-b (bevelled top highlight, darker base), untinted (white), stretched Simple over the enemy health_fast bar: straight cut end"
+    },
+    {
+      "name": "bar_enemy_lag_b",
+      "file": "bar_enemy_lag_b.png",
+      "size": [
+        5,
+        15
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "bar.enemy.lag.b",
+      "notes": "the pale lag segment cut from mockup enemy-b, untinted, stretched over health_slow"
+    },
+    {
+      "name": "bar_enemy_trough_b",
+      "file": "bar_enemy_trough_b.png",
+      "size": [
+        25,
+        15
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "bar.enemy.trough.b",
+      "notes": "the black trough cut from mockup enemy-b, untinted, stretched over the Health bkg"
+    },
+    {
+      "name": "boss_frame",
+      "file": "boss_frame.png",
+      "size": [
+        72,
+        36
+      ],
+      "border": {
+        "left": 4,
+        "bottom": 8,
+        "right": 4,
+        "top": 8
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": false,
+      "token": "boss.frame",
+      "notes": "cut from the approved mockup boss-c (user pick 2026-10-22): an unoccluded rail stretch (dark forged iron, gold rim lines), window cut transparent, background keyed; square ends under the spear caps; BossAwakening world bar frame via RuneSkin.API Theme.TryGetSprite"
+    },
+    {
+      "name": "boss_cap",
+      "file": "boss_cap.png",
+      "size": [
+        143,
+        59
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        1,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "boss.cap",
+      "notes": "cut from mockup boss-c: left spear cap (steel tip, teal chevron runes, gold collar, knotwork block) up to the bar start (its right edge); the right cap is mirrored"
+    },
+    {
+      "name": "boss_plaque",
+      "file": "boss_plaque.png",
+      "size": [
+        238,
+        49
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "boss.plaque",
+      "notes": "cut whole from mockup boss-c: name plaque with its stepped top, crest diamond and knotwork wings (Simple, native aspect); the mockup caption cloned over by the field texture of the gap between its words; name field = theme rect.boss.plaque.field (x 0.236..0.783, y 0.30..0.75 of the plaque from the bottom)"
+    },
+    {
+      "name": "boss_marker",
+      "file": "boss_marker.png",
+      "size": [
+        19,
+        61
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.89
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "boss.marker",
+      "notes": "cut from mockup boss-c: ivory fang phase marker (red fill around it keyed)"
     },
     {
       "name": "bar_enemy_fill",

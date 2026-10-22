@@ -474,3 +474,36 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
       blocking every screen below. Fix: a plugin opt-out blocks only a would-be unit, never the vanilla boundary / family roots
       (ForeignMath.Node.OptedOutPlugin, test OptedOutPluginOnTheBoundaryPassesThrough). Not re-run (one-launch limit).
 - [ ] Open: Jotunn ModCompatibility window not shot (only on a version mismatch); Vaettir target / raid / Hamingja (other track).
+- [ ] Open: legacy uGUI body texts and IMGUI keep their own face (needs a legacy Font / dynamic body face in the art bundle);
+      Jotunn ModCompatibility window not shot (only on a version mismatch); Vaettir target / raid / Hamingja (other track).
+## 0.14.0 enemy bars E1-E4 (2026-10-22, user picks enemy-b + boss-c, spec hud-design\spec.md 1-5)
+
+- [x] E1 visibility (Hud.EnemyBars = Smart | Vanilla): per-HUD score (aimed + 1.5 s linger 1000, engaged 8 s 500+, alerted threat
+      within 15 m 100 - d, +50 when it targets the local player), top Hud.EnemyBarsMax 4 with at most Hud.EnemyBarsThreats 2
+      threats (EnemyHudMath.Score / Pick, insertion sort, no allocation); vanilla keeps them active through its own
+      m_hoverTimer (UpdateHuds prefix: 0 = picked / fading, 99999 = off), fade via a template CanvasGroup (in 0.12 / out 0.35 s,
+      threats at 0.75); engaged = Character.Damage postfix (attacker = local player) + ApplyDamage on the local player;
+      creation radius Hud.EnemyBarsRange 20 m; distance scale x1 <= 6 m .. x0.8 >= 20 m; name only for aimed / engaged.
+      Players, bosses, mounts, tamed, friendly: vanilla rules, alpha 1.
+- [x] E1 size: size.enemy.scale 1.35 -> 1.0, bar 96 x 8 ref (Widen on the template before any GuiBar caches its width),
+      name font 13.
+- [x] E2 tiers = enemy-b, art cut mechanically from the approved mockups (coordinator call after Codex image-gen kits
+      scored 6-7): art/src/kit/mockup-enemyb.png / mockup-bossc.png, art tools key "bg" (flood from the crop border over
+      the blurred scene), "clear" (bar windows cut out), "clone" (mockup caption replaced by its field texture), "keyRed",
+      command "strip" (BossAwakening fill / trough strips). frame_enemy_<tier> = socket + rail + chevron cap of the IDLE 3x
+      bar in one Sliced sprite (window fitted, bar 96 x 11.5 = mockup 8.4:1); fill / lag / trough = mockup strips
+      (bar_enemy_fill_b / lag_b / trough_b, untinted). Offline pre-score `go -C art/tools run . compare-eb` (sprites only,
+      Unity Sliced rules) -> Codex normal 8 / magic 8 / rare 8 / unique 9 / boss 8.
+- [x] E3 enemy shield band: ZDO mt_es / mt_es_max on the creature when published (MorgottTweaks does not publish it yet: user
+      undecided), else the owner's SE_Shield remaining; upper share.hud.shield.band of the window (HudMath.ShieldBand).
+- [x] E4 stagger line (bottom inner edge, share.enemy.stagger 0.28): build-up = GetStaggerPercentage (owner) / ZDO mt_stg,
+      0.15 s ease, staggered = pale color.enemy.stagger.active + 0.2 s white flash, fill = 1 - normalizedTime of the "stagger"
+      tagged animator state, hidden 1 s after zero (EnemyHudMath.StaggerStep + tests).
+- [x] Boss bar art for BossAwakening cut from boss-c: boss_frame (Tiled rail stretch), boss_cap (faded joint), boss_plaque
+      (whole, Simple, field share.boss.plaque.field.*), boss_marker; theme sprite.boss.*, size.boss.cap.h 2.6,
+      size.boss.marker.h 1.85, share.boss.marker.aspect / pivot, share.boss.plaque.h 2.45 (mockup ratios).
+- [x] Audit P2: VT_Frame lookup cached with a 1 s retry (was Find per frame per HUD); HudArt rows / suppressed / ppu tables
+      pruned when doubled + Reset on EnemyHud.Awake (world reload piled up dead templates).
+- [x] Unit tests EnemyBarTests (visibility, pick cap, fades, distance scale, stagger build / decay / active / immune).
+- Art pipeline note: a fresh worktree's unity\ has no Library -> the first batch build crashes in the atlas packer
+  ("Unsupported Format 0"); copying the main checkout's unity\Library first builds fine.

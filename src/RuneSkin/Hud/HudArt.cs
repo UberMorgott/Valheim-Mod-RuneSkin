@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using RuneSkin.Classify;
 using RuneSkin.Diagnostics;
@@ -109,6 +110,7 @@ namespace RuneSkin.PlayerHud
         public void Track(Image img, float scale)
         {
             _ppuScale[img] = Mathf.Clamp(scale, 0.25f, 4f);
+            PrunePpu();
             img.pixelsPerUnitMultiplier = _refPpu / 100f / _ppuScale[img];
         }
 
@@ -154,7 +156,45 @@ namespace RuneSkin.PlayerHud
             if (g) Set(g, new Classification { Role = _screenId.ToLowerInvariant() + ":content", Outcome = Outcome.Content, Reason = reason });
         }
 
-        public void Suppressed(Transform t, string reason) => _suppressed.Add(new KeyValuePair<Transform, string>(t, reason));
+        public void Suppressed(Transform t, string reason)
+        {
+            _suppressed.Add(new KeyValuePair<Transform, string>(t, reason));
+            if (_suppressed.Count > _suppressedPrune)
+            {
+                _suppressed.RemoveAll(p => !p.Key);
+                _suppressedPrune = Math.Max(64, _suppressed.Count * 2);
+            }
+        }
+
+        // Drops every row (a static HudArt of a family whose objects were rebuilt, e.g. EnemyHud.Awake per world load:
+        // the old templates are destroyed, their rows / ppu entries would only pile up).
+        public void Reset()
+        {
+            _rows.Clear();
+            _suppressed.Clear();
+            _ppuScale.Clear();
+        }
+
+        // Rows / ppu entries of destroyed graphics, pruned whenever the tables doubled since the last prune (no per-frame cost).
+        private int _rowsPrune = 64, _suppressedPrune = 64, _ppuPrune = 64;
+        private static readonly List<Image> DeadImages = new List<Image>();
+
+        private void PruneRows()
+        {
+            if (_rows.Count <= _rowsPrune) return;
+            _rows.RemoveAll(p => !p.Key);
+            _rowsPrune = Math.Max(64, _rows.Count * 2);
+        }
+
+        private void PrunePpu()
+        {
+            if (_ppuScale.Count <= _ppuPrune) return;
+            foreach (var p in _ppuScale)
+                if (!p.Key) DeadImages.Add(p.Key);
+            foreach (var d in DeadImages) _ppuScale.Remove(d);
+            DeadImages.Clear();
+            _ppuPrune = Math.Max(64, _ppuScale.Count * 2);
+        }
 
         private void Set(Graphic g, Classification c)
         {
@@ -165,6 +205,7 @@ namespace RuneSkin.PlayerHud
                     return;
                 }
             _rows.Add(new KeyValuePair<Graphic, Classification>(g, c));
+            PruneRows();
         }
 
         public ScreenReport Report(Transform root)

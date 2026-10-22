@@ -22,7 +22,7 @@ namespace RuneSkin
     [BepInProcess("valheim.exe")]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Version = "0.13.1";
+        public const string Version = "0.14.0";
 
         public static ManualLogSource Log { get; private set; }
         public static ConfigEntry<float> SkinScale { get; private set; }
@@ -143,6 +143,7 @@ namespace RuneSkin
                 "Opens / closes the full list of status effects when the strip shows a +N cell.");
             StatusListButton = Config.Bind("Hud", "StatusListGamepadButton", "JoyDPadDown",
                 "Gamepad: this ZInput button while JoyAltKeys is held opens / closes the full status list. Empty = none.");
+            WorldHud.EnemyHudConfig.Bind(Config);
             _requireAssets = Config.Bind("Ownership", "RequireAssets", true,
                 "Take a family only when its theme assets loaded (otherwise the other skin keeps it). Off = take it anyway (development before the art bundle exists).");
             SkinScale = Config.Bind("Layout", "SkinScale", 1f, new ConfigDescription(
