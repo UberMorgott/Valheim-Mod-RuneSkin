@@ -6,6 +6,16 @@ namespace RuneSkin.PreWorld
     // Pure pre-world helpers (unit tested).
     public static class PreWorldMath
     {
+        // Input placeholder without vanilla's brackets; the untranslated "Filter" (server filter) in the given language.
+        public static string CleanPlaceholder(string text, string language)
+        {
+            if (string.IsNullOrEmpty(text)) return text;
+            var s = text.Trim();
+            if (s.Length > 2 && s[0] == '[' && s[s.Length - 1] == ']') s = s.Substring(1, s.Length - 2).Trim();
+            if (s == "Filter" && language == "Russian") s = "Фильтр";
+            return s.Length == text.Length ? text : s;
+        }
+
         // Vanilla panel art: the wooden panel family and the dark backdrops dialogs are built on.
         private static readonly string[] PanelSprites = { "woodpanel", "panel_bkg", "panel_interior_bkg" };
 

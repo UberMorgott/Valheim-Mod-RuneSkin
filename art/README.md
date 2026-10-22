@@ -35,7 +35,7 @@ Style targets and palette: `STYLE.md`.
 | `src/kit/cuts.json` | cut spec: sheet rect, key, scale, nine/period, grading, Unity border/pivot/type/token/notes, palette |
 | `tools/` (Go, `go -C art/tools run . <cmd>`) | `build`, `check`, `compare`, `compare-m2`, `compare-m3`, `compare-m3s`, `sheet`, `zoom`, `sample`, `blobs` (piece rects on a sheet) |
 | `sprites/` | final sprites (authored at 2x reference px, PPU 200) + `sprites.json` |
-| `fonts/` | Cormorant Bold 4.002 (display), PT Sans Regular 2.003W (body), `charset-ru-en.txt` (309 chars), `bake-report.txt`, `licenses/` (OFL 1.1) |
+| `fonts/` | PT Sans Regular + Bold 2.003W (body; the display face is the game's own Valheim-Norsebold, loaded at runtime; Cormorant Bold 4.002 kept as a source only, not bundled since 2026-10-22), `charset-ru-en.txt` (309 chars), `bake-report.txt`, `licenses/` (OFL 1.1) |
 | `../unity/Assets/Editor/BuildBundles.cs` | import (9-slice borders, pivot, PPU), SpriteAtlas (BC7, no rotation/tight packing), static TMP SDF fonts, bundle build, contents check |
 
 ## sprites.json contract
@@ -67,7 +67,7 @@ Style targets and palette: `STYLE.md`.
 ## Fonts
 
 - Sources: Cormorant v4.002 (github.com/CatharsisFonts/Cormorant release, `Cormorant_Essentials_v4.002.zip`),
-  PT Sans Web 2.003W OFL (github.com/google/fonts `ofl/ptsans`). Downloads kept in `D:\Downloads\fonts-runeskin`.
+  PT Sans Web 2.003W OFL Regular + Bold (github.com/google/fonts `ofl/ptsans`, Bold fetched 2026-10-22). Downloads kept in `D:\Downloads\fonts-runeskin`.
 - Both SIL OFL 1.1 (PT Sans: Reserved Font Names "PT Sans", "ParaType"; fonts ship unmodified, the bundle holds
   SDF atlases). Licence texts in `fonts/licenses/` must ship with the mod.
 - Bake: `TMP_FontAsset.CreateFontAsset` (SDFAA) + `TryAddCharacters(charset, includeFontFeatures)` then Static,

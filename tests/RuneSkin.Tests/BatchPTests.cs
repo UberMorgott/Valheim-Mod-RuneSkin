@@ -18,11 +18,10 @@ namespace RuneSkin.Tests
         }
 
         [Fact]
-        public void BoldBodyTakesTheDisplayFace()
+        public void BoldBodyTakesTheBoldCut()
         {
-            Assert.Equal("font.display", LegacyFaces.FaceToken("font.body", true));
+            Assert.Equal("font.body.bold", LegacyFaces.FaceToken("font.body", true));
             Assert.Equal("font.body", LegacyFaces.FaceToken("font.body", false));
-            Assert.Equal("font.rune", LegacyFaces.FaceToken("font.rune", true));
             Assert.Equal("font.display", LegacyFaces.FaceToken("font.display", true));
         }
 
@@ -32,8 +31,8 @@ namespace RuneSkin.Tests
             var t = Default();
             Assert.Empty(ThemeSchema.Validate(t));
             Assert.Equal("PT_Sans-Web-Regular", t.fonts.Single(f => f.token == "font.body").legacy);
-            Assert.Equal("Cormorant-Bold", t.fonts.Single(f => f.token == "font.display").legacy);
-            Assert.Null(t.fonts.Single(f => f.token == "font.rune").legacy);
+            Assert.Equal("PT_Sans-Web-Bold", t.fonts.Single(f => f.token == "font.body.bold").legacy);
+            Assert.Null(t.fonts.Single(f => f.token == "font.display").legacy); // loaded rune face: its own source font
             Assert.Equal("cursor", t.textures.Single(x => x.token == "texture.cursor").asset);
             foreach (var role in new[] { "legacy.body", "legacy.label", "legacy.muted", "text.legacy" })
                 Assert.Equal("font.body", t.roles.Single(r => r.role == role).font);
@@ -43,7 +42,7 @@ namespace RuneSkin.Tests
         public void LegacyFaceOnALoadedFontIsRejected()
         {
             var t = Default();
-            t.fonts.Single(f => f.token == "font.rune").legacy = "X";
+            t.fonts.Single(f => f.token == "font.display").legacy = "X";
             Assert.Contains(ThemeSchema.Validate(t), e => e.Contains("legacy face only for bundle fonts"));
             t = Default();
             t.textures = new[] { new AssetEntry { token = "texture.cursor", asset = "" } };

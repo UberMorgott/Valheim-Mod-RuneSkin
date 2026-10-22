@@ -134,7 +134,7 @@ namespace RuneSkin.MapScreen
                 _biome.alignment = TextAlignmentOptions.Center;
                 _biome.textWrappingMode = TextWrappingModes.NoWrap;
                 _biome.enableAutoSizing = false;
-                _biome.fontSize = ThemeTokens.GetFloat("size.minimap.font", 17f);
+                _biome.fontSize = WorldHud.MessageSkin.HudReadable(ThemeTokens.GetFloat("size.minimap.font", 17f));
                 var font = ThemeTokens.GetFont("font.body");
                 if (font) _biome.font = font;
                 _biome.color = ThemeTokens.GetColor("color.text.body", Color.white);
@@ -276,7 +276,7 @@ namespace RuneSkin.MapScreen
             _plaque.pivot = new Vector2(0.5f, 1f);
             _plaque.anchoredPosition = new Vector2(0f, box * 0.02f);
             _plaque.sizeDelta = new Vector2(Mathf.Max(_plaque.sizeDelta.x, _plaqueMin), ph);
-            if (_biome) _biome.fontSize = ThemeTokens.GetFloat("size.minimap.font", 17f) * k;
+            if (_biome) _biome.fontSize = WorldHud.MessageSkin.HudReadable(ThemeTokens.GetFloat("size.minimap.font", 17f)) * k;
             if (_keyTip)
             {
                 var tr = _keyTip.rectTransform;

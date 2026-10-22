@@ -34,6 +34,7 @@ namespace RuneSkin.Restyle
         private RectTransform _viewport;
         private Vector2 _origMin, _origMax, _setMin, _setMax;
         private bool _origAuto;
+        private int _columns = -1; // 1 = column text of a multi-text row button, 0 = not, -1 = undecided
         private float _origSizeMin, _origSizeMax;
 
         public static void Ensure(TMP_Text text)
@@ -70,7 +71,11 @@ namespace RuneSkin.Restyle
             if (sel is TMP_InputField input) Field(input);
             else if (sel is TMP_Dropdown dropdown) Caption(dropdown);
             else if (sel is Toggle toggle && !GetComponentInParent<TMP_Dropdown>()) Beside(toggle);
-            else if (sel is Button button) Row(button);
+            else if (sel is Button button)
+            {
+                Row(button);
+                if (_columns < 0) _columns = RuneSkin.Classify.Classifier.RowTexts(button) > 1 ? 1 : 0;
+            }
             FitTruncated();
         }
 
@@ -155,11 +160,17 @@ namespace RuneSkin.Restyle
         }
 
         // Label that still does not fit (Ellipsis / Truncate) shrinks to the fit floor instead of losing letters.
+        // A column text of a multi-text row (server / save rows) that runs past its own rect shrinks the same way: an
+        // overflowing column drew over the next one.
         private void FitTruncated()
         {
-            if (_text.overflowMode != TextOverflowModes.Ellipsis && _text.overflowMode != TextOverflowModes.Truncate) return;
-            if (_text.enableAutoSizing && _text.fontSizeMin <= ThemeTokens.GetFloat("size.text.fit.min", 12f) + 0.01f) return;
-            if (!_text.isTextTruncated) return;
+            var column = _columns == 1 && _text.overflowMode == TextOverflowModes.Overflow;
+            if (!column && _text.overflowMode != TextOverflowModes.Ellipsis && _text.overflowMode != TextOverflowModes.Truncate) return;
+            // Column texts of a list row keep the readable size (16) and end in their ellipsis below it (m5-text-min,
+            // run 20261022-210451: server names shrank to 12-14 px).
+            var floor = _columns == 1 ? ThemeTokens.GetFloat("size.text.readable", 16f) : ThemeTokens.GetFloat("size.text.fit.min", 12f);
+            if (_text.enableAutoSizing && _text.fontSizeMin <= floor + 0.01f) return;
+            if (column ? !ColumnOverflows() : !_text.isTextTruncated) return;
             if (!_hasAuto)
             {
                 _origAuto = _text.enableAutoSizing;
@@ -169,8 +180,18 @@ namespace RuneSkin.Restyle
             }
             var max = _text.enableAutoSizing ? _text.fontSizeMax : _text.fontSize;
             _text.fontSizeMax = max;
-            _text.fontSizeMin = Mathf.Min(max, ThemeTokens.GetFloat("size.text.fit.min", 12f));
+            _text.fontSizeMin = Mathf.Min(max, floor);
             _text.enableAutoSizing = true;
+        }
+
+        private bool ColumnOverflows()
+        {
+            var r = _text.rectTransform.rect;
+            var m = _text.margin;
+            var w = r.width - m.x - m.z;
+            if (w <= 1f || string.IsNullOrEmpty(_text.text)) return false;
+            var size = _text.GetPreferredValues(_text.text, _text.textWrappingMode == TextWrappingModes.NoWrap ? float.PositiveInfinity : w, float.PositiveInfinity);
+            return size.x > w + 0.5f || size.y > r.height - m.y - m.w + 0.5f;
         }
 
         // ------------------------------------------------------------------ helpers

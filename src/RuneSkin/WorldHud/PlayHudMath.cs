@@ -44,5 +44,20 @@ namespace RuneSkin.WorldHud
 
         // Key plate width for a key label: at least square, grown to the label plus both side pads.
         public static float KeyPlateWidth(float labelWidth, float height, float pad) => Math.Max(height, labelWidth + 2f * pad);
+
+        // Readable HUD text (theme size.text.hud.min, canvas units = px at 1080p: the HUD canvas scales with the screen
+        // height): a themed size below the floor is raised to it.
+        public static float Readable(float size, float min) => Math.Max(size, Math.Max(0f, min));
+
+        // Notification plate edges along one axis around the content span [min, max]: the content keeps the plate's
+        // full 9-slice border plus the pad on each side, so an icon at the content edge is never drawn under the
+        // frame (user screenshot 2026-10-22: the skill icon was clipped by the left knot). Returns (centre, size).
+        public static (float center, float size) PlateSpan(float min, float max, float border, float pad)
+        {
+            var inset = Math.Max(0f, border) + Math.Max(0f, pad);
+            var lo = Math.Min(min, max) - inset;
+            var hi = Math.Max(min, max) + inset;
+            return ((lo + hi) * 0.5f, hi - lo);
+        }
     }
 }

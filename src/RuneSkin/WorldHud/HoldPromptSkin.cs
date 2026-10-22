@@ -78,13 +78,13 @@ namespace RuneSkin.WorldHud
             _key.fontStyle = FontStyles.Bold;
             Stretch(_key.rectTransform, 0f);
 
-            _label = _art.Text("Label", _root, "font.display", "color.text.body", ThemeTokens.GetFloat("size.hold.font", 24f), TextAlignmentOptions.Left);
+            _label = _art.Text("Label", _root, "font.body", "color.text.body", ThemeTokens.GetFloat("size.hold.font", 24f), TextAlignmentOptions.Left);
             var lr = _label.rectTransform;
             lr.anchorMin = lr.anchorMax = new Vector2(0.5f, 0f);
             lr.pivot = new Vector2(0f, 0.5f);
             lr.sizeDelta = new Vector2(320f, _ring);
 
-            _caption = _art.Text("Caption", _root, "font.display", "color.text.ember", ThemeTokens.GetFloat("size.hold.caption.font", 26f), TextAlignmentOptions.Bottom);
+            _caption = _art.Text("Caption", _root, "font.body", "color.text.ember", ThemeTokens.GetFloat("size.hold.caption.font", 26f), TextAlignmentOptions.Bottom);
             var cr = _caption.rectTransform;
             cr.anchorMin = cr.anchorMax = new Vector2(0.5f, 0f);
             cr.pivot = new Vector2(0.5f, 0f);

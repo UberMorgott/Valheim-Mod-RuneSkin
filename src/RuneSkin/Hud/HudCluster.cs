@@ -113,7 +113,7 @@ namespace RuneSkin.PlayerHud
             seal.rectTransform.anchorMin = Vector2.zero;
             seal.rectTransform.anchorMax = Vector2.one;
             seal.rectTransform.offsetMin = seal.rectTransform.offsetMax = Vector2.zero;
-            _plaqueText = _art.Text("Label", _plaque, "font.display", "color.text.accent", ThemeTokens.GetFloat("size.hud.font.number", 16f), TMPro.TextAlignmentOptions.Center);
+            _plaqueText = _art.Text("Label", _plaque, "font.body", "color.text.accent", ThemeTokens.GetFloat("size.hud.font.number", 16f), TMPro.TextAlignmentOptions.Center);
             _plaqueText.rectTransform.anchorMin = Vector2.zero;
             _plaqueText.rectTransform.anchorMax = Vector2.one;
             _plaqueText.rectTransform.offsetMin = new Vector2(20f, 0f);

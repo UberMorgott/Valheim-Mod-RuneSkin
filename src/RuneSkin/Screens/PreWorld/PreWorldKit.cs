@@ -63,6 +63,31 @@ namespace RuneSkin.PreWorld
             return false;
         }
 
+        // Readable floor for the pre-world screens (m5-text-min, size.text.readable = 16 px at 1080p; runs 20261022-205726
+        // / -210451: settings stepper values 14.9, the sex toggle label 15.9, the modded notice 15): fixed sizes below it
+        // rise to it, auto-size minima below it rise to it. Inactive templates included (clones copy it).
+        public static void ReadableFloor(Transform root)
+        {
+            if (!root) return;
+            var floor = ThemeTokens.GetFloat("size.text.readable", 16f);
+            foreach (var t in root.GetComponentsInChildren<TMP_Text>(true))
+            {
+                if (t.GetComponent<SkinMark>() is SkinMark m && m.Internal) continue;
+                // Plate labels shrink to their plate by design (PlateLabelFit wraps first; a floor truncated them, run
+                // 20261022-210451); size groups carry their own floor.
+                if (t.GetComponent<PlateLabelFit>() || t.GetComponent<TextSizeGroup>()) continue;
+                // Measured where it renders: screen code scales subtrees / sets sizes after the restyle (settings stepper
+                // 14.9 px, sex toggles 15.5 px with a one-shot floor, run 20261022-232945), so the floor re-applies for a
+                // few frames after every enable (ReadableText).
+                if (!t.TryGetComponent<ReadableText>(out var rt))
+                {
+                    rt = t.gameObject.AddComponent<ReadableText>();
+                    rt.hideFlags = HideFlags.HideInInspector;
+                }
+                rt.Floor = floor;
+                ReadableText.Apply(t, floor);
+            }
+        }
         public static void Common(ScreenContext ctx, Transform root)
         {
             foreach (var g in root.GetComponentsInChildren<Graphic>(true))
@@ -84,7 +109,8 @@ namespace RuneSkin.PreWorld
                     ctx.Role(g, "button.label", "label of a plated button");
                     continue;
                 }
-                if (Under(g.transform, root, "GamepadMap")) { ctx.Role(g, "content", "controller map art (Settings gamepad tab)"); continue; }
+                // Controller map: the art stays, its labels take the body face (two-font theme, run 20261022-230744).
+                if (Under(g.transform, root, "GamepadMap")) { if (g is TMP_Text) ctx.Role(g, "text.body", "controller map label (body face)"); else ctx.Role(g, "content", "controller map art (Settings gamepad tab)"); continue; }
                 if (g is TMP_SelectionCaret) { ctx.Role(g, "content", "input caret"); continue; }
                 if (g is Text) { ctx.Role(g, "text.legacy", "legacy uGUI text (another mod's menu line)"); continue; }
                 if (g is Image image) Fallback(ctx, image);
@@ -132,6 +158,40 @@ namespace RuneSkin.PreWorld
     }
 
     // Vanilla panel image switched off under the RuneSkin panel stack; Revert turns it back on.
+    // Readable floor kept on one pre-world text (PreWorldKit.ReadableFloor): size in canvas units >= Floor, re-applied for
+    // 10 frames after each enable (layout / scale passes of the screen code run then), idle otherwise.
+    [DisallowMultipleComponent]
+    public sealed class ReadableText : MonoBehaviour, IRevertible
+    {
+        public float Floor = 16f;
+        private TMP_Text _text;
+        private int _until;
+
+        private void OnEnable() => _until = Time.frameCount + 10;
+
+        private void LateUpdate()
+        {
+            if (Time.frameCount > _until) return;
+            if (!_text && !TryGetComponent(out _text)) return;
+            Apply(_text, Floor);
+        }
+
+        public static void Apply(TMP_Text t, float floor)
+        {
+            var canvas = t.canvas ? t.canvas : t.GetComponentInParent<Canvas>(true);
+            var k = canvas ? t.transform.lossyScale.y / canvas.rootCanvas.transform.lossyScale.y : 1f;
+            var want = k > 0.01f ? floor / k : floor;
+            if (!t.enableAutoSizing) { if (t.fontSize < want - 0.05f) t.fontSize = want; }
+            else
+            {
+                if (t.fontSizeMax < want) t.fontSizeMax = want;
+                if (t.fontSizeMin < want) t.fontSizeMin = want;
+            }
+        }
+
+        public void Revert() => Destroy(this);
+    }
+
     [DisallowMultipleComponent]
     public sealed class PanelSwap : MonoBehaviour, IRevertible
     {

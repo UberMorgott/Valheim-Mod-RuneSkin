@@ -160,7 +160,7 @@ namespace RuneSkin.Tests
                 Assert.Contains(f.families, x => x.family == fam);
             foreach (var role in new[] { "legacy.title", "legacy.body", "legacy.label", "legacy.muted", "glyph.ench.enchant", "glyph.board.bounty", "plate.currency" })
                 Assert.Contains(f.roles, x => x.role == role);
-            Assert.Equal("font.rune", Array.Find(f.roles, x => x.role == "legacy.title").font);
+            Assert.Equal("font.display", Array.Find(f.roles, x => x.role == "legacy.title").font);
         }
     }
 }

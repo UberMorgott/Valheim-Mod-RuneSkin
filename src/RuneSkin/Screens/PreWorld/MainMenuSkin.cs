@@ -39,6 +39,7 @@ namespace RuneSkin.PreWorld
             var menuList = fejd.m_menuList ? fejd.m_menuList.transform : null;
             PreWorldKit.Panels(root, "size.panel.pad", img => (menuList && img.transform.IsChildOf(menuList)) || VanillaCorner(img.transform, root));
             Changelog(fejd);
+            SidePanels(fejd);
             TabSelected(root);
             DefaultCancel(fejd.m_removeCharacterDialog);
             // The character's name in the delete confirm (OnCharacterRemove :2857 writes it): the header size of the
@@ -78,7 +79,9 @@ namespace RuneSkin.PreWorld
                 }
             }
             CharacterFraming.Ensure(fejd);
+            SaveRows(fejd);
             if (fejd.m_worldListElement) RegisterTemplate(fejd.m_worldListElement.transform, fejd);
+            PreWorldKit.ReadableFloor(root);
             Plugin.Log.LogInfo("[RuneSkin] main menu attached");
         }
 
@@ -92,14 +95,18 @@ namespace RuneSkin.PreWorld
             // (run 20261022-105515): shrinks to fit.
             if (fejd.m_moddedText && fejd.m_moddedText.TryGetComponent<TMP_Text>(out var modded) && !modded.enableAutoSizing)
             {
-                modded.fontSizeMax = modded.fontSize;
-                modded.fontSizeMin = ThemeTokens.GetFloat("size.text.fit.min", 13f);
+                // Readability floor (m5-text-min: vanilla 15 px): the notice grows past its box upward instead.
+                var floor = ThemeTokens.GetFloat("size.text.readable", 16f);
+                modded.fontSizeMax = Mathf.Max(modded.fontSize, floor);
+                modded.fontSizeMin = floor;
                 modded.enableAutoSizing = true;
+                modded.overflowMode = TextOverflowModes.Overflow;
             }
             if (fejd.m_versionLabel)
             {
                 fejd.m_versionLabel.alignment = TextAlignmentOptions.BottomRight;
-                fejd.m_versionLabel.overflowMode = TextOverflowModes.Overflow;
+                fejd.m_versionLabel.overflowMode = TextOverflowModes.Overflow;                // Vanilla 14: below the readability floor (m5-text-min, run 20261022-205726).
+                fejd.m_versionLabel.fontSize = Mathf.Max(fejd.m_versionLabel.fontSize, ThemeTokens.GetFloat("size.text.readable", 16f));
             }
         }
 
@@ -123,7 +130,107 @@ namespace RuneSkin.PreWorld
                 PanelSwap.Apply(img, sprite);
                 PanelDecor.Ensure(rt, "size.panel.pad", glass: true, plaque: false);
             }
-            OnScreen.Ensure(window);
+            // Closing: vanilla closes the changelog only through the toggle that opened it (BottomLeftButtons/
+            // showChangelog, OnButtonShowChangelog :1222). The RuneSkin stack (x 0..565, y 90..770 at 1080p, run
+            // 20261022-194855) lay over that button and over the menu column, so nothing closed it. The window docks
+            // right of the menu column and the bottom-left links (SidePanel, drawn above them), and gets a close
+            // button in its top-right corner plus Esc / gamepad B (ChangelogClose).
+            var menu = fejd.m_menuList ? (RectTransform)fejd.m_menuList.transform : null;
+            var links = fejd.m_mainMenu ? fejd.m_mainMenu.transform.Find("BottomLeftButtons") as RectTransform : null;
+            // The drawn plates (knots, caps) reach past the MenuList rect (run 20261022-205726: 24 px apart on paper, touching
+            // on screen): the window keeps clear of every entry button, not of the list rect.
+            SidePanel.Ensure(window, () => ButtonRects(menu, links), decor: false);
+            // Vanilla's 10-unit PatchlogScroll read as a thin pale line: theme width (track + handle art from the roles).
+            if (window.TryGetComponent<ChangeLog>(out var log) && log.m_scrollbar)
+                Grow((RectTransform)log.m_scrollbar.transform, ThemeTokens.GetFloat("size.scrollbar.w", 16f), 0f);
+            ChangelogClose.Ensure(fejd, window);
+        }
+
+        // Manage-saves rows (ManageSavesMenuElement template: PrimarySaveElement name / size / backups / date + source
+        // icon, BackupSaveElement name / size / date; 678 x 32 vanilla). Vanilla column boxes sized for its own face put
+        // "Сохранения: 2" in a 70-unit box that auto-sized it to 12 px (run 20261022-210451); here fixed columns at the
+        // readable size: name | size (right) | backups (centre) | date (right, from the right edge, clear of the icon).
+        private static void SaveRows(FejdStartup fejd)
+        {
+            var menu = fejd.m_manageSavesMenu;
+            var el = menu && menu.saveElement ? menu.saveElement.GetComponent<ManageSavesMenuElement>() : null;
+            if (!el || el.GetComponent<LiftMark>()) return;
+            el.gameObject.AddComponent<LiftMark>();
+            var font = ThemeTokens.GetFloat("size.text.readable", 16f);
+            foreach (var b in new[] { el.primaryElement, el.backupElement })
+            {
+                if (!b) continue;
+                var row = b.transform;
+                Place(row, "name", new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(40f, 0f), new Vector2(210f, 0f), font, TextAlignmentOptions.MidlineLeft);
+                Place(row, "size", new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(215f, 0f), new Vector2(345f, 0f), font, TextAlignmentOptions.MidlineRight);
+                Place(row, "backups", new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(355f, 0f), new Vector2(465f, 0f), font, TextAlignmentOptions.Midline);
+                Place(row, "date", new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(-215f, 0f), new Vector2(-40f, 0f), font, TextAlignmentOptions.MidlineRight);
+                foreach (var n in new[] { "name", "size", "backups", "date" })
+                    if (row.Find(n) is Transform tn && tn.TryGetComponent<TMP_Text>(out var tt)) tt.overflowMode = TextOverflowModes.Ellipsis;
+            }
+        }
+
+        // Side panels beside a window (SidePanel): the modifier description of the world modifiers dialog
+        // (ServerOptionsGUI.m_toolTipPanel, shown while its text is set, ServerOptionsGUI.cs:45) and the world source
+        // notice of the start-game panel (FejdStartup.m_worldSourceInfoPanel, UpdateWorldList :1396-1401). Vanilla bare
+        // dark rectangles, partly under the modal / window stacks: RuneSkin stack, docked beside the window, on top.
+        private static void SidePanels(FejdStartup fejd)
+        {
+            var options = fejd.m_serverOptions;
+            if (options && options.m_toolTipPanel)
+            {
+                var tip = options.m_toolTipPanel;
+                SidePanel.Ensure(tip, () => new[] { LargestPanel(options.transform, tip) });
+            }
+            // Modifier rows: the slider names / values and the checkbox labels each read at one size per column (same
+            // object name, same control kind, same box width) instead of one auto-size per label (TextSizeGroup).
+            if (options && options.m_modifiersRoot)
+                foreach (var t in options.m_modifiersRoot.GetComponentsInChildren<TMP_Text>(true))
+                {
+                    if (options.m_toolTipPanel && t.transform.IsChildOf(options.m_toolTipPanel)) continue;
+                    var kind = t.GetComponentInParent<KeyToggle>(true) ? "toggle" : t.GetComponentInParent<KeySlider>(true) ? "slider" : "row";
+                    TextSizeGroup.Join(t, "modifiers|" + kind + "|" + t.name + "|" + Mathf.Round(t.rectTransform.rect.width / 4f), null);
+                    // Slider names stay one line at the floor and run left into the free margin (wrapped two-line names
+                    // overlapped the next row, run 20261022-210451); checkbox labels keep wrapping under their box.
+                    if (kind != "toggle") t.textWrappingMode = TextWrappingModes.NoWrap;
+                }
+            if (fejd.m_worldSourceInfoPanel && fejd.m_startGamePanel)
+            {
+                var info = (RectTransform)fejd.m_worldSourceInfoPanel.transform;
+                // Not on top: the world modifiers modal opens over the start-game panel and must cover this notice.
+                SidePanel.Ensure(info, () => new[] { LargestPanel(fejd.m_startGamePanel.transform, info) }, onTop: false);
+            }
+        }
+
+        // Rects of the drawn images under the given roots (plus the roots themselves).
+        private static RectTransform[] ButtonRects(params RectTransform[] roots)
+        {
+            var list = new List<RectTransform>();
+            foreach (var r in roots)
+            {
+                if (!r) continue;
+                list.Add(r);
+                // Every drawn image (plates, knots), not only the button rects.
+                foreach (var g in r.GetComponentsInChildren<Image>(false))
+                    if (g.enabled && g.sprite) list.Add(g.rectTransform);
+            }
+            return list.ToArray();
+        }
+
+        // Host of the largest active RuneSkin panel stack under scope, outside exclude (the window a side panel describes).
+        private static RectTransform LargestPanel(Transform scope, Transform exclude)
+        {
+            RectTransform best = null;
+            var area = 0f;
+            foreach (var decor in scope.GetComponentsInChildren<PanelDecor>(false))
+            {
+                var host = decor.transform.parent as RectTransform;
+                if (!host || host == exclude || host.IsChildOf(exclude)) continue;
+                var r = host.rect;
+                var s = r.width * r.height * host.lossyScale.x * host.lossyScale.y;
+                if (s > area) { area = s; best = host; }
+            }
+            return best;
         }
 
         // Row templates instantiated by vanilla (world rows FejdStartup.cs:1319, server rows ServerListGui.cs:608):
@@ -170,7 +277,7 @@ namespace RuneSkin.PreWorld
             var sub = ThemeTokens.GetFloat("size.world.sub.font", 17f);
             Place(row, "name", new Vector2(0f, 0.5f), new Vector2(1f, 1f), new Vector2(16f, 0f), new Vector2(-46f, -2f), ThemeTokens.GetFloat("size.world.name.font", 24f), TextAlignmentOptions.BottomLeft);
             Place(row, "seed", Vector2.zero, new Vector2(0.45f, 0.5f), new Vector2(16f, 4f), new Vector2(0f, 0f), sub, TextAlignmentOptions.TopLeft);
-            Place(row, "modifiers", new Vector2(0.45f, 0f), new Vector2(1f, 0.5f), new Vector2(8f, 4f), new Vector2(-46f, 0f), sub, TextAlignmentOptions.TopRight);
+            Place(row, "modifiers", new Vector2(0.45f, 0f), new Vector2(1f, 0.5f), new Vector2(8f, 4f), new Vector2(-54f, 0f), sub, TextAlignmentOptions.TopRight);
             foreach (var icon in new[] { "source_cloud", "source_local", "source_legacy" })
                 if (row.Find(icon) is RectTransform ir)
                 {
@@ -294,6 +401,82 @@ namespace RuneSkin.PreWorld
             }
             input.pointSize = font;
             input.selectionColor = ThemeTokens.GetColor("color.field.selection", new Color(0.35f, 0.85f, 1f, 0.35f));
+            if (input.placeholder is TMP_Text ph && !ph.GetComponent<PlaceholderText>()) ph.gameObject.AddComponent<PlaceholderText>();
+        }
+
+        // Server rows (mockup m5-world-a family: two-line rows). ServerListElement (ServerListElement.cs:37-53) finds its
+        // texts / icons by name: name (first TMP), modifiers, version, players, status, crossplay, Private (+ PVP, UPNP
+        // in the prefab). Vanilla rows are one 32-unit line with the modifiers summary drawn over the name area; here:
+        // name on the top line, modifiers under it (muted), version / players columns, then one fixed icon column per
+        // flag at the right edge (uniform size, theme tint, upright), inset from the frame. The row pitch
+        // (m_serverListElementStep, ServerListGui.cs:617) grows with the row. Runs in Awake, before the first clone.
+        public static void ServerRow(ServerListGui gui)
+        {
+            var row = gui.m_serverListElement ? gui.m_serverListElement.transform as RectTransform : null;
+            if (!row || row.GetComponent<LiftMark>()) return;
+            row.gameObject.AddComponent<LiftMark>();
+            var h = ThemeTokens.GetFloat("size.server.row.h", 52f);
+            if (Mathf.Approximately(row.anchorMin.y, row.anchorMax.y)) row.sizeDelta = new Vector2(row.sizeDelta.x, h);
+            gui.m_serverListElementStep = h + ThemeTokens.GetFloat("size.server.row.gap", 4f);
+            var icon = ThemeTokens.GetFloat("size.server.icon", 22f);
+            var pitch = icon + ThemeTokens.GetFloat("size.server.icon.gap", 8f);
+            var edge = ThemeTokens.GetFloat("size.server.icon.inset", 18f);
+            var tint = ThemeTokens.GetColor("color.text.label", new Color(0.78f, 0.86f, 0.9f, 1f));
+            var x = -edge;
+            foreach (var n in new[] { "Private", "crossplay", "PVP", "UPNP", "status" })
+            {
+                if (!(row.Find(n) is RectTransform ir)) continue;
+                ir.anchorMin = ir.anchorMax = new Vector2(1f, 0.5f);
+                ir.pivot = new Vector2(1f, 0.5f);
+                ir.anchoredPosition = new Vector2(x, 0f);
+                ir.sizeDelta = new Vector2(icon, icon);
+                ir.localRotation = Quaternion.identity;
+                ir.localScale = Vector3.one;
+                foreach (var img in ir.GetComponentsInChildren<Image>(true))
+                {
+                    // Password flag: the theme lock glyph (vanilla key_icon is a tilted gold key that ran into the frame).
+                    if (n == "Private" && ThemeTokens.GetSprite("sprite.server.lock") is Sprite lockSprite) img.sprite = lockSprite;
+                    img.preserveAspect = true;
+                    img.color = new Color(tint.r, tint.g, tint.b, img.color.a);
+                    if (img.rectTransform != ir)
+                    {
+                        var c = img.rectTransform;
+                        c.anchorMin = Vector2.zero;
+                        c.anchorMax = Vector2.one;
+                        c.offsetMin = c.offsetMax = Vector2.zero;
+                        c.localRotation = Quaternion.identity;
+                    }
+                }
+                x -= pitch;
+            }
+            var players = ThemeTokens.GetFloat("size.server.players.w", 64f);
+            var version = ThemeTokens.GetFloat("size.server.version.w", 78f);
+            var font = ThemeTokens.GetFloat("size.server.name.font", 20f);
+            var sub = ThemeTokens.GetFloat("size.server.sub.font", 15f);
+            var right = x + pitch - icon - 10f; // left edge of the last icon column, a gap before it (run 20261022-205726: players ran under the status icon)
+            Place(row, "players", new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(right - players, 0f), new Vector2(right, 0f), sub + 2f, TextAlignmentOptions.MidlineRight);
+            right -= players + 8f;
+            Place(row, "version", new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(right - version, 0f), new Vector2(right, 0f), sub + 2f, TextAlignmentOptions.MidlineRight);
+            right -= version + 12f;
+            Place(row, "name", new Vector2(0f, 0.5f), new Vector2(1f, 1f), new Vector2(16f, 0f), new Vector2(right, -3f), font, TextAlignmentOptions.BottomLeft);
+            Place(row, "modifiers", new Vector2(0f, 0f), new Vector2(1f, 0.5f), new Vector2(16f, 3f), new Vector2(right, 0f), sub, TextAlignmentOptions.TopLeft);            // Long names / modifier summaries end in an ellipsis inside their column (run 20261022-205726: a long name
+            // ran over the version column); the half-row line box holds a whole line, so TMP keeps it.
+            foreach (var n in new[] { "name", "modifiers" })
+                if (row.Find(n) is Transform tn && tn.TryGetComponent<TMP_Text>(out var tt))
+                    tt.overflowMode = TextOverflowModes.Ellipsis;
+            if (row.Find("selected") is Transform sel && sel.TryGetComponent<Image>(out var selImg))
+            {
+                selImg.color = Color.white;
+                var s = ThemeTokens.GetSprite("sprite.row.recipe.selected");
+                if (s)
+                {
+                    selImg.sprite = s;
+                    selImg.type = Image.Type.Sliced;
+                    selImg.fillCenter = true;
+                }
+                else selImg.color = new Color(1f, 1f, 1f, 0.15f);
+                selImg.raycastTarget = false;
+            }
         }
 
         private static void Place(Transform row, string child, Vector2 min, Vector2 max, Vector2 offMin, Vector2 offMax, float size, TextAlignmentOptions align)
@@ -532,6 +715,18 @@ namespace RuneSkin.PreWorld
                 foreach (var tab in handler.m_tabs)
                     if (tab?.m_button && tab.m_button.targetGraphic) ctx.Role(tab.m_button.targetGraphic, "tab", "TabHandler tab button");
             CharacterList.Roles(ctx);
+            if (fejd.m_changeLog && fejd.m_changeLog.transform.Find(ChangelogClose.ButtonName) is Transform close)
+            {
+                if (close.TryGetComponent<Image>(out var ci)) ctx.Role(ci, "button.icon", "changelog close button (RuneSkin)");
+                if (close.GetComponentInChildren<TMP_Text>(true) is TMP_Text ct) ctx.Role(ct, "row.label", "changelog close glyph");
+            }
+            // Manage saves rows (ManageSavesMenuElement): the expand arrow is a Button whose target graphic IS the
+            // arrow glyph; as a "button" it became an empty plate frame at the left of every row. Glyph kept, tinted.
+            foreach (var el in root.GetComponentsInChildren<ManageSavesMenuElement>(true))
+                if (el.arrow && el.arrow.targetGraphic) ctx.Role(el.arrow.targetGraphic, "content", "manage saves expand arrow glyph (vanilla)");
+            if (fejd.m_manageSavesMenu && fejd.m_manageSavesMenu.saveElement && fejd.m_manageSavesMenu.saveElement.TryGetComponent<ManageSavesMenuElement>(out var tmpl)
+                && tmpl.arrow && tmpl.arrow.targetGraphic && tmpl.transform.IsChildOf(root))
+                ctx.Role(tmpl.arrow.targetGraphic, "content", "manage saves expand arrow glyph (vanilla)");
             // World row clones under the list: same roles as their template (the root pass would call the sprite-less
             // vanilla selection a scrim).
             // The template itself too when it lies under this root (it sits inactive in WorldList): the root pass gave it
@@ -669,7 +864,13 @@ namespace RuneSkin.PreWorld
             try
             {
                 if (__instance.m_serverListElement && FejdStartup.instance)
+                {
+                    MainMenuSkin.ServerRow(__instance);
                     MainMenuSkin.RegisterTemplate(__instance.m_serverListElement.transform, FejdStartup.instance);
+                    // After the restyle (row.label writes the body colour): the modifiers line reads muted.
+                    if (__instance.m_serverListElement.transform.Find("modifiers") is Transform mt && mt.TryGetComponent<TMP_Text>(out var mtext))
+                        mtext.color = ThemeTokens.GetColor("color.state.disabled", mtext.color);
+                }
                 if (__instance.m_serverListTabHandler) MainMenuSkin.TabLabels(__instance.m_serverListTabHandler, "size.server.tab");
             }
             catch (Exception e) { Plugin.Log.LogError($"[RuneSkin] server row restyle failed: {e}"); }

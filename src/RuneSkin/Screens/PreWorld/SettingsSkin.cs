@@ -32,6 +32,7 @@ namespace RuneSkin.PreWorld
             GamepadInset(settings);
             ScreenRegistry.Register(root, () => Context(settings));
             ScreenRegistry.Restyle(root);
+            PreWorldKit.ReadableFloor(root);
         }
 
         // Tab buttons stacked vertically in a column on the panel's left; the pages start right of it.
@@ -66,13 +67,21 @@ namespace RuneSkin.PreWorld
                 foreach (var t in rt.GetComponentsInChildren<TMP_Text>(true))
                 {
                     if (PreWorldKit.IsKeyHint(t.transform, rt)) continue;
+                    // Clear of the plate caps; long labels ("Специальные возможности" in PT Sans, run 20261022-230744)
+                    // shrink to the readable floor, then take a second line.
                     t.alignment = TextAlignmentOptions.Center;
-                    t.enableAutoSizing = false;
-                    t.fontSize = ThemeTokens.GetFloat("size.settings.tab.font", 20f);
+                    var full = ThemeTokens.GetFloat("size.settings.tab.font", 20f);
+                    t.fontSize = full;
+                    t.fontSizeMax = full;
+                    t.fontSizeMin = Mathf.Min(full, ThemeTokens.GetFloat("size.text.readable", 16f));
+                    t.enableAutoSizing = true;
+                    t.textWrappingMode = TextWrappingModes.Normal;
+                    var inset = ThemeTokens.GetFloat("size.settings.tab.inset", 30f);
                     var tr = t.rectTransform;
                     tr.anchorMin = Vector2.zero;
                     tr.anchorMax = Vector2.one;
-                    tr.offsetMin = tr.offsetMax = Vector2.zero;
+                    tr.offsetMin = new Vector2(inset, 2f);
+                    tr.offsetMax = new Vector2(-inset, -2f);
                 }
             }
         }

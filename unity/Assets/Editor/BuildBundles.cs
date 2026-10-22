@@ -29,17 +29,18 @@ public static class BuildBundles
     [Serializable] public class SpriteDef { public string name, file, imageType, token; public int[] size; public Border border; public float[] pivot; }
     [Serializable] public class Manifest { public int version, authoredScale, pixelsPerUnit; public SpriteDef[] sprites; }
 
-    // display + body; sampling size/padding per role, atlas grows until every charset glyph fits
+    // body regular + its real bold cut (user 2026-10-22: two faces, PT Sans + the game's own Norsebold, loaded at runtime); sampling size/padding,
+    // atlas grows until every charset glyph fits
     static readonly (string name, string file, int pointSize, int padding)[] Fonts =
     {
-        ("RuneSkin-Display Cormorant-Bold SDF", "Cormorant-Bold.otf", 72, 8),
         ("RuneSkin-Body PTSans-Regular SDF", "PT_Sans-Web-Regular.ttf", 60, 7),
+        ("RuneSkin-Body PTSans-Bold SDF", "PT_Sans-Web-Bold.ttf", 60, 7),
     };
 
     // The same source files as legacy dynamic UnityEngine.Font assets (asset name = file name without extension): uGUI
     // Text and IMGUI draw with a Font, never a TMP asset, and the baked TMP faces drop their source font. Dynamic =
     // glyphs rasterised from the embedded font data at runtime (Cyrillic included), no OS font lookup.
-    static readonly string[] LegacyFonts = { "PT_Sans-Web-Regular.ttf", "Cormorant-Bold.otf" };
+    static readonly string[] LegacyFonts = { "PT_Sans-Web-Regular.ttf", "PT_Sans-Web-Bold.ttf" };
 
     const string TextureDir = Root + "/Textures";
 

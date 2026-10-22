@@ -227,7 +227,10 @@ namespace RuneSkin.Theme
             {
                 var asset = (Sprites.TryGetValue(token, out var s) && s) || (Fonts.TryGetValue(token, out var f) && f) ||
                             (Textures.TryGetValue(token, out var t) && t);
-                var ok = asset || Colors.ContainsKey(token) || Floats.ContainsKey(token);
+                // A loaded face (the display token = the game's own Valheim-Norsebold) binds after the families are
+                // decided (first restyle): declared is enough (run 20261022-222603: the two-font theme made font.display
+                // loaded and every family that requires it went unowned).
+                var ok = asset || LoadedFonts.ContainsKey(token) || Colors.ContainsKey(token) || Floats.ContainsKey(token);
                 if (!ok) missing?.Add(token);
             }
             return missing == null || missing.Count == 0;

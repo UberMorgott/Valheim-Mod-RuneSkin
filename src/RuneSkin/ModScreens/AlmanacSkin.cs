@@ -22,7 +22,7 @@ namespace RuneSkin.ModScreens
     // Viewport/ListRoot + Scrollbar, templates Viewport/ListElement {Selected, Background(Button)/Icon, Notice, Name,
     // Description} and Viewport/Button {Selected, Text}), TextView, GamblePanel, Description (RightPanel: Icon, Name,
     // MainButton, Requirements, InfoView), SearchField / SearchField (1), Currency, Closebutton). Texts are legacy
-    // UnityEngine.UI.Text: theme colour and the theme face as a legacy Font (bundle PT Sans / Cormorant). Elements are cloned per tab
+    // UnityEngine.UI.Text: theme colour and the theme face as a legacy Font (bundle PT Sans). Elements are cloned per tab
     // (GridView / TextView / InfoView Create*): a postfix on every Create* / On*Tab / Show marks the window dirty and
     // the next LateUpdate restyles it (styled templates make clones cheap: their marks carry the originals).
     public sealed class AlmanacSkin : MonoBehaviour
@@ -157,7 +157,7 @@ namespace RuneSkin.ModScreens
             foreach (var text in root.GetComponentsInChildren<Text>(true))
             {
                 var t = text.transform;
-                if (text.GetComponentInParent<InputField>(true)) ctx.Role(text, "content", "input field text / placeholder (user content)");
+                if (text.GetComponentInParent<InputField>(true)) ctx.Role(text, "text.legacy", "input field text / placeholder (body face, two-font theme)");
                 else if (t.name == "topic" && t.parent == root) ctx.Role(text, "text.legacy.title", "window title");
                 else if (t.parent && t.parent.name == "Selected" && InTab(root, t)) ctx.Role(text, "text.legacy.accent", "selected tab label");
                 else if (t.name == "Name" && t.parent && t.parent.name == "Description") ctx.Role(text, "text.legacy.accent", "detail title (item title colour)");
@@ -165,7 +165,7 @@ namespace RuneSkin.ModScreens
             }
             foreach (var text in root.GetComponentsInChildren<TMP_Text>(true))
                 if (!(text.GetComponent<SkinMark>() is SkinMark m && m.Internal))
-                    ctx.Role(text, text.GetComponentInParent<TMP_InputField>(true) ? "content" : "text.body", "Almanac TMP text");
+                    ctx.Role(text, "text.body", "Almanac TMP text (input fields too: two-font theme)");
             return ctx;
         }
 

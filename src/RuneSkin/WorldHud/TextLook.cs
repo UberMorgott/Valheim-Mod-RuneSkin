@@ -39,12 +39,48 @@ namespace RuneSkin.WorldHud
             m.SetFloat(ShaderUtilities.ID_FaceDilate, dilate);
         }
 
+        // The face's own material (main-menu rune preset: no added outline) plus a soft dark underlay; for big texts
+        // over the world (centre message). Run 20261022-210451: the outlined copy (width 0.22) ate Norsebold's thin
+        // strokes, the text read grey / near-black (contrast 2.9 on white, 1.9 on black).
+        public static bool ApplyShadowed(TMP_Text text, string fontToken, string look)
+        {
+            var font = ThemeTokens.GetFont(fontToken);
+            if (!text || !font || !font.material) return false;
+            text.font = font;
+            text.fontStyle &= ~FontStyles.Bold;
+            if (!(Cache.TryGetValue((font, look), out var entry) && entry.Key))
+            {
+                var m = new Material(font.material) { name = font.material.name + " (RuneSkin " + look + ")" };
+                Cache[(font, look)] = entry = new KeyValuePair<Material, int>(m, -1);
+            }
+            if (entry.Value != ThemeTokens.Revision)
+            {
+                Underlay(entry.Key);
+                Cache[(font, look)] = new KeyValuePair<Material, int>(entry.Key, ThemeTokens.Revision);
+            }
+            text.fontSharedMaterial = entry.Key;
+            return true;
+        }
+        // Soft dark drop shadow (TMP underlay) on a RuneSkin look material: contrast over bright backgrounds where an
+        // outline alone reads thin. Tokens color.text.underlay, size.text.underlay.{offset,dilate,softness}.
+        public static void Underlay(Material m)
+        {
+            if (!m || !m.HasProperty(ShaderUtilities.ID_UnderlayColor)) return;
+            m.EnableKeyword(ShaderUtilities.Keyword_Underlay);
+            m.SetColor(ShaderUtilities.ID_UnderlayColor, ThemeTokens.GetColor("color.text.underlay", new Color(0f, 0f, 0f, 0.85f)));
+            var o = ThemeTokens.GetFloat("size.text.underlay.offset", 0.6f);
+            m.SetFloat(ShaderUtilities.ID_UnderlayOffsetX, o);
+            m.SetFloat(ShaderUtilities.ID_UnderlayOffsetY, -o);
+            m.SetFloat(ShaderUtilities.ID_UnderlayDilate, ThemeTokens.GetFloat("size.text.underlay.dilate", 0.35f));
+            m.SetFloat(ShaderUtilities.ID_UnderlaySoftness, ThemeTokens.GetFloat("size.text.underlay.softness", 0.55f));
+        }
         // Font + outline material on a live text; false when the font token has no asset (text left as it is).
         public static bool Apply(TMP_Text text, string fontToken, string look, float dilate = 0f)
         {
             var font = ThemeTokens.GetFont(fontToken);
             if (!text || !font) return false;
             text.font = font;
+            text.fontStyle &= ~FontStyles.Bold; // two single-weight faces (PT Sans, Norsebold): never a faux bold
             var m = Outlined(font, look, ThemeTokens.GetFloat("size.text.outline", 0.22f), dilate);
             if (m) text.fontSharedMaterial = m;
             return true;

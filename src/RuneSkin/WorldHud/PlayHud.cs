@@ -102,11 +102,14 @@ namespace RuneSkin.WorldHud
             if (!t) return;
             art.Note(t, role, TextLook.Apply(t, font, look), reason);
             if (color != null) t.color = ThemeTokens.GetColor(color, t.color);
+            // Every themed HUD text reads at >= size.text.hud.min (px at 1080p, the HUD canvas scales with the screen).
             if (size > 0f)
             {
                 t.enableAutoSizing = false;
-                t.fontSize = size;
+                t.fontSize = MessageSkin.HudReadable(size);
             }
+            else if (t.enableAutoSizing) t.fontSizeMax = MessageSkin.HudReadable(t.fontSizeMax);
+            else t.fontSize = MessageSkin.HudReadable(t.fontSize);
         }
 
         // A frame image (sibling drawn after `after`) around `target` by the sprite's border insets.
@@ -280,7 +283,7 @@ namespace RuneSkin.WorldHud
                     ThemeTokens.GetFloat("scale.action.frame", 0.5f));
                 if (frame && label) frame.rectTransform.SetSiblingIndex(label.transform.GetSiblingIndex());
             }
-            PlayHud.Text(_art, label, "font.display", "action", "color.text.body", what + ".label", $"{what} label (outlined serif)", ThemeTokens.GetFloat("size.action.font", 19f));
+            PlayHud.Text(_art, label, "font.body", "action", "color.text.body", what + ".label", $"{what} label (outlined serif)", ThemeTokens.GetFloat("size.action.font", 19f));
             // Label above the framed bar (vanilla centres a 16 px auto-sized line inside the 20 px bar; the frame and the
             // serif would cut it): one line, overflowing sideways, its bottom on the frame top.
             if (label && bkg)
@@ -552,7 +555,7 @@ namespace RuneSkin.WorldHud
                 }
                 else _art.Content(img, img.sprite ? $"key hint glyph art '{img.sprite.name}' (controller / mouse)" : "key hint layout image");
             }
-            var keySize = ThemeTokens.GetFloat("size.keyhint.key", 17f);
+            var keySize = MessageSkin.HudReadable(ThemeTokens.GetFloat("size.keyhint.key", 17f));
             foreach (var t in root.GetComponentsInChildren<TMP_Text>(true))
             {
                 var key = t.transform.parent && t.transform.parent.name == "key_bkg";

@@ -63,7 +63,7 @@ namespace RuneSkin.Diagnostics
                 }
                 if (M7(screenId) && status != "unstyled") m7++;
                 if (status == "styled" && g is TMP_Text t && t.font && !t.font.name.StartsWith("RuneSkin", StringComparison.Ordinal) && !Theme.ThemeTokens.IsLoadedFont(t.font)) foreignFont++;
-                // Legacy uGUI texts that took a role: on a theme legacy face (bundle PT Sans / Cormorant, rune source) or not.
+                // Legacy uGUI texts that took a role: on a theme legacy face (bundle PT Sans) or not.
                 if (status == "styled" && g is UnityEngine.UI.Text lt) { if (Theme.ThemeTokens.IsLegacyThemeFont(lt.font)) legacyTheme++; else legacyForeign++; }
                 var key = screenId ?? "(none)";
                 if (!perScreen.TryGetValue(key, out var c)) perScreen[key] = c = new int[3];

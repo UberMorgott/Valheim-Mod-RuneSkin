@@ -106,5 +106,14 @@ namespace RuneSkin.Tests
             var tan = (float)System.Math.Tan(30.0 * System.Math.PI / 180.0);
             return new UnityEngine.Vector2(0.5f + x / (2f * z * tan * aspect), 0.5f + y / (2f * z * tan));
         }
+
+        [Theory]
+        [InlineData("[Filter]", "Russian", "Фильтр")]
+        [InlineData("[Filter]", "English", "Filter")]
+        [InlineData("[Пусто]", "Russian", "Пусто")]
+        [InlineData("Search", "Russian", "Search")]
+        [InlineData("[]", "Russian", "[]")]
+        public void PlaceholderLosesBrackets(string text, string language, string want) =>
+            Assert.Equal(want, PreWorldMath.CleanPlaceholder(text, language));
     }
 }

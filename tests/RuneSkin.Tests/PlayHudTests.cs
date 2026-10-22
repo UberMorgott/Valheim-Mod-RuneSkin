@@ -15,6 +15,25 @@ namespace RuneSkin.Tests
         [InlineData(99, 3)]
         public void LadderIndexMapsEverySpeed(int speed, int index) => Assert.Equal(index, PlayHudMath.LadderIndex(speed));
 
+        [Theory]
+        [InlineData(16f, 18f, 18f)]
+        [InlineData(26f, 18f, 26f)]
+        [InlineData(12f, -1f, 12f)]
+        public void ReadableRaisesSmallSizesToTheFloor(float size, float min, float expected) => Assert.Equal(expected, PlayHudMath.Readable(size, min));
+
+        [Fact]
+        public void PlateSpanKeepsBorderAndPadOnBothSides()
+        {
+            var (c, s) = PlayHudMath.PlateSpan(10f, 110f, 12f, 6f);
+            Assert.Equal(60f, c, 3);
+            Assert.Equal(136f, s, 3);
+            // Content edge (an icon at min) stays border + pad inside the plate edge.
+            Assert.Equal(18f, 10f - (c - s * 0.5f), 3);
+            var (c2, s2) = PlayHudMath.PlateSpan(110f, 10f, -5f, 0f);
+            Assert.Equal(60f, c2, 3);
+            Assert.Equal(100f, s2, 3);
+        }
+
         [Fact]
         public void LadderCellsStackInsideTheColumn()
         {

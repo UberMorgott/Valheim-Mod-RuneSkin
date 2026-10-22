@@ -84,5 +84,19 @@ namespace RuneSkin.Tests
         [InlineData(float.NaN, 10f, 0f, 1920f, 0f)]
         public void EdgeShiftBringsTheStackInside(float min, float max, float lo, float hi, float want) =>
             Assert.Equal(want, RuneSkin.Restyle.PanelMath.EdgeShift(min, max, lo, hi), 3);
+
+        [Theory]
+        // room on the right: panel left = window right + gap, tops level
+        [InlineData(100f, 100f, 700f, 900f, 0f, 0f, 400f, 500f, 724f, 400f)]
+        // no room right (window reaches 1700): goes left of the window
+        [InlineData(1100f, 100f, 1700f, 900f, 0f, 0f, 400f, 500f, 676f, 400f)]
+        // window top above the screen: clamped down inside
+        [InlineData(100f, 100f, 700f, 1300f, 0f, 0f, 400f, 500f, 724f, 580f)]
+        public void DockBesidePlacesThePanelNextToTheWindow(float wx0, float wy0, float wx1, float wy1, float px0, float py0, float px1, float py1, float wantDx, float wantDy)
+        {
+            var (dx, dy) = RuneSkin.Restyle.PanelMath.DockBeside(wx0, wy0, wx1, wy1, px0, py0, px1, py1, 0f, 0f, 1920f, 1080f, 24f);
+            Assert.Equal(wantDx, dx, 3);
+            Assert.Equal(wantDy, dy, 3);
+        }
     }
 }

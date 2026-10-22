@@ -55,18 +55,26 @@ namespace RuneSkin.WorldHud
             var center = hud.m_messageCenterText;
             if (center)
             {
-                _art.Note(center, "message.center", TextLook.Apply(center, "font.display", "message"), "centre message (display serif, outline)");
-                center.color = ThemeTokens.GetColor("color.text.body", center.color);
+                // Rune face like the main menu (user 2026-10-22: the thin dim serif "День 9" was nearly invisible): the
+                // Norsebold face with a copy of its own material plus a soft dark underlay (contrast
+                // on sky / snow / water and at night), no faux bold, bright warm colour, display size.
+                _art.Note(center, "message.center", TextLook.ApplyShadowed(center, "font.display", "message.rune"), "centre message (rune face, own material + soft underlay)");
+                center.color = ThemeTokens.GetColor("color.message.center", new Color(1f, 0.93f, 0.8f, 1f));
                 center.enableAutoSizing = false;
-                center.fontSize = ThemeTokens.GetFloat("size.message.font", 26f);
-                _centerBand = Behind("RuneSkin_CenterBand", center.rectTransform, "sprite.band.message");
+                center.fontSize = ThemeTokens.GetFloat("size.message.center.font", 44f);
+                // A dark backing band (color.message.band) under the rune text: readable over snow / sky (run
+                // 20261022-232945: contrast 3.9 on white with a light band).
+                _centerBand = Behind("RuneSkin_CenterBand", center.rectTransform, "sprite.band.message", "color.message.band");
             }
             var top = hud.m_messageText;
             if (top)
             {
-                _art.Note(top, "message.topleft", TextLook.Apply(top, "font.display", "notify"), "top-left notification (display serif)");
+                // Body sans at a readable size (user 2026-10-22: the serif line at 16 was unreadable at 1080p), full body
+                // contrast; the HUD canvas scales with the screen, so the floor is px at 1080p at every resolution.
+                _art.Note(top, "message.topleft", TextLook.Apply(top, "font.body", "notify"), "top-left notification (body sans)");
                 top.color = ThemeTokens.GetColor("color.text.body", top.color);
-                top.fontSize = ThemeTokens.GetFloat("size.message.notify.font", top.fontSize);
+                top.enableAutoSizing = false;
+                top.fontSize = HudReadable(ThemeTokens.GetFloat("size.message.notify.font", top.fontSize));
                 _plate = Behind("RuneSkin_NotifyPlate", top.rectTransform, "sprite.hud.frame.small");
                 // Room for the icon left of the text (the vanilla icon sits under the line).
                 // ...and below the hotbar's summon frames (Codex r1: the plate overlapped them).
@@ -83,10 +91,10 @@ namespace RuneSkin.WorldHud
             if (Instance == this) Instance = null;
         }
 
-        private Image Behind(string name, RectTransform text, string token)
+        private Image Behind(string name, RectTransform text, string token, string colorToken = "color.frame")
         {
             if (!text.parent) return null;
-            var img = _art.Image(name, text.parent, token, "color.frame", Image.Type.Sliced);
+            var img = _art.Image(name, text.parent, token, colorToken, Image.Type.Sliced);
             img.rectTransform.SetSiblingIndex(text.GetSiblingIndex());
             img.rectTransform.pivot = new Vector2(0.5f, 0.5f);
             return img;
@@ -176,19 +184,29 @@ namespace RuneSkin.WorldHud
                 bottom = Mathf.Min(bottom, iMin.y);
                 top = Mathf.Max(top, iMax.y);
             }
+            // Icon + text inside the plate's full 9-slice border on every side (user screenshot 2026-10-22: the knot
+            // clipped the skill icon), equal margins; the plate grows with the text.
             var rt = _plate.rectTransform;
             rt.anchorMin = rt.anchorMax = parent.pivot;
             rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.localPosition = new Vector3((left + right) * 0.5f, (bottom + top) * 0.5f, 0f);
-            rt.sizeDelta = new Vector2(right - left + 2f * pad + 2f * KnotInset(), top - bottom + 2f * ThemeTokens.GetFloat("size.message.plate.vpad", 6f));
+            var (cx, w) = PlayHudMath.PlateSpan(left, right, Border(true), pad);
+            var (cy, h) = PlayHudMath.PlateSpan(bottom, top, Border(false), ThemeTokens.GetFloat("size.message.plate.vpad", 6f));
+            rt.localPosition = new Vector3(cx, cy, 0f);
+            rt.sizeDelta = new Vector2(w, h);
         }
 
-        // frame_small knot ends (the plate's 9-slice side border, ref px): the text keeps clear of them on both sides.
-        private float KnotInset()
+        // frame_small 9-slice border (theme geometry at reference 100, Restyler.CanvasPpuFactor convention), sides or
+        // top / bottom.
+        private float Border(bool sides)
         {
             var s = _plate ? _plate.sprite : null;
-            return s ? Mathf.Max(s.border.x, s.border.z) * 100f / Mathf.Max(1f, s.pixelsPerUnit) * ThemeTokens.GetFloat("share.message.plate.knot", 0.6f) : 0f;
+            if (!s) return 0f;
+            var b = sides ? Mathf.Max(s.border.x, s.border.z) : Mathf.Max(s.border.y, s.border.w);
+            return b * 100f / Mathf.Max(1f, s.pixelsPerUnit);
         }
+
+        // Theme floor for small HUD texts (size.text.hud.min).
+        internal static float HudReadable(float size) => PlayHudMath.Readable(size, ThemeTokens.GetFloat("size.text.hud.min", 18f));
 
         // A band centred on the text's visible line (alignment-aware horizontally).
         private static void Around(RectTransform band, RectTransform text, Vector2 size, TextAlignmentOptions align)
@@ -326,7 +344,8 @@ namespace RuneSkin.WorldHud
                     // Clear of the plate's right rim (frame_small border; Codex r3: the body reached it), long texts shrink.
                     var tr = t.rectTransform;
                     tr.offsetMax -= new Vector2(ThemeTokens.GetFloat("size.message.unlock.inset", 14f), 0f);
-                    if (!title) { t.enableAutoSizing = true; t.fontSizeMax = t.fontSize; t.fontSizeMin = Mathf.Max(10f, t.fontSize * 0.7f); t.overflowMode = TextOverflowModes.Ellipsis; }
+                    t.fontSize = HudReadable(t.fontSize);
+                    if (!title) { t.enableAutoSizing = true; t.fontSizeMax = t.fontSize; t.fontSizeMin = HudReadable(0f); t.overflowMode = TextOverflowModes.Ellipsis; }
                 }
             }
             if (_unlocks.Count > 256) { _unlocks.Clear(); _unlockPlates.Clear(); }

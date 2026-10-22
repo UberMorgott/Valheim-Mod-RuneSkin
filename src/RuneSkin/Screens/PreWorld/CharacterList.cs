@@ -151,7 +151,7 @@ namespace RuneSkin.PreWorld
             sr.sizeDelta = new Vector2(cell, cell);
             r.Initial = Text("Initial", r.Socket.transform, "font.display", "color.text.active", cell * 0.5f, TextAlignmentOptions.Center);
             Stretch(r.Initial.rectTransform, 0f);
-            r.Name = Text("Name", r.Root, "font.display", "color.text.body", ThemeTokens.GetFloat("size.charlist.name", 27f), TextAlignmentOptions.BottomLeft);
+            r.Name = Text("Name", r.Root, "font.body", "color.text.body", ThemeTokens.GetFloat("size.charlist.name", 27f), TextAlignmentOptions.BottomLeft);
             var nr = r.Name.rectTransform;
             nr.anchorMin = new Vector2(0f, 0.5f);
             nr.anchorMax = new Vector2(1f, 1f);

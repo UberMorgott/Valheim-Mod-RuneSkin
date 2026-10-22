@@ -142,8 +142,18 @@ namespace RuneSkin.Classify
                 {
                     if (button.targetGraphic == g)
                         return Classification.Of("menu.entry", "TMP is the Button's targetGraphic (text-only entry)");
+                    // A list row (server row: name / modifiers / version / players; save row: name / size / backups /
+                    // date) is a Button holding several texts in vanilla columns. The plate fit (button.label) spans one
+                    // label over the whole plate, so every column landed in the same rect and overlapped: row texts
+                    // keep their own vanilla rects (TextInset row placement for the left-aligned one).
+                    if (RowTexts(button) > 1)
+                        return Classification.Of("row.label", "one of several texts of a row button (own column)");
                     return Classification.Of("button.label", "TMP inside Button");
                 }
+                // Checkbox labels (start-game "Запустить сервер", modifier toggles) read in the label face of the rows
+                // beside them, not the plain body face.
+                if (selectable is Toggle && !g.GetComponentInParent<TMP_Dropdown>(true))
+                    return Classification.Of("row.label", "checkbox label (label face)");
                 // Input text and placeholder take the body font like every other RuneSkin text (left as content they kept
                 // the vanilla Norse / Averia fonts: a third and fourth face next to the theme's two).
                 if (selectable is TMP_InputField input)
@@ -163,6 +173,27 @@ namespace RuneSkin.Classify
         public static readonly HashSet<string> ControlFamilies = new HashSet<string> { "MainMenu", "Settings", "Connection", "BuildHud", "LoadScreen", "Chat", "Popups", "TextDialogs", "Compendium", "SplitDialog", "Store", "Barber", "DevPanels", "Feedback", "ModUi", "EpicLootEnchanting", "EpicLootBoard", "EpicLootTemper", "ModHud", "InventoryExtras", "Radial" };
 
         private static bool Controls(string family) => family != null && ControlFamilies.Contains(family);
+
+        private static readonly List<TMP_Text> RowBuffer = new List<TMP_Text>(8);
+
+        // Texts of a button that are its own (not of a nested control, not a gamepad key hint, not RuneSkin's).
+        internal static int RowTexts(Button button)
+        {
+            RowBuffer.Clear();
+            button.GetComponentsInChildren(true, RowBuffer);
+            var n = 0;
+            foreach (var t in RowBuffer)
+            {
+                if (!t || t.GetComponentInParent<Selectable>(true) != button) continue;
+                if (t.GetComponent<SkinMark>() is SkinMark m && m.Internal) continue;
+                var hint = false;
+                for (var p = t.transform; p && p != button.transform; p = p.parent)
+                    if (p.name.StartsWith("gamepad_hint", StringComparison.Ordinal) || p.name == "KeyHint") { hint = true; break; }
+                if (!hint) n++;
+            }
+            RowBuffer.Clear();
+            return n;
+        }
 
         // Component wiring of uGUI / TMP controls: Toggle.graphic / targetGraphic, Slider.fillRect / handleRect,
         // TMP_Dropdown targetGraphic / template (its item toggles), input fields. Null = not part of a control.
@@ -195,7 +226,11 @@ namespace RuneSkin.Classify
             if (slider)
             {
                 if (slider.fillRect == rt) return Classification.Of("slider.fill", "Slider.fillRect");
-                if (slider.handleRect == rt || slider.targetGraphic == image) return Classification.Of("slider.handle", "Slider.handleRect");
+                // The target graphic is the handle only when it is (inside) the handle: the world-modifier sliders point
+                // it at their Background, which took the diamond handle art and drew a second diamond mid-track
+                // (run 20261022-210451).
+                if (slider.handleRect == rt || (slider.targetGraphic == image && (!slider.handleRect || rt.IsChildOf(slider.handleRect))))
+                    return Classification.Of("slider.handle", "Slider.handleRect");
                 return Classification.Of("slider.track", "graphic inside a Slider (track)");
             }
             var input = image.GetComponentInParent<TMP_InputField>(true);

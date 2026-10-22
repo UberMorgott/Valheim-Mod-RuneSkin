@@ -80,19 +80,24 @@ namespace RuneSkin.Tests
             Assert.Equal(280.8f, RuneSkin.MapScreen.MinimapMath.RingSize(320f, 1080f, 1f, 0.26f), 1);
         }
 
-        // The shipped theme: three faces, the rune face bound late from a loaded asset, menu entries and headers on it.
+        // The shipped theme: two faces (user 2026-10-22), the rune face as display bound late from a loaded asset (menu
+        // entries, headers), PT Sans for everything else (buttons, rows, tooltips, item names) with its real bold cut.
         [Fact]
-        public void DefaultThemeHasThreeFaces()
+        public void DefaultThemeHasTwoFaces()
         {
             using var s = typeof(ThemeSchema).Assembly.GetManifestResourceStream("RuneSkin.default-theme.json");
             using var r = new System.IO.StreamReader(s!);
             var f = ThemeJson.Parse(r.ReadToEnd());
-            Assert.Equal(new[] { "font.display", "font.body", "font.rune" }, System.Array.ConvertAll(f.fonts, x => x.token));
-            Assert.Equal("loaded", System.Array.Find(f.fonts, x => x.token == "font.rune").source);
-            foreach (var role in new[] { "menu.entry", "button.label.menu", "text.header", "info.title" })
-                Assert.Equal("font.rune", System.Array.Find(f.roles, x => x.role == role).font);
-            foreach (var role in new[] { "text.display", "tooltip.topic", "craft.title", "dialog.subject", "button.label" })
+            Assert.Equal(new[] { "font.display", "font.body", "font.body.bold" }, System.Array.ConvertAll(f.fonts, x => x.token));
+            Assert.Equal("loaded", System.Array.Find(f.fonts, x => x.token == "font.display").source);
+            Assert.Equal("Valheim-Norsebold", System.Array.Find(f.fonts, x => x.token == "font.display").asset);
+            foreach (var role in new[] { "menu.entry", "button.label.menu", "text.header", "info.title", "text.display" })
                 Assert.Equal("font.display", System.Array.Find(f.roles, x => x.role == role).font);
+            foreach (var role in new[] { "button.label", "row.label" })
+                Assert.Equal("font.body", System.Array.Find(f.roles, x => x.role == role).font);
+            foreach (var role in new[] { "tooltip.topic", "craft.title", "dialog.subject", "button.label.primary" })
+                Assert.Equal("font.body.bold", System.Array.Find(f.roles, x => x.role == role).font);
+            Assert.All(f.roles, x => Assert.True(x.font == null || x.font == "font.body" || x.font == "font.body.bold" || x.font == "font.display", x.role + ": " + x.font));
         }
 
         [Fact]

@@ -28,6 +28,8 @@ namespace RuneSkin.Restyle
             _button = button;
             Inset = inset;
             _dirty = true;
+            // Sibling plated buttons of one size share one label size (TextSizeGroup).
+            if (_text && button && button.parent) TextSizeGroup.Join(_text, button.parent, button);
             Apply();
         }
 
@@ -77,7 +79,7 @@ namespace RuneSkin.Restyle
                 _text.fontSizeMin = Mathf.Min(_text.fontSize, ThemeTokens.GetFloat("size.text.fit.min", 13f));
                 _text.enableAutoSizing = true;
             }
-            var full = _text.fontSizeMax;
+            var full = TextSizeGroup.FullOf(_text);
             // Measured at the full size with auto-size off (the auto-sized current size depends on the last wrap mode).
             var auto = _text.enableAutoSizing;
             var cur = _text.fontSize;

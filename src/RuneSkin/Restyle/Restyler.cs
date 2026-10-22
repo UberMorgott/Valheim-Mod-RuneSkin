@@ -76,6 +76,9 @@ namespace RuneSkin.Restyle
             }
             var original = mark ? mark.OriginalSprite : g is Image img && img.sprite ? img.sprite.name : null;
             var c = Classifier.Classify(g, original, ctx);
+            // "!" badges stay content (vanilla art) but move to the corner of their button (run 20261022-230744: a
+            // layout hook on styled roles never saw them).
+            if (g is Image badge && c.Outcome == Outcome.Content && BadgeDock.IsBadge(badge)) BadgeDock.Ensure(badge);
             if (c.Outcome == Outcome.Unknown || c.Outcome == Outcome.Skipped || c.Outcome == Outcome.Content)
             {
                 if (mark) { Revert(mark); mark.Role = c.Role; mark.Outcome = c.Outcome; mark.Reason = c.Reason; }
@@ -143,14 +146,16 @@ namespace RuneSkin.Restyle
                     // Loaded face (the rune face = vanilla Valheim-Norsebold): the canonical preset is the main menu's look,
                     // the font asset's own material and no faux bold. Texts that already had the face keep vanilla's
                     // preset otherwise ("- Outline" copies, Bold topics read heavy / smeared).
-                    if (ThemeTokens.IsLoadedFont(role.Font))
+                    if (ThemeTokens.IsLoadedFont(role.Font) && role.Font.material) text.fontSharedMaterial = role.Font.material;
+                    // The theme has two single-weight faces (PT Sans Regular, Norsebold): a Bold style would be a faux
+                    // bold (smeared), so it goes on every themed text.
+                    if ((text.fontStyle & FontStyles.Bold) == FontStyles.Bold)
                     {
-                        if (role.Font.material) text.fontSharedMaterial = role.Font.material;
-                        if ((text.fontStyle & FontStyles.Bold) == FontStyles.Bold)
-                        {
-                            mark.HasBoldOff = true;
-                            text.fontStyle &= ~FontStyles.Bold;
-                        }
+                        mark.HasBoldOff = true;
+                        text.fontStyle &= ~FontStyles.Bold;
+                        // Bold body text: the real bold cut instead of the style.
+                        if (role.FontToken == LegacyFaces.Body && ThemeTokens.GetFont(LegacyFaces.BodyBold) is TMP_FontAsset bold)
+                            text.font = mark.SetFont = bold;
                     }
                     mark.SetFontMaterial = text.fontSharedMaterial;
                 }
@@ -162,7 +167,7 @@ namespace RuneSkin.Restyle
             else if (g is Text legacy)
             {
                 // Legacy uGUI text (mods built on UnityEngine.UI.Text, e.g. Almanac): theme colour and the role's face as a
-                // legacy Font (ThemeTokens.LegacyFont: the bundle's dynamic PT Sans / Cormorant, the rune face's source).
+                // legacy Font (ThemeTokens.LegacyFont: the bundle's dynamic PT Sans for both theme faces).
                 if (role.TextColor.HasValue) { mark.HasTextColor = true; mark.OrigTextColor = legacy.color; legacy.color = mark.SetTextColor = role.TextColor.Value; }
                 var bold = (legacy.fontStyle & FontStyle.Bold) == FontStyle.Bold; // Bold or BoldAndItalic
                 var face = role.FontToken != null ? ThemeTokens.LegacyFont(LegacyFaces.FaceToken(role.FontToken, bold)) : null;
