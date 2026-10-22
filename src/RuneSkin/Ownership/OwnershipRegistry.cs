@@ -69,7 +69,19 @@ namespace RuneSkin.Ownership
         public const string DevPanels = RuneSkin.API.SkinFamilies.DevPanels;
         public const string Feedback = RuneSkin.API.SkinFamilies.Feedback;
 
-        public static readonly string[] Known = { Menu, Tooltips, Hud, Inventory, Crafting, Skills, Trophies, Almanac, Minimap, EnemyHud, MessageHud, DamageText, MainMenu, Settings, Connection, BuildHud, Crosshair, ActionHud, ShipHud, KeyHints, LoadScreen, Chat, Popups, TextDialogs, Compendium, SplitDialog, Store, Barber, DevPanels, Feedback };
+        // M7 (ModScreens\): the fallback restyler for every UI no other family owns (ModUi: other mods' canvases and
+        // panels, Jotunn windows, IMGUI fonts, other mods' main menu lines), precise mod adapters (Epic Loot enchanting
+        // table / adventure board / tempering, mod HUD parts) and the vanilla leftovers (achievements panel, variant
+        // dialog, dragged item; radial menus).
+        public const string ModUi = RuneSkin.API.SkinFamilies.ModUi;
+        public const string EpicLootEnchanting = RuneSkin.API.SkinFamilies.EpicLootEnchanting;
+        public const string EpicLootBoard = RuneSkin.API.SkinFamilies.EpicLootBoard;
+        public const string EpicLootTemper = RuneSkin.API.SkinFamilies.EpicLootTemper;
+        public const string ModHud = RuneSkin.API.SkinFamilies.ModHud;
+        public const string InventoryExtras = RuneSkin.API.SkinFamilies.InventoryExtras;
+        public const string Radial = RuneSkin.API.SkinFamilies.Radial;
+
+        public static readonly string[] Known = { Menu, Tooltips, Hud, Inventory, Crafting, Skills, Trophies, Almanac, Minimap, EnemyHud, MessageHud, DamageText, MainMenu, Settings, Connection, BuildHud, Crosshair, ActionHud, ShipHud, KeyHints, LoadScreen, Chat, Popups, TextDialogs, Compendium, SplitDialog, Store, Barber, DevPanels, Feedback, ModUi, EpicLootEnchanting, EpicLootBoard, EpicLootTemper, ModHud, InventoryExtras, Radial };
 
         private static readonly HashSet<string> Owned = new HashSet<string>();
         public static bool Frozen { get; private set; }

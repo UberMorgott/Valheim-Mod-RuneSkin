@@ -18,6 +18,9 @@ namespace RuneSkin.Api
 
         private static readonly List<Transform> Dead = new List<Transform>();
 
+        // Bumped on every new root or removal: the fallback restyler (ModScreens\ForeignUi) re-derives what is foreign.
+        public static int Version { get; private set; }
+
         public static void Register(Transform root, Func<ScreenContext> context)
         {
             // Destroyed roots (tooltip instances die on every hide) leave the registry here.
@@ -25,10 +28,18 @@ namespace RuneSkin.Api
                 if (!key) Dead.Add(key);
             foreach (var key in Dead) Roots.Remove(key);
             Dead.Clear();
+            if (!Roots.ContainsKey(root)) Version++;
             Roots[root] = context;
         }
 
-        public static void Unregister(Transform root) => Roots.Remove(root);
+        public static void Unregister(Transform root)
+        {
+            if (Roots.Remove(root)) Version++;
+        }
+
+        public static bool IsRoot(Transform t) => t && Roots.ContainsKey(t);
+
+        public static IEnumerable<Transform> All => Roots.Keys;
 
         public static bool Restyle(Transform root)
         {

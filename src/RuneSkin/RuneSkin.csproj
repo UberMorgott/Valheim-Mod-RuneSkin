@@ -6,7 +6,7 @@
     <AssemblyName>RuneSkin</AssemblyName>
     <RootNamespace>RuneSkin</RootNamespace>
     <!-- Keep in sync with Plugin.Version. -->
-    <Version>0.10.2</Version>
+    <Version>0.11.0</Version>
     <!-- Plugin internals are not public API; XML docs are required on RuneSkin.API only. -->
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
@@ -76,6 +76,10 @@
     </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>$(ValheimManagedDir)\UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(ValheimManagedDir)\UnityEngine.IMGUIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UIModule">

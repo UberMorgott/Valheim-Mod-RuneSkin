@@ -92,6 +92,15 @@ namespace RuneSkin.Theme
 
         public static bool IsLoadedFont(TMP_FontAsset f) => f && LoadedFonts.ContainsValue(f.name);
 
+        // Legacy uGUI Text and IMGUI styles draw with a UnityEngine.Font, not a TMP asset. A dynamic TMP face keeps its
+        // source font at runtime (the rune face = vanilla Valheim-Norsebold); the static bundle faces do not (BuildBundles
+        // drops the reference when it bakes them) -> null: those texts keep their own face, theme colour only.
+        public static Font LegacyFont(string token)
+        {
+            var f = GetFont(token);
+            return f ? f.sourceFontFile : null;
+        }
+
         private static AssetBundle _bundle;
         private static readonly Dictionary<string, Sprite> BundleSprites = new Dictionary<string, Sprite>();
         private static readonly Dictionary<string, TMP_FontAsset> BundleFonts = new Dictionary<string, TMP_FontAsset>();

@@ -29,7 +29,9 @@ namespace RuneSkin.Restyle
         public bool Internal; // graphic created by RuneSkin (keeps its role, never re-classified)
 
         // Journal flags
-        public bool HasSprite, HasType, HasImageColor, HasPpu, HasPreserve, HasFill, HasFont, HasTextColor, HasStates, HasSpriteStates, HasFit, HasBoldOff;
+        public bool HasSprite, HasType, HasImageColor, HasPpu, HasPreserve, HasFill, HasFont, HasTextColor, HasStates, HasSpriteStates, HasFit, HasBoldOff, HasLegacyFont;
+        // Legacy uGUI Text font (roles with a dynamic theme face: the rune face's source font).
+        public Font OrigLegacyFont, SetLegacyFont;
         // Label fit (role fitInset): auto-size + side margins written to a TMP label.
         public bool OrigAutoSize;
         public float OrigSizeMin, OrigSizeMax, OrigFontSize;
@@ -52,7 +54,7 @@ namespace RuneSkin.Restyle
 
         public void ClearJournal()
         {
-            HasSprite = HasType = HasImageColor = HasPpu = HasPreserve = HasFill = HasFont = HasTextColor = HasStates = HasSpriteStates = HasFit = HasBoldOff = false;
+            HasSprite = HasType = HasImageColor = HasPpu = HasPreserve = HasFill = HasFont = HasTextColor = HasStates = HasSpriteStates = HasFit = HasBoldOff = HasLegacyFont = false;
         }
     }
 

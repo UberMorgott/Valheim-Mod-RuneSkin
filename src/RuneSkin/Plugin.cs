@@ -22,7 +22,7 @@ namespace RuneSkin
     [BepInProcess("valheim.exe")]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Version = "0.10.2";
+        public const string Version = "0.11.0";
 
         public static ManualLogSource Log { get; private set; }
         public static ConfigEntry<float> SkinScale { get; private set; }
@@ -38,6 +38,8 @@ namespace RuneSkin
         private static ConfigEntry<bool> _ownBuildHud, _ownCrosshair, _ownActionHud, _ownShipHud, _ownKeyHints;
         private static ConfigEntry<bool> _ownLoadScreen, _ownChat, _ownPopups, _ownTextDialogs, _ownCompendium, _ownSplitDialog;
         private static ConfigEntry<bool> _ownStore, _ownBarber, _ownDevPanels, _ownFeedback;
+        private static ConfigEntry<bool> _ownModUi, _ownElEnchanting, _ownElBoard, _ownElTemper, _ownModHud, _ownInventoryExtras, _ownRadial;
+        private static ConfigEntry<string> _modUiOptOut;
         private Harmony _harmony;
 
         private void Awake()
@@ -103,6 +105,22 @@ namespace RuneSkin
                 "RuneSkin styles the F5 console and the F2 connect panel. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
             _ownFeedback = Config.Bind("Ownership", "Feedback", true,
                 "RuneSkin styles the feedback dialog. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownModUi = Config.Bind("Ownership", "ModUi", true,
+                "RuneSkin restyles every window no other family owns (other mods' canvases and panels, Jotunn windows, IMGUI fonts, other mods' main menu lines): theme panels, controls and fonts, the mod's own layout kept. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _modUiOptOut = Config.Bind("Ownership", "ModUiOptOut", "AugaSkin,BA_WorldBossBar",
+                "Comma-separated object or plugin assembly names the fallback restyler (ModUi) never touches, with everything below them. Read once at startup.");
+            _ownElEnchanting = Config.Bind("Ownership", "EpicLootEnchanting", true,
+                "RuneSkin styles Epic Loot's enchanting table window and its dialogs. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownElBoard = Config.Bind("Ownership", "EpicLootBoard", true,
+                "RuneSkin styles Epic Loot's adventure board at Haldor (secret stash, gamble, treasure maps, bounties). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownElTemper = Config.Bind("Ownership", "EpicLootTemper", true,
+                "RuneSkin styles Epic Loot's tempering panel at Hildir. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownModHud = Config.Bind("Ownership", "ModHud", true,
+                "RuneSkin styles HUD parts other mods add (Epic Loot ability bar and debug text, level texts). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+            _ownInventoryExtras = Config.Bind("Ownership", "InventoryExtras", true,
+                "RuneSkin styles the achievements panel, the variant dialog and the dragged item. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+            _ownRadial = Config.Bind("Ownership", "Radial", true,
+                "RuneSkin styles the radial menus (texts; wheel art and icons stay). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
             HudScale = Config.Bind("Hud", "Scale", 1f, new ConfigDescription(
                 "HUD cluster scale on top of the game's UI scale (fonts never go below the readable floor).",
                 new AcceptableValueRange<float>(0.75f, 1.5f)));
@@ -163,6 +181,13 @@ namespace RuneSkin
                 [OwnershipRegistry.Barber] = _ownBarber.Value,
                 [OwnershipRegistry.DevPanels] = _ownDevPanels.Value,
                 [OwnershipRegistry.Feedback] = _ownFeedback.Value,
+                [OwnershipRegistry.ModUi] = _ownModUi.Value,
+                [OwnershipRegistry.EpicLootEnchanting] = _ownElEnchanting.Value,
+                [OwnershipRegistry.EpicLootBoard] = _ownElBoard.Value,
+                [OwnershipRegistry.EpicLootTemper] = _ownElTemper.Value,
+                [OwnershipRegistry.ModHud] = _ownModHud.Value,
+                [OwnershipRegistry.InventoryExtras] = _ownInventoryExtras.Value,
+                [OwnershipRegistry.Radial] = _ownRadial.Value,
             }, _requireAssets.Value);
 
             ApiHost = new Host();
@@ -198,6 +223,13 @@ namespace RuneSkin
                 _harmony.PatchAll(typeof(WorldHud.PlayHudAdapter));
             if (GameScreens.GameScreensAdapter.AnyOwned()) _harmony.PatchAll(typeof(GameScreens.GameScreensAdapter));
             if (GameScreens.TradeScreensAdapter.AnyOwned()) _harmony.PatchAll(typeof(GameScreens.TradeScreensAdapter));
+            // M7: precise mod panels + the fallback restyler for every UI no family owns, Jotunn windows, IMGUI fonts,
+            // vanilla leftovers.
+            if (ModScreens.VanillaExtrasAdapter.AnyOwned()) _harmony.PatchAll(typeof(ModScreens.VanillaExtrasAdapter));
+            if (ModScreens.MainMenuMods.Owned()) _harmony.PatchAll(typeof(ModScreens.MainMenuMods));
+            ModScreens.ForeignUi.Init(gameObject, _harmony, _modUiOptOut.Value);
+            ModScreens.JotunnHook.Init(_harmony);
+            ModScreens.ImguiFonts.Init(gameObject, _harmony);
             Log.LogInfo($"[RuneSkin] {Version} ready (API v{Skin.ApiVersion})");
         }
 
@@ -208,6 +240,10 @@ namespace RuneSkin
         {
             if (ThemeTokens.Load()) ScreenRegistry.RestyleAll();
         }
+
+        // Coverage scan for tools (AutotestDriver calls it by reflection): visible graphics styled / explained / unstyled,
+        // writes BepInEx\RuneSkin\diag\coverage-<state>.txt; first line = summary.
+        public static string[] Coverage(string state) => Diagnostics.Coverage.Scan(string.IsNullOrEmpty(state) ? "now" : state);
 
         // Diagnostics entry for tools (AutotestDriver calls it by reflection): writes BepInEx\RuneSkin\diag\<screen>.txt.
         public static string[] DiagDump(string screen)

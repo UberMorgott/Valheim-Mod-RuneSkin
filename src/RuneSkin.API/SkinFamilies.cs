@@ -1,7 +1,7 @@
 namespace RuneSkin.API
 {
     /// <summary>
-    /// Screen family names for <see cref="Skin.IsOwned"/> (ApiVersion 7). A family is the ownership unit: while RuneSkin
+    /// Screen family names for <see cref="Skin.IsOwned"/> (ApiVersion 8). A family is the ownership unit: while RuneSkin
     /// owns one, no other skin may style its screens. Names are stable strings; an older RuneSkin answers false for a
     /// family it does not know.
     /// </summary>
@@ -67,5 +67,21 @@ namespace RuneSkin.API
         public const string DevPanels = "DevPanels";
         /// <summary>Feedback dialog (M6).</summary>
         public const string Feedback = "Feedback";
+        /// <summary>Generic mod UI (M7c, ApiVersion 8): the fallback restyler for every uGUI / TMP window not owned by
+        /// another family (other mods' canvases and panels), Jotunn GUIManager windows, IMGUI fonts, other mods' main
+        /// menu lines.</summary>
+        public const string ModUi = "ModUi";
+        /// <summary>Epic Loot enchanting table window and its dialogs (M7a, ApiVersion 8).</summary>
+        public const string EpicLootEnchanting = "EpicLootEnchanting";
+        /// <summary>Epic Loot adventure board at Haldor (MerchantPanel: stash, gamble, treasure maps, bounties) (M7a, ApiVersion 8).</summary>
+        public const string EpicLootBoard = "EpicLootBoard";
+        /// <summary>Epic Loot tempering panel at Hildir (TemperPanel) (M7a, ApiVersion 8).</summary>
+        public const string EpicLootTemper = "EpicLootTemper";
+        /// <summary>HUD parts other mods add under the HUD root (Epic Loot ability bar / debug text, level texts) (M7b, ApiVersion 8).</summary>
+        public const string ModHud = "ModHud";
+        /// <summary>Vanilla inventory leftovers: achievements panel, variant dialog, dragged item (M7c, ApiVersion 8).</summary>
+        public const string InventoryExtras = "InventoryExtras";
+        /// <summary>Radial menus (emotes, hotbar wheel; Valheim.UI.RadialBase) (M7c, ApiVersion 8).</summary>
+        public const string Radial = "Radial";
     }
 }

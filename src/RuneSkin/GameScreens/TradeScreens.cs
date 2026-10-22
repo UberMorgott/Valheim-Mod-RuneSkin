@@ -13,7 +13,7 @@ namespace RuneSkin.GameScreens
     // place through the role pass like batch 2 (GameScreenKit.Form).
     // - Store (StoreGui: Haldor, Hildir, Bog Witch): panel stack, one item list in a well, rows row_recipe_* (selected
     //   = row_recipe_selected), icon in a slot_cell_recess socket, price + coin right, buy / sell = buttons (buy
-    //   primary). Epic Loot's TemperPanel / MerchantPanel under the store are M7 (AugaSkin keeps restyling them).
+    //   primary). Epic Loot's TemperPanel / MerchantPanel under the store are their own M7 families.
     // - Barber (PlayerCustomizaton barber instance; the character-creation one belongs to MainMenu): panel stack,
     //   colour sliders keep the vanilla gradient (handle art only), apply primary.
     // - DevPanels: the F5 console window (Console = Terminal: m_chatWindow, m_output, m_input) as a popup with the chat
@@ -40,11 +40,11 @@ namespace RuneSkin.GameScreens
         }
 
         // Epic Loot's trader panels (TemperPanel at Hildir, MerchantPanel at Haldor): built under the StoreGui in its
-        // Show finalizer; M7, AugaSkin restyles them.
+        // Show finalizer; their own families (M7a, fallback units of ModScreens\ForeignUi).
         private static void ExcludeEpicLoot(ScreenContext ctx, Transform r)
         {
             foreach (var n in new[] { "TemperPanel", "MerchantPanel" })
-                if (r.Find(n) is Transform t) ctx.Exclude(t, $"Epic Loot {n} (M7, AugaSkin)");
+                if (r.Find(n) is Transform t) ctx.Exclude(t, $"Epic Loot {n} (own family EpicLootBoard / EpicLootTemper, ModScreens\\ForeignRoles)");
         }
 
         private static void Row(Transform row)

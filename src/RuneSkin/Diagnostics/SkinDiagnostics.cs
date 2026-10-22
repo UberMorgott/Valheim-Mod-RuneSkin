@@ -17,6 +17,7 @@ namespace RuneSkin.Diagnostics
         public string Component;
         public string Detail;
         public Classification Result;
+        public Graphic Graphic; // live reference (coverage scan)
     }
 
     // One classification pass over a root.
@@ -38,7 +39,7 @@ namespace RuneSkin.Diagnostics
         public void Add(Graphic g, Transform root, Classification c)
         {
             Counts[(int)c.Outcome]++;
-            Rows.Add(new ReportRow { Path = SkinDiagnostics.PathOf(g.transform, root), Component = g.GetType().Name, Detail = SkinDiagnostics.Describe(g), Result = c });
+            Rows.Add(new ReportRow { Graphic = g, Path = SkinDiagnostics.PathOf(g.transform, root), Component = g.GetType().Name, Detail = SkinDiagnostics.Describe(g), Result = c });
         }
 
         public string Summary =>
@@ -83,6 +84,8 @@ namespace RuneSkin.Diagnostics
         public static ScreenReport Get(string screenId) => Last.TryGetValue(screenId, out var r) ? r : null;
 
         public static IEnumerable<string> Screens => Last.Keys;
+
+        public static IEnumerable<ScreenReport> Reports => Last.Values;
 
         // Writes one file per screen (or all); returns the paths. Also logs the summary with live checks.
         public static List<string> Dump(string screenId = null)

@@ -396,3 +396,25 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
 - [x] Text starts exactly where it should everywhere (no left / right skew, alignment / padding; batch G).
 - [x] Every icon with equal margins in its cell, counts / numbers below it always fitting (batch G).
 - (Global layout rules part = batch G, before B1.)
+
+## 0.11.0 M7 - every UI on RuneSkin (fallback restyler + mod families; API v8 / 2.4.0, AugaSkin 2.2.22)
+
+- [x] Families ModUi (fallback), EpicLootEnchanting, EpicLootBoard, EpicLootTemper, ModHud, InventoryExtras, Radial (config
+      Ownership.*, theme families, Classifier control families); AugaSkin 2.2.22 yields each (RuneSkinOwnership flags, Skips,
+      OwnsHudPart.IsModHudPart, OwnsInventoryPart, Store_EpicLootPanels / EpicLootEnchanting / JotunnGui / Imgui / VanillaPanels gates).
+- [x] ModScreens\ForeignUi: Graphic / TMP OnEnable postfix queues new graphics, LateUpdate resolves each once (cached
+      ForeignMath.Step verdict per transform): unit = topmost object below the vanilla boundary (UI singletons + family roots
+      and their ancestors) with another plugin's MonoBehaviour and none of the game's, or Jotunn-built (JotunnHook anchors:
+      CustomGUIFront / Back via OnCustomGUIAvailable + every GUIManager Create* result); inside family roots only anchors and
+      precise types (ForeignRoles.Hints: EL EnchantingTableUI / MerchantPanel / TemperPanel / AbilityBar / DebugText /
+      SocketsUI, VNEI BaseUI). Unit = GameScreenKit.Form role pass (+ RootMark so the vanilla family skips it), foreign window
+      art -> panel stack (ForeignMath.IsWindowPanel), icon buttons keep their glyph, legacy texts theme colour (titles rune
+      face via the dynamic face's source font, ThemeTokens.LegacyFont), EL / board tab glyphs (m7 kit) where the plate has
+      room. Opt-out Ownership.ModUiOptOut (default AugaSkin, BA_WorldBossBar); world-space canvases never.
+- [x] VanillaExtras (achievements panel + rows, variant dialog, drag icon; radial menu restyled per Open), MainMenuMods
+      (version label clear of foreign corner buttons, cinematics button hidden), ImguiFonts (theme body face only when it has
+      a source font: the static bundle face has none -> IMGUI keeps its font), Diagnostics\Coverage (Plugin.Coverage: visible
+      graphics styled / explained / own / unstyled, m7 + before counts, unit list).
+- [x] Tests ForeignUiTests (assembly kinds, Step rules, window panel, glyph maps, theme families).
+- [ ] Open: legacy uGUI body texts and IMGUI keep their own face (needs a legacy Font / dynamic body face in the art bundle);
+      Jotunn ModCompatibility window not shot (only on a version mismatch); Vaettir target / raid / Hamingja (other track).

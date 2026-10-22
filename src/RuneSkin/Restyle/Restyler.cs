@@ -161,9 +161,11 @@ namespace RuneSkin.Restyle
             }
             else if (g is Text legacy)
             {
-                // Legacy uGUI text (mods built on UnityEngine.UI.Text, e.g. Almanac): colour only - the theme fonts are TMP
-                // SDF assets, which a legacy Text cannot draw; its own font stays.
+                // Legacy uGUI text (mods built on UnityEngine.UI.Text, e.g. Almanac): theme colour; the face only where the
+                // role's TMP face carries a source font (dynamic: the rune face), the static bundle faces have none.
                 if (role.TextColor.HasValue) { mark.HasTextColor = true; mark.OrigTextColor = legacy.color; legacy.color = mark.SetTextColor = role.TextColor.Value; }
+                var face = role.FontToken != null ? ThemeTokens.LegacyFont(role.FontToken) : null;
+                if (face && legacy.font != face) { mark.HasLegacyFont = true; mark.OrigLegacyFont = legacy.font; legacy.font = mark.SetLegacyFont = face; }
             }
 
             if (role.HasSpriteStates && g is Image && role.ImageUsable)
@@ -301,6 +303,7 @@ namespace RuneSkin.Restyle
             else if (g is Text legacy)
             {
                 if (mark.HasTextColor && legacy.color == mark.SetTextColor) legacy.color = mark.OrigTextColor;
+                if (mark.HasLegacyFont && legacy.font == mark.SetLegacyFont) legacy.font = mark.OrigLegacyFont;
             }
             if (mark.HasSpriteStates && g)
             {
