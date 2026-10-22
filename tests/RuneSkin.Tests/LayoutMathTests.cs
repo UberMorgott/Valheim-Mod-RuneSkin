@@ -1,0 +1,71 @@
+using System.Collections.Generic;
+using RuneSkin.Restyle;
+using Xunit;
+
+namespace RuneSkin.Tests
+{
+    public class LayoutMathTests
+    {
+        private static LayoutMath.Span S(float min, float max) => new LayoutMath.Span(min, max);
+
+        // An icon before the text bounds the span on the left, one after it on the right; overlapping and outside
+        // images do not count.
+        [Fact]
+        public void FreeSpanStopsAtIconsBesideTheText()
+        {
+            var span = LayoutMath.FreeSpan(-100f, 100f, -40f, 40f, new List<LayoutMath.Span> { S(-90f, -60f), S(70f, 90f), S(-10f, 10f), S(120f, 140f) });
+            Assert.Equal(-60f, span.Min, 3);
+            Assert.Equal(70f, span.Max, 3);
+        }
+
+        [Fact]
+        public void FreeSpanWithoutIconsIsTheBox()
+        {
+            var span = LayoutMath.FreeSpan(0f, 200f, 50f, 150f, null);
+            Assert.Equal(0f, span.Min, 3);
+            Assert.Equal(200f, span.Max, 3);
+            Assert.Equal(100f, span.Centre, 3);
+        }
+
+        // Recipe row: icon right edge at 36, name rect starting at 44 -> margin 4 puts the text at 36 + 12.
+        [Theory]
+        [InlineData(44f, 36f, 12f, 4f)]
+        [InlineData(0f, 0f, 12f, 12f)]
+        [InlineData(40f, 0f, 12f, -28f)]
+        [InlineData(10f, 0f, -5f, -10f)]
+        public void StartMarginPutsTheTextPadAfterTheEdge(float rectMin, float edge, float pad, float want) =>
+            Assert.Equal(want, LayoutMath.StartMargin(rectMin, edge, pad), 3);
+
+        [Theory]
+        [InlineData(-15f, 0f, 12f, -3f)]
+        [InlineData(100f, 100f, 12f, 12f)]
+        public void EndMarginPutsTheTextPadBeforeTheEdge(float rectMax, float edge, float pad, float want) =>
+            Assert.Equal(want, LayoutMath.EndMargin(rectMax, edge, pad), 3);
+
+        // Requirement socket 86 tall: icon 26.7 from the top, 22.4 from the bottom -> down by 2.15.
+        [Theory]
+        [InlineData(0f, 86f, 22.4f, 59.3f, 2.15f)]
+        [InlineData(0f, 64f, 8f, 56f, 0f)]
+        [InlineData(-32f, 32f, -20f, 40f, -10f)]
+        public void CentreOffsetCentresTheIcon(float cellMin, float cellMax, float min, float max, float want) =>
+            Assert.Equal(want, LayoutMath.CentreOffset(cellMin, cellMax, min, max), 3);
+
+        // Key letter 2.1 over the cell top -> down 2.1; inside -> 0; wider than the cell -> centred.
+        [Theory]
+        [InlineData(-64f, 0f, -22.1f, 2.1f, -2.1f)]
+        [InlineData(-64f, 0f, -65f, -45.6f, 1f)]
+        [InlineData(0f, 64f, 10f, 30f, 0f)]
+        [InlineData(0f, 64f, -10f, 84f, -5f)]
+        public void ClampOffsetKeepsTextsInside(float boxMin, float boxMax, float min, float max, float want) =>
+            Assert.Equal(want, LayoutMath.ClampOffset(boxMin, boxMax, min, max), 3);
+
+        [Theory]
+        [InlineData(64f, 64f, true)]
+        [InlineData(68f, 86f, true)]
+        [InlineData(80f, 60f, true)]
+        [InlineData(187f, 38f, false)]
+        [InlineData(10f, 10f, false)]
+        [InlineData(300f, 300f, false)]
+        public void CellShapeIsSquareIsh(float w, float h, bool want) => Assert.Equal(want, LayoutMath.IsCellShape(w, h));
+    }
+}

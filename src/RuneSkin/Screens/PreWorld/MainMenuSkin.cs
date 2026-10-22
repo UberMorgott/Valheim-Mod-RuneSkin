@@ -534,15 +534,20 @@ namespace RuneSkin.PreWorld
             CharacterList.Roles(ctx);
             // World row clones under the list: same roles as their template (the root pass would call the sprite-less
             // vanilla selection a scrim).
-            if (fejd.m_worldListRoot)
-                foreach (Transform clone in fejd.m_worldListRoot)
-                {
-                    if (clone.Find("bkg") is Transform cb && cb.TryGetComponent<Image>(out var cbi)) ctx.Role(cbi, "craft.row", "world row plate");
-                    if (clone.Find("selected") is Transform cs && cs.TryGetComponent<Image>(out var csi)) ctx.Role(csi, "craft.row.selected", "world row selection (vanilla toggles it)");
-                    foreach (var n in new[] { "modifiers", "seed" })
-                        if (clone.Find(n) is Transform ct && ct.TryGetComponent<TMP_Text>(out var ctx2)) ctx.Role(ctx2, "text.muted", "world row second line");
-                    if (clone.Find("name") is Transform cn && cn.TryGetComponent<TMP_Text>(out var cnt)) ctx.Role(cnt, "row.label", "world row name (placed by WorldRow, no plate fit)");
-                }
+            // The template itself too when it lies under this root (it sits inactive in WorldList): the root pass gave it
+            // the generic button.label (plate fit, 40-unit cap inset) while its own pass gave row.label, and clones
+            // copied whichever ran last (world names 40 units in, batch G).
+            var rows = new List<Transform>();
+            if (fejd.m_worldListRoot) foreach (Transform clone in fejd.m_worldListRoot) rows.Add(clone);
+            if (fejd.m_worldListElement && fejd.m_worldListElement.transform != root && fejd.m_worldListElement.transform.IsChildOf(root)) rows.Add(fejd.m_worldListElement.transform);
+            foreach (var clone in rows)
+            {
+                if (clone.Find("bkg") is Transform cb && cb.TryGetComponent<Image>(out var cbi)) ctx.Role(cbi, "craft.row", "world row plate");
+                if (clone.Find("selected") is Transform cs && cs.TryGetComponent<Image>(out var csi)) ctx.Role(csi, "craft.row.selected", "world row selection (vanilla toggles it)");
+                foreach (var n in new[] { "modifiers", "seed" })
+                    if (clone.Find(n) is Transform ct && ct.TryGetComponent<TMP_Text>(out var ctx2)) ctx.Role(ctx2, "text.muted", "world row second line");
+                if (clone.Find("name") is Transform cn && cn.TryGetComponent<TMP_Text>(out var cnt)) ctx.Role(cnt, "row.label", "world row name (placed by WorldRow, no plate fit)");
+            }
             // World row template: a list row (row_recipe plates like the character list), muted second-line texts.
             if (fejd.m_worldListElement && root == fejd.m_worldListElement.transform)
             {

@@ -34,6 +34,7 @@ namespace RuneSkin.Theme
                     ppuMultiplier = (float)Num(o, "ppuMultiplier"),
                     preserveAspect = Bool(o, "preserveAspect"),
                     keepColor = Bool(o, "keepColor"),
+                    cell = Bool(o, "cell"),
                     fillCenter = Str(o, "fillCenter"),
                     font = Str(o, "font"),
                     textColor = Str(o, "textColor"),

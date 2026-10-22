@@ -780,8 +780,10 @@ namespace RuneSkin.InventoryScreen
             var right = header.Right;
             if (weightPlate)
             {
-                var w = Geo.CanvasWidth(_canvas, weightPlate);
-                Geo.PlaceFit(_canvas, weightPlate, new Box(right - w - _tokens.Gap, header.Y, w, header.H));
+                // The footer's stat plate layout (glyph in the round socket, value beside it): the vanilla box layout
+                // put the weight glyph above the plate_stat strip, half outside it (batch G cell rule).
+                var w = ThemeTokens.GetFloat("size.inv.plate.weight.dock", 110f) * k;
+                StatPlate(weightPlate, new Box(right - w - _tokens.Gap, header.Y, w, header.H));
                 right -= w + _tokens.Gap;
             }
             var glyph = HeaderGlyph(panel, kind == PanelKind.Backpack ? "glyph.panel.backpack" : "glyph.panel.chest");

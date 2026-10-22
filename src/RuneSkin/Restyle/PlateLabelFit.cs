@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using RuneSkin.Theme;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace RuneSkin.Restyle
 {
@@ -17,6 +19,7 @@ namespace RuneSkin.Restyle
         private bool _has, _dirty = true;
         private TMP_Text _text;
         private string _measured;
+        private int _next;
 
         public void Init(RectTransform button, float inset)
         {
@@ -34,8 +37,14 @@ namespace RuneSkin.Restyle
 
         private void LateUpdate()
         {
+            if (Reverted) return;
             // Localisation / mods rewrite labels after the restyle: a new text re-decides one line vs two.
-            if (_dirty || (_text && (!_text.enableAutoSizing || !ReferenceEquals(_text.text, _measured)))) Apply();
+            // Glyphs beside the label may be placed after it (screen layout passes): re-measure now and then too.
+            if (_dirty || Time.frameCount >= _next || (_text && (!_text.enableAutoSizing || !ReferenceEquals(_text.text, _measured))))
+            {
+                _next = Time.frameCount + 15 + (GetInstanceID() & 7);
+                Apply();
+            }
         }
 
         private void Apply()
@@ -52,11 +61,14 @@ namespace RuneSkin.Restyle
             var lmax = _button.InverseTransformPoint(l.TransformPoint(l.rect.max));
             var inset = LabelFit.Inset(Inset, br.width, ThemeTokens.GetFloat("share.text.fit.inset", 0.12f));
             var v = ThemeTokens.GetFloat("size.text.fit.vinset", 4f);
-            var m = new Vector4(LabelFit.Margin(inset, lmin.x - br.xMin), LabelFit.Margin(v, br.yMax - lmax.y),
-                LabelFit.Margin(inset, br.xMax - lmax.x), LabelFit.Margin(v, lmin.y - br.yMin));
+            // Free span (batch G): a glyph beside the label inside the plate (craft button anvil) narrows it; the label
+            // is centred in what is left, the cap inset kept on both sides of that span.
+            var span = Span(br, lmin, lmax);
+            var m = new Vector4(LabelFit.Margin(inset, lmin.x - span.Min), LabelFit.Margin(v, br.yMax - lmax.y),
+                LabelFit.Margin(inset, span.Max - lmax.x), LabelFit.Margin(v, lmin.y - br.yMin));
             // One line while it still reads at >= share.text.fit.oneline of the full size, else two lines (a short label
             // never breaks just because wrapping lets it stay larger).
-            var areaW = br.width - Mathf.Max(0f, inset) * 2f;
+            var areaW = span.Size - Mathf.Max(0f, inset) * 2f;
             // Screen code may reset the label to a fixed size after the restyle (settings tab column): that size becomes
             // the auto-size maximum again.
             if (!_text.enableAutoSizing)
@@ -86,8 +98,48 @@ namespace RuneSkin.Restyle
             _text.margin = _set = m;
         }
 
+        private static readonly List<Image> Images = new List<Image>(8);
+        private static readonly List<LayoutMath.Span> Obstacles = new List<LayoutMath.Span>(4);
+
+        // Plate minus the glyphs beside the drawn label (images inside the button, not the plate, not the label's own).
+        private LayoutMath.Span Span(Rect br, Vector3 lmin, Vector3 lmax)
+        {
+            var tmin = lmin.x;
+            var tmax = lmax.x;
+            var b = _text.textBounds;
+            if (b.size.x > 0.01f && b.size.x < 1e6f)
+            {
+                var r = TextInset.RectIn(_text.rectTransform, new Rect(b.min.x, b.min.y, b.size.x, b.size.y), _button);
+                tmin = r.xMin;
+                tmax = r.xMax;
+            }
+            var plate = _button.GetComponent<Selectable>() is Selectable s ? s.targetGraphic : null;
+            Obstacles.Clear();
+            Images.Clear();
+            _button.GetComponentsInChildren(false, Images);
+            foreach (var img in Images)
+            {
+                if (!img || img == plate || !img.enabled || !img.sprite || img.type == Image.Type.Filled) continue;
+                if (img.transform.IsChildOf(transform) || transform.IsChildOf(img.transform)) continue;
+                if (Ornament(img)) continue;
+                var r = TextInset.Drawn(img, _button);
+                if (r.width >= br.width * 0.6f || r.yMax < lmin.y || r.yMin > lmax.y) continue;
+                Obstacles.Add(new LayoutMath.Span(r.xMin, r.xMax));
+            }
+            Images.Clear();
+            return LayoutMath.FreeSpan(br.xMin, br.xMax, tmin, tmax, Obstacles);
+        }
+
+        // Plate decor (knots, caps) frames a label; it is not an icon beside it.
+        internal static bool Ornament(Image img) =>
+            img.name.EndsWith("Knot", System.StringComparison.Ordinal) || img.TryGetComponent<SkinMark>(out var mark) && mark.Role != null &&
+            (mark.Role.StartsWith("ornament", System.StringComparison.Ordinal) || mark.Role.StartsWith("decor", System.StringComparison.Ordinal));
+
+        public bool Reverted { get; private set; }
+
         public void Revert()
         {
+            Reverted = true;
             if (_text && _has && _text.margin == _set) _text.margin = _orig;
             Destroy(this);
         }

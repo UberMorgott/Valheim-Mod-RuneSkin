@@ -21,6 +21,7 @@ namespace RuneSkin.Theme
         public float PpuMultiplier;
         public bool PreserveAspect;
         public bool KeepColor;
+        public bool Cell;
         public string FontToken;
         public TMP_FontAsset Font;
         public Color? TextColor;
@@ -349,6 +350,7 @@ namespace RuneSkin.Theme
                     PpuMultiplier = r.ppuMultiplier,
                     PreserveAspect = r.preserveAspect,
                     KeepColor = r.keepColor,
+                    Cell = r.cell,
                     FontToken = string.IsNullOrEmpty(r.font) ? null : r.font,
                     Font = string.IsNullOrEmpty(r.font) ? null : Fonts[r.font],
                     TextColor = C(r.textColor),

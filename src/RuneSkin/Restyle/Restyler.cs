@@ -9,7 +9,9 @@ using UnityEngine.UI;
 namespace RuneSkin.Restyle
 {
     // Applies theme roles to classified graphics. Visual properties only (sprite, image type, colour, PPU multiplier,
-    // preserveAspect, TMP font, text colour, Selectable colour states); RectTransforms and layout stay vanilla.
+    // preserveAspect, TMP font, text colour, Selectable colour states); RectTransforms and layout stay vanilla, except the
+    // global layout rules (batch G): TextInset (field / row / toggle text start, theme size.field.inset / size.row.pad)
+    // and CellFit (theme role "cell": icon centred, texts inside) - both journaled components.
     // Every write goes through the SkinMark journal so a root can be reverted exactly; a revert restores a property
     // only while it still holds RuneSkin's value (a later change by another mod wins).
     public static class Restyler
@@ -92,6 +94,7 @@ namespace RuneSkin.Restyle
             // Degraded marks are tried again: a font bound late (theme source "loaded") may exist by now.
             else if (mark.Role == c.Role && mark.ThemeRevision == ThemeTokens.Revision && mark.Outcome != Outcome.Degraded)
             {
+                if (mark.Outcome == Outcome.Styled) Layout(g, role); // clones of a styled template: their own layout components
                 return new Classification { Role = c.Role, Outcome = mark.Outcome, Reason = mark.Reason };
             }
             mark.Role = c.Role;
@@ -125,6 +128,7 @@ namespace RuneSkin.Restyle
                     if (role.PreserveAspect) { mark.HasPreserve = true; mark.OrigPreserve = image.preserveAspect; image.preserveAspect = mark.SetPreserve = true; }
                     if (role.FillCenter.HasValue) { mark.HasFill = true; mark.OrigFill = image.fillCenter; image.fillCenter = mark.SetFill = role.FillCenter.Value; }
                     if (role.Color.HasValue) { mark.HasImageColor = true; mark.OrigImageColor = image.color; image.color = mark.SetImageColor = role.Color.Value; }
+                    Layout(g, role);
                 }
                 else complete = false;
             }
@@ -153,6 +157,7 @@ namespace RuneSkin.Restyle
                 else if (role.FontToken != null) complete = false;
                 if (role.TextColor.HasValue) { mark.HasTextColor = true; mark.OrigTextColor = text.color; text.color = mark.SetTextColor = role.TextColor.Value; }
                 if (role.FitInset > 0f) Fit(text, mark, role.FitInset);
+                Layout(g, role);
             }
             else if (g is Text legacy)
             {
@@ -201,6 +206,21 @@ namespace RuneSkin.Restyle
             return complete;
         }
 
+        // Global layout rules (batch G): cell roles centre their icon and keep their texts inside (CellFit); texts
+        // without a plate fit get the field / row / toggle placement (TextInset). A label re-classified away from a
+        // plate role (world row name: button.label on the first pass, row.label after the screen's own pass) drops
+        // the stale plate fit, whose cap inset (40 units) pushed the row text in.
+        private static void Layout(Graphic g, ResolvedRole role)
+        {
+            if (role == null) return;
+            if (g is Image image && role.Cell && role.ImageUsable) CellFit.Ensure(image);
+            else if (g is TMP_Text text && role.FitInset <= 0f)
+            {
+                if (text.TryGetComponent<PlateLabelFit>(out var stale) && !stale.Reverted) stale.Revert();
+                TextInset.Ensure(text);
+            }
+        }
+
         // Theme geometry (sliced borders, tile periods, native sizes) is authored at canvas referencePixelsPerUnit 100
         // (sprite px x 100 / sprite PPU). Unity draws a sprite px as canvas.referencePixelsPerUnit / (sprite PPU x
         // pixelsPerUnitMultiplier) units, and Valheim's canvases run at 50 (live dump: Hud, Menu and tooltip refPpu=50),
@@ -241,6 +261,7 @@ namespace RuneSkin.Restyle
             mark.OrigWrap = text.textWrappingMode;
             text.textWrappingMode = TextWrappingModes.Normal;
             // Margins follow the laid-out button (layout groups size it after Awake): PlateLabelFit keeps them.
+            if (text.TryGetComponent<TextInset>(out var placed)) placed.Revert();
             if (!text.TryGetComponent<PlateLabelFit>(out var fit)) fit = text.gameObject.AddComponent<PlateLabelFit>();
             fit.Init(button.transform as RectTransform, inset);
         }

@@ -787,7 +787,10 @@ namespace RuneSkin.CraftingScreen
                         Anchors(rt, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(8f, -icon / 2f), new Vector2(8f + icon, icon / 2f));
                         break;
                     case "name":
-                        Anchors(rt, Vector2.zero, Vector2.one, new Vector2(icon + 16f, 2f), new Vector2(-30f, -2f));
+                        // Right column only while the quality level shows (upgrade tab); else the name takes the row
+                        // (long names were cut at the fit floor, batch G).
+                        var quality = row.Find("QualityLevel");
+                        Anchors(rt, Vector2.zero, Vector2.one, new Vector2(icon + 16f, 2f), new Vector2(quality && quality.gameObject.activeSelf ? -30f : -6f, -2f));
                         if (c.TryGetComponent<TMP_Text>(out var name))
                         {
                             if (name.alignment != TextAlignmentOptions.MidlineLeft) name.alignment = TextAlignmentOptions.MidlineLeft;

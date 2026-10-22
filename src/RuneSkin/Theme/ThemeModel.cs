@@ -58,6 +58,7 @@ namespace RuneSkin.Theme
         public float ppuMultiplier;
         public bool preserveAspect;
         public bool keepColor;
+        public bool cell; // graphic is a slot / socket cell: its icon is centred, its texts kept inside (Restyle.CellFit)
         public string fillCenter; // "true" / "false" / empty = keep
         public string font;
         public string textColor;

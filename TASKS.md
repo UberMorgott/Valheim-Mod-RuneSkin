@@ -311,10 +311,38 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
 - [x] Harness m2 no-mirrors (no RuneSkinDoll_right / left / ammo, equipped sword keeps its grid cell, figure right margin
       <= 25 % of the panel: 200 / 240 px at 2560): run tools\out\20261022-150023 m2 + m3 26/26 PASS.
 
+## 0.10.1 batch G - global layout rules (2026-10-22, user: text and icons placed exactly right on every owned screen)
+
+- [x] Harness: one shared check (tools AutotestDriver.RuneLayout.cs, label `<prefix>-layout`) after every state of m1 /
+      m2 / m3 / info / m4 / m5 / m6 / m6b / m6c over every visible SkinMark graphic: field text left +
+      size.field.inset (+-2), centred plate labels |left - right gap| <= 2 + 3 % of the free span (gaps from icons
+      beside the label), row and toggle labels size.row.pad (+-2) from the edge / icon / checkbox, cell icons equal
+      margins (<= 1.5), cell texts inside the cell, no truncated text. Baseline run tools\out\20261022-151853: 20 FAIL
+      checks, 461 findings (m3 220, m2 93, m6 40, m6b 40, info 31, m1 16, m6c 13, m5 8, m4 0).
+- [x] Root causes: (1) row labels had no common inset rule: recipe rows 8 after the icon, build tags 2.5, compendium 4,
+      store prices 5.5, settings toggles 15, field placeholders 14 / 16 (MT search after its glyph), the gamepad glyph
+      dropdown centred; (2) world row names / seeds 40 units in: the root pass classified the inactive row template as
+      button.label (plate fit, 40-unit cap inset), its own pass as row.label, the stale PlateLabelFit and its margin
+      stayed (also swapped name / seed lines); (3) craft button label centred on the whole plate, not beside its glyph;
+      (4) cell icons placed by screen code off-centre (requirement sockets 4.3 units, level socket 19, store sell glyph
+      12), EAQS quick-slot keys 2.1 and amounts 1 unit outside their cells; (5) container weight plate kept the vanilla
+      box layout (glyph above the plate_stat strip, half outside); (6) long recipe names cut at the fit floor (30-unit
+      right column reserved even without the quality column); (7) feedback category label truncated.
+- [x] Fix in the Restyle layer: TextInset (fields / dropdowns / rows / toggles, theme size.field.inset, new size.row.pad
+      12; truncating labels auto-size to size.text.fit.min), PlateLabelFit centres in the free span beside glyphs,
+      CellFit (theme role flag `"cell": true` on slot / socket / button roles: icon centred, texts kept inside),
+      Restyler.Layout (also for clones of styled templates; drops a stale plate fit). Pure geometry LayoutMath
+      (LayoutMathTests). Screen code: world row template gets its row roles in the root pass too, container weight plate
+      = StatPlate (size.inv.plate.weight.dock 110), recipe name right column only with the quality column.
+- [x] Harness hygiene: m2 removes its probe sword again (one per run had filled the test save), m6 action makes room
+      in a full grid, m1 / m6 lift the carry limit while the shared save is overloaded (black metal from other shots).
+- [x] After: run tools\out\20261022-162224 m1 + m2 + m3 + info + m4 + m5 + m6 + m6b + m6c 269/269 PASS, 54 layout
+      checks, 0 findings.
+
 ## Full-coverage directive (user, 2026-10-22; into M7 after B1-B5, not started)
 
 - [ ] 100 % of the UI on RuneSkin: all fonts, buttons, menus, incl. ALL current and future mods (Epic Loot etc.) -> a
       generic fallback restyler for unknown mod UIs (role pass on any foreign canvas), not only per-mod families.
-- [ ] Text starts exactly where it should everywhere (no left / right skew, correct alignment / padding).
-- [ ] Every icon with equal margins in its cell, counts / numbers below it always fitting.
+- [x] Text starts exactly where it should everywhere (no left / right skew, alignment / padding; batch G).
+- [x] Every icon with equal margins in its cell, counts / numbers below it always fitting (batch G).
 - (Global layout rules part = batch G, before B1.)
