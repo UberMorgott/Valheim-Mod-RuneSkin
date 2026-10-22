@@ -36,6 +36,7 @@ namespace RuneSkin.WorldHud
         private readonly RectTransform[] _rules = new RectTransform[2];
         private GameObject _bannerFor;
         private string _centerText, _topText;
+        private Vector2 _topBase;
         private readonly HashSet<int> _unlocks = new HashSet<int>();
 
         public static void Attach(MessageHud hud)
@@ -68,7 +69,9 @@ namespace RuneSkin.WorldHud
                 _plate = Behind("RuneSkin_NotifyPlate", top.rectTransform, "sprite.hud.frame.small");
                 // Room for the icon left of the text (the vanilla icon sits under the line).
                 // ...and below the hotbar's summon frames (Codex r1: the plate overlapped them).
-                top.rectTransform.anchoredPosition += new Vector2(ThemeTokens.GetFloat("size.message.icon", 28f) + ThemeTokens.GetFloat("size.message.icon.gap", 10f), -ThemeTokens.GetFloat("size.message.notify.drop", 64f));
+                // The icon slot is added per message in TopLeft, only when the message has an icon.
+                top.rectTransform.anchoredPosition += new Vector2(0f, -ThemeTokens.GetFloat("size.message.notify.drop", 64f));
+                _topBase = top.rectTransform.anchoredPosition;
                 if (_plate) _plate.rectTransform.SetAsFirstSibling();
             }
             Plugin.Log.LogInfo("[RuneSkin] message HUD attached");
@@ -134,17 +137,30 @@ namespace RuneSkin.WorldHud
             var parent = (RectTransform)_plate.rectTransform.parent;
             var pad = ThemeTokens.GetFloat("size.message.plate.pad", 14f);
             var tr = t.rectTransform;
-            // Rendered text bounds (the text rect is much taller than one line), not the rect.
+            // Icon only when this message has one: vanilla keeps the last sprite and sets the alpha to 0 for an
+            // icon-less message (MessageHud.UpdateMessage, the m_icon == null branch). Before (user live test
+            // 2026-10-22) the slot was reserved for every message and the text sat right of the plate centre.
+            var iconImg = _hud.m_messageIcon;
+            var icon = iconImg && iconImg.enabled && iconImg.sprite && iconImg.gameObject.activeInHierarchy && iconImg.canvasRenderer.GetAlpha() > 0.01f ? iconImg.rectTransform : null;
+            var slot = icon ? ThemeTokens.GetFloat("size.message.icon", 28f) + ThemeTokens.GetFloat("size.message.icon.gap", 10f) : 0f;
+            tr.anchoredPosition = _topBase + new Vector2(slot, 0f);
+            // Rendered text bounds (the text rect is much taller than one line), not the rect; vertically the line's
+            // ascender / descender box (glyph bounds shift with descenders, so the plate sat off-centre).
             t.ForceMeshUpdate();
             var b = t.textBounds;
+            var info = t.textInfo;
+            if (info != null && info.lineCount > 0)
+            {
+                var first = info.lineInfo[0];
+                var last = info.lineInfo[info.lineCount - 1];
+                b = new Bounds(new Vector3(b.center.x, (first.ascender + last.descender) * 0.5f, 0f), new Vector3(b.size.x, first.ascender - last.descender, 0f));
+            }
             var textMin = (Vector2)parent.InverseTransformPoint(tr.TransformPoint(b.min));
             var textMax = (Vector2)parent.InverseTransformPoint(tr.TransformPoint(b.max));
             var left = textMin.x;
             var right = textMax.x;
             var bottom = textMin.y;
             var top = textMax.y;
-            var iconImg = _hud.m_messageIcon;
-            var icon = iconImg && iconImg.enabled && iconImg.sprite && iconImg.gameObject.activeInHierarchy ? iconImg.rectTransform : null;
             if (icon && icon.parent == parent)
             {
                 // Notification row (mockup A): icon left of the text line, vertically centred on it.
@@ -163,7 +179,14 @@ namespace RuneSkin.WorldHud
             rt.anchorMin = rt.anchorMax = parent.pivot;
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.localPosition = new Vector3((left + right) * 0.5f, (bottom + top) * 0.5f, 0f);
-            rt.sizeDelta = new Vector2(right - left + 2f * pad, top - bottom + 1.6f * pad);
+            rt.sizeDelta = new Vector2(right - left + 2f * pad + 2f * KnotInset(), top - bottom + 2f * ThemeTokens.GetFloat("size.message.plate.vpad", 6f));
+        }
+
+        // frame_small knot ends (the plate's 9-slice side border, ref px): the text keeps clear of them on both sides.
+        private float KnotInset()
+        {
+            var s = _plate ? _plate.sprite : null;
+            return s ? Mathf.Max(s.border.x, s.border.z) * 100f / Mathf.Max(1f, s.pixelsPerUnit) * ThemeTokens.GetFloat("share.message.plate.knot", 0.6f) : 0f;
         }
 
         // A band centred on the text's visible line (alignment-aware horizontally).

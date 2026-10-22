@@ -165,6 +165,18 @@ namespace RuneSkin.PlayerHud
             return Math.Min(1f, shield / maxHp) * windowPx;
         }
 
+        // Shield band rect in window px (user call 2026-10-22 r2: the shield never hides HP): the upper `share` of the
+        // window height, ShieldOverlay wide from the window's left; the HP fill keeps the full height under it.
+        public static void ShieldBand(float shield, float maxHp, float windowW, float windowH, float share,
+            out float x, out float y, out float w, out float h)
+        {
+            share = Math.Min(1f, Math.Max(0f, share));
+            x = 0f;
+            w = ShieldOverlay(shield, maxHp, windowW);
+            h = w > 0f ? Math.Max(0f, windowH) * share : 0f;
+            y = Math.Max(0f, windowH) - h;
+        }
+
         // Side of a square status cell that holds its icon (top, iconShare of the side) and one timer / icon-text line
         // under it (textH tall, textW wide + pad each side) without the text leaving the cell: never below minCell.
         public static float StatusCell(float minCell, float iconShare, float textW, float textH, float pad)

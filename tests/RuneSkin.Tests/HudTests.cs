@@ -379,6 +379,21 @@ namespace RuneSkin.Tests
         public void ShieldOverlayWidth(float shield, float max, float window, float want) =>
             Assert.Equal(want, HudMath.ShieldOverlay(shield, max, window), 3);
 
+        [Theory]
+        [InlineData(120f, 340f, 400f, 42f, 0.4f, 141.176f, 16.8f, 25.2f)] // band = top 40 %, HP visible below
+        [InlineData(900f, 340f, 400f, 42f, 0.4f, 400f, 16.8f, 25.2f)]     // over max: clamped width
+        [InlineData(0f, 340f, 400f, 42f, 0.4f, 0f, 0f, 42f)]              // no shield: nothing
+        [InlineData(50f, 100f, 400f, 42f, 2f, 200f, 42f, 0f)]             // share clamped to 1
+        public void ShieldBandRect(float shield, float max, float ww, float wh, float share, float w, float h, float y)
+        {
+            HudMath.ShieldBand(shield, max, ww, wh, share, out var bx, out var by, out var bw, out var bh);
+            Assert.Equal(0f, bx);
+            Assert.Equal(w, bw, 2);
+            Assert.Equal(h, bh, 2);
+            Assert.Equal(y, by, 2);
+            Assert.True(by + bh <= wh + 0.001f);
+        }
+
         [Fact]
         public void StatusCellKeepsThemeMinimum() => Assert.Equal(60f, HudMath.StatusCell(60f, 0.6f, 20f, 10f, 3f));
     }

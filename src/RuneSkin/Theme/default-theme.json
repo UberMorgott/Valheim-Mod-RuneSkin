@@ -29,7 +29,7 @@
     { "token": "color.hud.adrenaline", "value": "#FF8A3DFF" },
     { "token": "color.hud.es", "value": "#70D8E6FF" },
     { "token": "color.hud.es.dim", "value": "#70D8E659" },
-    { "token": "color.hud.shield", "value": "#2FA6C466" },
+    { "token": "color.hud.shield", "value": "#46C2E0C8" },
     { "token": "color.hud.shield.text", "value": "#A6F2FFFF" },
     { "token": "color.hud.inert", "value": "#7B7F80FF" },
     { "token": "color.hud.lag", "value": "#E8D6CC4D" },

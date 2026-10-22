@@ -270,7 +270,9 @@ namespace RuneSkin.PlayerHud
             SetMax(max);
             cur = Mathf.Clamp(cur, 0f, max);
             // Damage-lag ghost: absolute value, holds then eases down; heals and max changes never create one.
-            if (_lagValue < 0f || cur >= _lagValue) { _lagValue = cur; _lagHold = 0f; }
+            // Rising value (regen, heal) snaps the ghost to the fill: a ghost only ever follows a decrease (user live
+            // test 2026-10-22: a ghost easing after an earlier hit read as a trail while the bar refilled).
+            if (_lagValue < 0f || cur >= _lagValue || cur > _lastCur + 0.001f) { _lagValue = cur; _lagHold = 0f; }
             else
             {
                 if (cur < _lastCur - 0.001f) _lagHold = ThemeTokens.GetFloat("time.hud.lag.hold", 0.6f);
@@ -298,13 +300,16 @@ namespace RuneSkin.PlayerHud
                 {
                     var fs = _front.sprite;
                     var fwid = fs ? _h * fs.rect.width / Mathf.Max(1f, fs.rect.height) : _h;
-                    var on = fillW > fwid * _frontCore;
+                    // Rides the fill edge and never reaches past it into the empty trough (user live test 2026-10-22:
+                    // the overhanging wisps read as a static trail): the sprite ends at the edge, its core
+                    // (_frontCore of its width) just inside; hidden while the fill is shorter than the sprite.
+                    var on = fillW >= fwid && fillW < l - 0.5f;
                     if (_front.gameObject.activeSelf != on) _front.gameObject.SetActive(on);
                     if (on)
                     {
                         var fr = _front.rectTransform;
                         fr.sizeDelta = new Vector2(fwid, _h);
-                        fr.anchoredPosition = new Vector2(fillW - fwid * _frontCore, 0f);
+                        fr.anchoredPosition = new Vector2(fillW - fwid, 0f);
                     }
                 }
                 Place(_lag, 0f, l * _lagValue / max, _lagValue > cur + 0.01f);
@@ -368,8 +373,15 @@ namespace RuneSkin.PlayerHud
             }
             if (_shield)
             {
-                var sw = HudMath.ShieldOverlay(_shieldValue, max, l);
-                Place(_shield, 0f, sw, sw > 0f);
+                HudMath.ShieldBand(_shieldValue, max, l, _h, ThemeTokens.GetFloat("share.hud.shield.band", 0.4f), out var sx, out var sy, out var sw, out var sh);
+                var son = sw > 0.05f && sh > 0.05f;
+                if (_shield.gameObject.activeSelf != son) _shield.gameObject.SetActive(son);
+                if (son)
+                {
+                    var sr = _shield.rectTransform;
+                    sr.anchoredPosition = new Vector2(sx, sy);
+                    sr.sizeDelta = new Vector2(sw, sh);
+                }
             }
             var extra = showAvail ? avail : -1f;
             var shieldShown = _shield ? Mathf.Ceil(Mathf.Max(0f, _shieldValue)) : 0f;
