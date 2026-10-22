@@ -5940,6 +5940,1524 @@
       "fillCenter": true,
       "token": "bar.enemy.trough.b",
       "notes": "ART PIPELINE: Codex 4x redraw of the enemy-b dark empty trough"
+    },
+    {
+      "name": "stats_plate",
+      "file": "stats_plate.png",
+      "size": [
+        112,
+        104
+      ],
+      "border": {
+        "left": 24,
+        "bottom": 20,
+        "right": 24,
+        "top": 20
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "stats.plate",
+      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : faint row plate (chamfered), 9-slice",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_bar_trough",
+      "file": "stats_bar_trough.png",
+      "size": [
+        152,
+        88
+      ],
+      "border": {
+        "left": 44,
+        "bottom": 20,
+        "right": 44,
+        "top": 20
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "stats.bar.trough",
+      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : bar trough capsule (metal rim, dark groove), fills inset 4 design px",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_divider",
+      "file": "stats_divider.png",
+      "size": [
+        876,
+        32
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.divider",
+      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : thin gold header divider, stretched",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_bar_hp",
+      "file": "stats_bar_hp.png",
+      "size": [
+        166,
+        56
+      ],
+      "border": {
+        "left": 34,
+        "bottom": 0,
+        "right": 4,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "stats.bar.hp",
+      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : glossy cylinder hp bar fill (rounded left end), stretched",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_bar_stamina",
+      "file": "stats_bar_stamina.png",
+      "size": [
+        166,
+        56
+      ],
+      "border": {
+        "left": 34,
+        "bottom": 0,
+        "right": 4,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "stats.bar.stamina",
+      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : glossy cylinder stamina bar fill (rounded left end), stretched",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_bar_eitr",
+      "file": "stats_bar_eitr.png",
+      "size": [
+        166,
+        56
+      ],
+      "border": {
+        "left": 34,
+        "bottom": 0,
+        "right": 4,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "stats.bar.eitr",
+      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : glossy cylinder eitr bar fill (rounded left end), stretched",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_bar_es",
+      "file": "stats_bar_es.png",
+      "size": [
+        166,
+        56
+      ],
+      "border": {
+        "left": 34,
+        "bottom": 0,
+        "right": 4,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "stats.bar.es",
+      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : glossy cylinder es bar fill (rounded left end), stretched",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_heart",
+      "file": "stats_icon_heart.png",
+      "size": [
+        156,
+        152
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.heart",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (heart), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_pulse",
+      "file": "stats_icon_pulse.png",
+      "size": [
+        148,
+        144
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.pulse",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (pulse), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_bolt",
+      "file": "stats_icon_bolt.png",
+      "size": [
+        128,
+        212
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.bolt",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (bolt), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_bolt2",
+      "file": "stats_icon_bolt2.png",
+      "size": [
+        112,
+        188
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.bolt2",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (bolt2), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_drop",
+      "file": "stats_icon_drop.png",
+      "size": [
+        124,
+        184
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.drop",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (drop), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_pulse2",
+      "file": "stats_icon_pulse2.png",
+      "size": [
+        152,
+        152
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.pulse2",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (pulse2), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_blunt",
+      "file": "stats_icon_blunt.png",
+      "size": [
+        164,
+        160
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.blunt",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (blunt), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_pierce",
+      "file": "stats_icon_pierce.png",
+      "size": [
+        156,
+        180
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.pierce",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (pierce), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_frost",
+      "file": "stats_icon_frost.png",
+      "size": [
+        156,
+        180
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.frost",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (frost), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_poison",
+      "file": "stats_icon_poison.png",
+      "size": [
+        140,
+        172
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.poison",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (poison), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_chop",
+      "file": "stats_icon_chop.png",
+      "size": [
+        168,
+        172
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.chop",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (chop), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_slash",
+      "file": "stats_icon_slash.png",
+      "size": [
+        140,
+        168
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.slash",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (slash), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_fire",
+      "file": "stats_icon_fire.png",
+      "size": [
+        140,
+        180
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.fire",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (fire), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_lightning",
+      "file": "stats_icon_lightning.png",
+      "size": [
+        112,
+        192
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.lightning",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (lightning), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_spirit",
+      "file": "stats_icon_spirit.png",
+      "size": [
+        144,
+        172
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.spirit",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (spirit), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_pickaxe",
+      "file": "stats_icon_pickaxe.png",
+      "size": [
+        168,
+        176
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.pickaxe",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (pickaxe), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_walk",
+      "file": "stats_icon_walk.png",
+      "size": [
+        136,
+        148
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.walk",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (walk), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_run",
+      "file": "stats_icon_run.png",
+      "size": [
+        140,
+        148
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.run",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (run), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_swim",
+      "file": "stats_icon_swim.png",
+      "size": [
+        152,
+        116
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.swim",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (swim), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_weight",
+      "file": "stats_icon_weight.png",
+      "size": [
+        140,
+        156
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.weight",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (weight), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_rundrain",
+      "file": "stats_icon_rundrain.png",
+      "size": [
+        136,
+        156
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.rundrain",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (rundrain), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_dodge",
+      "file": "stats_icon_dodge.png",
+      "size": [
+        144,
+        148
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.dodge",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (dodge), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_jump",
+      "file": "stats_icon_jump.png",
+      "size": [
+        112,
+        152
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.jump",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (jump), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_armor",
+      "file": "stats_icon_armor.png",
+      "size": [
+        184,
+        220
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.armor",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (armor), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_block",
+      "file": "stats_icon_block.png",
+      "size": [
+        188,
+        228
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.block",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (block), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_parry",
+      "file": "stats_icon_parry.png",
+      "size": [
+        188,
+        220
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.parry",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (parry), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_fork",
+      "file": "stats_icon_fork.png",
+      "size": [
+        120,
+        152
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.fork",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (fork), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_flask",
+      "file": "stats_icon_flask.png",
+      "size": [
+        120,
+        140
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.flask",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (flask), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_hourglass",
+      "file": "stats_icon_hourglass.png",
+      "size": [
+        108,
+        140
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.hourglass",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (hourglass), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_bed",
+      "file": "stats_icon_bed.png",
+      "size": [
+        180,
+        168
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.bed",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (bed), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_clock",
+      "file": "stats_icon_clock.png",
+      "size": [
+        192,
+        196
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.clock",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (clock), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_sword",
+      "file": "stats_icon_sword.png",
+      "size": [
+        164,
+        176
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.sword",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (sword), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_flame",
+      "file": "stats_icon_flame.png",
+      "size": [
+        100,
+        132
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.flame",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (flame), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_attackspeed",
+      "file": "stats_icon_attackspeed.png",
+      "size": [
+        120,
+        132
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.attackspeed",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (attackspeed), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_backstab",
+      "file": "stats_icon_backstab.png",
+      "size": [
+        124,
+        132
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.backstab",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (backstab), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_double",
+      "file": "stats_icon_double.png",
+      "size": [
+        132,
+        136
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.double",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (double), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_lifesteal",
+      "file": "stats_icon_lifesteal.png",
+      "size": [
+        124,
+        120
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.lifesteal",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (lifesteal), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_stagger",
+      "file": "stats_icon_stagger.png",
+      "size": [
+        120,
+        124
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.stagger",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (stagger), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_boots",
+      "file": "stats_icon_boots.png",
+      "size": [
+        120,
+        120
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.boots",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (boots), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_ring",
+      "file": "stats_icon_ring.png",
+      "size": [
+        128,
+        120
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.ring",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (ring), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_es",
+      "file": "stats_icon_es.png",
+      "size": [
+        172,
+        164
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.es",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (es), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_recharge",
+      "file": "stats_icon_recharge.png",
+      "size": [
+        108,
+        164
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.recharge",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (recharge), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_breakdelay",
+      "file": "stats_icon_breakdelay.png",
+      "size": [
+        120,
+        148
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.breakdelay",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (breakdelay), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_potion",
+      "file": "stats_icon_potion.png",
+      "size": [
+        120,
+        148
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.potion",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (potion), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_food",
+      "file": "stats_icon_food.png",
+      "size": [
+        116,
+        156
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.food",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (food), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_icon_potency",
+      "file": "stats_icon_potency.png",
+      "size": [
+        144,
+        148
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.icon.potency",
+      "notes": "Codex 4x redraw of the stats-full-b row icon (potency), 4x design size",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_head_res",
+      "file": "stats_head_res.png",
+      "size": [
+        504,
+        256
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.head.res",
+      "notes": "Codex 4x redraw of the stats-full-b card header icon (res), free-standing on magenta",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_head_resist",
+      "file": "stats_head_resist.png",
+      "size": [
+        232,
+        260
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.head.resist",
+      "notes": "Codex 4x redraw of the stats-full-b card header icon (resist), free-standing on magenta",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_head_move",
+      "file": "stats_head_move.png",
+      "size": [
+        560,
+        304
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.head.move",
+      "notes": "Codex 4x redraw of the stats-full-b card header icon (move), free-standing on magenta",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_head_defense",
+      "file": "stats_head_defense.png",
+      "size": [
+        212,
+        264
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.head.defense",
+      "notes": "Codex 4x redraw of the stats-full-b card header icon (defense), free-standing on magenta",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_head_food",
+      "file": "stats_head_food.png",
+      "size": [
+        372,
+        308
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.head.food",
+      "notes": "Codex 4x redraw of the stats-full-b card header icon (food), free-standing on magenta",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_head_rest",
+      "file": "stats_head_rest.png",
+      "size": [
+        308,
+        348
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.head.rest",
+      "notes": "Codex 4x redraw of the stats-full-b card header icon (rest), free-standing on magenta",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_head_combat",
+      "file": "stats_head_combat.png",
+      "size": [
+        324,
+        320
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.head.combat",
+      "notes": "Codex 4x redraw of the stats-full-b card header icon (combat), free-standing on magenta",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_head_mt",
+      "file": "stats_head_mt.png",
+      "size": [
+        320,
+        332
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.head.mt",
+      "notes": "Codex 4x redraw of the stats-full-b card header icon (mt), free-standing on magenta",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_button",
+      "file": "stats_button.png",
+      "size": [
+        224,
+        280
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.button",
+      "notes": "Codex 4x redraw of the stats-full-b card header icon (button), free-standing on magenta",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_chrome_tl",
+      "file": "stats_chrome_tl.png",
+      "size": [
+        1920,
+        1080
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.chrome.tl",
+      "notes": "quarter of the user-approved painted stats window chrome (Codex 3x3 tile edit of stats-full-b at 2x, stitched; card interiors wiped to clean glass), drawn at its design quarter (960x540 design px), sprite px = 2 design px",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_chrome_tr",
+      "file": "stats_chrome_tr.png",
+      "size": [
+        1920,
+        1080
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.chrome.tr",
+      "notes": "quarter of the user-approved painted stats window chrome (Codex 3x3 tile edit of stats-full-b at 2x, stitched; card interiors wiped to clean glass), drawn at its design quarter (960x540 design px), sprite px = 2 design px",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_chrome_bl",
+      "file": "stats_chrome_bl.png",
+      "size": [
+        1920,
+        1080
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.chrome.bl",
+      "notes": "quarter of the user-approved painted stats window chrome (Codex 3x3 tile edit of stats-full-b at 2x, stitched; card interiors wiped to clean glass), drawn at its design quarter (960x540 design px), sprite px = 2 design px",
+      "atlas": "hires"
+    },
+    {
+      "name": "stats_chrome_br",
+      "file": "stats_chrome_br.png",
+      "size": [
+        1920,
+        1080
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "stats.chrome.br",
+      "notes": "quarter of the user-approved painted stats window chrome (Codex 3x3 tile edit of stats-full-b at 2x, stitched; card interiors wiped to clean glass), drawn at its design quarter (960x540 design px), sprite px = 2 design px",
+      "atlas": "hires"
     }
   ]
 }
