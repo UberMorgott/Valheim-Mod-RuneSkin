@@ -3916,6 +3916,358 @@
       "fillCenter": true,
       "token": "glyph.settings",
       "notes": "settings cog; white mask"
+    },
+    {
+      "name": "minimap_ring",
+      "file": "minimap_ring.png",
+      "size": [
+        440,
+        440
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "minimap.ring",
+      "notes": "M4 small minimap: round carved knotwork ring, 440 px = 220 ref (clamp \u003c= 18% safe height, top-right); map image under it masked by minimap_mask; N/E/S/W = minimap_rune_stone + letter text (rune_glow) on the ring band, wind = minimap_wind_socket + glyph_wind upper-right, day phase = glyph_time_sun/moon riding the top arc; biome name on header_plaque below"
+    },
+    {
+      "name": "minimap_mask",
+      "file": "minimap_mask.png",
+      "size": [
+        440,
+        440
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "minimap.mask",
+      "notes": "M4 Unity Mask sprite for the minimap (white disc = ring hole, same 440 box as minimap_ring; showMaskGraphic off); Jotunn MinimapManager overlays are children of the masked map so they clip too"
+    },
+    {
+      "name": "minimap_rune_stone",
+      "file": "minimap_rune_stone.png",
+      "size": [
+        64,
+        64
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "minimap.rune.stone",
+      "notes": "M4 diamond rune stone on the ring band at N/E/S/W (centre on the band mid-radius); letter = text_header serif ~20 ref px, tint rune_glow; rotates with the map when rotation is on"
+    },
+    {
+      "name": "minimap_wind_socket",
+      "file": "minimap_wind_socket.png",
+      "size": [
+        60,
+        74
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "minimap.wind.socket",
+      "notes": "M4 teardrop wind socket on the ring (upper-right, visible when sailing); glyph_wind rotated to the wind direction in its round recess (centre at 45%,58%)"
+    },
+    {
+      "name": "ring_pin_select",
+      "file": "ring_pin_select.png",
+      "size": [
+        80,
+        80
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "ring.pin.select",
+      "notes": "M4 large map: selected / hovered pin ring (glowing cyan baked), 40 ref px around a pin icon"
+    },
+    {
+      "name": "frame_boss",
+      "file": "frame_boss.png",
+      "size": [
+        372,
+        148
+      ],
+      "border": {
+        "left": 154,
+        "bottom": 34,
+        "right": 154,
+        "top": 34
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": false,
+      "token": "frame.boss",
+      "notes": "M4 boss bar frame (unique tier: gold-bronze rim, rune blocks + leather straps at the ends); ~640x34 ref top-centre; window transparent: bar_trough + bar_enemy_fill (tint pool health) inside inset L 154 R 154 T 34 B 34 (sprite px); boss name on header_plaque above"
+    },
+    {
+      "name": "frame_enemy_normal",
+      "file": "frame_enemy_normal.png",
+      "size": [
+        136,
+        44
+      ],
+      "border": {
+        "left": 36,
+        "bottom": 14,
+        "right": 36,
+        "top": 14
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": false,
+      "token": "frame.enemy.normal",
+      "notes": "M4 enemy health bar frame, Vaettir tier Normal (level 1): thin dark iron; Sliced over the Health bar (VT_Frame), window transparent, fill inset L 36 R 36 T 14 B 14; all four tiers share size/borders"
+    },
+    {
+      "name": "frame_enemy_magic",
+      "file": "frame_enemy_magic.png",
+      "size": [
+        136,
+        44
+      ],
+      "border": {
+        "left": 36,
+        "bottom": 14,
+        "right": 36,
+        "top": 14
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": false,
+      "token": "frame.enemy.magic",
+      "notes": "M4 enemy frame, Vaettir Magic (level 2): brass, knot caps, teal inner line"
+    },
+    {
+      "name": "frame_enemy_rare",
+      "file": "frame_enemy_rare.png",
+      "size": [
+        136,
+        44
+      ],
+      "border": {
+        "left": 36,
+        "bottom": 14,
+        "right": 36,
+        "top": 14
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": false,
+      "token": "frame.enemy.rare",
+      "notes": "M4 enemy frame, Vaettir Rare (level 3): spiked black iron, ember inner line"
+    },
+    {
+      "name": "frame_enemy_unique",
+      "file": "frame_enemy_unique.png",
+      "size": [
+        136,
+        44
+      ],
+      "border": {
+        "left": 36,
+        "bottom": 14,
+        "right": 36,
+        "top": 14
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": false,
+      "token": "frame.enemy.unique",
+      "notes": "M4 enemy frame, Vaettir Unique (boss EnemyHud bars): gold-bronze runic rim"
+    },
+    {
+      "name": "bar_enemy_fill",
+      "file": "bar_enemy_fill.png",
+      "size": [
+        92,
+        34
+      ],
+      "border": {
+        "left": 14,
+        "bottom": 0,
+        "right": 14,
+        "top": 0
+      },
+      "pivot": [
+        0,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "bar.enemy.fill",
+      "notes": "M4 enemy / boss health fill: white shaded mask, tint pool health (friendly/tamed: vanilla green); width = HP fraction (or Filled Horizontal)"
+    },
+    {
+      "name": "banner_rule",
+      "file": "banner_rule.png",
+      "size": [
+        312,
+        58
+      ],
+      "border": {
+        "left": 240,
+        "bottom": 0,
+        "right": 8,
+        "top": 0
+      },
+      "pivot": [
+        0,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "banner.rule",
+      "notes": "M4 biome-discovered banner: knotwork rule, flourish on the outer (left) end; right rule = same sprite with scale.x -1; title serif caps text_header between the two rules, subtitle text_body below, band_message behind"
+    },
+    {
+      "name": "band_message",
+      "file": "band_message.png",
+      "size": [
+        224,
+        40
+      ],
+      "border": {
+        "left": 80,
+        "bottom": 12,
+        "right": 80,
+        "top": 12
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "band.message",
+      "notes": "M4 centre message / biome banner backing: borderless dark glass band, soft faded ends over the 80 px borders (alpha 0.6 baked); text ~28 ref px text_body"
+    },
+    {
+      "name": "glyph_time_sun",
+      "file": "glyph_time_sun.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.time.sun",
+      "notes": "M4 day phase glyph on the minimap top arc; tint text_active"
+    },
+    {
+      "name": "glyph_time_moon",
+      "file": "glyph_time_moon.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.time.moon",
+      "notes": "M4 night phase glyph on the minimap top arc; tint text_header"
+    },
+    {
+      "name": "glyph_wind",
+      "file": "glyph_wind.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.wind",
+      "notes": "M4 wind rune-arrow (points up = wind toward north); rotate; tint rune_glow"
     }
   ]
 }

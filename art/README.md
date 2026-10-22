@@ -17,13 +17,13 @@ graphics device ("Unsupported Format 0", editor crash).
 Review aids (not part of the build, output in `art/review/`, git-ignored):
 `go -C art/tools run . compare` -> `compare-inventory.png`, `compare-hud.png`, `compare-corner.png`,
 `compare-groups.png` ([mockup | ours] rebuilt from our sprites with Unity Sliced/Tiled rules; mockups in
-`D:\tmp\cx-augaskin`); `go -C art/tools run . sheet` -> `contact-sheet.png`. M2/M3: `compare-m2`, `compare-m3` (crafting: `compare-crafting-m3.png`, `compare-groups-m3.png`), `compare-m3s` (skills/trophies: `compare-skills-m3.png`, `compare-trophies-m3.png`, `compare-groups-m3s.png`).
+`D:\tmp\cx-augaskin`); `go -C art/tools run . sheet` -> `contact-sheet.png`. M2/M3: `compare-m2`, `compare-m3` (crafting: `compare-crafting-m3.png`, `compare-groups-m3.png`), `compare-m3s` (skills/trophies: `compare-skills-m3.png`, `compare-trophies-m3.png`, `compare-groups-m3s.png`), `compare-m4` (`compare-hud-m4a/b.png`, `compare-map-m4.png`, `compare-groups-m4.png`).
 
 ## Rule: Codex makes the pixels
 
 Every sprite pixel comes from Codex image gen (`cx.ps1 -NoSession -Img "<prompt>" -To <file>`), prompts kept next to
 the sheets as `src/kit/*.prompt.txt`. The Go tool is mechanical only: crop, magenta / luminance key, resize,
-9-slice assembly (corners kept, mid segments made periodic by cross-fade for Tiled), mirror, tone/leather grading, magenta-spill fixes (`despill`, `flatEnds`),
+9-slice assembly (corners kept, mid segments made periodic by cross-fade for Tiled), mirror, tone/leather grading, magenta-spill fixes (`despill`, `flatEnds`), `bold` (alpha max-filter), `fadeV`, `hole` (ring hole -> mask),
 alpha fades, transparent bar windows. New art = new kit sheet + `cuts.json` entry, never drawn in code.
 Style targets and palette: `STYLE.md`.
 
@@ -101,3 +101,28 @@ Style targets and palette: `STYLE.md`.
 - New glyph masks (48x48, white, tint like `glyph_cat_*`): `glyph_cat_ranged` (bow), `glyph_cat_magic` (staff) for CraftingFilter
   Ranged/Magic; `glyph_refresh`, `glyph_plus`, `glyph_minus`, `glyph_settings` (map zoom, server refresh, settings).
 - Codex: button 8.5, wells 8, ranged/magic 8, tab_strip 8. Build tool: new `bold` cut option (alpha max-filter for thin glyph masks).
+
+## M4 sprites (minimap, enemy HUD, messages, damage text)
+
+Picks (Codex, user asleep; mockups in `D:\tmp\cx-augaskin`): minimap `m4-hud-a`, boss bar A (shortened, unique tier), enemy bars B,
+damage text A, notifications A, centre message B, biome banner B, large map `m4-map-a` (legend toggles = M5 checkbox).
+- Minimap (220 ref = 440 sprite px, clamp <= 18% safe height, top-right): `minimap_ring` (Simple 440, hole = map) over the map image
+  masked by `minimap_mask` (Unity Mask, white disc, same box; Jotunn MinimapManager overlays as children of the masked map);
+  `minimap_rune_stone` x4 centred on the ring band at N/E/S/W (letter = localisable serif text tint rune_glow, ~25 ref px);
+  `minimap_wind_socket` upper-right + `glyph_wind` (rotate; sailing only); `glyph_time_sun` / `glyph_time_moon` on the top arc
+  (tint text_active / text_header); biome name on `tab_normal` under the ring.
+- Boss bar: `frame_boss` (Sliced, window transparent, inset L/R 154 T/B 34 sprite px) over `bar_trough` + `bar_enemy_fill`
+  (tint pool health); name on `header_plaque` above. Vaettir: this is the Unique tier for boss EnemyHud bars.
+- Enemy bars: `frame_enemy_normal|magic|rare|unique` (Vaettir tiers 1/2/3/boss) = the `VT_Frame` Sliced child stretched over the
+  Health bar, all 120x36 sprite, borders L/R 36 T/B 14, fillCenter off; template rim disabled under it; stars hidden (Vaettir
+  §6.2). Fill `bar_enemy_fill` (white mask, tint health red; tamed = vanilla green). Name above: body font + dark outline.
+- Damage text: font only. Body font (PT Sans; the display serif has old-style digits), TMP Bold / SDF dilate ~0.2, dark outline
+  ~1 ref px, ~24 ref px, crit ~30-36; colours physical text_body, crit text_active, fire #f08a3a, frost #8ac8f0,
+  poison #9fd66b, spirit #b28bdc. No sprites.
+- Notifications (top-left, pooled, variable count): `frame_small` row ~336x47 ref, icon left, serif text text_body.
+- Centre message: `band_message` (soft borderless band, alpha 0.6 baked) + serif text. Biome banner: `band_message` + `divider`
+  lines above/below + `banner_rule` left and mirrored right (scale.x -1) at native height + serif caps title + sans subtitle.
+- Large map: standard panel + `header_plaque`; legend column `slot_cell_recess` pin icons, `checkbox_box` + `glyph_check`
+  toggles, `tab_*` filter, `divider`, `field_search` name, zoom `button_round` + `glyph_plus/minus` + vertical
+  `bar_skill_trough`/`bar_skill_fill` + `slider_handle_*`; selected pin `ring_pin_select` + `tooltip_frame` label.
+

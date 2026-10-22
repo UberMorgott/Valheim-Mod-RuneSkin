@@ -1,3 +1,3 @@
-RuneSkin TMP bake report (2026-10-22 02:24), Unity 6000.0.75f1, charset art/fonts/charset-ru-en.txt = 309 chars (RU+EN)
+RuneSkin TMP bake report (2026-10-22 03:12), Unity 6000.0.75f1, charset art/fonts/charset-ru-en.txt = 309 chars (RU+EN)
 RuneSkin-Display Cormorant-Bold SDF: Cormorant-Bold.otf vCormorant Bold 72pt pad 8 SDFAA atlas 2048x1024 Alpha8 static; chars 309 (Cyrillic 94), glyphs 309, missing 0
 RuneSkin-Body PTSans-Regular SDF: PT_Sans-Web-Regular.ttf vPT Sans Regular 60pt pad 7 SDFAA atlas 1024x1024 Alpha8 static; chars 309 (Cyrillic 94), glyphs 309, missing 0

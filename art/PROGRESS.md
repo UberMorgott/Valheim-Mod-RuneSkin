@@ -60,3 +60,11 @@
 - [x] Recipe rows re-score after flatEnds: hover 8, filters/list top 8, selected/unavailable 7.5 -> unavailable = darkened idle strip, no ember marker, muted content -> 8.5
 - [x] M3 polish (coordinator in-game review): kit m3polish (buttons x5, deep well, tab strip), polishglyphs (ranged, magic, refresh, plus, minus, settings); Codex button 8.5, wells 8, glyphs 8 (after `bold` 1), tab_strip 8 (after brighten)
 - [x] Bundle BUILD OK 176/176
+
+## M4 minimap / enemy HUD / messages (2026-10-22)
+
+- [x] Mockups (Codex, D:\tmp\cx-augaskin): m4-hud-a/b (minimap, boss, enemy bars, damage, notifications, centre message, biome banner), m4-map-a/b (large map)
+- [x] Pick (Codex, user asleep; D:\tmp\cx-augaskin\work\m45\pick-m4.out.md): minimap A (matches hud-v2-a), boss A (no per-boss portrait), enemy bars B (tier read from frame shape+colour), damage A (compact), notifications A, centre message B (readable over bright sky), banner B (open composition), map A (side legend scales to any pin/player count)
+- [x] Kit sheets m4ring (ring, rune stone, wind socket, pin ring), m4bars (boss frame, 4 Vaettir tier frames, banner rule, message band), m45glyphs (sun, moon, wind, chevron, bar fill mask); build options `hole`, `fadeV`
+- [x] compare-m4: Codex 3 rounds -> 8 of 9 groups 8/10; map legend bottom (zoom slider) 7 (handle switched to the hover state after the cap, not re-scored)
+- [x] Bundle BUILD OK 192/192 (M4 state)

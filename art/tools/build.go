@@ -54,9 +54,11 @@ type Cut struct {
 	ClearWindow []int      `json:"clearWindow,omitempty"`
 	Leather     [2]float64 `json:"leather,omitempty"`  // leather-only grade: saturation keep, brightness
 	Fade        [2]int     `json:"fade,omitempty"`     // alpha ramp at the left/right ends (px)
+	FadeV       [2]int     `json:"fadeV,omitempty"`    // alpha ramp at the top/bottom ends (px)
 	Flip        string     `json:"flip,omitempty"`     // mirror the crop: h | v | hv
 	FlatEnds    [2]int     `json:"flatEnds,omitempty"` // left/right output columns whose RGB is replaced by the centre column (same row), alpha kept
 	Despill     bool       `json:"despill,omitempty"`  // neutralise violet magenta spill (r and b both above g) to the glass hue
+	Hole        bool       `json:"hole,omitempty"`     // output = white opaque mask of the transparent region connected to the centre (ring hole -> circular map mask)
 	Bold        int        `json:"bold,omitempty"`     // alpha max-filter radius (output px): thickens thin white glyph masks
 	Border      Border     `json:"border"`
 	Pivot       [2]float64 `json:"pivot"`
@@ -220,6 +222,25 @@ func renderCut(c Cut) *image.NRGBA {
 				img.Pix[i+3] = uint8(float64(img.Pix[i+3]) * f * f * (3 - 2*f))
 			}
 		}
+	}
+	if c.FadeV[0] > 0 || c.FadeV[1] > 0 {
+		H := img.Bounds().Dy()
+		for y := 0; y < H; y++ {
+			f := 1.0
+			if c.FadeV[0] > 0 && y < c.FadeV[0] {
+				f = math.Min(f, (float64(y)+0.5)/float64(c.FadeV[0]))
+			}
+			if c.FadeV[1] > 0 && y >= H-c.FadeV[1] {
+				f = math.Min(f, (float64(H-y)-0.5)/float64(c.FadeV[1]))
+			}
+			for x := 0; x < img.Bounds().Dx(); x++ {
+				i := img.PixOffset(x, y)
+				img.Pix[i+3] = uint8(float64(img.Pix[i+3]) * f * f * (3 - 2*f))
+			}
+		}
+	}
+	if c.Hole {
+		img = holeMask(img)
 	}
 	if c.Bold > 0 {
 		img = boldAlpha(img, c.Bold)
@@ -567,6 +588,35 @@ func boldAlpha(src *image.NRGBA, r int) *image.NRGBA {
 				}
 			}
 			out.Pix[out.PixOffset(x, y)+3] = m
+		}
+	}
+	return out
+}
+
+// holeMask flood-fills the transparent region connected to the image centre (alpha < 128) and returns it as an
+// opaque white mask, everything else transparent: the hole of a keyed ring becomes its Unity Mask sprite.
+func holeMask(src *image.NRGBA) *image.NRGBA {
+	W, H := src.Bounds().Dx(), src.Bounds().Dy()
+	out := image.NewNRGBA(src.Bounds())
+	seen := make([]bool, W*H)
+	stack := []int{(H/2)*W + W/2}
+	seen[stack[0]] = true
+	for len(stack) > 0 {
+		q := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+		x, y := q%W, q/W
+		i := out.PixOffset(x, y)
+		out.Pix[i], out.Pix[i+1], out.Pix[i+2], out.Pix[i+3] = 255, 255, 255, 255
+		for _, d := range [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}} {
+			nx, ny := x+d[0], y+d[1]
+			if nx < 0 || ny < 0 || nx >= W || ny >= H {
+				continue
+			}
+			n := ny*W + nx
+			if !seen[n] && src.Pix[src.PixOffset(nx, ny)+3] < 128 {
+				seen[n] = true
+				stack = append(stack, n)
+			}
 		}
 	}
 	return out
