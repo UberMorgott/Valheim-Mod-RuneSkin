@@ -39,6 +39,7 @@
     <Compile Include="..\..\src\RuneSkin\MapScreen\MinimapMath.cs" Link="Linked\MinimapMath.cs" />
     <Compile Include="..\..\src\RuneSkin\WorldHud\EnemyHudMath.cs" Link="Linked\EnemyHudMath.cs" />
     <Compile Include="..\..\src\RuneSkin\WorldHud\PlayHudMath.cs" Link="Linked\PlayHudMath.cs" />
+    <Compile Include="..\..\src\RuneSkin\WorldHud\HoldPromptMath.cs" Link="Linked\HoldPromptMath.cs" />
     <Compile Include="..\..\src\RuneSkin\GameScreens\GameScreenMath.cs" Link="Linked\GameScreenMath.cs" />
     <Compile Include="..\..\src\RuneSkin.API\SkinFamilies.cs" Link="Linked\SkinFamilies.cs" />
     <Compile Include="..\..\src\RuneSkin\ModScreens\ForeignMath.cs" Link="Linked\ForeignMath.cs" />

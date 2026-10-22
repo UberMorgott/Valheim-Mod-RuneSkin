@@ -83,8 +83,27 @@ namespace RuneSkin.Api
             return Call(e, player, out state) && ResourceCheck.IsSane(state);
         }
 
+        private static readonly List<Entry<HoldPromptState>> Holds = new List<Entry<HoldPromptState>>();
+
+        public static Action AddHold(string owner, string id, Func<Player, HoldPromptState> get) => Add(Holds, owner, owner + ":" + id, get);
+
+        // Newest live prompt that wants to be shown (sanitized: progress clamped to 0..1, empty prompts hidden).
+        public static bool TryHold(Player player, out HoldPromptState state)
+        {
+            for (var i = Holds.Count - 1; i >= 0; i--)
+            {
+                var e = Holds[i];
+                if (e.Faults >= MaxFaults || !Call(e, player, out state)) continue;
+                state = WorldHud.HoldPromptMath.Sanitize(state);
+                if (state.Visible) return true;
+            }
+            state = default;
+            return false;
+        }
+
         public static IEnumerable<string> Describe()
         {
+            foreach (var e in Holds) yield return $"hold {e.Key} from {e.Owner} faults={e.Faults}";
             foreach (var e in Resources) yield return $"resource {e.Key} from {e.Owner} faults={e.Faults}";
             foreach (var e in Capacities) yield return $"capacity {e.Key} from {e.Owner} faults={e.Faults}";
             foreach (var p in EffectOwners) yield return $"effect {p.Key} from {p.Value}";

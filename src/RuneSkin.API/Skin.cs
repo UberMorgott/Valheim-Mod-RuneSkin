@@ -23,7 +23,7 @@ namespace RuneSkin.API
         /// Version of the installed API surface (a property, not a const, so you read the installed value at runtime).
         /// Bumped on every public change; check it before using newer members.
         /// </summary>
-        public static int ApiVersion => 9;
+        public static int ApiVersion => 10;
 
         private static IHost _host;
         private static int _mainThread = -1;
@@ -38,7 +38,8 @@ namespace RuneSkin.API
         /// <summary>
         /// Whether the running RuneSkin renders a capability. Known names: "root.restyle", "bind", "invalidate",
         /// "theme.read", "ownership" (M0); "effect.render", "resource.render", "capacity.render" (M1, true while
-        /// RuneSkin owns the HUD); "panel.dock", "slot.render", "panel.action", "slot.overlay" (M2, true while RuneSkin owns the inventory).
+        /// RuneSkin owns the HUD); "panel.dock", "slot.render", "panel.action", "slot.overlay" (M2, true while RuneSkin owns the inventory); "hold.render" (ApiVersion 10, true while
+        /// RuneSkin owns the ActionHud family).
         /// </summary>
         public static bool Supports(string capability) => _host != null && capability != null && _host.Supports(capability);
 
@@ -162,6 +163,24 @@ namespace RuneSkin.API
             if (inventory == null) throw new ArgumentNullException(nameof(inventory));
             if (string.IsNullOrEmpty(glyphToken)) throw new ArgumentNullException(nameof(glyphToken));
             return Track(h => h.SetSlotOverlay(owner, inventory, x, y, glyphToken));
+        }
+
+        /// <summary>
+        /// Registers a hold-to-confirm prompt (ApiVersion 10, <see cref="HoldPromptState"/>): the key in a plate ringed by a
+        /// radial fill that follows <see cref="HoldPromptState.Progress"/>, the action label beside it and an optional
+        /// caption line above. Called once per frame for the local player while the HUD is shown; the latest
+        /// registration returning <see cref="HoldPromptState.Visible"/> is drawn. Rendered while
+        /// <c>Supports("hold.render")</c>; otherwise draw your own. Same fault rules as <see cref="RegisterResourceProvider"/>.
+        /// </summary>
+        /// <param name="owner">Your plugin GUID.</param>
+        /// <param name="id">Prompt id, unique per owner (e.g. "giveup").</param>
+        /// <param name="provider">Current state of the prompt.</param>
+        public static IDisposable RegisterHoldPrompt(string owner, string id, Func<Player, HoldPromptState> provider)
+        {
+            CheckOwner(owner);
+            if (string.IsNullOrEmpty(id)) throw new ArgumentNullException(nameof(id));
+            if (provider == null) throw new ArgumentNullException(nameof(provider));
+            return Track(h => h.RegisterHoldPrompt(owner, id, provider));
         }
 
         /// <summary>Read-only access to the active theme tokens.</summary>
@@ -316,6 +335,7 @@ namespace RuneSkin.API
         IDisposable RegisterCapacityProvider(string owner, string list, Func<Player, CapacityState> provider);
         IDisposable RegisterPanelAction(string owner, PanelActionDescriptor descriptor);
         IDisposable SetSlotOverlay(string owner, Inventory inventory, int x, int y, string glyphToken);
+        IDisposable RegisterHoldPrompt(string owner, string id, Func<Player, HoldPromptState> provider);
         bool TryGetColor(string token, out Color color);
         bool TryGetSprite(string token, out Sprite sprite);
         bool TryGetFloat(string token, out float value);

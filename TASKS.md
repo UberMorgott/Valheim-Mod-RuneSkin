@@ -535,3 +535,8 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
       PieceHelper / CritterHelper / FontManager, vanilla Localization.textMeshStrings); RuneSkin ForeignUi Units / Anchors fixed
       after the run (not re-run). Inventory cycles +18-20 MB / 10 (control, preview off): no RuneSkin holder grows; preview
       residual objects = vanilla sfx_gui_inventory_open/close clones in flight + item-template churn (net GameObject +1 / -1).
+
+## 0.15.0 (2026-10-22) - hold prompt (API v10 / 2.6.0)
+
+- [x] `Skin.RegisterHoldPrompt(owner, id, Func<Player, HoldPromptState>)` + capability `hold.render` (ActionHud owned): `WorldHud\HoldPromptSkin` draws key letter on plate_key inside the gp socket, gp_ring Filled Radial360 from the top clockwise over a trough-coloured track, display-serif label, ember caption above; bottom centre (size.hold.y 184) under Hud.m_rootObject. Pure math `HoldPromptMath` (sanitize, fill step, row centring) + HoldPromptTests. First user: Hamingja 0.4.7 give-up (hold G, "Сдаться", bleed-out countdown caption).
+- [x] In-game (tools\out\20261022-204523, shot 80e-hamingja-giveup-ring): idle key G / label / caption "Вы пали: 59 с" / fill 0, held half of GiveUpHoldSeconds 3 s -> ring 0.500, release -> 0, vanilla action bar stays off. No mockup / Codex fidelity pass yet (reuses existing M1/M6 sprites).

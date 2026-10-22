@@ -87,7 +87,9 @@ namespace RuneSkin.Api
 
         public bool Supports(string capability) =>
             Capabilities.Contains(capability) || (HudCapabilities.Contains(capability) && OwnershipRegistry.IsOwned(OwnershipRegistry.Hud)) ||
-            (InventoryCapabilities.Contains(capability) && OwnershipRegistry.IsOwned(OwnershipRegistry.Inventory));
+            (InventoryCapabilities.Contains(capability) && OwnershipRegistry.IsOwned(OwnershipRegistry.Inventory)) ||
+            // Hold prompts are drawn by the action HUD family (WorldHud\HoldPromptSkin).
+            (capability == "hold.render" && OwnershipRegistry.IsOwned(OwnershipRegistry.ActionHud));
 
         public IDisposable RegisterRoot(string owner, Transform root, string screenId)
         {
@@ -167,6 +169,9 @@ namespace RuneSkin.Api
 
         public IDisposable RegisterCapacityProvider(string owner, string list, Func<Player, CapacityState> provider) =>
             new Handle(Providers.AddCapacity(owner, list, provider));
+
+        public IDisposable RegisterHoldPrompt(string owner, string id, Func<Player, HoldPromptState> provider) =>
+            new Handle(Providers.AddHold(owner, id, provider));
 
         public IDisposable RegisterPanelAction(string owner, PanelActionDescriptor descriptor) => new Handle(InventoryScreen.InventoryRegistry.AddAction(owner, descriptor));
 

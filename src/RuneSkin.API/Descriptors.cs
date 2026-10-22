@@ -169,6 +169,25 @@ namespace RuneSkin.API
         public string ExtraGlyphToken;
     }
 
+    /// <summary>
+    /// Hold-to-confirm prompt (ApiVersion 10, <c>Skin.RegisterHoldPrompt</c>), e.g. "hold G to give up": the key in a
+    /// plate inside a radial ring filled to <see cref="Progress"/>, <see cref="Label"/> beside it, <see cref="Caption"/>
+    /// above. Texts are shown as given (localize them first).
+    /// </summary>
+    public struct HoldPromptState
+    {
+        /// <summary>False = hidden.</summary>
+        public bool Visible;
+        /// <summary>Key glyph text inside the plate (e.g. "G").</summary>
+        public string Key;
+        /// <summary>Action label beside the ring (e.g. "Give up").</summary>
+        public string Label;
+        /// <summary>Hold progress 0..1 (0 = not held; resets when the key is released).</summary>
+        public float Progress;
+        /// <summary>Optional line above the prompt (e.g. a countdown), or null.</summary>
+        public string Caption;
+    }
+
     /// <summary>Panel an action button belongs to.</summary>
     public enum PanelKind
     {

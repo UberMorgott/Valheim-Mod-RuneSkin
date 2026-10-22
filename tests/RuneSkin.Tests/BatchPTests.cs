@@ -56,7 +56,7 @@ namespace RuneSkin.Tests
             var families = Default().families.Select(f => f.family).ToList();
             foreach (var f in new[] { SkinFamilies.MenuCompendium, SkinFamilies.SummonFrames, SkinFamilies.PlayerShields, SkinFamilies.Cursor })
                 Assert.Contains(f, families);
-            Assert.Equal(9, Skin.ApiVersion);
+            Assert.Equal(10, Skin.ApiVersion);
         }
 
         [Theory]
