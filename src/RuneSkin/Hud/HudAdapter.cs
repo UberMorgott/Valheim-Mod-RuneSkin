@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HarmonyLib;
+using RuneSkin.Ownership;
 
 namespace RuneSkin.PlayerHud
 {
@@ -11,9 +12,12 @@ namespace RuneSkin.PlayerHud
     [HarmonyPatch]
     public static class HudAdapter
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => OwnershipRegistry.IsOwned(OwnershipRegistry.Hud);
+
         [HarmonyPatch(typeof(global::Hud), nameof(global::Hud.Awake))]
         [HarmonyPostfix]
-        [HarmonyPriority(Priority.Last)]
+        [HarmonyPriority(PatchOrder.Hud)]
         private static void Awake_Postfix(global::Hud __instance)
         {
             try

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using BepInEx.Bootstrap;
 using HarmonyLib;
+using RuneSkin.Compat;
 
 namespace RuneSkin.InventoryScreen
 {
@@ -12,7 +13,7 @@ namespace RuneSkin.InventoryScreen
     // IsCustomSlot, Slots.VisibleRows / InventorySizeVisible); absent or changed members = no EAQS cells.
     public static class EaqsBridge
     {
-        public const string PluginGuid = "randyknapp.mods.equipmentandquickslots";
+        public const string PluginGuid = ModCompat.EaqsGuid;
 
         public enum Kind { Equipment, Quick, Custom }
 
@@ -32,7 +33,7 @@ namespace RuneSkin.InventoryScreen
 
         private static bool Resolve()
         {
-            var slotsType = AccessTools.TypeByName("EquipmentAndQuickSlots.Slots");
+            var slotsType = AccessTools.TypeByName(ModCompat.EaqsSlotsType);
             _slots = slotsType == null ? null : AccessTools.Field(slotsType, "slots");
             var slotType = _slots?.FieldType.GetElementType();
             if (slotType == null) return Missing();

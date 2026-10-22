@@ -9,6 +9,7 @@ using RuneSkin.Theme;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using RuneSkin.Compat;
 
 namespace RuneSkin.CraftingScreen
 {
@@ -79,7 +80,7 @@ namespace RuneSkin.CraftingScreen
         private void HideVanilla()
         {
             if (_crafting.TryGetComponent<Image>(out var own)) own.enabled = false;
-            foreach (Transform child in _crafting)
+            foreach (var child in Children.Of(_crafting))
                 if (IsVanillaBackground(child))
                     foreach (var image in child.GetComponentsInChildren<Image>(true))
                         image.enabled = false;
@@ -210,7 +211,7 @@ namespace RuneSkin.CraftingScreen
         private RectTransform Filter()
         {
             var list = RecipeList();
-            var f = list ? list.Find("MT_CraftFilter") as RectTransform : null;
+            var f = list ? list.Find(ModCompat.MtCraftFilter) as RectTransform : null;
             return f && f.gameObject.activeInHierarchy ? f : null;
         }
 
@@ -219,7 +220,7 @@ namespace RuneSkin.CraftingScreen
         private ScreenContext Context()
         {
             var ctx = new ScreenContext(ScreenId, OwnershipRegistry.Crafting);
-            var vnei = _crafting.Find("VNEI(Clone)");
+            var vnei = _crafting.Find(ModCompat.VneiPanel);
             if (vnei) ctx.Exclude(vnei, "VNEI item browser panel: mod panel (M7), placed over the body by RuneSkin");
             foreach (var image in _crafting.GetComponentsInChildren<Image>(true))
             {
@@ -230,7 +231,7 @@ namespace RuneSkin.CraftingScreen
                 else if (_gui.m_repairPanel && t == _gui.m_repairPanel || _gui.m_repairPanelSelection && t == _gui.m_repairPanelSelection) ctx.Role(image, "skip", "vanilla repair plate (hidden, round repair button)");
                 else if (t.name == "Decription" && t.parent == _crafting) ctx.Role(image, "skip", "vanilla detail backdrop (replaced by the detail well)");
                 else if (t.name == "requirements" && t.parent && t.parent.name == "Decription") ctx.Role(image, "skip", "vanilla requirement row backdrop (hidden)");
-                else if (t.name == "MT_ChainTree") ctx.Role(image, "craft.missing", "RecipeChains 'missing' box (MorgottTweaks; RuneSkin adds its tree scroll)");
+                else if (t.name == ModCompat.MtChainTree) ctx.Role(image, "craft.missing", "RecipeChains 'missing' box (MorgottTweaks; RuneSkin adds its tree scroll)");
                 else if (image.GetComponent<ScrollRect>()) ctx.Role(image, "skip", "recipe scroll view hit area (drawn clear, list well behind)");
                 else if (_gui.m_craftingStationLevelRoot && t == _gui.m_craftingStationLevelRoot) ctx.Role(image, "craft.badge", "station level badge (InventoryGui.m_craftingStationLevelRoot)");
                 else if (_gui.m_craftingStationIcon && image == _gui.m_craftingStationIcon) ctx.Role(image, "content", "station icon (CraftingStation.m_icon)");
@@ -241,7 +242,7 @@ namespace RuneSkin.CraftingScreen
                 else if (_gui.m_repairButtonGlow && image == _gui.m_repairButtonGlow) ctx.Role(image, "content", "repair glow (vanilla pulses it; Epic Loot finds RepairButton/Glow)");
                 else if (IsTab(t, out var tabTarget)) ctx.Role(image, tabTarget ? (IsCategory(t) ? "craft.category" : "craft.tab") : t.name == "Selected" ? "skip" : "content",
                     tabTarget ? "crafting tab button (selected = interactable off: sprite disabled state)" : "tab child");
-                else if (t.name == "MT_CraftSearch" && image.GetComponent<Selectable>()) ctx.Role(image, "craft.search", "CraftingFilter search field");
+                else if (t.name == ModCompat.MtCraftSearch && image.GetComponent<Selectable>()) ctx.Role(image, "craft.search", "CraftingFilter search field");
                 else if (Row(t, out var row))
                 {
                     if (t.name == "bkg" && t.parent == row) ctx.Role(image, CanCraft(row) ? "craft.row" : "craft.row.unavailable", "recipe row strip (canCraft from m_availableRecipes)");
@@ -253,8 +254,8 @@ namespace RuneSkin.CraftingScreen
                 else if (_gui.m_minStationLevelIcon && t == _gui.m_minStationLevelIcon.transform.parent && t.parent == Requirements()) ctx.Role(image, "craft.socket", "required station level: its own requirement socket (level, parent of MinLevel)");
                 else if (_gui.m_minStationLevelIcon && t == _gui.m_minStationLevelIcon.transform) ctx.Role(image, "content", "required station level icon (MinLevel, shows the station's icon)");
                 else if (t.name == "res_icon" || t.parent && t.parent.name == "level" || t.name == "MinLevel") ctx.Role(image, "content", "requirement icon / min station level glyph");
-                else if (t.name == "MT_ChainTree") ctx.Role(image, "craft.missing", "RecipeChains 'missing' box (MorgottTweaks)");
-                else if (_gui.m_recipeIcon && image == _gui.m_recipeIcon || t.name == "magicItemIconBG" || t.name == "MT_Icon") ctx.Role(image, "content", "item icon / magic background / category icon");
+                else if (t.name == ModCompat.MtChainTree) ctx.Role(image, "craft.missing", "RecipeChains 'missing' box (MorgottTweaks)");
+                else if (_gui.m_recipeIcon && image == _gui.m_recipeIcon || t.name == "magicItemIconBG" || t.name == ModCompat.MtCategoryIcon) ctx.Role(image, "content", "item icon / magic background / category icon");
                 else if (Leftover(image)) ctx.Role(image, "content", "vanilla crafting graphic kept (no theme role): " + (image.sprite ? image.sprite.name : "no sprite"));
             }
             foreach (var g in _crafting.GetComponentsInChildren<Graphic>(true))
@@ -299,7 +300,7 @@ namespace RuneSkin.CraftingScreen
             var tabs = TabsRoot();
             for (var p = t; p && p != _crafting; p = p.parent)
             {
-                if (p.parent && (p.parent == tabs || p.parent.name == "Tabs" && p.parent.parent && p.parent.parent.name == "MT_CraftFilter") && p.GetComponent<Button>())
+                if (p.parent && (p.parent == tabs || p.parent.name == "Tabs" && p.parent.parent && p.parent.parent.name == ModCompat.MtCraftFilter) && p.GetComponent<Button>())
                 {
                     target = p == t && p.GetComponent<Button>().targetGraphic && p.GetComponent<Button>().targetGraphic.transform == t;
                     return true;
@@ -308,7 +309,7 @@ namespace RuneSkin.CraftingScreen
             return false;
         }
 
-        private static bool IsCategory(Transform t) => t.parent && t.parent.name == "Tabs" && t.parent.parent && t.parent.parent.name == "MT_CraftFilter";
+        private static bool IsCategory(Transform t) => t.parent && t.parent.name == "Tabs" && t.parent.parent && t.parent.parent.name == ModCompat.MtCraftFilter;
 
         private bool Row(Transform t, out Transform row)
         {
@@ -410,15 +411,22 @@ namespace RuneSkin.CraftingScreen
         {
             _tabs.Clear();
             var tabs = TabsRoot();
+            // Index loops: foreach over a Transform allocates an enumerator per call (per frame here).
             if (tabs)
-                foreach (Transform c in tabs)
-                    if (c.gameObject.activeSelf && c.GetComponent<Button>()) _tabs.Add((RectTransform)c);
+                for (var n = 0; n < tabs.childCount; n++)
+                {
+                    var c = tabs.GetChild(n);
+                    if (c.gameObject.activeSelf && c.TryGetComponent<Button>(out _)) _tabs.Add((RectTransform)c);
+                }
             _cats.Clear();
             var filter = Filter();
             var catRoot = filter ? filter.Find("Tabs") : null;
             if (catRoot)
-                foreach (Transform c in catRoot)
-                    if (c.gameObject.activeSelf && c.GetComponent<Button>()) _cats.Add((RectTransform)c);
+                for (var n = 0; n < catRoot.childCount; n++)
+                {
+                    var c = catRoot.GetChild(n);
+                    if (c.gameObject.activeSelf && c.TryGetComponent<Button>(out _)) _cats.Add((RectTransform)c);
+                }
             _reqActive.Clear();
             var list = _gui.m_recipeRequirementList;
             if (list != null)
@@ -466,8 +474,13 @@ namespace RuneSkin.CraftingScreen
             return decor.ContentInset() * _host.lossyScale.x / Mathf.Max(Geo.WorldPerUnit(_canvas), 1e-6f);
         }
 
+        private int _tokensRevision = -1;
+
+        // Theme sizes change only with the theme (runeskin_reload / watcher): read once per revision, not per frame.
         private void ReadTokens()
         {
+            if (_tokensRevision == ThemeTokens.Revision) return;
+            _tokensRevision = ThemeTokens.Revision;
             float F(string token, float fallback) => ThemeTokens.GetFloat(token, fallback);
             var t = _t;
             t.Pad = F("size.craft.pad", t.Pad); t.Gap = F("size.craft.gap", t.Gap); t.HeaderH = F("size.craft.header", t.HeaderH);
@@ -495,7 +508,7 @@ namespace RuneSkin.CraftingScreen
             List(o);
             Detail(o);
             Buttons(o);
-            var vnei = _crafting.Find("VNEI(Clone)") as RectTransform;
+            var vnei = _crafting.Find(ModCompat.VneiPanel) as RectTransform;
             if (vnei && vnei.gameObject.activeSelf)
             {
                 var top = o.Search.IsEmpty ? o.List.Y : o.Search.Y;
@@ -514,13 +527,15 @@ namespace RuneSkin.CraftingScreen
         private static System.Reflection.FieldInfo _vneiRoot;
         private static System.Reflection.PropertyInfo _vneiX, _vneiY;
         private static bool _vneiLooked;
+        private Component _vneiUi;
+        private (int x, int y) _vneiCells;
 
         private void VneiFit(RectTransform vnei, Box area)
         {
             if (!_vneiLooked)
             {
                 _vneiLooked = true;
-                _vneiType = HarmonyLib.AccessTools.TypeByName("VNEI.UI.BaseUI");
+                _vneiType = HarmonyLib.AccessTools.TypeByName(ModCompat.VneiBaseUi);
                 if (_vneiType != null)
                 {
                     _vneiSetSize = HarmonyLib.AccessTools.Method(_vneiType, "SetSize", new[] { typeof(bool), typeof(int), typeof(int) });
@@ -540,7 +555,13 @@ namespace RuneSkin.CraftingScreen
             var (x, y) = CraftingMath.VneiCells(area.W, area.H, u);
             try
             {
-                if ((int)_vneiX.GetValue(ui, null) != x || (int)_vneiY.GetValue(ui, null) != y) _vneiSetSize.Invoke(ui, new object[] { false, x, y });
+                // Reflection reads box their ints: asked only when the wanted cell counts or the VNEI instance changed.
+                if (ui != _vneiUi || x != _vneiCells.x || y != _vneiCells.y)
+                {
+                    if ((int)_vneiX.GetValue(ui, null) != x || (int)_vneiY.GetValue(ui, null) != y) _vneiSetSize.Invoke(ui, new object[] { false, x, y });
+                    _vneiUi = ui;
+                    _vneiCells = (x, y);
+                }
                 if (_vneiRoot.GetValue(ui) is RectTransform root && root != vnei)
                 {
                     var w = (x * 50f + 10f) * u;
@@ -589,14 +610,14 @@ namespace RuneSkin.CraftingScreen
                 var cell = n < o.Tabs.Cells.Length ? o.Tabs.Cells[n] : default;
                 if (!Visible(tab, cell)) continue;
                 Geo.Place(_canvas, tab, cell);
-                foreach (Transform c in tab)
+                foreach (var c in Children.Of(tab))
                 {
-                    if (c.name == "Text" && c is RectTransform tr && c.TryGetComponent<TMP_Text>(out var label))
+                    if (NameCache.Of(c) == "Text" && c is RectTransform tr && c.TryGetComponent<TMP_Text>(out var label))
                     {
                         Geo.Place(_canvas, tr, cell);
                         Label(label, TextAlignmentOptions.Center, size, 12f, upper: true);
                     }
-                    else if (c.name == "Selected" && c.TryGetComponent<Image>(out var sel) && sel.enabled) sel.enabled = false;
+                    else if (NameCache.Of(c) == "Selected" && c.TryGetComponent<Image>(out var sel) && sel.enabled) sel.enabled = false;
                 }
             }
             _tabArrows.Show(_canvas, o.Tabs);
@@ -616,28 +637,28 @@ namespace RuneSkin.CraftingScreen
                 Geo.Place(_canvas, tab, cell);
                 var inner = CraftingMath.Inset(cell, cell.W * 0.19f, cell.H * 0.19f);
                 var glyph = CategoryGlyph(tab, inner);
-                foreach (Transform c in tab)
+                foreach (var c in Children.Of(tab))
                 {
                     if (!(c is RectTransform rt)) continue;
-                    if (glyph && (c.name == "MT_Icon" || c.name == "Text"))
+                    if (glyph && (NameCache.Of(c) == ModCompat.MtCategoryIcon || NameCache.Of(c) == "Text"))
                     {
                         // The kit glyph replaces CraftingFilter's item icon / "All" text (mockup: one glyph family).
                         if (c.TryGetComponent<Graphic>(out var g) && g.enabled) g.enabled = false;
                         continue;
                     }
-                    if (c.name == "MT_Icon") Geo.Place(_canvas, rt, inner);
-                    else if (c.name == "Text" && c.TryGetComponent<TMP_Text>(out var label))
+                    if (NameCache.Of(c) == ModCompat.MtCategoryIcon) Geo.Place(_canvas, rt, inner);
+                    else if (NameCache.Of(c) == "Text" && c.TryGetComponent<TMP_Text>(out var label))
                     {
                         Geo.Place(_canvas, rt, cell);
                         if (label.margin != Vector4.zero) label.margin = Vector4.zero;
                         Label(label, TextAlignmentOptions.Center, cell.H * 0.36f, 10f);
                     }
-                    else if (c.name == "Selected" && c.TryGetComponent<Image>(out var sel) && sel.enabled) sel.enabled = false;
+                    else if (NameCache.Of(c) == "Selected" && c.TryGetComponent<Image>(out var sel) && sel.enabled) sel.enabled = false;
                 }
             }
             _catArrows.Show(_canvas, o.Categories);
             var search = filter.Find("Search") as RectTransform;
-            var field = search ? search.Find("MT_CraftSearch") as RectTransform : null;
+            var field = search ? search.Find(ModCompat.MtCraftSearch) as RectTransform : null;
             if (search && !o.Search.IsEmpty) Geo.Place(_canvas, search, o.Search);
             if (field && !o.Search.IsEmpty)
             {
@@ -683,10 +704,18 @@ namespace RuneSkin.CraftingScreen
             ["Materials"] = "materials",
         };
 
+        private readonly Dictionary<RectTransform, string> _catKeys = new Dictionary<RectTransform, string>();
+
         private Image CategoryGlyph(RectTransform tab, Box inner)
         {
-            const string prefix = "MT_CraftTab_";
-            if (!tab.name.StartsWith(prefix, StringComparison.Ordinal) || !CategoryGlyphs.TryGetValue(tab.name.Substring(prefix.Length), out var key)) return null;
+            const string prefix = ModCompat.MtCraftTabPrefix;
+            // Category key per tab object, cached (name + Substring allocated two strings per tab per frame).
+            if (!_catKeys.TryGetValue(tab, out var key))
+            {
+                var tabName = NameCache.Of(tab);
+                _catKeys[tab] = key = tabName.StartsWith(prefix, StringComparison.Ordinal) && CategoryGlyphs.TryGetValue(tabName.Substring(prefix.Length), out var k) ? k : null;
+            }
+            if (key == null) return null;
             var t = tab.Find(Prefix + "Glyph");
             Image image;
             if (!t)
@@ -773,10 +802,10 @@ namespace RuneSkin.CraftingScreen
             row.sizeDelta = new Vector2(0f, h);
             var icon = h - 10f;
             var font = ThemeTokens.GetFloat("size.craft.font.row", 16f) * _in.Scale;
-            foreach (Transform c in row)
+            foreach (var c in Children.Of(row))
             {
                 if (!(c is RectTransform rt)) continue;
-                switch (c.name)
+                switch (NameCache.Of(c))
                 {
                     case "bkg":
                     case "selected":
@@ -933,7 +962,7 @@ namespace RuneSkin.CraftingScreen
 
         private Box Chain(CraftingLayout o)
         {
-            if (!_chain) _chain = _crafting.Find("MT_ChainTree") as RectTransform;
+            if (!_chain) _chain = _crafting.Find(ModCompat.MtChainTree) as RectTransform;
             if (!_chain || !_chain.gameObject.activeInHierarchy) return default;
             var k = _in.Scale;
             var box = Geo.BoxOf(_canvas, _chain);
@@ -969,7 +998,7 @@ namespace RuneSkin.CraftingScreen
                 sr.content = text;
             }
             // Viewport = the text area: from the box top down to the chain button (or the box bottom).
-            var button = _chain.Find("MT_ChainCraftButton") as RectTransform;
+            var button = _chain.Find(ModCompat.MtChainCraftButton) as RectTransform;
             var bottom = box.Bottom;
             if (button && button.gameObject.activeSelf) bottom = Geo.BoxOf(_canvas, button).Y;
             Geo.Place(_canvas, _chainView, new Box(box.X, box.Y, box.W, Mathf.Max(1f, bottom - box.Y)));
@@ -1032,10 +1061,10 @@ namespace RuneSkin.CraftingScreen
         private void StyleSocket(RectTransform cell)
         {
             var k = _in.Scale;
-            foreach (Transform c in cell)
+            foreach (var c in Children.Of(cell))
             {
                 if (!(c is RectTransform rt)) continue;
-                switch (c.name)
+                switch (NameCache.Of(c))
                 {
                     case "res_name":
                         Anchors(rt, new Vector2(0.06f, 0.67f), new Vector2(0.94f, 0.98f), Vector2.zero, Vector2.zero);
@@ -1116,9 +1145,7 @@ namespace RuneSkin.CraftingScreen
             var c = text.color;
             var now = Time.unscaledTime;
             bool missing;
-            var s = text.text;
-            var slash = s != null ? s.IndexOf('/') : -1;
-            if (slash > 0 && int.TryParse(s.Substring(0, slash).Trim(), out var have) && int.TryParse(s.Substring(slash + 1).Trim(), out var need))
+            if (CraftingMath.TryParseHaveNeed(text.text, out var have, out var need))
                 missing = have < need && !(ZoneSystem.instance && ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoCraftCost));
             else
             {
@@ -1159,10 +1186,10 @@ namespace RuneSkin.CraftingScreen
             {
                 var rt = (RectTransform)repair.transform;
                 Geo.Place(_canvas, rt, o.Repair);
-                foreach (Transform c in rt)
+                foreach (var c in Children.Of(rt))
                 {
                     if (!(c is RectTransform cr)) continue;
-                    if (c.name == "Image")
+                    if (NameCache.Of(c) == "Image")
                     {
                         Geo.Place(_canvas, cr, CraftingMath.Inset(o.Repair, o.Repair.W * 0.27f, o.Repair.H * 0.27f));
                         if (c.TryGetComponent<Image>(out var gi))
@@ -1171,7 +1198,7 @@ namespace RuneSkin.CraftingScreen
                             if (!Mathf.Approximately(gi.canvasRenderer.GetAlpha(), 1f)) gi.canvasRenderer.SetAlpha(1f);
                         }
                     }
-                    else if (c.name == "Glow") Geo.Place(_canvas, cr, CraftingMath.Inset(o.Repair, -o.Repair.W * 0.08f, -o.Repair.H * 0.08f));
+                    else if (NameCache.Of(c) == "Glow") Geo.Place(_canvas, cr, CraftingMath.Inset(o.Repair, -o.Repair.W * 0.08f, -o.Repair.H * 0.08f));
                 }
             }
         }

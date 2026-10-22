@@ -508,3 +508,30 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
 - Art pipeline note: a fresh worktree's unity\ has no Library -> the first batch build crashes in the atlas packer
   ("Unsupported Format 0"); copying the main checkout's unity\Library first builds fine.
 - [x] Verified: runs tools\out\20261022-184813 and 20261022-185607 (ui-runeskin-enemybars + m4) 74/74 PASS each; Codex fidelity in game normal 9 / magic 8 / rare 8 / unique 8 (run -184813), Vaettir boss bar 8 (run -185607: bar height from width, name on the rune face).
+
+## 0.14.1 perf track B1-B5 (2026-10-22, audit scratchpad perf-audit.md re-verified at 0.14.0)
+
+- [x] Harness 99r-runeskin-perf (tools 51bde18): RuneSkin heap B/frame + us/frame per scene (wrappers on every RuneSkin
+      Update / LateUpdate / Harmony patch method, per-method top list), frame p50 / p99, inventory-cycle census of every
+      collection holder, 5 x logout / re-enter. Meter: GC.GetAllocatedBytesForCurrentThread = 0 in this player, so mono
+      heap blocks (a statistic). Runs 20261022-191119 (before, 0.14.0) / 20261022-194855 (after, 0.14.1).
+- [x] B1: no periodic HUD Record (GC spike / 5 s); DamageText HudArt Reset; HudArt rows O(1) + Bounded prune; Classifier.Bindings,
+      ForeignUi Decided / Cache / Units / Anchors pruned when doubled (Bounded); SkinDiagnostics caps; CharacterList.Own gone;
+      TextLook / HudArt glow materials restyled in place on reload (Codex: destroying them broke live texts).
+- [x] B2: CellFit / ActionBar / registered-slot closures, Transform enumerators (Children.Of), per-frame names (NameCache),
+      crafting tokens per revision, V+ have/need parse without substrings, VNEI reflection cached, Words.Get cache, map
+      legend labels cached, minimap pins culled only after Minimap.UpdatePins, AlphaFollow writes once, font lookup backoff.
+      RuneSkin B/frame before -> after: HUD idle 922 -> 997, inventory 20514 -> 3843, crafting 28208 -> 12015, map 1966 -> 1802,
+      damage 1106 -> 328.
+- [x] B3: one PatchAll(Assembly) + static Prepare per patch class (PatchOrder keeps the old tie order), atlas clones skipped,
+      textures by name: FastStartup RuneSkin 348 -> 320 ms, Harmony builds 85 / 272 ms -> 71 / 245 ms (75 batched).
+- [x] B4: ConfigurationManagerAttributes (Ownership / Diagnostics advanced), [Diagnostics] RequireAssets + WatchTheme,
+      layered theme (ThemeMerge: layers list only changes), // and /* */ comments, debounced watcher -> Plugin.ReloadTheme.
+- [x] B5: Compat\ModCompat (every foreign name in one table), AdventureBackpacks name fallback dropped (ABAPI only).
+- [ ] Remaining allocations: CharacterPreview.LateUpdate (camera render window), InventorySkin / CraftingSkin LateUpdate
+      0.9-3.6 KB/frame, HUD idle (HudCluster / BarView = Track H rewrite; PlayHud.cs:228, BarView.cs:410 skipped for Track H).
+- [ ] Own-mod API registration for MT_Trash / MT_CraftSearch / VT_Frame needs new API regions (API under Track H edits).
+- [ ] Relog +104 MB managed per cycle = other mods (census: Seasonality.RandomColors.m_instances 13422 -> 26844, Almanac
+      PieceHelper / CritterHelper / FontManager, vanilla Localization.textMeshStrings); RuneSkin ForeignUi Units / Anchors fixed
+      after the run (not re-run). Inventory cycles +18-20 MB / 10 (control, preview off): no RuneSkin holder grows; preview
+      residual objects = vanilla sfx_gui_inventory_open/close clones in flight + item-template churn (net GameObject +1 / -1).

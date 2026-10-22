@@ -1,4 +1,6 @@
 using HarmonyLib;
+using RuneSkin.Ownership;
+using RuneSkin.Compat;
 
 namespace RuneSkin.InventoryScreen
 {
@@ -9,9 +11,12 @@ namespace RuneSkin.InventoryScreen
     [HarmonyPatch]
     public static class InventoryAdapter
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => OwnershipRegistry.IsOwned(OwnershipRegistry.Inventory);
+
         private const string Eaqs = EaqsBridge.PluginGuid;
-        private const string AugaSkin = "morgott.valheim.augaskin";
-        private const string ValheimPlus = "org.bepinex.plugins.valheim_plus";
+        private const string AugaSkin = ModCompat.AugaSkinGuid;
+        private const string ValheimPlus = ModCompat.ValheimPlusGuid;
 
         [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Awake))]
         [HarmonyPostfix]

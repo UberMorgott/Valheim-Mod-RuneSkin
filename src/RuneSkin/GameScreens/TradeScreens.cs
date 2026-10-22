@@ -30,7 +30,7 @@ namespace RuneSkin.GameScreens
             {
                 ExcludeEpicLoot(ctx, r);
                 if (row && row.IsChildOf(r)) ctx.Exclude(row, "store row template (own registration Store.Row)");
-                foreach (Transform t in s.m_listRoot ? s.m_listRoot : r)
+                foreach (var t in Children.Of(s.m_listRoot ? s.m_listRoot : r))
                     if (s.m_listRoot && t != row) ctx.Exclude(t, "store row instance (clone of the styled template)");
                 ctx.Role(s.m_coinText, "text.body", "coin purse amount");
                 GameScreenKit.Primary(ctx, s.m_buyButton, "buy (button_selected)");
@@ -69,7 +69,7 @@ namespace RuneSkin.GameScreens
             GameScreenKit.Restyle(s);
             // Rows cloned before the template was styled (mod rows) take the look now.
             if (s.m_listRoot)
-                foreach (Transform t in s.m_listRoot)
+                foreach (var t in Children.Of(s.m_listRoot))
                     if (t && !(s.m_listElement && t == s.m_listElement.transform) && Api.ScreenRegistry.ContextOf(t) == null) Row(t);
         }
 
@@ -149,6 +149,9 @@ namespace RuneSkin.GameScreens
     [HarmonyPatch]
     public static class TradeScreensAdapter
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => AnyOwned();
+
         private static readonly string[] Families = { OwnershipRegistry.Store, OwnershipRegistry.Barber, OwnershipRegistry.DevPanels, OwnershipRegistry.Feedback };
 
         public static bool AnyOwned() => Array.Exists(Families, OwnershipRegistry.IsOwned);

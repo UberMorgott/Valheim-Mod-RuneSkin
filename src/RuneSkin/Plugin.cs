@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
@@ -22,7 +23,7 @@ namespace RuneSkin
     [BepInProcess("valheim.exe")]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Version = "0.14.0";
+        public const string Version = "0.14.1";
 
         public static ManualLogSource Log { get; private set; }
         public static ConfigEntry<float> SkinScale { get; private set; }
@@ -42,94 +43,105 @@ namespace RuneSkin
         private static ConfigEntry<bool> _ownModUi, _ownElEnchanting, _ownElBoard, _ownElTemper, _ownModHud, _ownInventoryExtras, _ownRadial;
         private static ConfigEntry<bool> _ownMenuCompendium, _ownSummonFrames, _ownPlayerShields, _ownCursor;
         private static ConfigEntry<string> _modUiOptOut;
+        public static ConfigEntry<bool> WatchTheme { get; private set; }
+        private int _ownOrder;
+
+        // Ownership switches: restart-only by design (families freeze at startup), advanced in ConfigurationManager.
+        private ConfigEntry<bool> Own(string key, string description) =>
+            Config.Bind("Ownership", key, true, new ConfigDescription(description, null,
+                new ConfigurationManagerAttributes { IsAdvanced = true, Order = 1000 - _ownOrder++ }));
         private Harmony _harmony;
+
+        private long _initStart;
 
         private void Awake()
         {
+            _initStart = Stopwatch.GetTimestamp();
             Log = Logger;
-            _ownMenu = Config.Bind("Ownership", "Menu", true,
+            _ownMenu = Own("Menu",
                 "RuneSkin styles the pause menu. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownTooltips = Config.Bind("Ownership", "Tooltips", true,
+            _ownTooltips = Own("Tooltips",
                 "RuneSkin styles tooltips. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
-            _ownHud = Config.Bind("Ownership", "Hud", true,
+            _ownHud = Own("Hud",
                 "RuneSkin draws the player HUD (bars, food, status effects, hotbar placement). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownInventory = Config.Bind("Ownership", "Inventory", true,
+            _ownInventory = Own("Inventory",
                 "RuneSkin lays out the inventory screen (layout A: doll, grid, chest / backpack dock, crafting placement). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownCrafting = Config.Bind("Ownership", "Crafting", true,
+            _ownCrafting = Own("Crafting",
                 "RuneSkin styles and lays out the crafting column (station header, tabs, recipe list, detail, requirements). Needs Inventory. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownSkills = Config.Bind("Ownership", "Skills", true,
+            _ownSkills = Own("Skills",
                 "RuneSkin styles and lays out the skills dialog (needs Inventory). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownTrophies = Config.Bind("Ownership", "Trophies", true,
+            _ownTrophies = Own("Trophies",
                 "RuneSkin styles and lays out the trophies panel (needs Inventory). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownAlmanac = Config.Bind("Ownership", "Almanac", true,
+            _ownAlmanac = Own("Almanac",
                 "RuneSkin restyles the Almanac mod's window (its layout and content stay Almanac's). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownMinimap = Config.Bind("Ownership", "Minimap", true,
+            _ownMinimap = Own("Minimap",
                 "RuneSkin draws the small minimap as a round rune ring (compass runes, wind, day phase, biome plaque) and restyles the large map screen. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownEnemyHud = Config.Bind("Ownership", "EnemyHud", true,
+            _ownEnemyHud = Own("EnemyHud",
                 "RuneSkin restyles enemy health bars, star levels and the boss bar (Vaettir rarity frames keep their tiers). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownMessageHud = Config.Bind("Ownership", "MessageHud", true,
+            _ownMessageHud = Own("MessageHud",
                 "RuneSkin restyles centre messages, top-left notifications, unlock messages and the biome-discovered banner. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownDamageText = Config.Bind("Ownership", "DamageText", true,
+            _ownDamageText = Own("DamageText",
                 "RuneSkin restyles floating damage numbers (font, outline, colour per hit type). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownMainMenu = Config.Bind("Ownership", "MainMenu", true,
+            _ownMainMenu = Own("MainMenu",
                 "RuneSkin styles the pre-world screens (main menu, character select / create, world and server select, dialogs, loading). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
-            _ownSettings = Config.Bind("Ownership", "Settings", true,
+            _ownSettings = Own("Settings",
                 "RuneSkin styles the Settings window (category list, sliders, checkboxes, dropdowns, key bindings). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownConnection = Config.Bind("Ownership", "Connection", true,
+            _ownConnection = Own("Connection",
                 "RuneSkin styles the server password and connecting dialogs. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
-            _ownBuildHud = Config.Bind("Ownership", "BuildHud", true,
+            _ownBuildHud = Own("BuildHud",
                 "RuneSkin styles the build menu, the selected-piece strip and the hovered-piece author window. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
-            _ownCrosshair = Config.Bind("Ownership", "Crosshair", true,
+            _ownCrosshair = Own("Crosshair",
                 "RuneSkin styles the crosshair, hover text, piece health bar and the stealth eye. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
-            _ownActionHud = Config.Bind("Ownership", "ActionHud", true,
+            _ownActionHud = Own("ActionHud",
                 "RuneSkin styles the action progress and stagger bars, the event / raid line and the mount panel. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
-            _ownShipHud = Config.Bind("Ownership", "ShipHud", true,
+            _ownShipHud = Own("ShipHud",
                 "RuneSkin draws the ship HUD as a speed ladder with a rudder socket (wind stays on the minimap ring). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownKeyHints = Config.Bind("Ownership", "KeyHints", true,
+            _ownKeyHints = Own("KeyHints",
                 "RuneSkin styles the key hints (key plates and labels; gamepad glyphs stay). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
-            _ownLoadScreen = Config.Bind("Ownership", "LoadScreen", true,
+            _ownLoadScreen = Own("LoadScreen",
                 "RuneSkin styles the black screens over the world (respawn tip banner + rune spinner, sleep, teleport ring). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
-            _ownChat = Config.Bind("Ownership", "Chat", true,
+            _ownChat = Own("Chat",
                 "RuneSkin styles the chat window, in-world chat texts and NPC / raven speech bubbles. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
-            _ownPopups = Config.Bind("Ownership", "Popups", true,
+            _ownPopups = Own("Popups",
                 "RuneSkin styles the small popups (achievement unlock, join code, session player list, closed captions). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
-            _ownTextDialogs = Config.Bind("Ownership", "TextDialogs", true,
+            _ownTextDialogs = Own("TextDialogs",
                 "RuneSkin styles the text input (signs, portals, pins, names) and the text viewer (runestones, intro saga, raven). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
-            _ownCompendium = Config.Bind("Ownership", "Compendium", true,
+            _ownCompendium = Own("Compendium",
                 "RuneSkin styles the compendium / lore dialog. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownSplitDialog = Config.Bind("Ownership", "SplitDialog", true,
+            _ownSplitDialog = Own("SplitDialog",
                 "RuneSkin styles the split stack dialog. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownStore = Config.Bind("Ownership", "Store", true,
+            _ownStore = Own("Store",
                 "RuneSkin styles the trader store (Haldor, Hildir, Bog Witch; Epic Loot's own trader panels excluded). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownBarber = Config.Bind("Ownership", "Barber", true,
+            _ownBarber = Own("Barber",
                 "RuneSkin styles the barber / mirror. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownDevPanels = Config.Bind("Ownership", "DevPanels", true,
+            _ownDevPanels = Own("DevPanels",
                 "RuneSkin styles the F5 console and the F2 connect panel. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
-            _ownFeedback = Config.Bind("Ownership", "Feedback", true,
+            _ownFeedback = Own("Feedback",
                 "RuneSkin styles the feedback dialog. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownModUi = Config.Bind("Ownership", "ModUi", true,
+            _ownModUi = Own("ModUi",
                 "RuneSkin restyles every window no other family owns (other mods' canvases and panels, Jotunn windows, IMGUI fonts, other mods' main menu lines): theme panels, controls and fonts, the mod's own layout kept. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _modUiOptOut = Config.Bind("Ownership", "ModUiOptOut", "AugaSkin,BossAwakening,BA_WorldBossBar",
-                "Comma-separated object or plugin assembly names the fallback restyler (ModUi) never touches, with everything below them (default: AugaSkin's own UI; BossAwakening's boss / raid / target bars keep their own design, styled by the EnemyHud track). Read once at startup.");
-            _ownElEnchanting = Config.Bind("Ownership", "EpicLootEnchanting", true,
+            _modUiOptOut = Config.Bind("Ownership", "ModUiOptOut", "AugaSkin,BossAwakening,BA_WorldBossBar", new ConfigDescription(
+                "Comma-separated object or plugin assembly names the fallback restyler (ModUi) never touches, with everything below them (default: AugaSkin's own UI; BossAwakening's boss / raid / target bars keep their own design, styled by the EnemyHud track). Read once at startup.",
+                null, new ConfigurationManagerAttributes { IsAdvanced = true, Order = 1000 - _ownOrder++ }));
+            _ownElEnchanting = Own("EpicLootEnchanting",
                 "RuneSkin styles Epic Loot's enchanting table window and its dialogs. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownElBoard = Config.Bind("Ownership", "EpicLootBoard", true,
+            _ownElBoard = Own("EpicLootBoard",
                 "RuneSkin styles Epic Loot's adventure board at Haldor (secret stash, gamble, treasure maps, bounties). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownElTemper = Config.Bind("Ownership", "EpicLootTemper", true,
+            _ownElTemper = Own("EpicLootTemper",
                 "RuneSkin styles Epic Loot's tempering panel at Hildir. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownModHud = Config.Bind("Ownership", "ModHud", true,
+            _ownModHud = Own("ModHud",
                 "RuneSkin styles HUD parts other mods add (Epic Loot ability bar and debug text, level texts). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
-            _ownInventoryExtras = Config.Bind("Ownership", "InventoryExtras", true,
+            _ownInventoryExtras = Own("InventoryExtras",
                 "RuneSkin styles the achievements panel, the variant dialog and the dragged item. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
-            _ownRadial = Config.Bind("Ownership", "Radial", true,
+            _ownRadial = Own("Radial",
                 "RuneSkin styles the radial menus (texts; wheel art and icons stay). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
-            _ownMenuCompendium = Config.Bind("Ownership", "MenuCompendium", true,
+            _ownMenuCompendium = Own("MenuCompendium",
                 "RuneSkin adds a Compendium entry under Settings in the pause menu (needs Menu). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownSummonFrames = Config.Bind("Ownership", "SummonFrames", true,
+            _ownSummonFrames = Own("SummonFrames",
                 "RuneSkin shows a frame per summon next to the hotbar (icon, health with the summon's energy shield, respawn / stay / off state). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownPlayerShields = Config.Bind("Ownership", "PlayerShields", true,
+            _ownPlayerShields = Own("PlayerShields",
                 "RuneSkin shows other players' energy shield and absorb shield as rails under their overhead health bar (MorgottTweaks publishes them). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _ownCursor = Config.Bind("Ownership", "Cursor", true,
+            _ownCursor = Own("Cursor",
                 "RuneSkin sets its rune mouse cursor. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
             HudScale = Config.Bind("Hud", "Scale", 1f, new ConfigDescription(
                 "HUD cluster scale on top of the game's UI scale (fonts never go below the readable floor).",
@@ -144,8 +156,13 @@ namespace RuneSkin
             StatusListButton = Config.Bind("Hud", "StatusListGamepadButton", "JoyDPadDown",
                 "Gamepad: this ZInput button while JoyAltKeys is held opens / closes the full status list. Empty = none.");
             WorldHud.EnemyHudConfig.Bind(Config);
-            _requireAssets = Config.Bind("Ownership", "RequireAssets", true,
-                "Take a family only when its theme assets loaded (otherwise the other skin keeps it). Off = take it anyway (development before the art bundle exists).");
+            // [Diagnostics]: development switches, not looks (perf audit B4: were mixed into [Ownership]).
+            _requireAssets = Config.Bind("Diagnostics", "RequireAssets", true, new ConfigDescription(
+                "Take a family only when its theme assets loaded (otherwise the other skin keeps it). Off = take it anyway (development before the art bundle exists). Read once at startup.",
+                null, new ConfigurationManagerAttributes { IsAdvanced = true, Order = 2 }));
+            WatchTheme = Config.Bind("Diagnostics", "WatchTheme", true, new ConfigDescription(
+                "Reload the theme when the override BepInEx\\config\\RuneSkin\\theme.json is written (0.5 s after the last change; same as the runeskin_reload console command). The override lists only the entries it changes (layered over the shipped theme; // comments allowed). Read once at startup.",
+                null, new ConfigurationManagerAttributes { IsAdvanced = true, Order = 1 }));
             SkinScale = Config.Bind("Layout", "SkinScale", 1f, new ConfigDescription(
                 "Extra scale of RuneSkin panels on top of the game's UI scale.",
                 new AcceptableValueRange<float>(ResponsiveContext.MinSkinScale, ResponsiveContext.MaxSkinScale)));
@@ -212,48 +229,26 @@ namespace RuneSkin
             Skin.Attach(ApiHost);
 
             gameObject.AddComponent<ResponsiveContext>();
+            if (WatchTheme.Value) ThemeWatcher.Attach(gameObject);
 
+            var patchStart = Stopwatch.GetTimestamp();
             _harmony = new Harmony(Skin.PluginGuid);
-            _harmony.PatchAll(typeof(ConsoleCommands));
-            _harmony.PatchAll(typeof(Theme.WordsPatch));
-            Theme.Words.ApplyExisting();
-            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Menu)) _harmony.PatchAll(typeof(MenuAdapter));
-            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Tooltips)) _harmony.PatchAll(typeof(TooltipAdapter));
-            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Hud)) _harmony.PatchAll(typeof(PlayerHud.HudAdapter));
-            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Inventory)) _harmony.PatchAll(typeof(InventoryScreen.InventoryAdapter));
-            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Inventory) && OwnershipRegistry.IsOwned(OwnershipRegistry.Crafting)) _harmony.PatchAll(typeof(CraftingScreen.CraftingAdapter));
-            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Inventory) && OwnershipRegistry.IsOwned(OwnershipRegistry.Skills)) _harmony.PatchAll(typeof(InfoScreens.SkillsAdapter));
-            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Inventory) && OwnershipRegistry.IsOwned(OwnershipRegistry.Trophies)) _harmony.PatchAll(typeof(InfoScreens.TrophiesAdapter));
-            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Almanac))
-            {
-                ModScreens.AlmanacAdapter.Harmony = _harmony;
-                _harmony.PatchAll(typeof(ModScreens.AlmanacAdapter));
-            }
-            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Minimap)) _harmony.PatchAll(typeof(MapScreen.MinimapAdapter));
-            if (OwnershipRegistry.IsOwned(OwnershipRegistry.EnemyHud)) _harmony.PatchAll(typeof(WorldHud.EnemyHudAdapter));
-            if (OwnershipRegistry.IsOwned(OwnershipRegistry.MessageHud)) _harmony.PatchAll(typeof(WorldHud.MessageAdapter));
-            if (OwnershipRegistry.IsOwned(OwnershipRegistry.DamageText)) _harmony.PatchAll(typeof(WorldHud.DamageTextAdapter));
-            if (OwnershipRegistry.IsOwned(OwnershipRegistry.MainMenu)) _harmony.PatchAll(typeof(PreWorld.MainMenuAdapter));
-            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Settings)) _harmony.PatchAll(typeof(PreWorld.SettingsAdapter));
-            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Connection)) _harmony.PatchAll(typeof(PreWorld.ConnectionAdapter));
-            if (OwnershipRegistry.IsOwned(OwnershipRegistry.BuildHud) || OwnershipRegistry.IsOwned(OwnershipRegistry.Crosshair) || OwnershipRegistry.IsOwned(OwnershipRegistry.ActionHud) ||
-                OwnershipRegistry.IsOwned(OwnershipRegistry.ShipHud) || OwnershipRegistry.IsOwned(OwnershipRegistry.KeyHints))
-                _harmony.PatchAll(typeof(WorldHud.PlayHudAdapter));
-            if (GameScreens.GameScreensAdapter.AnyOwned()) _harmony.PatchAll(typeof(GameScreens.GameScreensAdapter));
-            if (GameScreens.TradeScreensAdapter.AnyOwned()) _harmony.PatchAll(typeof(GameScreens.TradeScreensAdapter));
-            // M7: precise mod panels + the fallback restyler for every UI no family owns, Jotunn windows, IMGUI fonts,
-            // vanilla leftovers.
-            if (ModScreens.VanillaExtrasAdapter.AnyOwned()) _harmony.PatchAll(typeof(ModScreens.VanillaExtrasAdapter));
-            if (ModScreens.MainMenuMods.Owned()) _harmony.PatchAll(typeof(ModScreens.MainMenuMods));
+            // M7: precise mod panels + the fallback restyler for every UI no family owns, Jotunn windows, IMGUI fonts
+            // (their own runtime hooks), set up before the class patches that read their state.
+            ModScreens.AlmanacAdapter.Harmony = _harmony;
             ModScreens.ForeignUi.Init(gameObject, _harmony, _modUiOptOut.Value);
             ModScreens.JotunnHook.Init(_harmony);
             ModScreens.ImguiFonts.Init(gameObject, _harmony);
-            // Batch P features.
-            if (OwnershipRegistry.IsOwned(OwnershipRegistry.MenuCompendium)) _harmony.PatchAll(typeof(MenuCompendium));
-            if (OwnershipRegistry.IsOwned(OwnershipRegistry.SummonFrames)) _harmony.PatchAll(typeof(PlayerHud.SummonFramesAdapter));
-            if (OwnershipRegistry.IsOwned(OwnershipRegistry.PlayerShields)) _harmony.PatchAll(typeof(WorldHud.PlayerShields));
+            // One PatchAll(Assembly) (perf audit B3): every patch class gates itself on its family's ownership (static
+            // Prepare), so FastStartup's HarmonyBatcher builds each patched game method once (22 PatchAll(Type) calls
+            // rebuilt InventoryGui.Awake 6x, Hud.Awake 2x, InventoryGui.Update 2x). Ties between RuneSkin's own
+            // postfixes on one method are explicit (PatchOrder): class order in the assembly is not a contract.
+            // WorldHud.PlayHudAdapter has no Prepare: each of its hooks gates per family (PlayHud.Owned).
+            _harmony.PatchAll(typeof(Plugin).Assembly);
+            Theme.Words.ApplyExisting();
             if (OwnershipRegistry.IsOwned(OwnershipRegistry.Cursor)) CursorSkin.Apply();
-            Log.LogInfo($"[RuneSkin] {Version} ready (API v{Skin.ApiVersion})");
+            var ms = (Stopwatch.GetTimestamp() - patchStart) * 1000.0 / Stopwatch.Frequency;
+            Log.LogInfo($"[RuneSkin] {Version} ready (API v{Skin.ApiVersion}); init {(patchStart - _initStart) * 1000.0 / Stopwatch.Frequency:0} ms theme + ownership, {ms:0} ms patches");
         }
 
         private void OnDestroy() => _harmony?.UnpatchSelf();
@@ -281,6 +276,19 @@ namespace RuneSkin
             WorldHud.PlayHud.Record();
             return SkinDiagnostics.Dump(string.IsNullOrEmpty(screen) ? null : screen).ToArray();
         }
+    }
+
+    // Order of RuneSkin's own postfixes that share one game method (HarmonyX: higher priority first, ties by
+    // registration). Priority.Last = 0; the old sequential PatchAll(Type) order, kept: InventoryGui.Awake / Update
+    // inventory -> crafting -> skills -> trophies -> Almanac -> game screens -> extras; Hud.Awake HUD cluster ->
+    // play HUD (WorldHud.PlayHudAdapter, Priority.Last) -> game screens -> extras; FejdStartup.Start main menu -> mod lines.
+    internal static class PatchOrder
+    {
+        public const int Hud = Priority.Last + 1;
+        public const int HudGameScreens = Priority.Last - 1, HudExtras = Priority.Last - 2;
+        public const int Crafting = Priority.Last - 1, Skills = Priority.Last - 2, Trophies = Priority.Last - 3, Almanac = Priority.Last - 4,
+            InventoryGameScreens = Priority.Last - 5, InventoryExtras = Priority.Last - 6;
+        public const int MainMenuMods = Priority.Last - 1;
     }
 
     // Console: runeskin_diag [screen] (dump), runeskin_reload (theme). Registered with the vanilla terminal.

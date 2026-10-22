@@ -203,7 +203,7 @@ namespace RuneSkin.Restyle
             if (Mathf.Abs(dx) <= 0.25f && Mathf.Abs(dy) <= 0.25f) return;
             var parent = rt.parent ? rt.parent : (Transform)space;
             var d = parent.InverseTransformVector(space.TransformVector(new Vector3(dx, dy, 0f)));
-            var i = _moved.FindIndex(m => m.Rt == rt);
+            var i = MovedIndex(rt);
             var pos = rt.anchoredPosition;
             // The screen code re-placed it since (position no longer ours): its value is the new original.
             if (i < 0) { _moved.Add(new Moved { Rt = rt, Orig = pos }); i = _moved.Count - 1; }
@@ -216,7 +216,7 @@ namespace RuneSkin.Restyle
         // Multiplies t's localScale by k (uniform x / y), journaled like Shift.
         private void Scale(Transform t, float k)
         {
-            var i = _scaled.FindIndex(s => s.T == t);
+            var i = ScaledIndex(t);
             var cur = t.localScale;
             if (i < 0) { _scaled.Add(new Scaled { T = t, Orig = cur }); i = _scaled.Count - 1; }
             else if (cur != _scaled[i].Set) _scaled[i] = new Scaled { T = t, Orig = cur };
@@ -228,7 +228,7 @@ namespace RuneSkin.Restyle
         // The font size the screen set (before any zone shrink); a size changed by someone else since is the new one.
         private float OrigSize(TMP_Text t)
         {
-            var i = _sized.FindIndex(s => s.T == t);
+            var i = SizedIndex(t);
             if (i < 0) return t.fontSize;
             if (!Mathf.Approximately(t.fontSize, _sized[i].Set)) { _sized.RemoveAt(i); return t.fontSize; }
             return _sized[i].Orig;
@@ -237,11 +237,34 @@ namespace RuneSkin.Restyle
         private void Resize(TMP_Text t, float size)
         {
             if (Mathf.Abs(t.fontSize - size) <= 0.1f) return;
-            var i = _sized.FindIndex(s => s.T == t);
+            var i = SizedIndex(t);
             if (i < 0) { _sized.Add(new Sized { T = t, Orig = t.fontSize, Auto = t.enableAutoSizing }); i = _sized.Count - 1; }
             if (t.enableAutoSizing) t.enableAutoSizing = false;
             t.fontSize = size;
             _sized[i] = new Sized { T = t, Orig = _sized[i].Orig, Set = size, Auto = _sized[i].Auto };
+        }
+
+        // Journal lookups by plain loops: FindIndex with a capturing lambda allocated a closure + delegate per call,
+        // i.e. per text per cell per frame (perf audit B2: ~20 KB per frame with the inventory open).
+        private int MovedIndex(RectTransform rt)
+        {
+            for (var i = 0; i < _moved.Count; i++)
+                if (_moved[i].Rt == rt) return i;
+            return -1;
+        }
+
+        private int ScaledIndex(Transform t)
+        {
+            for (var i = 0; i < _scaled.Count; i++)
+                if (_scaled[i].T == t) return i;
+            return -1;
+        }
+
+        private int SizedIndex(TMP_Text t)
+        {
+            for (var i = 0; i < _sized.Count; i++)
+                if (_sized[i].T == t) return i;
+            return -1;
         }
 
         private static bool IconRole(string role) =>

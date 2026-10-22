@@ -538,7 +538,7 @@ namespace RuneSkin.PreWorld
             // the generic button.label (plate fit, 40-unit cap inset) while its own pass gave row.label, and clones
             // copied whichever ran last (world names 40 units in, batch G).
             var rows = new List<Transform>();
-            if (fejd.m_worldListRoot) foreach (Transform clone in fejd.m_worldListRoot) rows.Add(clone);
+            if (fejd.m_worldListRoot) foreach (var clone in Children.Of(fejd.m_worldListRoot)) rows.Add(clone);
             if (fejd.m_worldListElement && fejd.m_worldListElement.transform != root && fejd.m_worldListElement.transform.IsChildOf(root)) rows.Add(fejd.m_worldListElement.transform);
             foreach (var clone in rows)
             {
@@ -629,6 +629,9 @@ namespace RuneSkin.PreWorld
     [HarmonyPatch]
     public static class MainMenuAdapter
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => OwnershipRegistry.IsOwned(OwnershipRegistry.MainMenu);
+
         [HarmonyPatch(typeof(FejdStartup), nameof(FejdStartup.Awake))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]

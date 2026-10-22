@@ -9,6 +9,7 @@ using RuneSkin.Restyle;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using RuneSkin.Compat;
 
 namespace RuneSkin.ModScreens
 {
@@ -27,7 +28,7 @@ namespace RuneSkin.ModScreens
     public sealed class AlmanacSkin : MonoBehaviour
     {
         public const string ScreenId = "Almanac";
-        public const string PluginGuid = "RustyMods.Almanac";
+        public const string PluginGuid = ModCompat.AlmanacGuid;
         private static AlmanacSkin _instance;
         private static bool _patched;
 
@@ -38,7 +39,7 @@ namespace RuneSkin.ModScreens
         public static void Attach(InventoryGui gui, Harmony harmony)
         {
             var hud = gui && gui.transform.parent ? gui.transform.parent.Find("HUD") : null;
-            var root = hud ? hud.Find("Almanac") as RectTransform : null;
+            var root = hud ? hud.Find(ModCompat.AlmanacRoot) as RectTransform : null;
             if (!root || root.GetComponent<AlmanacSkin>()) return;
             root.gameObject.AddComponent<AlmanacSkin>().Init(root);
             PatchRefresh(harmony);
@@ -94,7 +95,7 @@ namespace RuneSkin.ModScreens
         private void FormPanel()
         {
             if (_form) return;
-            var panel = AccessTools.TypeByName("Almanac.UI.AlmanacPanel");
+            var panel = AccessTools.TypeByName(ModCompat.AlmanacPanelType);
             var field = panel != null ? AccessTools.Field(panel, "formPanel") : null;
             if (field == null || !field.IsStatic) return;
             if (!(field.GetValue(null) is Component form) || !form) return;
@@ -109,7 +110,7 @@ namespace RuneSkin.ModScreens
         {
             if (_patched) return;
             _patched = true;
-            var panel = AccessTools.TypeByName("Almanac.UI.AlmanacPanel");
+            var panel = AccessTools.TypeByName(ModCompat.AlmanacPanelType);
             if (panel == null) { Plugin.Log.LogWarning("[RuneSkin] Almanac present without Almanac.UI.AlmanacPanel: new elements stay unstyled until reopened"); return; }
             var postfix = new HarmonyMethod(typeof(AlmanacSkin), nameof(Refresh_Postfix)) { priority = Priority.Last };
             var count = 0;
@@ -244,12 +245,15 @@ namespace RuneSkin.ModScreens
     [HarmonyPatch]
     public static class AlmanacAdapter
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => OwnershipRegistry.IsOwned(OwnershipRegistry.Almanac);
+
         internal static Harmony Harmony;
 
         [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Awake))]
         [HarmonyPostfix]
-        [HarmonyPriority(Priority.Last)]
-        [HarmonyAfter(AlmanacSkin.PluginGuid, "morgott.valheim.augaskin")]
+        [HarmonyPriority(PatchOrder.Almanac)]
+        [HarmonyAfter(AlmanacSkin.PluginGuid, ModCompat.AugaSkinGuid)]
         private static void Awake_Postfix(InventoryGui __instance)
         {
             try { AlmanacSkin.Attach(__instance, Harmony); }

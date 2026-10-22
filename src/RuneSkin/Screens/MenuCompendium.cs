@@ -3,6 +3,7 @@ using HarmonyLib;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using RuneSkin.Ownership;
 
 namespace RuneSkin.Screens
 {
@@ -16,6 +17,9 @@ namespace RuneSkin.Screens
     [HarmonyPatch]
     public static class MenuCompendium
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => OwnershipRegistry.IsOwned(OwnershipRegistry.MenuCompendium);
+
         public const string EntryName = "RuneSkinCompendium";
         public const string Label = "$inventory_texts"; // vanilla Compendium title token
 

@@ -6,7 +6,8 @@ using System.Text;
 
 namespace RuneSkin.Theme
 {
-    // Theme file reader: a small strict JSON parser (objects, arrays, strings, numbers, true/false/null) mapped onto
+    // Theme file reader: a small strict JSON parser (objects, arrays, strings, numbers, true/false/null; // and /* */
+    // comments allowed between values) mapped onto
     // ThemeFile. Managed only, so the shipped default theme is parsed and validated by the unit tests exactly as in
     // game (UnityEngine.JsonUtility is native and dropped array entries of the default theme in game).
     public static class ThemeJson
@@ -183,9 +184,24 @@ namespace RuneSkin.Theme
                 _i += w.Length;
             }
 
+            // Whitespace and comments (// to the end of the line, /* ... */): a hand-edited override theme may explain
+            // its values (perf audit B4).
             private void Ws()
             {
-                while (_i < _s.Length && char.IsWhiteSpace(_s[_i])) _i++;
+                while (_i < _s.Length)
+                {
+                    if (char.IsWhiteSpace(_s[_i])) { _i++; continue; }
+                    if (_s[_i] != '/' || _i + 1 >= _s.Length) return;
+                    if (_s[_i + 1] == '/')
+                    {
+                        while (_i < _s.Length && _s[_i] != '\n') _i++;
+                        continue;
+                    }
+                    if (_s[_i + 1] != '*') return;
+                    var end = _s.IndexOf("*/", _i + 2, StringComparison.Ordinal);
+                    if (end < 0) Fail("unterminated comment");
+                    _i = end + 2;
+                }
             }
 
             private bool Peek(char c) => _i < _s.Length && _s[_i] == c;

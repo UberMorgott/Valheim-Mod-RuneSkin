@@ -10,6 +10,7 @@ using RuneSkin.Theme;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using RuneSkin.Compat;
 
 namespace RuneSkin.InventoryScreen
 {
@@ -232,14 +233,14 @@ namespace RuneSkin.InventoryScreen
             {
                 if (!panel) continue;
                 if (panel.TryGetComponent<Image>(out var own)) own.enabled = false;
-                foreach (Transform child in panel)
+                foreach (var child in Children.Of(panel))
                     if (IsVanillaBackground(child) && child.TryGetComponent<Image>(out var image))
                         image.enabled = false;
             }
         }
 
         // Footer stat plates: vanilla Armor / Weight, CurrencyPocket CoinPocketUI, MorgottTweaks MT_Trash.
-        private static readonly string[] StatPlates = { "Armor", "CoinPocketUI", "Weight", "MT_Trash" };
+        private static readonly string[] StatPlates = { "Armor", ModCompat.CoinPocketPlate, "Weight", ModCompat.MtTrashPlate };
 
         private static bool IsVanillaBackground(Transform t) =>
             t.name == "selected_frame" || t.name.StartsWith("BraidLineHorisontalMedium", StringComparison.Ordinal) && !t.parent.name.StartsWith("Title", StringComparison.Ordinal) ||
@@ -270,8 +271,8 @@ namespace RuneSkin.InventoryScreen
                 else if (t.name == "Weight" && t.parent && (t.parent == _gui.m_player || t.parent.GetComponentInChildren<InventoryGrid>(true))) ctx.Role(image, "plate.stat", "weight plate (InventoryGui.m_weight / m_containerWeight)");
                 else if (t.name == "weight_icon") ctx.Role(image, "glyph.stat.weight", "weight plate icon");
                 else if (t.name == "armor_icon" && t.parent && t.parent.name == "Armor") ctx.Role(image, "glyph.stat.armor", "armor plate icon (InventoryGui.m_armor)");
-                else if (t.name == "armor_icon" && t.parent && t.parent.name == "MT_Trash") ctx.Role(image, "glyph.trash", "MorgottTweaks trash plate icon");
-                else if (t.name == "armor_icon" && t.parent && t.parent.name == "CoinPocketUI") ctx.Role(image, "content", "MorgottTweaks coin pocket: item icon");
+                else if (t.name == "armor_icon" && t.parent && t.parent.name == ModCompat.MtTrashPlate) ctx.Role(image, "glyph.trash", "MorgottTweaks trash plate icon");
+                else if (t.name == "armor_icon" && t.parent && t.parent.name == ModCompat.CoinPocketPlate) ctx.Role(image, "content", "MorgottTweaks coin pocket: item icon");
                 else if (t.name == "Background" && t.parent && t.parent.parent == _gui.m_info) ctx.Role(image, "tab.background", "info tab button background (Info/<tab>/Background)");
                 else if ((t.name == "Icon" || t.name == "Image") && t.parent && t.parent.parent == _gui.m_info) ctx.Role(image, "content", "info tab icon (Button.targetGraphic, keeps its picture)");
                 else if (t.parent && t.parent.name == "TitlePanel" && t.parent.parent == _gui.m_info && sprite.StartsWith("BraidLine", StringComparison.Ordinal)) ctx.Role(image, "skip", "name row braid halves (hidden under the RuneSkin name plaque)");
@@ -283,7 +284,7 @@ namespace RuneSkin.InventoryScreen
             {
                 if (!panel) continue;
                 if (panel.TryGetComponent<Image>(out var own)) ctx.Role(own, "skip", "vanilla panel background (replaced by RuneSkin panel stack)");
-                foreach (Transform child in panel)
+                foreach (var child in Children.Of(panel))
                     if (IsVanillaBackground(child) && child.TryGetComponent<Image>(out var image))
                         ctx.Role(image, "skip", "vanilla / EAQS panel background (replaced by RuneSkin panel stack)");
             }
@@ -416,14 +417,13 @@ namespace RuneSkin.InventoryScreen
         private bool ContainerIsBackpack() =>
             _gui.m_currentContainer && Player.m_localPlayer && _gui.m_currentContainer.gameObject == Player.m_localPlayer.gameObject;
 
-        // Backpack beside a chest: the fork's third panel (registered "inventory.backpack", or its clone
-        // "AB_BackpackPanel" under the crafting panel's parent before the fork registers it).
+        // Backpack beside a chest: a panel registered as "inventory.backpack" (Skin.RegisterPanel), else the
+        // AdventureBackpacks fork's docking API (ABAPI.GetBackpackPanel). No object-name fallback (perf audit B5: own
+        // mods come in through APIs).
         private void FindBackpack()
         {
             var panel = InventoryRegistry.Panel("inventory.backpack");
             if (!panel) panel = AbApi.Panel();
-            if (!panel && _gui.m_crafting && _gui.m_crafting.parent)
-                panel = _gui.m_crafting.parent.Find("AB_BackpackPanel") as RectTransform;
             if (panel && !panel.gameObject.activeInHierarchy) panel = null;
             if (panel != _packPanel)
             {
@@ -433,7 +433,7 @@ namespace RuneSkin.InventoryScreen
                 {
                     var p = (Transform)panel;
                     if (panel.TryGetComponent<Image>(out var own)) own.enabled = false;
-                    foreach (Transform child in panel)
+                    foreach (var child in Children.Of(panel))
                         if (IsVanillaBackground(child) && child.TryGetComponent<Image>(out var image)) image.enabled = false;
                     ScreenRegistry.Register(p, () => Context(p, ScreenId + ".Backpack"));
                     ScreenRegistry.Restyle(p);
@@ -629,9 +629,14 @@ namespace RuneSkin.InventoryScreen
                 Geo.Place(_canvas, title, new Box(box.X, box.Y, box.W, nameH));
                 NamePlaque(title, new Box(box.X, box.Y, box.W, nameH));
             }
+            // Index loops / cached names: this runs every frame while the inventory is open (foreach over a Transform
+            // allocates an enumerator, .name a string; perf audit B2).
             var tabs = 0;
-            foreach (Transform child in info)
-                if (child.gameObject.activeSelf && child.GetComponent<Selectable>()) tabs++;
+            for (var n = 0; n < info.childCount; n++)
+            {
+                var child = info.GetChild(n);
+                if (child.gameObject.activeSelf && child.TryGetComponent<Selectable>(out _)) tabs++;
+            }
             if (tabs == 0) return;
             var gap = _tokens.Gap / 2f;
             // Tab row under the name (layout-a2.png): tabs as tall as the row, a little wider than tall, never past
@@ -642,9 +647,10 @@ namespace RuneSkin.InventoryScreen
             h = Mathf.Min(h, w);
             var x = box.X + (box.W - (tabs * w + (tabs - 1) * gap)) / 2f;
             var y = box.Y + nameH + gap;
-            foreach (Transform child in info)
+            for (var n = 0; n < info.childCount; n++)
             {
-                if (!child.gameObject.activeSelf || !child.GetComponent<Selectable>()) continue;
+                var child = info.GetChild(n);
+                if (!child.gameObject.activeSelf || !child.TryGetComponent<Selectable>(out _)) continue;
                 Tab((RectTransform)child, new Box(x, y, w, h));
                 x += w + gap;
             }
@@ -657,11 +663,13 @@ namespace RuneSkin.InventoryScreen
             Geo.Place(_canvas, tab, b);
             var side = Mathf.Min(b.W, b.H) * (1f - 2f * ThemeTokens.GetFloat("share.inv.tab.icon.inset", 0.16f));
             var icon = new Box(b.X + (b.W - side) / 2f, b.Y + (b.H - side) / 2f, side, side);
-            foreach (Transform c in tab)
+            for (var n = 0; n < tab.childCount; n++)
             {
-                if (!(c is RectTransform rt) || !c.gameObject.activeSelf || !c.GetComponent<Graphic>()) continue;
-                if (c.name == "Background") Geo.Place(_canvas, rt, b);
-                else if (c.name == "Icon" || c.name == "Image" || c.name == "Checked") Geo.Place(_canvas, rt, icon);
+                var c = tab.GetChild(n);
+                if (!(c is RectTransform rt) || !c.gameObject.activeSelf || !c.TryGetComponent<Graphic>(out _)) continue;
+                var part = NameCache.Of(c);
+                if (part == "Background") Geo.Place(_canvas, rt, b);
+                else if (part == "Icon" || part == "Image" || part == "Checked") Geo.Place(_canvas, rt, icon);
             }
         }
 
@@ -689,10 +697,10 @@ namespace RuneSkin.InventoryScreen
             }
             Left(PlateOf(_gui.m_armor), "size.inv.plate.armor", 104f);
             // Coin pocket plate (CurrencyPocket CoinPocketUI) next to the armour, as in the mockup.
-            Left(Named("CoinPocketUI"), "size.inv.plate.coins", 104f);
+            Left(Named(ModCompat.CoinPocketPlate), "size.inv.plate.coins", 104f);
             Left(PlateOf(_gui.m_weight), "size.inv.plate.weight", 160f);
             var right = box.Right;
-            var trash = Named("MT_Trash");
+            var trash = Named(ModCompat.MtTrashPlate);
             if (trash && trash.gameObject.activeSelf)
             {
                 var w = ThemeTokens.GetFloat("size.inv.plate.trash", 150f) * k;
@@ -711,11 +719,13 @@ namespace RuneSkin.InventoryScreen
             var socket = box.H; // plate_stat: round socket as wide as the strip is tall (sprite border 92 of 96 px)
             // Weight carries its own plate image and a bkg child: one strip only (the bkg one, like the other plates).
             if (plate.Find("bkg") && plate.TryGetComponent<Image>(out var own) && own.enabled) own.enabled = false;
-            foreach (Transform child in plate)
+            for (var n = 0; n < plate.childCount; n++)
             {
+                var child = plate.GetChild(n);
                 if (!(child is RectTransform rt) || !child.gameObject.activeSelf) continue;
-                if (child.name == "bkg") Geo.Place(_canvas, rt, box);
-                else if (child.name.EndsWith("_icon", StringComparison.Ordinal)) Geo.Place(_canvas, rt, Inset(new Box(box.X, box.Y, socket, box.H), socket * 0.2f, socket * 0.2f));
+                var part = NameCache.Of(child);
+                if (part == "bkg") Geo.Place(_canvas, rt, box);
+                else if (part.EndsWith("_icon", StringComparison.Ordinal)) Geo.Place(_canvas, rt, Inset(new Box(box.X, box.Y, socket, box.H), socket * 0.2f, socket * 0.2f));
                 else if (child.TryGetComponent<TMP_Text>(out var text))
                 {
                     Geo.Place(_canvas, rt, new Box(box.X + socket + 4f, box.Y, Mathf.Max(1f, box.W - socket - 12f), box.H));
@@ -750,10 +760,11 @@ namespace RuneSkin.InventoryScreen
             var width = Mathf.Min(box.W, ThemeTokens.GetFloat("size.inv.name.plaque", 560f) * k);
             var plaque = new Box(box.X + (box.W - width) / 2f, box.Y, width, box.H);
             Geo.Place(_canvas, _namePlaque.rectTransform, plaque);
-            foreach (Transform child in title)
+            for (var n = 0; n < title.childCount; n++)
             {
+                var child = title.GetChild(n);
                 // The vanilla braid halves would run through the plaque: hidden while it is shown.
-                if (child.name.StartsWith("BraidLine", StringComparison.Ordinal) && child.TryGetComponent<Image>(out var braid) && braid.enabled == _namePlaque.enabled)
+                if (NameCache.Of(child).StartsWith("BraidLine", StringComparison.Ordinal) && child.TryGetComponent<Image>(out var braid) && braid.enabled == _namePlaque.enabled)
                     braid.enabled = !_namePlaque.enabled;
                 if (!(child is RectTransform rt) || !child.TryGetComponent<TMP_Text>(out var label)) continue;
                 // Text between the knot ends (share of the plaque width each side, sprite border 230 of 620 px).
@@ -874,9 +885,12 @@ namespace RuneSkin.InventoryScreen
         private Transform Twin(Transform original)
         {
             if (!original || !_packPanel || !_gui.m_container) return null;
-            var path = SkinPath(_gui.m_container, original);
+            // The relative path of a vanilla container part never changes: built once per part, not per frame.
+            if (!_twinPaths.TryGetValue(original, out var path)) _twinPaths[original] = path = SkinPath(_gui.m_container, original);
             return path == null ? null : _packPanel.Find(path);
         }
+
+        private readonly Dictionary<Transform, string> _twinPaths = new Dictionary<Transform, string>();
 
         private static string SkinPath(Transform root, Transform t)
         {
@@ -1281,8 +1295,7 @@ namespace RuneSkin.InventoryScreen
             foreach (var r in InventoryRegistry.Slots)
             {
                 if (r.Dead || r.D.GetItem == null || !_registered.TryGetValue(r.Key, out var cell) || !cell) continue;
-                var reg = r;
-                cell.Show(InventoryRegistry.Guard(reg, () => reg.D.GetItem(), null), 0);
+                cell.Show(InventoryRegistry.Guard(r, r.D.GetItem, null), 0);
             }
         }
 

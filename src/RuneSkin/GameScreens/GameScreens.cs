@@ -9,6 +9,7 @@ using RuneSkin.Theme;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using RuneSkin.Compat;
 
 namespace RuneSkin.GameScreens
 {
@@ -113,11 +114,15 @@ namespace RuneSkin.GameScreens
 
         private void LateUpdate()
         {
-            if (!_group && !TryGetComponent(out _group)) _group = gameObject.AddComponent<CanvasGroup>();
+            if (!_group)
+            {
+                // Decor only: never hit or focused. Set once (the per-frame writes re-dirtied the group, perf audit P2).
+                if (!TryGetComponent(out _group)) _group = gameObject.AddComponent<CanvasGroup>();
+                _group.blocksRaycasts = false;
+                _group.interactable = false;
+            }
             var a = Source && Source.gameObject.activeInHierarchy ? Source.color.a * Source.canvasRenderer.GetAlpha() : 0f;
             if (!Mathf.Approximately(_group.alpha, a)) _group.alpha = a;
-            _group.blocksRaycasts = false;
-            _group.interactable = false;
         }
     }
 
@@ -570,6 +575,9 @@ namespace RuneSkin.GameScreens
     [HarmonyPatch]
     public static class GameScreensAdapter
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => AnyOwned();
+
         private static readonly string[] Families =
             { OwnershipRegistry.LoadScreen, OwnershipRegistry.Chat, OwnershipRegistry.Popups, OwnershipRegistry.TextDialogs, OwnershipRegistry.Compendium, OwnershipRegistry.SplitDialog };
 
@@ -584,7 +592,7 @@ namespace RuneSkin.GameScreens
 
         [HarmonyPatch(typeof(Hud), nameof(Hud.Awake))]
         [HarmonyPostfix]
-        [HarmonyPriority(Priority.Last)]
+        [HarmonyPriority(PatchOrder.HudGameScreens)]
         private static void Hud_Postfix(Hud __instance) => Try("load screen", OwnershipRegistry.LoadScreen, () => LoadScreenSkin.Attach(__instance));
 
         [HarmonyPatch(typeof(Chat), nameof(Chat.Awake))]
@@ -602,7 +610,7 @@ namespace RuneSkin.GameScreens
 
         [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Awake))]
         [HarmonyPostfix]
-        [HarmonyPriority(Priority.Last)]
+        [HarmonyPriority(PatchOrder.InventoryGameScreens)]
         private static void InventoryGui_Postfix(InventoryGui __instance)
         {
             if (__instance.m_textsDialog) Try("compendium", OwnershipRegistry.Compendium, () => CompendiumSkin.Attach(__instance.m_textsDialog));
@@ -623,7 +631,7 @@ namespace RuneSkin.GameScreens
 
         [HarmonyPatch(typeof(TextsDialog), nameof(TextsDialog.ShowText), typeof(TextsDialog.TextInfo))]
         [HarmonyPostfix]
-        [HarmonyAfter("randyknapp.mods.epicloot")]
+        [HarmonyAfter(ModCompat.EpicLootGuid)]
         private static void ShowText_Postfix(TextsDialog __instance, TextsDialog.TextInfo text) => Try("active effects page", OwnershipRegistry.Compendium, () => ActiveEffectsPage.Shown(__instance, text));
 
         [HarmonyPatch(typeof(TextsDialog), nameof(TextsDialog.OnClose))]

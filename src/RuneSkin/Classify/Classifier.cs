@@ -55,6 +55,14 @@ namespace RuneSkin.Classify
     {
         // (a) Skin.Bind registrations (owner-qualified in Host).
         public static readonly Dictionary<Graphic, Classification> Bindings = new Dictionary<Graphic, Classification>();
+        private static readonly List<Graphic> DeadBindings = new List<Graphic>();
+        private static int _bindingsPrune = 64;
+
+        // Graphics destroyed without their owner disposing the Bind handle (a mod's window rebuilt per world load) leave
+        // here whenever the table doubled since the last prune: bounded, no per-frame cost.
+        public static void PruneBindings() => Diagnostics.Bounded.PruneWhenDoubled(Bindings, Alive, ref _bindingsPrune, DeadBindings);
+
+        private static readonly Func<Graphic, bool> Alive = g => g;
 
         public static Classification Classify(Graphic g, string originalSprite, ScreenContext ctx)
         {

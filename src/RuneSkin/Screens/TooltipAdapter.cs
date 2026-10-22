@@ -7,6 +7,7 @@ using RuneSkin.Theme;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using RuneSkin.Ownership;
 
 namespace RuneSkin.Screens
 {
@@ -19,6 +20,9 @@ namespace RuneSkin.Screens
     [HarmonyPatch]
     public static class TooltipAdapter
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => OwnershipRegistry.IsOwned(OwnershipRegistry.Tooltips);
+
         [HarmonyPatch(typeof(UITooltip), nameof(UITooltip.OnHoverStart))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]

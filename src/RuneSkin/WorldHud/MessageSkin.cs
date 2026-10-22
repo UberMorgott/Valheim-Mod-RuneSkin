@@ -7,6 +7,7 @@ using RuneSkin.Theme;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using RuneSkin.Ownership;
 
 namespace RuneSkin.WorldHud
 {
@@ -359,6 +360,9 @@ namespace RuneSkin.WorldHud
     [HarmonyPatch]
     public static class MessageAdapter
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => OwnershipRegistry.IsOwned(OwnershipRegistry.MessageHud);
+
         [HarmonyPatch(typeof(MessageHud), nameof(MessageHud.Awake))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]

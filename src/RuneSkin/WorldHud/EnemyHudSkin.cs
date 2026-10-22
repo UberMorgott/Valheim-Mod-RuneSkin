@@ -10,6 +10,8 @@ using RuneSkin.Theme;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using RuneSkin.Ownership;
+using RuneSkin.Compat;
 
 namespace RuneSkin.WorldHud
 {
@@ -36,7 +38,7 @@ namespace RuneSkin.WorldHud
         public const string FrameName = "RuneSkin_EnemyFrame";
         public const string ShieldName = "RuneSkin_Shield";
         public const string StaggerName = "RuneSkin_Stagger";
-        private const string VaettirFrame = "VT_Frame";
+        private const string VaettirFrame = ModCompat.VaettirFrame;
         private const float VtRetrySeconds = 1f; // HUDs without a VT_Frame (players, tamed, Vaettir off) look again at most once a second
         private const int MaxCandidates = 64;
 
@@ -678,6 +680,9 @@ namespace RuneSkin.WorldHud
     [HarmonyPatch]
     public static class EnemyHudAdapter
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => OwnershipRegistry.IsOwned(OwnershipRegistry.EnemyHud);
+
         [HarmonyPatch(typeof(EnemyHud), nameof(EnemyHud.Awake))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]
@@ -698,7 +703,7 @@ namespace RuneSkin.WorldHud
         [HarmonyPatch(typeof(EnemyHud), nameof(EnemyHud.UpdateHuds))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]
-        [HarmonyAfter("morgott.valheim.bossawakening", "morgott.valheim.tweaks", "MidnightsFX.StarLevelSystem")]
+        [HarmonyAfter(ModCompat.BossAwakeningGuid, ModCompat.MtGuid, ModCompat.StarLevelSystemGuid)]
         private static void UpdateHuds_Postfix(EnemyHud __instance)
         {
             try { EnemyHudSkin.Update(__instance); }

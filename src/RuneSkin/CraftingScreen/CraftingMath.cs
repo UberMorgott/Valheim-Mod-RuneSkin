@@ -253,5 +253,39 @@ namespace RuneSkin.CraftingScreen
         private static float Clamp(float v, float min, float max) => v < min ? min : v > max ? max : v;
 
         public static Box Inset(Box b, float x, float y) => new Box(b.X + x, b.Y + y, Math.Max(0f, b.W - 2f * x), Math.Max(0f, b.H - 2f * y));
+
+        // Requirement amount "have/need" (ValheimPlus CraftFromChest rewrites the label so; vanilla writes only "need"),
+        // read without substrings (this runs per requirement cell per frame). Spaces around the numbers allowed.
+        public static bool TryParseHaveNeed(string s, out int have, out int need)
+        {
+            have = need = 0;
+            if (string.IsNullOrEmpty(s)) return false;
+            var i = 0;
+            return Number(s, ref i, out have) && Skip(s, ref i, '/') && Number(s, ref i, out need) && End(s, i);
+        }
+
+        private static bool Number(string s, ref int i, out int value)
+        {
+            value = 0;
+            while (i < s.Length && s[i] == ' ') i++;
+            var start = i;
+            while (i < s.Length && s[i] >= '0' && s[i] <= '9')
+            {
+                if (value > 99999999) return false;
+                value = value * 10 + (s[i] - '0');
+                i++;
+            }
+            while (i < s.Length && s[i] == ' ') i++;
+            return i > start && s[start] >= '0' && s[start] <= '9';
+        }
+
+        private static bool Skip(string s, ref int i, char c)
+        {
+            if (i >= s.Length || s[i] != c) return false;
+            i++;
+            return true;
+        }
+
+        private static bool End(string s, int i) => i == s.Length;
     }
 }

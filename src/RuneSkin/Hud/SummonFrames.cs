@@ -3,6 +3,7 @@ using RuneSkin.Theme;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using RuneSkin.Ownership;
 
 namespace RuneSkin.PlayerHud
 {
@@ -350,6 +351,9 @@ namespace RuneSkin.PlayerHud
     [HarmonyLib.HarmonyPatch]
     public static class SummonFramesAdapter
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => OwnershipRegistry.IsOwned(OwnershipRegistry.SummonFrames);
+
         [HarmonyLib.HarmonyPatch(typeof(Hud), nameof(Hud.Awake))]
         [HarmonyLib.HarmonyPostfix]
         private static void Awake_Postfix(Hud __instance) => SummonFrames.Attach(__instance);

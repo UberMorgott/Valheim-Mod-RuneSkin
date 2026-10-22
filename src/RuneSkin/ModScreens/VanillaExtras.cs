@@ -75,6 +75,9 @@ namespace RuneSkin.ModScreens
     [HarmonyPatch]
     public static class VanillaExtrasAdapter
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => AnyOwned();
+
         public static bool AnyOwned() => OwnershipRegistry.IsOwned(OwnershipRegistry.InventoryExtras) || OwnershipRegistry.IsOwned(OwnershipRegistry.Radial);
 
         private static void Try(string what, Action a)
@@ -85,7 +88,7 @@ namespace RuneSkin.ModScreens
 
         [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Awake))]
         [HarmonyPostfix]
-        [HarmonyPriority(Priority.Last)]
+        [HarmonyPriority(PatchOrder.InventoryExtras)]
         private static void Inventory_Postfix(InventoryGui __instance) => Try("inventory extras", () => VanillaExtras.Inventory(__instance));
 
         [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnOpenAchievements))]
@@ -98,7 +101,7 @@ namespace RuneSkin.ModScreens
 
         [HarmonyPatch(typeof(Hud), nameof(Hud.Awake))]
         [HarmonyPostfix]
-        [HarmonyPriority(Priority.Last)]
+        [HarmonyPriority(PatchOrder.HudExtras)]
         private static void Hud_Postfix(Hud __instance) => Try("radial menu", () => VanillaExtras.Radial(__instance));
 
         [HarmonyPatch(typeof(Valheim.UI.RadialBase), nameof(Valheim.UI.RadialBase.Open))]

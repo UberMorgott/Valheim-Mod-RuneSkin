@@ -147,13 +147,13 @@ namespace RuneSkin.InventoryScreen
                 if (e.Action == null || !e.Button) continue;
                 var a = e.Action;
                 var inv = _inventory;
-                var enabled = a.D.EnabledFor != null ? InventoryRegistry.Guard(a, () => a.D.EnabledFor(inv), false)
-                    : a.D.Enabled == null || InventoryRegistry.Guard(a, () => a.D.Enabled(), false);
+                var enabled = a.D.EnabledFor != null ? InventoryRegistry.Guard(a, a.D.EnabledFor, inv, false)
+                    : a.D.Enabled == null || InventoryRegistry.Guard(a, a.D.Enabled, false);
                 if (e.Button.interactable != enabled)
                 {
                     e.Button.interactable = enabled;
                     var tip = e.Rect.GetComponent<UITooltip>();
-                    var reason = enabled || a.D.DisabledReasonFor == null ? "" : InventoryRegistry.Guard(a, () => a.D.DisabledReasonFor(inv), "") ?? "";
+                    var reason = enabled || a.D.DisabledReasonFor == null ? "" : InventoryRegistry.Guard(a, a.D.DisabledReasonFor, inv, "") ?? "";
                     if (tip) tip.m_text = reason;
                 }
                 if (!keysAllowed || consumed || !enabled || string.IsNullOrEmpty(a.D.InputButton)) continue;

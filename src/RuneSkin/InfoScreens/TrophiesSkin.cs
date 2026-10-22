@@ -61,7 +61,7 @@ namespace RuneSkin.InfoScreens
             var element = gui.m_playerGrid ? gui.m_playerGrid.m_elementPrefab : null;
             var tip = element ? element.GetComponent<InventoryElement>() : null;
             _tooltipPrefab = tip && tip.m_tooltip ? tip.m_tooltip.m_tooltipPrefab : null;
-            foreach (Transform c in _frame)
+            foreach (var c in Children.Of(_frame))
                 if (c.name.StartsWith("border", System.StringComparison.Ordinal) && c.TryGetComponent<Image>(out var b)) b.enabled = false;
             PanelDecor.Ensure(_frame, "size.panel.glass.inset", glass: true, plaque: false);
             _strip = (RectTransform)new GameObject("RuneSkinBossStrip", typeof(RectTransform)).transform;
@@ -272,7 +272,7 @@ namespace RuneSkin.InfoScreens
             var inner = new Box(box.X + pad, box.Y + pad, box.W - 2f * pad, box.H - 2f * pad);
             var headerH = ThemeTokens.GetFloat("size.info.header", 64f) * k;
             var gap = ThemeTokens.GetFloat("size.info.trophy.gap", 8f) * k;
-            foreach (Transform c in _frame)
+            foreach (var c in Children.Of(_frame))
             {
                 if (!(c is RectTransform rt) || !c.gameObject.activeSelf) continue;
                 if (c.name == "topic" && c.TryGetComponent<TMP_Text>(out var title))
@@ -349,7 +349,7 @@ namespace RuneSkin.InfoScreens
                 if (element)
                 {
                     InfoArt.Rect(element, x, yy, cell, cell, cell);
-                    foreach (Transform ch in element)
+                    foreach (var ch in Children.Of(element))
                         if (ch is RectTransform cr && ch.name == "icon_bkg")
                         {
                             InfoArt.Rect(cr, 0f, 0f, cell, cell, cell);

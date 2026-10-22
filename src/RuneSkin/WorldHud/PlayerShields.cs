@@ -4,6 +4,7 @@ using RuneSkin.PlayerHud;
 using RuneSkin.Theme;
 using UnityEngine;
 using UnityEngine.UI;
+using RuneSkin.Ownership;
 
 namespace RuneSkin.WorldHud
 {
@@ -19,6 +20,9 @@ namespace RuneSkin.WorldHud
     [HarmonyPatch]
     public static class PlayerShields
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => OwnershipRegistry.IsOwned(OwnershipRegistry.PlayerShields);
+
         public const string EsName = "RuneSkin_EnergyShield";
         public const string ShieldName = "RuneSkin_Shield";
         private static readonly int EsKey = "mt_es".GetStableHashCode(), EsMaxKey = "mt_es_max".GetStableHashCode();

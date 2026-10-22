@@ -81,7 +81,7 @@ namespace RuneSkin.PlayerHud
         // (sprites, colours, sprite-derived geometry); the vanilla suppression stays.
         private void RebuildViews()
         {
-            foreach (Transform c in _root) Destroy(c.gameObject);
+            foreach (var c in Children.Of(_root)) Destroy(c.gameObject);
             _art = new HudArt();
             BuildViews();
             foreach (var r in _suppressedRoots) _art.Suppressed(r, "vanilla HUD part (RuneSkin draws its own; vanilla code keeps running)");
@@ -206,7 +206,8 @@ namespace RuneSkin.PlayerHud
             ArrangeAndPlace(player);
             _strip.Tick(dt);
             _buffs.Tick(dt);
-            if (Time.frameCount % 300 == 0) Record();
+            // No periodic Record: a full report (paths, descriptions, GetComponentsInChildren) every 300 frames was a GC
+            // spike every ~5 s (perf audit P0). Diagnostics record on demand (Plugin.DiagDump / runeskin_diag).
         }
 
         private bool _childrenOn = true;
@@ -215,7 +216,7 @@ namespace RuneSkin.PlayerHud
         {
             if (_childrenOn == on) return;
             _childrenOn = on;
-            foreach (Transform c in _root) c.gameObject.SetActive(on);
+            foreach (var c in Children.Of(_root)) c.gameObject.SetActive(on);
         }
 
         private void HotbarVisibility()

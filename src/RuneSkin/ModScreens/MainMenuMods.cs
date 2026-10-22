@@ -16,6 +16,9 @@ namespace RuneSkin.ModScreens
     [HarmonyPatch]
     public static class MainMenuMods
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => Owned();
+
         [HarmonyPatch(typeof(FejdStartup), nameof(FejdStartup.Awake))]
         [HarmonyPostfix]
         private static void Awake_Postfix(FejdStartup __instance)
@@ -35,7 +38,7 @@ namespace RuneSkin.ModScreens
 
         [HarmonyPatch(typeof(FejdStartup), nameof(FejdStartup.Start))]
         [HarmonyPostfix]
-        [HarmonyPriority(Priority.Last)]
+        [HarmonyPriority(PatchOrder.MainMenuMods)]
         private static void Start_Postfix(FejdStartup __instance)
         {
             if (__instance && __instance.m_versionLabel) __instance.StartCoroutine(ClearVersionLabel(__instance, __instance.m_versionLabel));

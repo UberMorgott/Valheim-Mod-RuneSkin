@@ -8,6 +8,7 @@ using RuneSkin.Theme;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using RuneSkin.Ownership;
 
 namespace RuneSkin.MapScreen
 {
@@ -157,7 +158,14 @@ namespace RuneSkin.MapScreen
                 SyncMapMaterial();
                 Layout(false);
                 UpdateDials();
-                CullPins();
+                // Pins move only when vanilla re-places them (Minimap.UpdatePins, on m_pinUpdateRequired; a frame
+                // throttle such as Skidbladnir's skips whole Updates) or the ring is re-laid out: culled then, not per frame.
+                if (_pinsDirty || PinsVersion != _pinsCulled)
+                {
+                    _pinsDirty = false;
+                    _pinsCulled = PinsVersion;
+                    CullPins();
+                }
                 FitPlaque();
             }
             var largeOn = _large && _large.gameObject.activeInHierarchy;
@@ -213,6 +221,7 @@ namespace RuneSkin.MapScreen
             _box = box;
             _pxPerRef = pxPerRef;
             _screenCorner = corner;
+            _pinsDirty = true;
 
             _small.anchorMin = _small.anchorMax = _small.pivot = Vector2.one;
             _small.sizeDelta = new Vector2(box, box);
@@ -313,6 +322,11 @@ namespace RuneSkin.MapScreen
 
         // Pins inside the map's square but outside the hole would draw over the ring (their material may ignore the
         // stencil): a CanvasGroup per pin hides them (vanilla never writes it; it re-creates pin objects on a mode switch).
+        // Bumped by the Minimap.UpdatePins postfix (MinimapAdapter).
+        internal static int PinsVersion;
+        private int _pinsCulled = -1;
+        private bool _pinsDirty = true;
+
         private void CullPins()
         {
             if (_map.m_mode != Minimap.MapMode.Small || !_mapImage) return;
@@ -371,6 +385,9 @@ namespace RuneSkin.MapScreen
     [HarmonyPatch]
     public static class MinimapAdapter
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => OwnershipRegistry.IsOwned(OwnershipRegistry.Minimap);
+
         [HarmonyPatch(typeof(Minimap), nameof(Minimap.Start))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]
@@ -379,6 +396,11 @@ namespace RuneSkin.MapScreen
             try { MinimapSkin.Attach(__instance); }
             catch (Exception e) { Plugin.Log.LogError($"[RuneSkin] minimap restyle failed (vanilla map stays): {e}"); }
         }
+
+        // Pin markers re-placed (Minimap.cs:1601-1655): the small-map cull runs on the next LateUpdate.
+        [HarmonyPatch(typeof(Minimap), nameof(Minimap.UpdatePins))]
+        [HarmonyPostfix]
+        private static void UpdatePins_Postfix() => MinimapSkin.PinsVersion++;
 
         [HarmonyPatch(typeof(Minimap), nameof(Minimap.SetMapMode))]
         [HarmonyPostfix]

@@ -108,7 +108,7 @@ namespace RuneSkin.PreWorld
             if (panel.TryGetComponent<WidenMark>(out _)) return;
             panel.gameObject.AddComponent<WidenMark>().Shift = s;
             var children = new System.Collections.Generic.List<RectTransform>();
-            foreach (Transform t in panel)
+            foreach (var t in Children.Of(panel))
                 if (t is RectTransform r && r != column && !t.name.StartsWith("RuneSkin", StringComparison.Ordinal)) children.Add(r);
             panel.sizeDelta += new Vector2(s, 0f);
             foreach (var r in children)
@@ -166,6 +166,9 @@ namespace RuneSkin.PreWorld
     [HarmonyPatch]
     public static class SettingsAdapter
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => OwnershipRegistry.IsOwned(OwnershipRegistry.Settings);
+
         [HarmonyPatch(typeof(Settings), nameof(Settings.Awake))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]
@@ -236,6 +239,9 @@ namespace RuneSkin.PreWorld
     [HarmonyPatch]
     public static class ConnectionAdapter
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => OwnershipRegistry.IsOwned(OwnershipRegistry.Connection);
+
         [HarmonyPatch(typeof(ZNet), nameof(ZNet.Awake))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]

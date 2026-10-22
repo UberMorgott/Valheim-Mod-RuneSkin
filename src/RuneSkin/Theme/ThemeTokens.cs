@@ -47,8 +47,9 @@ namespace RuneSkin.Theme
     }
 
     // ThemeTokens: the single source of colours, sprites, fonts and sizes. Code holds no colours or pixel values.
-    // Load order: embedded default -> TextAsset "runeskin-theme" in the bundle (art-side values) -> dev override file.
-    // Each layer is validated as a whole; an invalid layer is reported and the last good theme stays active.
+    // Load order: embedded default -> TextAsset "runeskin-theme" in the bundle (art-side values) -> dev override file,
+    // each layer merged over the ones below (ThemeMerge: only changed entries needed). The merged result is validated
+    // as a whole; an invalid layer is reported and skipped, the last good theme stays active.
     public static class ThemeTokens
     {
         public const string BundleThemeAsset = "runeskin-theme";
@@ -75,22 +76,30 @@ namespace RuneSkin.Theme
             if (token == null) return null;
             if (Fonts.TryGetValue(token, out var f) && f) return f;
             if (!LoadedFonts.TryGetValue(token, out var name)) return null;
-            // Not loaded yet (or absent): searched at most every 2 s (FindObjectsOfTypeAll is not free).
+            // Not loaded yet (or absent): searched with a growing interval (2 s doubling up to 60 s; FindObjectsOfTypeAll
+            // is not free and an absent face would otherwise cost a full scan every 2 s for the whole session).
             if (Time.realtimeSinceStartup < _nextLoadedLookup) return null;
-            _nextLoadedLookup = Time.realtimeSinceStartup + 2f;
+            _nextLoadedLookup = Time.realtimeSinceStartup + _loadedLookupStep;
+            _loadedLookupStep = Mathf.Min(_loadedLookupStep * 2f, 60f);
             // Shared font another plugin / the game loads (source "loaded"): looked up by name once it exists.
-            f = Resources.FindObjectsOfTypeAll<TMP_FontAsset>().FirstOrDefault(a => a && a.name == name);
+            f = null;
+            foreach (var a in Resources.FindObjectsOfTypeAll<TMP_FontAsset>())
+                if (a && a.name == name) { f = a; break; }
             if (!f) return null;
             Fonts[token] = f;
+            LoadedAssets.Add(f);
+            _loadedLookupStep = 2f;
             Plugin.Log?.LogInfo($"[RuneSkin] font '{token}' bound to loaded TMP asset '{name}'");
             return f;
         }
 
         // token -> TMP asset name for fonts with source "loaded" (never ours: no fallback links, no shader swap).
         private static readonly Dictionary<string, string> LoadedFonts = new Dictionary<string, string>();
-        private static float _nextLoadedLookup;
+        private static float _nextLoadedLookup, _loadedLookupStep = 2f;
+        private static readonly HashSet<TMP_FontAsset> LoadedAssets = new HashSet<TMP_FontAsset>();
 
-        public static bool IsLoadedFont(TMP_FontAsset f) => f && LoadedFonts.ContainsValue(f.name);
+        // Bound loaded faces by reference (no name string per call); by name until bound.
+        public static bool IsLoadedFont(TMP_FontAsset f) => f && (LoadedAssets.Contains(f) || LoadedFonts.ContainsValue(f.name));
 
         // Legacy uGUI Text and IMGUI styles draw with a UnityEngine.Font, not a TMP asset. A dynamic TMP face keeps its
         // source font at runtime (the rune face = vanilla Valheim-Norsebold); the static bundle faces do not (BuildBundles
@@ -156,15 +165,17 @@ namespace RuneSkin.Theme
             var embedded = ReadEmbedded();
             if (TryParse(embedded, "embedded default", out var file)) { active = file; source = "embedded"; }
 
+            // Layers on top (ThemeMerge): each lists only what it changes; a layer whose merged result is invalid is
+            // reported and skipped (the layers under it stay).
             var bundleText = _bundle ? _bundle.LoadAsset<TextAsset>(BundleThemeAsset) : null;
-            if (bundleText && TryParse(bundleText.text, $"bundle {BundleThemeAsset}", out file)) { active = file; source = "bundle"; }
+            if (bundleText && TryLayer(active, bundleText.text, $"bundle {BundleThemeAsset}", out file)) { active = file; source = source == null ? "bundle" : source + " + bundle"; }
 
             if (File.Exists(OverridePath))
             {
                 string text = null;
                 try { text = File.ReadAllText(OverridePath); }
                 catch (Exception e) { Diagnostics.SkinDiagnostics.Theme($"override {OverridePath} unreadable: {e.Message}"); }
-                if (text != null && TryParse(text, OverridePath, out file)) { active = file; source = OverridePath; }
+                if (text != null && TryLayer(active, text, OverridePath, out file)) { active = file; source = source == null ? OverridePath : source + " + " + OverridePath; }
             }
 
             if (active == null)
@@ -276,6 +287,10 @@ namespace RuneSkin.Theme
             foreach (var atlas in _bundle.LoadAllAssets<SpriteAtlas>())
             {
                 Atlases.Add(atlas);
+                // GetSprites returns a clone of every packed sprite (new Sprite objects named "<x>(Clone)"): only
+                // needed when the atlas holds sprites the bundle does not ship as standalone assets (the current art
+                // bundle ships all 233 standalone: the clones were 233 wasted objects at startup, perf audit B3).
+                if (atlas.spriteCount <= BundleSprites.Count) continue;
                 var packed = new Sprite[atlas.spriteCount];
                 atlas.GetSprites(packed);
                 foreach (var s in packed)
@@ -290,9 +305,20 @@ namespace RuneSkin.Theme
                 if (f && !BundleFonts.ContainsKey(f.name)) BundleFonts.Add(f.name, f);
             foreach (var f in _bundle.LoadAllAssets<Font>())
                 if (f && !BundleLegacyFonts.ContainsKey(f.name)) BundleLegacyFonts.Add(f.name, f);
-            foreach (var t in _bundle.LoadAllAssets<Texture2D>())
-                if (t && t.isReadable && !BundleTextures.ContainsKey(t.name)) BundleTextures.Add(t.name, t);
-            Plugin.Log.LogInfo($"[RuneSkin] bundle: {BundleSprites.Count} sprites, {BundleFonts.Count} TMP fonts, {BundleLegacyFonts.Count} legacy fonts, {BundleTextures.Count} textures");
+            // Standalone readable textures (theme "textures", e.g. the cursor) load by name when the theme asks
+            // (BundleTexture): LoadAllAssets<Texture2D> walked every sprite / font atlas page too.
+            Plugin.Log.LogInfo($"[RuneSkin] bundle: {BundleSprites.Count} sprites, {BundleFonts.Count} TMP fonts, {BundleLegacyFonts.Count} legacy fonts");
+        }
+
+        private static Texture2D BundleTexture(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return null;
+            if (BundleTextures.TryGetValue(name, out var t) && t) return t;
+            if (!_bundle) return null;
+            t = _bundle.LoadAsset<Texture2D>(name);
+            if (!t || !t.isReadable) return null;
+            BundleTextures[name] = t;
+            return t;
         }
 
         private static string ReadEmbedded()
@@ -303,6 +329,33 @@ namespace RuneSkin.Theme
                 using (var reader = new StreamReader(stream))
                     return reader.ReadToEnd();
             }
+        }
+
+        private static bool TryLayer(ThemeFile under, string json, string origin, out ThemeFile merged)
+        {
+            merged = null;
+            if (string.IsNullOrEmpty(json))
+            {
+                Diagnostics.SkinDiagnostics.Theme($"{origin}: empty");
+                return false;
+            }
+            ThemeFile layer;
+            try
+            {
+                layer = ThemeJson.Parse(json);
+            }
+            catch (Exception e)
+            {
+                Diagnostics.SkinDiagnostics.Theme($"{origin}: JSON error {e.Message}");
+                return false;
+            }
+            var candidate = ThemeMerge.Merge(under, layer);
+            var errors = ThemeSchema.Validate(candidate);
+            foreach (var e in errors)
+                Diagnostics.SkinDiagnostics.Theme($"{origin} (merged): {e}");
+            if (errors.Count > 0) return false;
+            merged = candidate;
+            return true;
         }
 
         private static bool TryParse(string json, string origin, out ThemeFile file)
@@ -358,11 +411,14 @@ namespace RuneSkin.Theme
             foreach (var p in FallbackTokens)
                 Diagnostics.SkinDiagnostics.Theme($"sprite '{p.Key}': {p.Value}");
             LoadedFonts.Clear();
+            LoadedAssets.Clear();
+            _nextLoadedLookup = 0f;
+            _loadedLookupStep = 2f;
             LegacyFonts.Clear();
             Textures.Clear();
             foreach (var t in f.textures ?? new AssetEntry[0])
             {
-                BundleTextures.TryGetValue(t.asset, out var tex);
+                var tex = BundleTexture(t.asset);
                 if (!tex && BundleLoaded) Diagnostics.SkinDiagnostics.Theme($"texture '{t.token}': readable texture '{t.asset}' not in bundle");
                 Textures[t.token] = tex;
             }

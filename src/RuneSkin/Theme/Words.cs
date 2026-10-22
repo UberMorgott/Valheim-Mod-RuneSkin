@@ -68,11 +68,26 @@ namespace RuneSkin.Theme
             if (loc != null) Apply(loc, loc.GetSelectedLanguage());
         }
 
+        // Localization.Localize builds its result in a new StringBuilder per call (Localization.cs): per-frame callers
+        // (map legend labels) read a cache instead, cleared whenever a language is set up. Bounded (texts of mods'
+        // buttons are keys too).
+        private static readonly Dictionary<string, string> Localized = new Dictionary<string, string>();
+        public const int MaxLocalized = 1024;
+
         public static string Get(string key)
         {
             if (string.IsNullOrEmpty(key)) return "";
-            return Localization.instance != null ? Localization.instance.Localize(key) : key;
+            if (Localization.instance == null) return key;
+            if (Localized.TryGetValue(key, out var text)) return text;
+            text = Localization.instance.Localize(key);
+            // "[key]" = not translated yet (a mod may add its words later): asked again next time.
+            if (text.StartsWith("[", StringComparison.Ordinal)) return text;
+            if (Localized.Count >= MaxLocalized) Localized.Clear();
+            Localized[key] = text;
+            return text;
         }
+
+        internal static void ClearCache() => Localized.Clear();
     }
 
     [HarmonyPatch]
@@ -80,6 +95,10 @@ namespace RuneSkin.Theme
     {
         [HarmonyPatch(typeof(Localization), nameof(Localization.SetupLanguage))]
         [HarmonyPostfix]
-        private static void SetupLanguage_Postfix(Localization __instance, string language) => Words.Apply(__instance, language);
+        private static void SetupLanguage_Postfix(Localization __instance, string language)
+        {
+            Words.ClearCache();
+            Words.Apply(__instance, language);
+        }
     }
 }

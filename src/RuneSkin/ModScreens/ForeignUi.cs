@@ -4,6 +4,7 @@ using System.Reflection;
 using HarmonyLib;
 using RuneSkin.Api;
 using RuneSkin.Classify;
+using RuneSkin.Diagnostics;
 using RuneSkin.GameScreens;
 using RuneSkin.Ownership;
 using RuneSkin.PreWorld;
@@ -39,7 +40,15 @@ namespace RuneSkin.ModScreens
         private static readonly Dictionary<Graphic, int> Retry = new Dictionary<Graphic, int>();
         private static readonly List<Graphic> RetryWork = new List<Graphic>();
         private static readonly List<Graphic> Work = new List<Graphic>(256);
-        private static readonly HashSet<int> Decided = new HashSet<int>();
+        // Graphics already looked at / transforms already judged. Every damage number, tooltip and mod popup passes
+        // through here: destroyed keys leave whenever a table doubled since its last prune (perf audit B1; the old
+        // instance-id set only cleared itself at 200000 entries).
+        private static readonly HashSet<Graphic> Decided = new HashSet<Graphic>();
+        private static int _decidedPrune = 1024, _cachePrune = 1024, _unitsPrune = Bounded.MinPrune, _anchorsPrune = Bounded.MinPrune;
+        private static readonly Predicate<Transform> TransformDead = t => !t;
+        private static readonly List<Transform> DeadTransforms = new List<Transform>();
+        private static readonly Func<Transform, bool> TransformAlive = t => t;
+        private static readonly Predicate<Graphic> GraphicDead = g => !g;
         private static readonly Dictionary<Transform, Entry> Cache = new Dictionary<Transform, Entry>();
         private static readonly HashSet<Transform> Boundary = new HashSet<Transform>();
         private static readonly HashSet<Transform> Anchors = new HashSet<Transform>();
@@ -71,7 +80,6 @@ namespace RuneSkin.ModScreens
             if (!_on) return;
             _optOut = ForeignMath.ParseList(optOut);
             _instance = host.AddComponent<ForeignUi>();
-            harmony.PatchAll(typeof(ForeignUiPatches));
             var tmpEnable = AccessTools.DeclaredMethod(typeof(TextMeshProUGUI), "OnEnable");
             if (tmpEnable != null) harmony.Patch(tmpEnable, postfix: new HarmonyMethod(typeof(ForeignUiPatches), nameof(ForeignUiPatches.Enable_Postfix)));
             Plugin.Log.LogInfo($"[RuneSkin] fallback restyler on (generic={_generic}, opt-out [{string.Join(",", _optOut)}])");
@@ -122,18 +130,31 @@ namespace RuneSkin.ModScreens
             Work.Clear();
             foreach (var g in Pending) Work.Add(g);
             Pending.Clear();
-            if (Decided.Count > 200000) Decided.Clear();
+            if (Decided.Count >= _decidedPrune)
+            {
+                Decided.RemoveWhere(GraphicDead);
+                _decidedPrune = Math.Max(1024, Decided.Count * 2);
+            }
+            Bounded.PruneWhenDoubled(Cache, TransformAlive, ref _cachePrune, DeadTransforms);
+            // Units and Jotunn anchors of a previous world (logout / re-enter) and of rebuilt mod windows: destroyed ones
+            // leave when the table doubled (run 20261022-194855: Units 36 -> 69, Anchors 64 -> 76 over 4 relogs).
+            Bounded.PruneWhenDoubled(Units, TransformAlive, ref _unitsPrune, DeadTransforms);
+            if (Anchors.Count >= _anchorsPrune)
+            {
+                Anchors.RemoveWhere(TransformDead);
+                _anchorsPrune = Math.Max(Bounded.MinPrune, Anchors.Count * 2);
+            }
             for (var i = 0; i < Work.Count; i++)
             {
                 var g = Work[i];
-                if (!g || !Decided.Add(g.GetInstanceID())) continue;
+                if (!g || !Decided.Add(g)) continue;
                 // Screen UI only: in-world canvases (signs, name plates, mod bars over creatures) stay theirs.
                 var canvas = g.canvas;
                 if (!canvas)
                 {
                     // Built off-canvas and parented after its OnEnable (new GameObject + AddComponent, then SetParent):
                     // looked at again for a second.
-                    Decided.Remove(g.GetInstanceID());
+                    Decided.Remove(g);
                     if (!Retry.ContainsKey(g)) Retry[g] = Time.frameCount + 60;
                     continue;
                 }
@@ -241,8 +262,8 @@ namespace RuneSkin.ModScreens
                 Boundary = Boundary.Contains(p),
                 FamilyRoot = ScreenRegistry.IsRoot(p) && !Units.ContainsKey(p),
                 Anchor = Anchors.Contains(p),
-                Own = p.name.StartsWith("RuneSkin", StringComparison.Ordinal),
-                OptedOut = _optOut.Contains(p.name),
+                Own = NameCache.Of(p).StartsWith("RuneSkin", StringComparison.Ordinal),
+                OptedOut = _optOut.Contains(NameCache.Of(p)),
                 WorldCanvas = p.TryGetComponent<Canvas>(out var canvas) && canvas.renderMode == RenderMode.WorldSpace
             };
             Behaviours.Clear();
@@ -327,6 +348,9 @@ namespace RuneSkin.ModScreens
     [HarmonyPatch]
     internal static class ForeignUiPatches
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => ForeignUi.Active;
+
         [HarmonyPatch(typeof(Graphic), "OnEnable")]
         [HarmonyPostfix]
         internal static void Enable_Postfix(Graphic __instance) => ForeignUi.Notice(__instance);

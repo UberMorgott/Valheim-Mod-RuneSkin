@@ -1,4 +1,6 @@
 using HarmonyLib;
+using RuneSkin.Ownership;
+using RuneSkin.Compat;
 
 namespace RuneSkin.CraftingScreen
 {
@@ -9,13 +11,16 @@ namespace RuneSkin.CraftingScreen
     [HarmonyPatch]
     public static class CraftingAdapter
     {
-        private const string AugaSkin = "morgott.valheim.augaskin";
-        private const string ValheimPlus = "org.bepinex.plugins.valheim_plus";
-        private const string Vnei = "com.maxsch.valheim.vnei";
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => OwnershipRegistry.IsOwned(OwnershipRegistry.Inventory) && OwnershipRegistry.IsOwned(OwnershipRegistry.Crafting);
+
+        private const string AugaSkin = ModCompat.AugaSkinGuid;
+        private const string ValheimPlus = ModCompat.ValheimPlusGuid;
+        private const string Vnei = ModCompat.VneiGuid;
 
         [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Awake))]
         [HarmonyPostfix]
-        [HarmonyPriority(Priority.Last)]
+        [HarmonyPriority(PatchOrder.Crafting)]
         [HarmonyAfter(AugaSkin, Vnei)]
         private static void Awake_Postfix(InventoryGui __instance)
         {
@@ -25,7 +30,7 @@ namespace RuneSkin.CraftingScreen
 
         [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Update))]
         [HarmonyPostfix]
-        [HarmonyPriority(Priority.Last)]
+        [HarmonyPriority(PatchOrder.Crafting)]
         [HarmonyAfter(AugaSkin, ValheimPlus, Vnei)]
         private static void Update_Postfix()
         {

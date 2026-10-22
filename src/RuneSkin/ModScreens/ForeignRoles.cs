@@ -9,6 +9,7 @@ using RuneSkin.Theme;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using RuneSkin.Compat;
 
 namespace RuneSkin.ModScreens
 {
@@ -28,14 +29,14 @@ namespace RuneSkin.ModScreens
         // Loot's trader panels live under the StoreGui).
         private static readonly Dictionary<string, string> Hints = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["EpicLoot_UnityLib.EnchantingTableUI"] = OwnershipRegistry.EpicLootEnchanting,
-            ["EpicLoot.Adventure.MerchantPanel"] = OwnershipRegistry.EpicLootBoard,
-            ["EpicLoot.TemperPanel"] = OwnershipRegistry.EpicLootTemper,
-            ["EpicLoot.Abilities.AbilityBar"] = OwnershipRegistry.ModHud,
-            ["EpicLoot.DebugText"] = OwnershipRegistry.ModHud,
-            ["EpicLoot.ShardStones.SocketsUI"] = OwnershipRegistry.ModUi,
+            [ModCompat.EpicLootEnchantingUi] = OwnershipRegistry.EpicLootEnchanting,
+            [ModCompat.EpicLootMerchantPanel] = OwnershipRegistry.EpicLootBoard,
+            [ModCompat.EpicLootTemperPanel] = OwnershipRegistry.EpicLootTemper,
+            [ModCompat.EpicLootAbilityBar] = OwnershipRegistry.ModHud,
+            [ModCompat.EpicLootDebugText] = OwnershipRegistry.ModHud,
+            [ModCompat.EpicLootSocketsUi] = OwnershipRegistry.ModUi,
             // VNEI attaches its window to the crafting panel (a Crafting family root).
-            ["VNEI.UI.BaseUI"] = OwnershipRegistry.ModUi,
+            [ModCompat.VneiBaseUi] = OwnershipRegistry.ModUi,
         };
 
         private static readonly string[] PreciseFamilies = { OwnershipRegistry.EpicLootEnchanting, OwnershipRegistry.EpicLootBoard, OwnershipRegistry.EpicLootTemper, OwnershipRegistry.ModHud };

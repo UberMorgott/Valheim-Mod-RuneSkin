@@ -5,6 +5,7 @@ using RuneSkin.PlayerHud;
 using RuneSkin.Theme;
 using TMPro;
 using UnityEngine;
+using RuneSkin.Ownership;
 
 namespace RuneSkin.WorldHud
 {
@@ -23,6 +24,8 @@ namespace RuneSkin.WorldHud
         internal static void Attach(DamageText dt)
         {
             if (!dt || !dt.m_worldTextBase) return;
+            // A new DamageText per world load: the previous template's rows only pile up in the static table.
+            Art.Reset();
             _template = dt.m_worldTextBase.transform;
             var text = dt.m_worldTextBase.GetComponentInChildren<TMP_Text>(true);
             var ok = TextLook.Apply(text, "font.body", "damage", ThemeTokens.GetFloat("size.damage.dilate", 0.15f));
@@ -72,6 +75,9 @@ namespace RuneSkin.WorldHud
     [HarmonyPatch]
     public static class DamageTextAdapter
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => OwnershipRegistry.IsOwned(OwnershipRegistry.DamageText);
+
         [HarmonyPatch(typeof(DamageText), nameof(DamageText.Awake))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]

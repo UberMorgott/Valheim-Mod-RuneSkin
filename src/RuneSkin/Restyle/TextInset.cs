@@ -277,9 +277,11 @@ namespace RuneSkin.Restyle
         }
 
         // Plate decor (knots, caps) frames a label; it is not an icon beside it.
+        // Name read through NameCache (a string per read otherwise; this runs on every periodic re-measure).
         internal static bool Ornament(Image img) =>
-            img.name.EndsWith("Knot", System.StringComparison.Ordinal) || img.TryGetComponent<SkinMark>(out var mark) && mark.Role != null &&
-            (mark.Role.StartsWith("ornament", System.StringComparison.Ordinal) || mark.Role.StartsWith("decor", System.StringComparison.Ordinal));
+            img.TryGetComponent<SkinMark>(out var mark) && mark.Role != null &&
+            (mark.Role.StartsWith("ornament", System.StringComparison.Ordinal) || mark.Role.StartsWith("decor", System.StringComparison.Ordinal)) ||
+            NameCache.Of(img.gameObject).EndsWith("Knot", System.StringComparison.Ordinal);
 
         private bool _reverted;
 

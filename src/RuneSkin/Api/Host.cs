@@ -112,6 +112,7 @@ namespace RuneSkin.Api
         public IDisposable Bind(string owner, Graphic graphic, string role)
         {
             if (!graphic) return new Handle(null);
+            Classifier.PruneBindings();
             Classifier.Bindings[graphic] = Classification.Of(role, $"bound by {owner}");
             Restyle(graphic);
             return new Handle(() =>

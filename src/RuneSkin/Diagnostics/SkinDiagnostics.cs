@@ -58,9 +58,13 @@ namespace RuneSkin.Diagnostics
         public static string DumpDir => Path.Combine(BepInEx.Paths.BepInExRootPath, "RuneSkin", "diag");
         public static IReadOnlyList<string> ThemeProblems => ThemeIssues;
 
+        // Caps (perf audit B1): every theme reload re-reports its issues and every unknown path warns once; neither may
+        // grow without bound over a long session.
+        public const int MaxThemeIssues = 256, MaxWarnedUnknown = 2048;
+
         public static void Theme(string message)
         {
-            ThemeIssues.Add(message);
+            Bounded.AddCapped(ThemeIssues, message, MaxThemeIssues);
             Plugin.Log?.LogWarning($"[RuneSkin] theme: {message}");
         }
 
@@ -77,7 +81,7 @@ namespace RuneSkin.Diagnostics
                 Plugin.Log?.LogInfo($"[RuneSkin] diag {summary}");
             }
             foreach (var row in report.Rows)
-                if (row.Result.Outcome == Outcome.Unknown && WarnedUnknown.Add(report.ScreenId + "|" + row.Path))
+                if (row.Result.Outcome == Outcome.Unknown && Bounded.AddCapped(WarnedUnknown, report.ScreenId + "|" + row.Path, MaxWarnedUnknown))
                     Plugin.Log?.LogWarning($"[RuneSkin] unknown {report.ScreenId}: {row.Path} [{row.Component} {row.Detail}] {row.Result.Reason}");
         }
 

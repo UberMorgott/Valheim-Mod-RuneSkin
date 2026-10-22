@@ -135,6 +135,15 @@ namespace RuneSkin.InventoryScreen
             catch (Exception e) { Fault(ref a.Faults, a.Key, e); return fallback; }
         }
 
+        // Per-frame callers pass the registered delegate and its argument (a capturing lambda per call allocated a
+        // closure + delegate every frame per action / slot, perf audit B2).
+        public static T Guard<TArg, T>(Action a, Func<TArg, T> call, TArg arg, T fallback)
+        {
+            if (a.Dead) return fallback;
+            try { return call(arg); }
+            catch (Exception e) { Fault(ref a.Faults, a.Key, e); return fallback; }
+        }
+
         private static void Fault(ref int faults, string key, Exception e)
         {
             faults++;

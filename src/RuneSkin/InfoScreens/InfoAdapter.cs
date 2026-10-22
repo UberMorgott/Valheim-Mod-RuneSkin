@@ -1,4 +1,6 @@
 using HarmonyLib;
+using RuneSkin.Ownership;
+using RuneSkin.Compat;
 
 namespace RuneSkin.InfoScreens
 {
@@ -7,10 +9,13 @@ namespace RuneSkin.InfoScreens
     [HarmonyPatch]
     public static class SkillsAdapter
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => OwnershipRegistry.IsOwned(OwnershipRegistry.Inventory) && OwnershipRegistry.IsOwned(OwnershipRegistry.Skills);
+
         [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Awake))]
         [HarmonyPostfix]
-        [HarmonyPriority(Priority.Last)]
-        [HarmonyAfter("morgott.valheim.augaskin")]
+        [HarmonyPriority(PatchOrder.Skills)]
+        [HarmonyAfter(ModCompat.AugaSkinGuid)]
         private static void Awake_Postfix(InventoryGui __instance)
         {
             try { SkillsSkin.Attach(__instance); }
@@ -19,7 +24,7 @@ namespace RuneSkin.InfoScreens
 
         [HarmonyPatch(typeof(SkillsDialog), nameof(SkillsDialog.Setup))]
         [HarmonyPostfix]
-        [HarmonyPriority(Priority.Last)]
+        [HarmonyPriority(PatchOrder.Trophies)]
         private static void Setup_Postfix(Player player)
         {
             try { SkillsSkin.Instance?.AfterSetup(player); }
@@ -30,10 +35,13 @@ namespace RuneSkin.InfoScreens
     [HarmonyPatch]
     public static class TrophiesAdapter
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => OwnershipRegistry.IsOwned(OwnershipRegistry.Inventory) && OwnershipRegistry.IsOwned(OwnershipRegistry.Trophies);
+
         [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Awake))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]
-        [HarmonyAfter("morgott.valheim.augaskin")]
+        [HarmonyAfter(ModCompat.AugaSkinGuid)]
         private static void Awake_Postfix(InventoryGui __instance)
         {
             try { TrophiesSkin.Attach(__instance); }

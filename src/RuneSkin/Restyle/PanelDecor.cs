@@ -78,7 +78,7 @@ namespace RuneSkin.Restyle
             Revision = ThemeTokens.Revision;
             var self = (RectTransform)transform;
             if (!_fitted) Stretch(self, -ThemeTokens.GetFloat(PadToken, 0f));
-            foreach (Transform child in self)
+            foreach (var child in Children.Of(self))
                 if (child is RectTransform r && r != _plaque)
                     Stretch(r, r == _glass || r == _backing ? ThemeTokens.GetFloat("size.panel.glass.inset", 0f) : 0f);
             SyncCaps();

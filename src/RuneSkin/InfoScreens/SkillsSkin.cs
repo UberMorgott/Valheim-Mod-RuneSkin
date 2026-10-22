@@ -57,7 +57,7 @@ namespace RuneSkin.InfoScreens
             var canvas = gui.GetComponentInParent<Canvas>();
             _canvas = canvas ? (RectTransform)canvas.rootCanvas.transform : null;
             // Vanilla frame art directly under the frame (bkg, list backdrop): replaced by the panel stack.
-            foreach (Transform c in _frame)
+            foreach (var c in Children.Of(_frame))
                 if (c.name != "Closebutton" && c.TryGetComponent<Image>(out var b) && !c.GetComponent<Selectable>()) b.enabled = false;
             PanelDecor.Ensure(_frame, "size.panel.glass.inset", glass: true, plaque: false);
             _dialog.m_spacing = ThemeTokens.GetFloat("size.info.skill.row", 58f);
@@ -230,7 +230,7 @@ namespace RuneSkin.InfoScreens
             var summaryH = ThemeTokens.GetFloat("size.info.summary", 48f) * k;
             var gap = 8f * k;
             var y = inner.Y;
-            foreach (Transform c in _frame)
+            foreach (var c in Children.Of(_frame))
             {
                 if (!(c is RectTransform rt) || !c.gameObject.activeSelf) continue;
                 if (c.name == "topic" && c.TryGetComponent<TMP_Text>(out var title))
@@ -338,7 +338,7 @@ namespace RuneSkin.InfoScreens
             var levelW = 64f * k;
             var x0 = socket + 18f * k;
             var barRight = w - levelW - 64f * k;
-            foreach (Transform c in row)
+            foreach (var c in Children.Of(row))
             {
                 if (!(c is RectTransform rt)) continue;
                 switch (c.name)

@@ -14,7 +14,8 @@ namespace RuneSkin.PlayerHud
     // with the missing token). Everything here is decoration or data display: raycastTarget off unless asked.
     public sealed class HudArt
     {
-        private readonly List<KeyValuePair<Graphic, Classification>> _rows = new List<KeyValuePair<Graphic, Classification>>();
+        // One row per graphic (O(1) Note / Set: enemy HUDs and damage texts note per instance).
+        private readonly Dictionary<Graphic, Classification> _rows = new Dictionary<Graphic, Classification>();
         private readonly string _screenId;
 
         public HudArt(string screenId = "Hud") => _screenId = screenId;
@@ -66,15 +67,26 @@ namespace RuneSkin.PlayerHud
         private static Material GlowMaterial(TMP_FontAsset font)
         {
             if (!font || !font.material) return null;
-            if (_glowRevision != ThemeTokens.Revision) { Glow.Clear(); _glowRevision = ThemeTokens.Revision; }
+            // Theme reload: every cached copy is restyled in place (texts still using it keep a live material; a new
+            // copy per revision leaked one per reload).
+            var restyle = _glowRevision != ThemeTokens.Revision;
+            _glowRevision = ThemeTokens.Revision;
+            if (restyle)
+                foreach (var cached in Glow.Values)
+                    if (cached) GlowStyle(cached);
             if (Glow.TryGetValue(font, out var m) && m) return m;
             m = new Material(font.material) { name = font.material.name + " (RuneSkin glow)" };
             m.EnableKeyword(ShaderUtilities.Keyword_Underlay);
+            GlowStyle(m);
+            Glow[font] = m;
+            return m;
+        }
+
+        private static void GlowStyle(Material m)
+        {
             m.SetColor(ShaderUtilities.ID_UnderlayColor, ThemeTokens.GetColor("color.hud.text.glow", new Color(0.32f, 0.88f, 0.94f, 0.45f)));
             m.SetFloat(ShaderUtilities.ID_UnderlaySoftness, ThemeTokens.GetFloat("size.hud.text.glow.softness", 0.6f));
             m.SetFloat(ShaderUtilities.ID_UnderlayDilate, ThemeTokens.GetFloat("size.hud.text.glow.dilate", 0.3f));
-            Glow[font] = m;
-            return m;
         }
 
         public TMP_Text Text(string name, Transform parent, string fontToken, string colorToken, float size, TextAlignmentOptions align, bool glow = false)
@@ -159,11 +171,7 @@ namespace RuneSkin.PlayerHud
         public void Suppressed(Transform t, string reason)
         {
             _suppressed.Add(new KeyValuePair<Transform, string>(t, reason));
-            if (_suppressed.Count > _suppressedPrune)
-            {
-                _suppressed.RemoveAll(p => !p.Key);
-                _suppressedPrune = Math.Max(64, _suppressed.Count * 2);
-            }
+            Bounded.PruneWhenDoubled(_suppressed, DeadSuppressed, ref _suppressedPrune);
         }
 
         // Drops every row (a static HudArt of a family whose objects were rebuilt, e.g. EnemyHud.Awake per world load:
@@ -178,34 +186,23 @@ namespace RuneSkin.PlayerHud
         // Rows / ppu entries of destroyed graphics, pruned whenever the tables doubled since the last prune (no per-frame cost).
         private int _rowsPrune = 64, _suppressedPrune = 64, _ppuPrune = 64;
         private static readonly List<Image> DeadImages = new List<Image>();
+        private static readonly List<Graphic> DeadGraphics = new List<Graphic>();
+        private static readonly Func<Graphic, bool> GraphicAlive = g => g;
+        private static readonly Func<Image, bool> ImageAlive = i => i;
+        private static readonly Predicate<KeyValuePair<Transform, string>> DeadSuppressed = p => !p.Key;
 
-        private void PruneRows()
-        {
-            if (_rows.Count <= _rowsPrune) return;
-            _rows.RemoveAll(p => !p.Key);
-            _rowsPrune = Math.Max(64, _rows.Count * 2);
-        }
+        // Live entries (diagnostics, autotest leak census).
+        public int RowCount => _rows.Count;
 
-        private void PrunePpu()
-        {
-            if (_ppuScale.Count <= _ppuPrune) return;
-            foreach (var p in _ppuScale)
-                if (!p.Key) DeadImages.Add(p.Key);
-            foreach (var d in DeadImages) _ppuScale.Remove(d);
-            DeadImages.Clear();
-            _ppuPrune = Math.Max(64, _ppuScale.Count * 2);
-        }
+        private void PruneRows() => Bounded.PruneWhenDoubled(_rows, GraphicAlive, ref _rowsPrune, DeadGraphics);
+
+        private void PrunePpu() => Bounded.PruneWhenDoubled(_ppuScale, ImageAlive, ref _ppuPrune, DeadImages);
 
         private void Set(Graphic g, Classification c)
         {
-            for (var i = 0; i < _rows.Count; i++)
-                if (_rows[i].Key == g)
-                {
-                    _rows[i] = new KeyValuePair<Graphic, Classification>(g, c);
-                    return;
-                }
-            _rows.Add(new KeyValuePair<Graphic, Classification>(g, c));
-            PruneRows();
+            var added = !_rows.ContainsKey(g);
+            _rows[g] = c;
+            if (added) PruneRows();
         }
 
         public ScreenReport Report(Transform root)

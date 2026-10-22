@@ -3,6 +3,7 @@ using System.Reflection;
 using HarmonyLib;
 using RuneSkin.Ownership;
 using UnityEngine;
+using RuneSkin.Compat;
 
 namespace RuneSkin.ModScreens
 {
@@ -36,11 +37,11 @@ namespace RuneSkin.ModScreens
             string name;
             try { name = assembly.GetName().Name; }
             catch { return; }
-            if (name != "Jotunn") return;
+            if (name != ModCompat.JotunnAssembly) return;
             _done = true;
             try
             {
-                var gui = assembly.GetType("Jotunn.Managers.GUIManager");
+                var gui = assembly.GetType(ModCompat.JotunnGuiManager);
                 if (gui == null) { Plugin.Log.LogWarning("[RuneSkin] Jotunn without Jotunn.Managers.GUIManager: its windows are styled only where they carry a mod component"); return; }
                 _front = gui.GetProperty("CustomGUIFront", BindingFlags.Public | BindingFlags.Static);
                 _back = gui.GetProperty("CustomGUIBack", BindingFlags.Public | BindingFlags.Static);

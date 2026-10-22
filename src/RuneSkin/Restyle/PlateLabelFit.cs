@@ -130,10 +130,8 @@ namespace RuneSkin.Restyle
             return LayoutMath.FreeSpan(br.xMin, br.xMax, tmin, tmax, Obstacles);
         }
 
-        // Plate decor (knots, caps) frames a label; it is not an icon beside it.
-        internal static bool Ornament(Image img) =>
-            img.name.EndsWith("Knot", System.StringComparison.Ordinal) || img.TryGetComponent<SkinMark>(out var mark) && mark.Role != null &&
-            (mark.Role.StartsWith("ornament", System.StringComparison.Ordinal) || mark.Role.StartsWith("decor", System.StringComparison.Ordinal));
+        // Plate decor (knots, caps) frames a label; it is not an icon beside it (one rule: TextInset.Ornament).
+        internal static bool Ornament(Image img) => TextInset.Ornament(img);
 
         public bool Reverted { get; private set; }
 

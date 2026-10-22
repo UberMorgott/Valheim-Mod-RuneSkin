@@ -58,7 +58,7 @@ namespace RuneSkin.InfoScreens
             _sources.Clear();
             var info = _gui ? _gui.m_info : null;
             if (!info) return;
-            foreach (Transform c in info)
+            foreach (var c in Children.Of(info))
                 if (c.gameObject.activeSelf && c.TryGetComponent<Button>(out var b) && !c.name.StartsWith("RuneSkin", StringComparison.Ordinal))
                     _sources.Add(b);
         }
@@ -75,7 +75,7 @@ namespace RuneSkin.InfoScreens
         private static Sprite IconOf(Button source)
         {
             Image any = null;
-            foreach (Transform c in source.transform)
+            foreach (var c in Children.Of(source.transform))
             {
                 if (!c.TryGetComponent<Image>(out var img) || !img.sprite) continue;
                 if (c.name == "Icon" || c.name == "Image") return img.sprite;

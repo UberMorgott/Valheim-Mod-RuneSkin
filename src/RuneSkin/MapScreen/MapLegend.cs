@@ -3,6 +3,7 @@ using RuneSkin.Theme;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using RuneSkin.Compat;
 
 namespace RuneSkin.MapScreen
 {
@@ -165,6 +166,22 @@ namespace RuneSkin.MapScreen
             }
         }
 
+        private static readonly List<Button> ButtonScratch = new List<Button>(16);
+        // Mod button labels per button (reflection over Epic Loot fields, name string work): computed once per button
+        // and language, not per frame (perf audit B2: the open map allocated ~2 KB per frame).
+        // Re-read every RefreshFrames (a mod may set its tooltip / filter fields after the map first opened).
+        private readonly Dictionary<Button, KeyValuePair<string, int>> _modNames = new Dictionary<Button, KeyValuePair<string, int>>();
+        private const int RefreshFrames = 120;
+
+        private string CachedModName(Button b)
+        {
+            if (_modNames.TryGetValue(b, out var cached) && Time.frameCount - cached.Value < RefreshFrames) return cached.Key;
+            if (_modNames.Count >= 128) _modNames.Clear(); // buttons are rebuilt by their mods now and then
+            var label = ModName(b);
+            _modNames[b] = new KeyValuePair<string, int>(label, Time.frameCount);
+            return label;
+        }
+
         // Mod filter button: its own tooltip text, else its object name without the usual prefixes.
         private static string ModName(Button b)
         {
@@ -197,7 +214,7 @@ namespace RuneSkin.MapScreen
                 _elFilters = new System.Collections.Generic.List<(System.Reflection.FieldInfo, string)>();
                 foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
                 {
-                    if (asm.GetName().Name != "EpicLoot") continue;
+                    if (asm.GetName().Name != ModCompat.EpicLootAssembly) continue;
                     System.Type[] types;
                     try { types = asm.GetTypes(); }
                     catch (System.Reflection.ReflectionTypeLoadException e) { types = e.Types; }
@@ -291,7 +308,9 @@ namespace RuneSkin.MapScreen
             {
                 var t = _legend.Find(panel);
                 if (!t || !t.gameObject.activeSelf) continue;
-                foreach (var b in t.GetComponentsInChildren<Button>(false)) _iconButtons.Add(b);
+                t.GetComponentsInChildren(false, ButtonScratch);
+                _iconButtons.AddRange(ButtonScratch);
+                ButtonScratch.Clear();
             }
             if (_iconButtons.Count != _loggedButtons)
             {
@@ -343,7 +362,7 @@ namespace RuneSkin.MapScreen
                 Place(r.Box.rectTransform, rowW - box, (rowH - box) * 0.5f, box, box);
                 Place(r.Name.rectTransform, cell + 10f, 0f, rowW - cell - 10f - box - 6f, rowH);
                 var key = Types().TryGetValue(r.Icon.gameObject, out var type) ? NameKey(type) : null;
-                var label = key != null ? Words.Get(key) : ModName(r.Icon);
+                var label = key != null ? Words.Get(key) : CachedModName(r.Icon);
                 if (r.Name.text != label) r.Name.text = label;
                 var visible = Visible(r.Icon, out var filter);
                 if (r.Box.gameObject.activeSelf != filter) r.Box.gameObject.SetActive(filter);

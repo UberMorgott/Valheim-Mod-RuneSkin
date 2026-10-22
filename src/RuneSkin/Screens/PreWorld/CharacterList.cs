@@ -21,7 +21,6 @@ namespace RuneSkin.PreWorld
         private static ScrollRect _scroll;
         private static TMP_Text _header;
         private static readonly List<Row> Rows = new List<Row>();
-        private static readonly List<Graphic> Own = new List<Graphic>();
 
         private sealed class Row
         {
@@ -68,7 +67,6 @@ namespace RuneSkin.PreWorld
             view.gameObject.AddComponent<RectMask2D>();
             var hit = view.gameObject.AddComponent<Image>();
             hit.color = new Color(0f, 0f, 0f, 0f);
-            Own.Add(hit);
             _content = Rect("Content", view);
             _content.anchorMin = new Vector2(0f, 1f);
             _content.anchorMax = Vector2.one;

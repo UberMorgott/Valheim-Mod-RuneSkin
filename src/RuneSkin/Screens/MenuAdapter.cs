@@ -6,6 +6,8 @@ using RuneSkin.Restyle;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using RuneSkin.Ownership;
+using RuneSkin.Compat;
 
 namespace RuneSkin.Screens
 {
@@ -17,18 +19,21 @@ namespace RuneSkin.Screens
     [HarmonyPatch]
     public static class MenuAdapter
     {
+        // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
+        private static bool Prepare() => OwnershipRegistry.IsOwned(OwnershipRegistry.Menu);
+
         public const string ScreenId = "Menu";
 
         [HarmonyPatch(typeof(Menu), nameof(Menu.Start))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]
-        [HarmonyAfter("morgott.valheim.augaskin")]
+        [HarmonyAfter(ModCompat.AugaSkinGuid)]
         private static void Start_Postfix(Menu __instance) => Apply(__instance);
 
         [HarmonyPatch(typeof(Menu), nameof(Menu.Show))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]
-        [HarmonyAfter("morgott.valheim.augaskin")]
+        [HarmonyAfter(ModCompat.AugaSkinGuid)]
         private static void Show_Postfix(Menu __instance)
         {
             Apply(__instance);
