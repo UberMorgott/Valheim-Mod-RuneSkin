@@ -32,7 +32,7 @@ namespace RuneSkin.WorldHud
     // a CanvasGroup on the template (vanilla's SetActive is never fought: vanilla keeps the picked HUDs active through its
     // own m_hoverTimer, written in the UpdateHuds prefix). Players, bosses, mounts, tamed and friendly creatures keep the
     // vanilla rules at alpha 1.
-    public static class EnemyHudSkin
+    public static partial class EnemyHudSkin
     {
         public const string ScreenId = "EnemyHud";
         public const string FrameName = "RuneSkin_EnemyFrame";
@@ -46,6 +46,7 @@ namespace RuneSkin.WorldHud
         private static Transform _root;
         private static float _canvasFactor = 1f;
         private static float _baseScale = 1f;
+        private static RectTransform _rootCanvas;
 
         private static readonly int EsHash = "mt_es".GetStableHashCode();
         private static readonly int EsMaxHash = "mt_es_max".GetStableHashCode();
@@ -68,6 +69,11 @@ namespace RuneSkin.WorldHud
             public EnemyHudMath.StaggerState Stg;
             public EnemyHudMath.StaggerPhase ShownPhase = (EnemyHudMath.StaggerPhase)(-1);
             public float ShownFlash = -1f;
+            public Image Weld, Sparks, SparksB, Flare, FlareB;
+            public bool WeldLooked, SparksLooked, FlareLooked, BossC, BossCTried;
+            public int SparkFrame = -1;
+            public float BossFit = 1f, LastHp = -1f, Flash;
+            public int Tier;
         }
 
         private static readonly ConditionalWeakTable<EnemyHud.HudData, State> States = new ConditionalWeakTable<EnemyHud.HudData, State>();
@@ -90,7 +96,10 @@ namespace RuneSkin.WorldHud
                 // Valheim canvases run at referencePixelsPerUnit 50: borders authored at 100 (Restyler.CanvasPpuFactor).
                 Art.SyncPpu(canvas.rootCanvas.referencePixelsPerUnit);
                 _canvasFactor = canvas.rootCanvas.referencePixelsPerUnit / 100f;
+                _rootCanvas = canvas.rootCanvas.transform as RectTransform;
             }
+            LoadSparks();
+            LoadBossC();
             Template(hud.m_baseHud, false, true);
             Template(hud.m_baseHudBoss, true, true);
             Template(hud.m_baseHudPlayer, false, false);
@@ -142,6 +151,7 @@ namespace RuneSkin.WorldHud
                         var stagger = NewInWindow(health, StaggerName);
                         Art.Note(stagger, "enemy.stagger", true, "stagger line (bottom inner edge of the window: gold building, pale while staggered)");
                         stagger.enabled = false;
+                        NewSparks(health, health.rect.height * ThemeTokens.GetFloat("share.enemy.stagger", 0.28f));
                         var shield = NewInWindow(health, ShieldName);
                         shield.color = ThemeTokens.GetColor("color.enemy.shield", new Color(0.31f, 0.88f, 0.9f, 0.6f));
                         Art.Note(shield, "enemy.shield", true, "enemy shield band (upper share of the window)");
@@ -475,7 +485,13 @@ namespace RuneSkin.WorldHud
                     }
                 }
 
-                if (s.Boss || alpha <= 0f || !data.m_gui.activeSelf) continue;
+                if (s.Boss)
+                {
+                    if (!s.BossC && !s.BossCTried) ApplyBossC(s);
+                    if (data.m_gui.activeSelf) BossUpdate(s, data.m_character);
+                    continue;
+                }
+                if (alpha <= 0f || !data.m_gui.activeSelf) continue;
                 ShieldBand(s, data.m_character);
                 StaggerLine(s, data.m_character, dt);
             }
@@ -490,10 +506,18 @@ namespace RuneSkin.WorldHud
                 s.VtRetryAt = now + VtRetrySeconds;
                 s.Vt = Child(s.Health, VaettirFrame);
             }
+            if (s.Boss && s.BossC)
+            {
+                // boss-c draws its own rail; Vaettir's rarity frame on a boss HUD would add a second frame.
+                if (s.Vt && s.Vt.enabled) s.Vt.enabled = false;
+                return;
+            }
             var vtOn = s.Vt && s.Vt.enabled && s.Vt.sprite;
             if (vtOn && s.Vt.sprite != s.VtSet)
             {
-                SetFrame(s.Vt, s.Health, EnemyHudMath.TierToken(s.Vt.sprite.name, s.Boss), s.Boss);
+                var tierToken = EnemyHudMath.TierToken(s.Vt.sprite.name, s.Boss);
+                SetFrame(s.Vt, s.Health, tierToken, s.Boss);
+                s.Tier = EnemyHudMath.TierIndex(tierToken);
                 s.VtSet = s.Vt.sprite;
             }
             if (s.Own && s.Own.enabled == vtOn) s.Own.enabled = !vtOn && s.Own.sprite;
@@ -547,6 +571,7 @@ namespace RuneSkin.WorldHud
             s.Stg = EnemyHudMath.StaggerStep(s.Stg, can, build, staggering, staggering ? StaggerRemaining(c) : 0f, dt);
             var st = s.Stg;
             var shown = st.Phase != EnemyHudMath.StaggerPhase.Hidden;
+            UpdateSparks(s, shown && st.Phase == EnemyHudMath.StaggerPhase.Active, st.Fill, Time.unscaledTime);
             if (st.Phase != s.ShownPhase || Mathf.Abs(st.Flash - s.ShownFlash) > 0.01f)
             {
                 s.ShownPhase = st.Phase;
@@ -612,7 +637,13 @@ namespace RuneSkin.WorldHud
                     .Append(" shieldW=").Append((s.Shield && s.Shield.enabled ? s.Shield.rectTransform.sizeDelta.x : 0f).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture))
                     .Append(" barW=").Append(s.Health.rect.width.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture))
                     .Append(" stg=").Append(s.Stg.Phase).Append(':').Append(s.Stg.Fill.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture))
-                    .Append(" stgW=").Append((s.Stagger && s.Stagger.enabled ? s.Stagger.rectTransform.sizeDelta.x : 0f).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture));
+                    .Append(" stgW=").Append((s.Stagger && s.Stagger.enabled ? s.Stagger.rectTransform.sizeDelta.x : 0f).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture))
+                    .Append(" tier=").Append(s.Tier)
+                    .Append(" sparks=").Append(((s.Sparks && s.Sparks.enabled ? s.Sparks.color.a : 0f) + (s.SparksB && s.SparksB.enabled ? s.SparksB.color.a : 0f)).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))
+                    .Append(" boss=").Append(s.Boss ? 1 : 0).Append(" bossC=").Append(s.BossC ? 1 : 0)
+                    .Append(" bossFit=").Append(s.BossFit.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture))
+                    .Append(" bossSpan=").Append((_rootCanvas && s.Boss ? _bossSpan * s.BossFit / _rootCanvas.rect.width : -1f).ToString("0.000", System.Globalization.CultureInfo.InvariantCulture))
+                    .Append(" weld=").Append((s.Weld && s.Weld.enabled ? s.Weld.rectTransform.anchorMin.x : -1f).ToString("0.000", System.Globalization.CultureInfo.InvariantCulture));
             }
             return sb.ToString();
         }
@@ -660,6 +691,7 @@ namespace RuneSkin.WorldHud
         public static ConfigEntry<float> Engaged { get; private set; }
         public static ConfigEntry<float> ThreatRange { get; private set; }
         public static ConfigEntry<float> Range { get; private set; }
+        public static ConfigEntry<float> BossBarWidth { get; private set; }
 
         public static bool Smart => Mode != null && Mode.Value == EnemyBarMode.Smart;
 
@@ -673,6 +705,7 @@ namespace RuneSkin.WorldHud
             Engaged = config.Bind("Hud", "EnemyBarsEngaged", 8f, new ConfigDescription("Smart: seconds an enemy's bar stays after you hit it or it hit you (refreshed by every hit).", new AcceptableValueRange<float>(0f, 60f)));
             ThreatRange = config.Bind("Hud", "EnemyBarsThreatRange", 15f, new ConfigDescription("Smart: metres within which an alerted enemy counts as a threat.", new AcceptableValueRange<float>(0f, 40f)));
             Range = config.Bind("Hud", "EnemyBarsRange", 20f, new ConfigDescription("Smart: creation radius of overhead bars in metres (vanilla 10; bars shrink to 0.8 at 20 m). Applied on world load.", new AcceptableValueRange<float>(10f, 40f)));
+            BossBarWidth = config.Bind("Hud", "BossBarWidth", 0.64f, new ConfigDescription("Screen share a boss bar spans, spear tip to spear tip (of a 16:9 box on ultrawide screens), for boss-flagged creatures that are not Vaettir's world boss (Vaettir's own bar: its BossBar.Width). The approved mockup boss-c is 0.95; 0.64 keeps the bar clear of the minimap.", new AcceptableValueRange<float>(0.2f, 0.98f)));
         }
     }
 

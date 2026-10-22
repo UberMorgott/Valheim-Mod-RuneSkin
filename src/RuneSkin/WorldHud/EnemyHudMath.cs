@@ -176,6 +176,49 @@ namespace RuneSkin.WorldHud
         // Remaining stagger fraction from the animator state's normalizedTime (speed independent; > 1 = ended).
         public static float StaggerRemaining(float normalizedTime) => Math.Min(1f, Math.Max(0f, 1f - normalizedTime));
 
+        // Spark strength per tier (enemy-b: normal a bright line with few embers, unique a shower).
+        public static float SparkAlpha(int tier) => tier switch { 1 => 0.6f, 2 => 0.85f, 3 => 1f, _ => 0.35f };
+
+        public static int TierIndex(string token) => token switch
+        {
+            "sprite.frame.enemy.magic" => 1,
+            "sprite.frame.enemy.rare" => 2,
+            "sprite.frame.enemy.unique" => 3,
+            _ => 0,
+        };
+
+        // Only a real boss gets the boss bar: the creature says IsBoss() (m_boss: vanilla bosses, Vaettir's world boss, Epic
+        // Loot bounty bosses) AND vanilla built its HUD from the boss template. A normal mob never does, and the target panel
+        // Vaettir copies from that template is not an EnemyHud HUD at all.
+        public static bool BossBar(bool isBoss, string guiName, string bossTemplateName) =>
+            isBoss && !string.IsNullOrEmpty(guiName) && !string.IsNullOrEmpty(bossTemplateName) &&
+            guiName.StartsWith(bossTemplateName, StringComparison.Ordinal);
+
+        // boss-c bar span (spear tip to spear tip): the body plus each cap's part outside it (cap pivot 1 at the bar end,
+        // pulled inwards by capOffset).
+        public static float BossSpan(float bodyWidth, float capWidth, float capOffset) =>
+            bodyWidth + 2f * Math.Max(0f, capWidth - capOffset);
+
+        // Uniform scale that makes the boss bar span widthShare of the screen (16:9 box on ultrawide) - the same rule as
+        // Vaettir's world boss bar (BossMath.ScreenFit), so every boss bar has one size. Canvas units in. 1 when unknown.
+        public static float BossScreenFit(float span, float canvasWidth, float canvasHeight, float widthShare)
+        {
+            if (!(span > 0f) || !(canvasWidth > 0f) || !(canvasHeight > 0f) || !(widthShare > 0f)) return 1f;
+            return widthShare * Math.Min(canvasWidth, canvasHeight * 16f / 9f) / span;
+        }
+
+        // Animation frame of a looping sheet: index 0..count-1 at fps, and the blend toward the next frame (cross-fade).
+        public static int SheetFrame(float time, float fps, int count, out float blend)
+        {
+            blend = 0f;
+            if (count <= 1 || !(fps > 0f)) return 0;
+            var f = time * fps;
+            var i = (int)Math.Floor(f);
+            blend = f - i;
+            i %= count;
+            return i < 0 ? i + count : i;
+        }
+
         // Vaettir rarity frame sprite name (UI\Resources\vt_frame_<tier>.png, RarityFrames.cs Files) -> RuneSkin token.
         public static string TierToken(string vtSprite, bool boss)
         {

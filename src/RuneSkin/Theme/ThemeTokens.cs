@@ -260,6 +260,10 @@ namespace RuneSkin.Theme
             }
         }
 
+        public static Shader BossFxShader { get; private set; }
+
+        private const float MipBias = -0.5f;
+
         private static void LoadBundle()
         {
             if (_bundle || BundlePath != null) return;
@@ -284,6 +288,10 @@ namespace RuneSkin.Theme
                 return;
             }
             SpriteAtlasManager.atlasRequested += OnAtlasRequested; // before any sprite load can ask for it
+            // UI effect shader (boss bar gas haze / weld). Loaded here, Shader.Find("RuneSkin/UI Boss FX") resolves it for
+            // other mods (Vaettir); null = their sprite fallback.
+            BossFxShader = _bundle.LoadAsset<Shader>("RuneSkinBossFx");
+            if (!BossFxShader || !BossFxShader.isSupported) Diagnostics.SkinDiagnostics.Theme("boss FX shader missing or unsupported (sprite fallback)");
             // Sprites may be standalone assets, texture sub-assets or packed in a SpriteAtlas: index all by name.
             foreach (var s in _bundle.LoadAllAssets<Sprite>())
                 if (s && !BundleSprites.ContainsKey(s.name)) BundleSprites.Add(s.name, s);
@@ -299,6 +307,8 @@ namespace RuneSkin.Theme
                 foreach (var s in packed)
                 {
                     if (!s) continue;
+                    // ART PIPELINE: the atlas is mipmapped (4x art shown small); a sharp bias keeps it crisp
+                    if (s.texture && s.texture.mipmapCount > 1 && s.texture.mipMapBias != MipBias) s.texture.mipMapBias = MipBias;
                     var name = s.name.EndsWith("(Clone)", StringComparison.Ordinal) ? s.name.Substring(0, s.name.Length - 7) : s.name;
                     if (!BundleSprites.ContainsKey(name)) BundleSprites.Add(name, s);
                 }
