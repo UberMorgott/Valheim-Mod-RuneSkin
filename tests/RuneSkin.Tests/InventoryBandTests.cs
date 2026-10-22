@@ -19,7 +19,7 @@ namespace RuneSkin.Tests
             DollCell = 84f,
             DollGap = 8f,
             DollPad = 8f,
-            DollMirrorGap = 28f,
+            DollFigureGap = 28f,
             PanelMaxH = 840f
         };
 
@@ -117,13 +117,13 @@ namespace RuneSkin.Tests
             Assert.Equal(s.Figure.H * 0.66f, s.Figure.W, 2);
             var storageW = 3f * 92f - 8f;
             Assert.Equal(s.StorageX + storageW + 28f, s.Figure.X, 2);
-            Assert.Equal(s.Figure.Right + 28f, s.MirrorX, 2);
+            // No hand mirrors (0.10.0): storage | figure is the whole group, centred with equal sides.
             var left = s.StorageX - box.X;
-            var right = box.Right - (s.MirrorX + d.Cell);
+            var right = box.Right - s.Figure.Right;
             Assert.Equal(left, right, 2);
-            // Narrow box: the figure takes only the room left, never pushes the mirrors out.
-            var narrow = InventoryMath.Strip(new Box(0f, 0f, 420f, 300f), d, 8f, 28f, 0.66f);
-            Assert.True(narrow.MirrorX + d.Cell <= 420.01f);
+            // Narrow box: the figure takes only the room left, never leaves the box.
+            var narrow = InventoryMath.Strip(new Box(0f, 0f, 320f, 300f), d, 8f, 28f, 0.66f);
+            Assert.True(narrow.Figure.Right <= 320.01f && narrow.Figure.W >= 0f);
         }
 
         [Fact]

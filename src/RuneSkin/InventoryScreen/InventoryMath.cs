@@ -54,11 +54,11 @@ namespace RuneSkin.InventoryScreen
         // Corner-cap keep-out of the dock panels (PanelDecor.ContentInset -> PanelMath.CapInset, canvas units, set
         // live): the glyph action row sits at least this far from the bottom and right edges.
         public float PanelCapInset;
-        // Carved silhouette box between storage cells and mirrors: portrait, width = height x aspect (layout-a2.png).
+        // Figure box right of the storage cells: portrait, width = height x aspect.
         public float DollFigureAspect = 0.66f;
         public float GridCell = 64f, GridGap = 8f, HotbarHeaderH = 30f;
         public float ContainerCell = 56f, ContainerGap = 6f;
-        public float DollCell = 48f, DollGap = 8f, DollPad = 8f, DollColumns = 3f, DollMirrorGap = 24f, DollMinRows = 2f;
+        public float DollCell = 48f, DollGap = 8f, DollPad = 8f, DollColumns = 3f, DollFigureGap = 24f, DollMinRows = 2f;
         public float ScrollbarW = 14f;
         public float MinCellPhysPx = 44f;
     }
@@ -77,7 +77,7 @@ namespace RuneSkin.InventoryScreen
 
     public struct DollFit
     {
-        public int StorageColumns, StorageRows, MirrorRows, Rows, VisibleRows;
+        public int StorageColumns, StorageRows, Rows, VisibleRows;
         public float Pitch, Cell;
         public bool Scroll;
     }
@@ -93,7 +93,7 @@ namespace RuneSkin.InventoryScreen
         public int GridW = 8, GridH = 4;
         public int ChestW, ChestH;
         public int BackpackW, BackpackH;
-        public int DollStorage = 9, DollMirrors = 3;
+        public int DollStorage = 9;
         // Top of the HUD cluster in the same logical units (0 = unknown): the columns end a gap above it.
         public float HudTop;
     }
@@ -113,10 +113,10 @@ namespace RuneSkin.InventoryScreen
         public float InnerGap;
     }
 
-    // Doll row geometry (layout-a2.png): storage cells | portrait silhouette | mirror column, centred as one group.
+    // Doll row geometry: storage cells | portrait figure, centred as one group (hand mirrors removed 0.10.0).
     public struct DollStrip
     {
-        public float StorageX, MirrorX;
+        public float StorageX;
         public Box Figure;
     }
 
@@ -259,8 +259,8 @@ namespace RuneSkin.InventoryScreen
                 StorageColumns = Math.Max(1, (int)t.DollColumns),
             };
             d.StorageRows = (i.DollStorage + d.StorageColumns - 1) / d.StorageColumns;
-            d.MirrorRows = Math.Max(0, i.DollMirrors);
-            d.Rows = Math.Max(d.StorageRows, d.MirrorRows);
+            d.Rows = d.StorageRows;
+
             d.VisibleRows = Math.Max(0, (int)Math.Floor((dollH - 2f * dollPad + t.DollGap * k + 0.01f) / dollPitch));
             d.Scroll = d.Rows > d.VisibleRows;
             o.DollCells = d;
@@ -280,25 +280,23 @@ namespace RuneSkin.InventoryScreen
             if (left > right) left = right = 0f;
         }
 
-        // Storage grid, silhouette and mirrors inside the doll box: the silhouette is a portrait box (height = the
-        // doll rows, width = height x aspect, never wider than the room left), the whole group centred.
-        public static DollStrip Strip(Box box, DollFit d, float cellGap, float mirrorGap, float aspect)
+        // Storage grid and figure inside the doll box: the figure is a portrait box (height = the doll rows, width =
+        // height x aspect, never wider than the room left), the whole group centred.
+        public static DollStrip Strip(Box box, DollFit d, float cellGap, float figureGap, float aspect)
         {
             var storageW = Math.Max(0f, d.StorageColumns * d.Pitch - cellGap);
             var figH = Math.Max(0f, Math.Min(box.H, Math.Max(3, d.Rows) * d.Pitch - cellGap));
-            var room = Math.Max(0f, box.W - storageW - d.Cell - 2f * mirrorGap);
+            var room = Math.Max(0f, box.W - storageW - figureGap);
             var figW = Math.Min(room, figH * Math.Max(0f, aspect));
-            var total = storageW + 2f * mirrorGap + figW + d.Cell;
+            var total = storageW + figureGap + figW;
             var x = box.X + Math.Max(0f, (box.W - total) / 2f);
-            var s = new DollStrip { StorageX = x, Figure = new Box(x + storageW + mirrorGap, box.Y, figW, figH) };
-            s.MirrorX = s.Figure.Right + mirrorGap;
-            return s;
+            return new DollStrip { StorageX = x, Figure = new Box(x + storageW + figureGap, box.Y, figW, figH) };
         }
 
         private static int DollRows(InventoryInput i, InventoryTokens t)
         {
             var cols = Math.Max(1, (int)t.DollColumns);
-            return Math.Max((i.DollStorage + cols - 1) / cols, i.DollMirrors);
+            return (i.DollStorage + cols - 1) / cols;
         }
 
         private static void LayoutDock(InventoryInput i, InventoryTokens t, float k, InventoryLayout o)

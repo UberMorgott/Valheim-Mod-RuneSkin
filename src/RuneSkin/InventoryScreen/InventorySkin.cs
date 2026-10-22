@@ -42,7 +42,7 @@ namespace RuneSkin.InventoryScreen
         private InventoryGui _gui;
         private RectTransform _canvas;
         private Canvas _rootCanvas;
-        private RectTransform _decor, _centerHost, _chestHost, _packHost, _doll, _focus, _hotbarHeader, _backdrop, _silhouette;
+        private RectTransform _decor, _centerHost, _chestHost, _packHost, _doll, _hotbarHeader, _backdrop, _silhouette;
         private readonly InventoryTokens _tokens = new InventoryTokens();
         private readonly InventoryInput _input = new InventoryInput();
         private InventoryLayout _layout;
@@ -50,13 +50,11 @@ namespace RuneSkin.InventoryScreen
         private GameObject _tooltipPrefab;
 
         // Doll
-        private DollCell _right, _left, _ammo;
         private readonly Dictionary<string, DollCell> _registered = new Dictionary<string, DollCell>();
         private readonly Dictionary<string, InventoryRegistry.Slot> _registeredBy = new Dictionary<string, InventoryRegistry.Slot>();
         private readonly List<EaqsBridge.SlotInfo> _eaqs = new List<EaqsBridge.SlotInfo>();
         private readonly List<DollEntry> _entries = new List<DollEntry>();
         private int _eaqsReadFrame = -1000, _entriesRevision = -1, _dollScroll;
-        private float _focusUntil;
 
         // Backpack
         private RectTransform _packPanel;
@@ -151,7 +149,7 @@ namespace RuneSkin.InventoryScreen
             t.GridCell = F("size.inv.cell", t.GridCell); t.GridGap = F("size.inv.cell.gap", t.GridGap); t.HotbarHeaderH = F("size.inv.hotbar.header", t.HotbarHeaderH);
             t.ContainerCell = F("size.inv.container.cell", t.ContainerCell); t.ContainerGap = F("size.inv.container.gap", t.ContainerGap);
             t.DollCell = F("size.inv.doll.cell", t.DollCell); t.DollGap = F("size.inv.doll.gap", t.DollGap);
-            t.DollColumns = F("size.inv.doll.columns", t.DollColumns); t.DollPad = F("size.inv.doll.pad", t.DollPad); t.DollMirrorGap = F("size.inv.doll.mirror.gap", t.DollMirrorGap);
+            t.DollColumns = F("size.inv.doll.columns", t.DollColumns); t.DollPad = F("size.inv.doll.pad", t.DollPad); t.DollFigureGap = F("size.inv.doll.figure.gap", t.DollFigureGap);
             t.DollFigureAspect = F("share.inv.doll.figure", t.DollFigureAspect); t.HeaderMinH = F("size.inv.header.min", t.HeaderMinH); t.InnerGapMin = F("size.inv.inner.gap.min", t.InnerGapMin);
             t.ScrollbarW = F("size.inv.scrollbar", t.ScrollbarW); t.MinCellPhysPx = F("floor.cell.px", t.MinCellPhysPx);
         }
@@ -201,18 +199,6 @@ namespace RuneSkin.InventoryScreen
 
             _backdrop = Decor("RuneSkinDollBackdrop", "doll.backdrop", "doll alcove behind the silhouette");
             _silhouette = Decor("RuneSkinDollFigure", "doll.silhouette", "carved warrior silhouette (no 3D preview yet)");
-            _right = Mirror("right", "weapon", "$runeskin_slot_right");
-            _left = Mirror("left", "offhand", "$runeskin_slot_left");
-            _ammo = Mirror("ammo", "ammo", "$runeskin_slot_ammo");
-
-            _focus = (RectTransform)new GameObject("RuneSkinFocus", typeof(RectTransform)).transform;
-            _focus.SetParent(_gui.m_player, false);
-            var ring = _focus.gameObject.AddComponent<Image>();
-            ring.raycastTarget = false;
-            var fm = DollCell.Mark(ring, "slot.focus", "source-cell highlight of a hand mirror");
-            fm.Outcome = Restyler.Apply(ring, fm, ThemeTokens.Role("slot.focus")) ? Outcome.Styled : Outcome.Degraded;
-            if (fm.Outcome != Outcome.Styled) ring.color = new Color(0.31f, 0.88f, 0.9f, 0.5f);
-            _focus.gameObject.SetActive(false);
         }
 
         private RectTransform Decor(string name, string role, string reason)
@@ -226,16 +212,6 @@ namespace RuneSkin.InventoryScreen
             image.enabled = mark.Outcome == Outcome.Styled;
             rt.gameObject.SetActive(false);
             return rt;
-        }
-
-        private DollCell Mirror(string id, string glyph, string key)
-        {
-            var cell = DollCell.Create(_doll, id, "slot.mirror", "glyph.slot." + glyph, _tooltipPrefab);
-            cell.OnPrimary = c => MirrorPrimary(c);
-            cell.OnDropped = c => DropOnMirror(c);
-            cell.OnSecondary = c => MirrorUnequip(c);
-            cell.SetTooltip(SlotNames.Get(key), SlotNames.Get("$runeskin_mirror_hint"));
-            return cell;
         }
 
         // Vanilla panel backgrounds under owned roots: replaced by RuneSkin's panel stacks (hidden, not destroyed).
@@ -356,10 +332,9 @@ namespace RuneSkin.InventoryScreen
                 if (cluster && !cluster.BandWanted) RequestBand(_rootCanvas.scaleFactor > 0f ? _rootCanvas.scaleFactor : 1f);
             }
             _frameReady = true;
-            UpdateMirrors();
+            UpdateRegisteredSlots();
             UpdateActions();
             HideQuickBar();
-            if (_focus && _focus.gameObject.activeSelf && Time.unscaledTime > _focusUntil) _focus.gameObject.SetActive(false);
             DollScrollInput();
         }
 
@@ -390,7 +365,6 @@ namespace RuneSkin.InventoryScreen
         {
             RestoreQuickBar();
             ClearBand();
-            if (_focus) _focus.gameObject.SetActive(false);
         }
 
         private int InputHash()
@@ -495,7 +469,6 @@ namespace RuneSkin.InventoryScreen
             i.BackpackW = pack?.GetWidth() ?? 0;
             i.BackpackH = pack?.GetHeight() ?? 0;
             i.DollStorage = DollStorageCount();
-            i.DollMirrors = 3;
             i.HudTop = HudTopLogical(scale);
             ReadTokens();
             _tokens.PanelCapInset = CapKeepOut(_chestHost);
@@ -1085,9 +1058,9 @@ namespace RuneSkin.InventoryScreen
             var d = _layout.DollCells;
             var box = Inset(_layout.Doll, _tokens.DollPad * _input.SkinScale, _tokens.DollPad * _input.SkinScale);
             var cols = d.StorageColumns;
-            // Storage grid left, portrait silhouette, mirrors column right of it, centred as one group (layout-a2.png).
+            // Storage grid left, portrait figure right of it, centred as one group.
             var k = _input.SkinScale;
-            var strip = InventoryMath.Strip(box, d, _tokens.DollGap * k, _tokens.DollMirrorGap * k, _tokens.DollFigureAspect);
+            var strip = InventoryMath.Strip(box, d, _tokens.DollGap * k, _tokens.DollFigureGap * k, _tokens.DollFigureAspect);
             var x0 = strip.StorageX;
             var visible = Mathf.Max(1, d.VisibleRows);
             _dollScroll = Mathf.Clamp(_dollScroll, 0, Mathf.Max(0, d.Rows - visible));
@@ -1128,16 +1101,11 @@ namespace RuneSkin.InventoryScreen
                     PlaceOwnCell(entry.Cell, cx, cy, d.Cell, shown);
                 }
             }
-            var mx = strip.MirrorX;
             var figure = strip.Figure;
+
             if (_backdrop) Show(_backdrop, figure.W >= d.Cell ? figure : default);
             if (_silhouette) Show(_silhouette, figure.W >= d.Cell ? Inset(figure, 8f, 8f) : default);
-            // Mirrors scroll with the doll rows (never over the grid when fewer rows fit).
-            for (var m = 0; m < 3; m++)
-            {
-                var row = m - _dollScroll;
-                PlaceOwnCell(m == 0 ? _right : m == 1 ? _left : _ammo, mx, box.Y + row * d.Pitch, d.Cell, row >= 0 && row < visible);
-            }
+
             PlaceQuickCells(grid);
         }
 
@@ -1288,95 +1256,17 @@ namespace RuneSkin.InventoryScreen
             _dollScroll += wheel < 0f ? 1 : -1;
         }
 
-        // ---------------------------------------------------------------- mirrors
+        // ---------------------------------------------------------------- API-registered doll cells
 
-        private void UpdateMirrors()
+        private void UpdateRegisteredSlots()
         {
-            var p = Player.m_localPlayer;
-            if (!p || !_right) return;
-            var right = p.m_rightItem;
-            var left = p.m_leftItem;
-            var twoRight = right != null && right.m_shared.m_itemType == ItemDrop.ItemData.ItemType.TwoHandedWeapon;
-            var twoLeft = left != null && left.m_shared.m_itemType == ItemDrop.ItemData.ItemType.TwoHandedWeaponLeft;
-            // Two-handed: both mirrors show the weapon, the hand that does not hold it dimmed; both link frames lit.
-            _right.Show(twoLeft ? left : right, twoLeft, 0);
-            _left.Show(twoRight ? right : left, twoRight, 0);
-            if (twoRight && _right.Link.sprite) _right.Link.enabled = true;
-            if (twoLeft && _left.Link.sprite) _left.Link.enabled = true;
-            var ammo = p.m_ammoItem;
-            _ammo.Show(ammo, false, ammo != null ? p.GetInventory().CountItems(ammo.m_shared.m_name) : 0);
+            if (!Player.m_localPlayer) return;
             foreach (var r in InventoryRegistry.Slots)
             {
                 if (r.Dead || r.D.GetItem == null || !_registered.TryGetValue(r.Key, out var cell) || !cell) continue;
                 var reg = r;
-                cell.Show(InventoryRegistry.Guard(reg, () => reg.D.GetItem(), null), false, 0);
+                cell.Show(InventoryRegistry.Guard(reg, () => reg.D.GetItem(), null), 0);
             }
-        }
-
-        private ItemDrop.ItemData MirrorItem(DollCell c)
-        {
-            var p = Player.m_localPlayer;
-            if (!p) return null;
-            if (c == _ammo) return p.m_ammoItem;
-            var right = p.m_rightItem;
-            var left = p.m_leftItem;
-            if (c == _right) return right ?? (left != null && left.m_shared.m_itemType == ItemDrop.ItemData.ItemType.TwoHandedWeaponLeft ? left : null);
-            if (c == _left) return left ?? (right != null && right.m_shared.m_itemType == ItemDrop.ItemData.ItemType.TwoHandedWeapon ? right : null);
-            return null;
-        }
-
-        // Click: drag held -> drop on the mirror (equip); otherwise highlight + reveal the source cell.
-        private void MirrorPrimary(DollCell c)
-        {
-            if (_gui.m_dragGo) { DropOnMirror(c); return; }
-            var item = MirrorItem(c);
-            if (item == null) return;
-            var grid = _gui.m_playerGrid;
-            foreach (var e in grid.m_elements)
-            {
-                if (!e || e.Position != item.m_gridPos) continue;
-                var rt = (RectTransform)e.transform;
-                _focus.gameObject.SetActive(true);
-                _focus.SetAsLastSibling();
-                var b = Geo.BoxOf(_canvas, rt);
-                Geo.Place(_canvas, _focus, new Box(b.X - 3f, b.Y - 3f, b.W + 6f, b.H + 6f));
-                _focusUntil = Time.unscaledTime + 1.5f;
-                break;
-            }
-        }
-
-        // Drop: the held grid item goes through the normal equip path (Humanoid.UseItem -> Player.ToggleEquipped,
-        // equip queue / duration, Player.cs:7265); the item keeps its grid position. Drag cleared only when accepted.
-        private void DropOnMirror(DollCell c)
-        {
-            var p = Player.m_localPlayer;
-            var item = _gui.m_dragItem;
-            if (!p || item == null || !_gui.m_dragGo) return;
-            var inv = p.GetInventory();
-            if (_gui.m_dragInventory != inv || !inv.ContainsItem(item)) return;
-            if (!FitsMirror(c, item)) return;
-            if (!item.m_equipped && !p.IsEquipActionQueued(item)) p.UseItem(inv, item, true);
-            if (item.m_equipped || p.IsEquipActionQueued(item)) _gui.SetupDragItem(null, null, 1);
-        }
-
-        private bool FitsMirror(DollCell c, ItemDrop.ItemData item)
-        {
-            if (!item.IsEquipable()) return false;
-            var t = item.m_shared.m_itemType;
-            if (c == _ammo) return t == ItemDrop.ItemData.ItemType.Ammo || t == ItemDrop.ItemData.ItemType.AmmoNonEquipable;
-            if (c == _left) return t == ItemDrop.ItemData.ItemType.Shield || t == ItemDrop.ItemData.ItemType.Torch || t == ItemDrop.ItemData.ItemType.Bow ||
-                                   t == ItemDrop.ItemData.ItemType.TwoHandedWeaponLeft || t == ItemDrop.ItemData.ItemType.TwoHandedWeapon;
-            return t == ItemDrop.ItemData.ItemType.OneHandedWeapon || t == ItemDrop.ItemData.ItemType.TwoHandedWeapon || t == ItemDrop.ItemData.ItemType.Tool ||
-                   t == ItemDrop.ItemData.ItemType.Torch || t == ItemDrop.ItemData.ItemType.TwoHandedWeaponLeft || t == ItemDrop.ItemData.ItemType.Bow;
-        }
-
-        // Right click / gamepad: unequip through the same queue; the item stays where it is in the grid.
-        private void MirrorUnequip(DollCell c)
-        {
-            var p = Player.m_localPlayer;
-            var item = MirrorItem(c);
-            if (!p || item == null || !item.m_equipped) return;
-            p.UseItem(p.GetInventory(), item, true);
         }
 
         private void RegisteredPrimary(InventoryRegistry.Slot r, DollCell c)

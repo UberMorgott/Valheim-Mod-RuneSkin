@@ -10,7 +10,7 @@ namespace RuneSkin.Tests
         private static readonly InventoryTokens T = new InventoryTokens();
 
         private static InventoryLayout Run(float w, float h, float phys = 1f, int gw = 8, int gh = 4, int cw = 0, int ch = 0, int bw = 0, int bh = 0,
-            int storage = 9, int mirrors = 3, float skin = 1f, Box safe = default, float hudTop = 0f) =>
+            int storage = 9, float skin = 1f, Box safe = default, float hudTop = 0f) =>
             InventoryMath.Compute(new InventoryInput
             {
                 CanvasW = w,
@@ -23,7 +23,6 @@ namespace RuneSkin.Tests
                 BackpackW = bw,
                 BackpackH = bh,
                 DollStorage = storage,
-                DollMirrors = mirrors,
                 SkinScale = skin,
                 Safe = safe,
                 HudTop = hudTop
@@ -195,7 +194,7 @@ namespace RuneSkin.Tests
             Assert.Equal(14, many.DollCells.StorageRows);
             Assert.True(many.DollCells.Scroll);
             Assert.True(many.DollCells.VisibleRows >= 2);
-            var none = Run(1920, 1080, storage: 0, mirrors: 0);
+            var none = Run(1920, 1080, storage: 0);
             Assert.Equal(0, none.DollCells.Rows);
             Assert.False(none.DollCells.Scroll);
         }

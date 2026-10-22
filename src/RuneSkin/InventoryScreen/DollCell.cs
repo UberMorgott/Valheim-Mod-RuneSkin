@@ -8,13 +8,13 @@ using UnityEngine.UI;
 
 namespace RuneSkin.InventoryScreen
 {
-    // A doll cell RuneSkin builds itself: hand / ammo mirrors and API-registered slots. No visible label: an empty cell
+    // A doll cell RuneSkin builds itself: API-registered slots (InventoryRegistry). No visible label: an empty cell
     // shows its carved type glyph, the name is in the tooltip. Input: left click (with the vanilla drag item held =
     // drop onto the cell, without = OnClick), drop at the end of a drag (IDropHandler), right click = OnSecondary.
     public sealed class DollCell : MonoBehaviour, IPointerClickHandler, IDropHandler
     {
-        public Image Background, Icon, Glyph, Link, Badge;
-        private Sprite _glyph, _occupied;
+        public Image Background, Icon, Glyph, Badge;
+        private Sprite _glyph;
         public TMP_Text Amount;
         public UITooltip Tooltip;
         public string Id;
@@ -22,8 +22,6 @@ namespace RuneSkin.InventoryScreen
         public Action<DollCell> OnPrimary, OnSecondary, OnDropped;
 
         private ItemDrop.ItemData _shown;
-        private bool _linked;
-        private float _iconAlpha = -1f;
 
         public static DollCell Create(Transform parent, string id, string backgroundRole, string glyphRole, GameObject tooltipPrefab)
         {
@@ -34,8 +32,6 @@ namespace RuneSkin.InventoryScreen
             var cell = go.AddComponent<DollCell>();
             cell.Id = id;
             cell.Background = Layer(rt, "Bkg", backgroundRole, true, 0f);
-            cell.Link = Layer(rt, "Link", "slot.link", false, -3f);
-            cell.Link.enabled = false;
             cell.Glyph = Layer(rt, "Glyph", glyphRole, false, 8f);
             // Engraving, not an icon: the empty-cell glyph reads smaller than an item (Codex M2 review).
             var gs = ThemeTokens.GetFloat("share.inv.glyph.scale", 0.82f);
@@ -57,7 +53,7 @@ namespace RuneSkin.InventoryScreen
             amount.text = "";
             Mark(amount, "content", "doll cell amount (live value)");
             cell.Amount = amount;
-            // Mirror badge (chain links: "equipped from the grid") + occupied-hand glyph for two-handed weapons.
+            // Mirror slots (API SlotSource.Mirror): chain-link badge "equipped from the grid".
             if (backgroundRole == "slot.mirror")
             {
                 var badge = new GameObject("Badge", typeof(RectTransform)).AddComponent<Image>();
@@ -72,7 +68,6 @@ namespace RuneSkin.InventoryScreen
                 bm.Outcome = Restyler.Apply(badge, bm, ThemeTokens.Role("glyph.link")) ? Outcome.Styled : Outcome.Degraded;
                 badge.enabled = false;
                 cell.Badge = badge;
-                cell._occupied = ThemeTokens.GetSprite("sprite.glyph.hand.occupied");
             }
             cell._glyph = cell.Glyph.sprite;
             if (tooltipPrefab)
@@ -120,32 +115,21 @@ namespace RuneSkin.InventoryScreen
             rt.offsetMax = new Vector2(-inset, -inset);
         }
 
-        // Shows an item (null = empty: glyph visible). linked = the item is the other hand's two-handed weapon.
-        // linked = this hand is taken by the other hand's two-handed weapon: occupied glyph, no icon, link rim.
-        public void Show(ItemDrop.ItemData item, bool linked, int amount)
+        // Shows an item (null = empty: glyph visible) and its amount (> 1 drawn).
+        public void Show(ItemDrop.ItemData item, int amount)
         {
-            if (!ReferenceEquals(item, _shown) || linked != _linked)
+            if (!ReferenceEquals(item, _shown))
             {
                 _shown = item;
-                _linked = linked;
-                var occupied = linked && _occupied;
-                Icon.enabled = item != null && !occupied;
+                Icon.enabled = item != null;
                 if (item != null) Icon.sprite = item.GetIcon();
-                Glyph.sprite = occupied ? _occupied : _glyph;
-                Glyph.enabled = Glyph.sprite && (item == null || occupied);
-                if (Link.sprite) Link.enabled = linked;
-                if (Badge && Badge.sprite) Badge.enabled = item != null && !occupied;
-            }
-            var alpha = linked ? 0.45f : 1f;
-            if (!Mathf.Approximately(alpha, _iconAlpha))
-            {
-                _iconAlpha = alpha;
-                Icon.color = new Color(1f, 1f, 1f, alpha);
+                Glyph.sprite = _glyph;
+                Glyph.enabled = Glyph.sprite && item == null;
+                if (Badge && Badge.sprite) Badge.enabled = item != null;
             }
             var text = amount > 1 ? amount.ToString() : "";
             if (Amount.text != text) Amount.text = text;
         }
-
         public void SetTooltip(string topic, string text)
         {
             if (!Tooltip) return;

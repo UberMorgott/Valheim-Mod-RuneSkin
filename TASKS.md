@@ -299,6 +299,18 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
       identical for the menu entries). Before: run 20261022-142305 37 preset FAILs; after: 20261022-142706 (m4 + m5 + m6 +
       m6b + m6c) 167/167 PASS, 20261022-143109 m5 42/42 (sharpness title 0.521 / 0.536 vs entry 0.522 / 0.526 at 1440p / 1080p).
 
+## 0.10.0 hand mirrors removed (2026-10-22, user: redundant with the hotbar)
+
+- [x] Doll mirror cells right / left / ammo gone (InventorySkin Mirror / MirrorItem / MirrorPrimary / DropOnMirror /
+      FitsMirror / MirrorUnequip / focus ring, DollCell Link layer + occupied glyph + linked state, InventoryMath
+      DollMirrors / MirrorRows / MirrorX, Words runeskin_slot_right / left / ammo / mirror_hint, theme slot.link,
+      glyph.hand.occupied, glyph.slot.weapon / offhand / ammo). API SlotSource.Mirror cells keep slot.mirror + link badge.
+      Doll strip = storage | figure centred (size.inv.doll.figure.gap, was mirror.gap); tests updated.
+- [ ] Art bundle still holds slot_mirror_linked, glyph_hand_occupied, glyph_slot_hand_right / left, glyph_slot_ammo
+      (no theme token points at them): drop at the next art bundle build (art owner).
+- [x] Harness m2 no-mirrors (no RuneSkinDoll_right / left / ammo, equipped sword keeps its grid cell, figure right margin
+      <= 25 % of the panel: 200 / 240 px at 2560): run tools\out\20261022-150023 m2 + m3 26/26 PASS.
+
 ## Full-coverage directive (user, 2026-10-22; into M7 after B1-B5, not started)
 
 - [ ] 100 % of the UI on RuneSkin: all fonts, buttons, menus, incl. ALL current and future mods (Epic Loot etc.) -> a
