@@ -181,7 +181,7 @@ public static class RenderFx
             mat.SetFloat("_Flash", flash);
             mat.SetFloat("_Feather", 0.14f);
             mat.SetFloat("_GlowOut", 0.36f);
-            mat.SetFloat("_WeldWidth", 0.09f);
+            mat.SetFloat("_WeldWidth", 0.2f);
             mat.SetFloat("_Intensity", 1.4f);
             mat.SetFloat("_Speed", 0.35f);
             mat.SetFloat("_Scale", 1.6f);
@@ -206,19 +206,22 @@ public static class RenderFx
             {
                 var gf = S("fx_gasend_0");
                 var gi = Img(fxRoot, "gasend", gf, Color.white);
-                var gh = barH * 3.2f;
+                var gh = barH * 4.5f;
                 var r = gi.rectTransform;
                 r.anchorMin = r.anchorMax = new Vector2(hp, 0.5f);
-                r.pivot = new Vector2(0.22f, 0.5f);
-                r.sizeDelta = new Vector2(gh * 3f, gh);
-                gi.color = new Color(1f, 1f, 1f, 0.6f);
+                r.pivot = new Vector2(0.28f, 0.32f);
+                r.sizeDelta = new Vector2(gh * 0.75f, gh); // cell 384x512, theme fx.gasend.w 1
+                gi.color = new Color(1f, 1f, 1f, 1f);
+                var add3 = Shader.Find("Legacy Shaders/Particles/Additive");
+                if (add3 != null) { var am3 = new Material(add3); am3.SetColor("_TintColor", new Color(0.5f, 0.5f, 0.5f, 0.8f)); mats.Add(am3); gi.material = am3; }
+
                 // the bright lilac end of the gas fill: the same shader ramp in lilac (Vaettir's gas edge fx)
                 var ge = Img(fxRoot, "gasedge", null, Color.white);
                 ge.rectTransform.anchorMin = new Vector2(0f, 0.5f); ge.rectTransform.anchorMax = new Vector2(1f, 0.5f);
                 ge.rectTransform.sizeDelta = new Vector2(0f, barH * (1f + 2f * room));
                 var gm = new Material(mat); mats.Add(gm);
-                gm.SetFloat("_Mode", 1f); gm.SetFloat("_WeldWidth", 0.05f); gm.SetFloat("_Intensity", 1.5f);
-                gm.SetColor("_WeldGlow", new Color(0.62f, 0.3f, 1f)); gm.SetColor("_WeldCore", new Color(0.9f, 0.78f, 1f));
+                gm.SetFloat("_Mode", 1f); gm.SetFloat("_WeldWidth", 0.05f); gm.SetFloat("_Intensity", 1.4f);
+                gm.SetColor("_WeldGlow", new Color(0.62f, 0.3f, 1f)); gm.SetColor("_WeldCore", new Color(0.82f, 0.62f, 1f));
                 ge.material = gm;
             }
 
@@ -270,6 +273,7 @@ public static class RenderFx
             text.resizeTextForBestFit = true;
             text.resizeTextMaxSize = 200;
             text.color = new Color(0.8f, 0.82f, 0.84f);
+            fxRoot.SetAsLastSibling(); // effects over the plaque / caps, like Vaettir's effect books
             Shoot(outDir, name, cam, rt, w, h);
         }
         finally
