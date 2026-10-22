@@ -31,7 +31,6 @@ namespace RuneSkin.Theme
             { "runeskin_map_zoom", new[] { "Zoom", "Масштаб" } },
             // Key labels stay Latin in every language (user rule: key hints English). Minimap.cs: OnMapDblClick adds a
             // pin, OnMapLeftClick checks it, the right-click handler (:547) removes it, OnMapMiddleClick pings.
-            { "runeskin_map_hint", new[] { "[2x LMB] place pin   [LMB] check   [RMB] remove   [MMB] ping   [Wheel] zoom", "[2x LMB] метка   [LMB] отметить   [RMB] удалить   [MMB] сигнал   [Wheel] масштаб" } },
             { "runeskin_pin_icon0", new[] { "Fire", "Огонь" } },
             { "runeskin_pin_icon1", new[] { "Home", "Дом" } },
             { "runeskin_pin_icon2", new[] { "Hammer", "Молот" } },

@@ -64,6 +64,33 @@ namespace RuneSkin.Tests
         }
 
         [Fact]
+        public void HintsFitAtFullSizeWithEvenSpacing()
+        {
+            var n = MinimapMath.FitHints(new[] { 26f, 26f }, new[] { 100f, 100f }, 2, 400f, 6f, 16f, 0.7f, out var scale, out var spacing);
+            Assert.Equal(2, n);
+            Assert.Equal(1f, scale, 4);
+            Assert.Equal((400f - 64f - 200f) / 3f, spacing, 3);
+        }
+
+        [Fact]
+        public void HintsShrinkThenDrop()
+        {
+            // Shrink: 5 items need 5*132 + 6*16 = 756 > 700 at full size.
+            var icons = new[] { 26f, 26f, 26f, 26f, 26f };
+            var labels = new[] { 100f, 100f, 100f, 100f, 100f };
+            var n = MinimapMath.FitHints(icons, labels, 5, 700f, 6f, 16f, 0.7f, out var scale, out var spacing);
+            Assert.Equal(5, n);
+            Assert.True(scale < 1f && scale >= 0.7f);
+            Assert.Equal(16f, spacing, 3);
+            // Too narrow even at minScale: the last item goes.
+            n = MinimapMath.FitHints(icons, labels, 5, 450f, 6f, 16f, 0.7f, out scale, out spacing);
+            Assert.True(n < 5 && n > 0);
+            Assert.True(spacing >= 16f - 1e-3f);
+            var used = n * 32f + n * 100f * scale + (n + 1) * spacing;
+            Assert.Equal(450f, used, 2);
+        }
+
+        [Fact]
         public void TouchingIsNoCollision()
         {
             var boxes = new[] { B(0, 0, 50, 10, 2, 0), B(49.5f, 0, 99, 10, 2, 1) };

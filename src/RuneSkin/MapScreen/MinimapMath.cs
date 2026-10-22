@@ -76,6 +76,33 @@ namespace RuneSkin.MapScreen
             return (float)Math.Exp(Math.Log(min) + (1.0 - v) * (Math.Log(max) - Math.Log(min)));
         }
 
+        // Large map key hint row (one row of [icon][gap][label] items in the band under the map): how many items fit,
+        // the label font scale (<= 1, >= minScale) and the even spacing (margins and gaps equal, >= minSpacing). Labels
+        // shrink first; when even minScale does not fit, trailing items are dropped (never overlap, never clip).
+        public static int FitHints(float[] iconW, float[] labelW, int n, float width, float gap, float minSpacing, float minScale,
+            out float scale, out float spacing)
+        {
+            for (var k = n; k > 0; k--)
+            {
+                var icons = 0f;
+                var labels = 0f;
+                for (var i = 0; i < k; i++)
+                {
+                    icons += iconW[i] + gap;
+                    labels += labelW[i];
+                }
+                var avail = width - minSpacing * (k + 1) - icons;
+                if (avail <= 0f) continue;
+                scale = labels <= avail ? 1f : avail / labels;
+                if (scale < minScale) continue;
+                spacing = (width - icons - labels * scale) / (k + 1);
+                return k;
+            }
+            scale = 1f;
+            spacing = 0f;
+            return 0;
+        }
+
         // Legend row height: preferred, shrunk to fit `count` rows into `available`, never below the floor (then the
         // column overflows into the scroll of later sections: the pin list is laid out first).
         public static float RowHeight(float available, int count, float preferred, float floor)

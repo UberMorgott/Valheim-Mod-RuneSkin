@@ -33,7 +33,7 @@ namespace RuneSkin.MapScreen
         private readonly List<Button> _iconButtons = new List<Button>();
         private readonly List<TMP_Text> _playerNames = new List<TMP_Text>();
         private readonly List<Image> _playerIcons = new List<Image>();
-        private TMP_Text _pinsHeader, _playersHeader, _zoomLabel, _hint;
+        private TMP_Text _pinsHeader, _playersHeader, _zoomLabel;
         private Image _pinsDivider, _playersDivider;
         private Slider _zoom;
         private bool _zoomWrite;
@@ -54,11 +54,8 @@ namespace RuneSkin.MapScreen
             _playersDivider = _art.Image("PlayersDivider", _rows, "sprite.divider", "color.frame", Image.Type.Sliced);
             _zoomLabel = _art.Text("ZoomLabel", _rows, "font.body", "color.text.body", ThemeTokens.GetFloat("size.map.legend.font", 17f), TextAlignmentOptions.Left);
             BuildZoom();
-            // Hint line under the map image, inside the panel frame.
-            _footer = HudArtRect("RuneSkin_MapHint", _large);
-            _hint = _art.Text("Hint", _footer, "font.body", "color.text.body", ThemeTokens.GetFloat("size.map.hint.font", 15f), TextAlignmentOptions.Center);
-            MinimapSkin.Stretch(_hint.rectTransform);
-            // Vanilla panel hint graphics (mouse glyphs next to the icons) give way to the hint line.
+            BuildHints(); // the vanilla key hint row, moved into the band under the map (MapHints.cs)
+            // Vanilla panel hint graphics (mouse glyphs next to the icons) give way to the hint row under the map.
             foreach (var panel in LegendPanels)
             {
                 var t = _legend.Find(panel);
@@ -443,23 +440,12 @@ namespace RuneSkin.MapScreen
                 _zoomWrite = false;
             }
 
-            // Hint line under the map image (panel bottom band), only with the KeyHints setting and a mouse.
-            var hintOn = PlatformPrefs.GetInt("KeyHints", 1) == 1 && ZInput.IsMouseActive();
-            if (_footer.gameObject.activeSelf != hintOn) _footer.gameObject.SetActive(hintOn);
-            if (hintOn)
-            {
-                _footer.anchorMin = new Vector2(0f, 0f);
-                _footer.anchorMax = new Vector2(1f, 0f);
-                _footer.pivot = new Vector2(0.5f, 0f);
-                _footer.offsetMin = new Vector2(inset, inset);
-                _footer.offsetMax = new Vector2(_map.m_mapImageLarge.rectTransform.offsetMax.x, inset + HintBand());
-                var text = Words.Get("$runeskin_map_hint");
-                if (_hint.text != text) _hint.text = text;
-            }
+            LayoutHints(inset);
         }
 
-        // Band under the map image that holds the hint line (0 while key hints are off).
-        private float HintBand() => PlatformPrefs.GetInt("KeyHints", 1) == 1 && ZInput.IsMouseActive() ? ThemeTokens.GetFloat("size.map.hint.h", 28f) : 0f;
+        // Band under the map image that holds the key hint row (0 while the game's KeyHints setting is off: vanilla then
+        // hides m_hints, Minimap.cs:1238-1242).
+        private float HintBand() => _footer && PlatformPrefs.GetInt("KeyHints", 1) == 1 ? ThemeTokens.GetFloat("size.map.hint.h", 28f) : 0f;
 
         // Top-left placement inside the legend (y down from the top edge).
         private static void Place(RectTransform rt, float x, float y, float w, float h)
