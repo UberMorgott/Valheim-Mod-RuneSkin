@@ -78,6 +78,22 @@ namespace RuneSkin.InfoScreens
             if (rt.localScale != s) rt.localScale = s;
         }
 
+        // Title ornaments (skills-a / trophies-a: a knot either side of the serif title), sized from the knot sprite's
+        // aspect, centred on the title row, clear of the rendered title text.
+        public static void TitleKnots(RectTransform canvas, TMP_Text title, Box row, Image left, Image right)
+        {
+            if (!left || !right || !left.enabled || !left.sprite) return;
+            var r = left.sprite.rect;
+            var h = row.H * 0.38f;
+            var w = h * (r.height > 0f ? r.width / r.height : 2.5f);
+            var textW = Mathf.Min(title.preferredWidth, row.W * 0.6f);
+            var gap = row.H * 0.3f;
+            var cx = row.X + row.W / 2f;
+            var y = row.Y + (row.H - h) / 2f;
+            Geo.Place(canvas, left.rectTransform, new Box(cx - textW / 2f - gap - w, y, w, h));
+            Geo.Place(canvas, right.rectTransform, new Box(cx + textW / 2f + gap, y, w, h));
+        }
+
         public static void Label(TMP_Text label, TextAlignmentOptions align, float size, float min, bool upper = false)
         {
             if (label.alignment != align) label.alignment = align;

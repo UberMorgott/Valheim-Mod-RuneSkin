@@ -27,7 +27,10 @@ namespace RuneSkin.Ownership
         public const string Skills = "Skills";
         public const string Trophies = "Trophies";
 
-        public static readonly string[] Known = { Menu, Tooltips, Hud, Inventory, Crafting, Skills, Trophies };
+        // The Almanac mod's window (RustyMods.Almanac; it replaces the trophies panel): restyle only, its layout stays.
+        public const string Almanac = "Almanac";
+
+        public static readonly string[] Known = { Menu, Tooltips, Hud, Inventory, Crafting, Skills, Trophies, Almanac };
 
         private static readonly HashSet<string> Owned = new HashSet<string>();
         public static bool Frozen { get; private set; }

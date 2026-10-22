@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using RuneSkin.Api;
 using RuneSkin.Classify;
 using RuneSkin.InventoryScreen;
@@ -11,20 +12,34 @@ using UnityEngine.UI;
 namespace RuneSkin.InfoScreens
 {
     // Family "Skills" (skills-a.png): the vanilla SkillsDialog (root/Skills/SkillsFrame) as a RuneSkin panel on the right
-    // of layout A (same top / bottom as the columns): title, summary row (total skill level), one scroll list of skill
-    // rows - icon socket, name, progress-to-next-level bar + percent, big level number (+bonus). The row count comes from
-    // Player.GetSkills().GetSkillList() (vanilla + every mod skill: SkillsDialog.Setup pools rows, SkillsDialog.cs:116-121).
-    // Reposition, never rebuild: rows keep their children and names (Setup finds them by name, :130-143).
+    // of layout A (same top / bottom as the columns): title between two knots, the info tab row (InfoTabs), a summary
+    // well (death glyph + skill loss on death, total skill level, sort toggles by level / name), one scroll list of
+    // skill rows - icon socket, name, progress-to-next-level bar + percent, big level number (+bonus). The row count
+    // comes from Player.GetSkills().GetSkillList() (vanilla + every mod skill: SkillsDialog.Setup pools rows,
+    // SkillsDialog.cs:116-121). Reposition, never rebuild: rows keep their children and names (Setup finds them by name,
+    // :130-143). Sorting permutes the pooled rows after Setup (m_elements order = gamepad order = screen order).
     public sealed class SkillsSkin : MonoBehaviour
     {
         public const string ScreenId = "Skills";
         public static SkillsSkin Instance { get; private set; }
 
+        // 0 = vanilla order, 1 = level (high first), 2 = name. Session-wide, like the list it orders.
+        private static int _sort = 1;
+
         private InventoryGui _gui;
         private SkillsDialog _dialog;
         private RectTransform _root, _frame, _canvas;
-        private Image _deathGlyph;
+        private Image _deathGlyph, _summaryWell, _knotL, _knotR;
+        private TMP_Text _death;
+        private InfoTabs _tabs;
+        private readonly SortToggle[] _sorts = new SortToggle[2];
         private int _rowsSeen = -1;
+
+        private sealed class SortToggle
+        {
+            public Image Back, Glyph;
+            public int Mode;
+        }
 
         public static void Attach(InventoryGui gui)
         {
@@ -46,10 +61,40 @@ namespace RuneSkin.InfoScreens
                 if (c.name != "Closebutton" && c.TryGetComponent<Image>(out var b) && !c.GetComponent<Selectable>()) b.enabled = false;
             PanelDecor.Ensure(_frame, "size.panel.glass.inset", glass: true, plaque: false);
             _dialog.m_spacing = ThemeTokens.GetFloat("size.info.skill.row", 58f);
+            _summaryWell = InfoArt.OwnImage(_frame, "RuneSkinSkillsSummary", "craft.well", "summary row well (frame_inset)");
+            _summaryWell.preserveAspect = false;
             _deathGlyph = InfoArt.OwnImage(_frame, "RuneSkinSkillsGlyph", "info.glyph.death", "summary row marker (glyph_death)");
+            _death = InfoArt.RowText(_frame, "RuneSkinSkillsDeath", "text.body", TextAlignmentOptions.MidlineLeft);
+            _knotL = InfoArt.OwnImage(_frame, "RuneSkinSkillsKnotL", "ornament.knot", "title ornament (knot)");
+            _knotR = InfoArt.OwnImage(_frame, "RuneSkinSkillsKnotR", "ornament.knot", "title ornament (knot)");
+            _tabs = new InfoTabs(gui, _frame, "OnOpenSkills", () => _dialog.OnClose());
+            for (var i = 0; i < _sorts.Length; i++) _sorts[i] = MakeSort(i + 1);
             ScreenRegistry.Register(_root, Context);
             ScreenRegistry.Restyle(_root);
             Plugin.Log.LogInfo("[RuneSkin] skills panel attached");
+        }
+
+        private SortToggle MakeSort(int mode)
+        {
+            var s = new SortToggle { Mode = mode };
+            var go = new GameObject("RuneSkinSkillsSort" + mode, typeof(RectTransform));
+            go.transform.SetParent(_frame, false);
+            s.Back = go.AddComponent<Image>();
+            var button = go.AddComponent<Button>();
+            button.targetGraphic = s.Back;
+            button.navigation = new Navigation { mode = Navigation.Mode.None };
+            button.onClick.AddListener(() => SetSort(mode));
+            var mark = DollCell.Mark(s.Back, "info.tab", "skills sort toggle");
+            mark.Outcome = Restyler.Apply(s.Back, mark, ThemeTokens.Role(mark.Role)) ? Outcome.Styled : Outcome.Degraded;
+            s.Glyph = InfoArt.OwnImage(go.transform, "Glyph", mode == 1 ? "info.glyph.sort.level" : "info.glyph.sort.name", "sort glyph (glyph_sort_*)");
+            return s;
+        }
+
+        // Click on the active toggle returns to the vanilla order; a click on the other switches to it.
+        private void SetSort(int mode)
+        {
+            _sort = _sort == mode ? 0 : mode;
+            if (Player.m_localPlayer && _root.gameObject.activeInHierarchy) _dialog.Setup(Player.m_localPlayer);
         }
 
         private void OnDestroy()
@@ -66,7 +111,9 @@ namespace RuneSkin.InfoScreens
                 if (image.GetComponent<SkinMark>() is SkinMark m && m.Internal) continue;
                 if (t.name == "bkg" && t.parent == _frame) ctx.Role(image, "skip", "vanilla skills frame (replaced by the panel stack)");
                 else if (t.name == "darken" || t.name == "blur") ctx.Role(image, "skip", "vanilla modal dim / blur behind the dialog (kept)");
+                else if (t.parent == _root && image.GetComponent<Button>()) ctx.Role(image, "skip", "full-screen click-outside closer (vanilla, transparent; a button sprite would paint the screen)");
                 else if (t.name == "Skills" && t.parent == _frame) ctx.Role(image, "skip", "inactive list backdrop (InputFieldBackground), replaced by the panel stack");
+                else if (_dialog.m_listRoot && t == _dialog.m_listRoot) ctx.Role(image, "skip", "list content hit area (vanilla, transparent; not a screen dim)");
                 else if (InRow(t, out var row))
                 {
                     if (t.name == "bkg" && t.parent == row) ctx.Role(image, "craft.row", "skill row strip (row_recipe_*)");
@@ -80,8 +127,9 @@ namespace RuneSkin.InfoScreens
             foreach (var text in _root.GetComponentsInChildren<TMP_Text>(true))
             {
                 var t = text.transform;
+                if (text.GetComponent<SkinMark>() is SkinMark m && m.Internal) continue;
                 if (t.name == "topic" && t.parent == _frame) ctx.Role(text, "info.title", "panel title (serif)");
-                else if (t.name == "leveltext") ctx.Role(text, "craft.level", "skill level number (text_active)");
+                else if (t.name == "leveltext") ctx.Role(text, "skill.level", "skill level number (body font digits, text_active; Codex: readable lining numerals)");
                 else if (InRow(t, out _) || t.parent == _frame) ctx.Role(text, "text.body", "skill row / summary text (body sans)");
             }
             return ctx;
@@ -101,7 +149,8 @@ namespace RuneSkin.InfoScreens
             return false;
         }
 
-        // SkillsDialog.Setup postfix: rows exist and carry their values; restyle new rows, write the percent labels.
+        // SkillsDialog.Setup postfix: rows exist and carry their values (row j = skill j); restyle new rows, write the
+        // percent labels, then order the rows.
         public void AfterSetup(Player player)
         {
             var skills = player.GetSkills().GetSkillList();
@@ -111,12 +160,52 @@ namespace RuneSkin.InfoScreens
                 _rowsSeen = rows.Count;
                 ScreenRegistry.Restyle(_root);
             }
-            for (var i = 0; i < skills.Count && i < rows.Count; i++)
+            var n = Mathf.Min(skills.Count, rows.Count);
+            for (var i = 0; i < n; i++)
             {
                 var pct = InfoArt.RowText(rows[i].transform, "RuneSkinSkillPercent", "text.body", TextAlignmentOptions.MidlineRight);
                 pct.SetText("{0}%", Mathf.FloorToInt(skills[i].GetLevelPercentage() * 100f));
             }
+            Sort(player, skills, n);
+            // Summary: skill loss on death (Skills.OnDeath: m_DeathLowerFactor x world skill reduction rate) and the total.
+            var loss = Mathf.RoundToInt(player.GetSkills().m_DeathLowerFactor * Game.m_skillReductionRate * 100f);
+            _death.SetText("-{0}%", loss);
+            foreach (var child in new[] { "totalskills_topic", "totalskills" })
+            {
+                var t = Utils.FindChild(_root, child);
+                if (t && !t.gameObject.activeSelf && t.TryGetComponent<TMP_Text>(out var tt) && !string.IsNullOrEmpty(tt.text)) t.gameObject.SetActive(true);
+            }
             Layout();
+        }
+
+        // Permutes rows 0..n-1 (row j holds skill j after Setup) into the sort order: list position, m_elements index
+        // (gamepad selection walks it) and the tooltip offset (Setup derives it from the row position, :127).
+        private void Sort(Player player, List<Skills.Skill> skills, int n)
+        {
+            if (_sort == 0 || n < 2) return;
+            var rows = _dialog.m_elements;
+            var names = new string[n];
+            var levels = new float[n];
+            var sk = player.GetSkills();
+            for (var i = 0; i < n; i++)
+            {
+                var nt = Utils.FindChild(rows[i].transform, "name");
+                names[i] = nt && nt.TryGetComponent<TMP_Text>(out var tt) ? tt.text : skills[i].m_info.m_skill.ToString();
+                levels[i] = sk.GetSkillLevel(skills[i].m_info.m_skill);
+            }
+            var order = InfoMath.SkillOrder(levels, names, _sort, System.StringComparer.CurrentCulture);
+            var sorted = new GameObject[n];
+            for (var r = 0; r < n; r++) sorted[r] = rows[order[r]];
+            for (var r = 0; r < n; r++)
+            {
+                rows[r] = sorted[r];
+                var rt = (RectTransform)sorted[r].transform;
+                rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, -r * _dialog.m_spacing);
+                rt.SetSiblingIndex(r);
+                var tip = sorted[r].GetComponentInChildren<UITooltip>();
+                var skill = skills[order[r]];
+                if (tip) tip.Set("", skill.m_info.m_description, _dialog.m_tooltipAnchor, new Vector2(0f, Mathf.Min(255f, rt.localPosition.y + 10f)));
+            }
         }
 
         private void LateUpdate()
@@ -137,7 +226,9 @@ namespace RuneSkin.InfoScreens
             var pad = ThemeTokens.GetFloat("size.info.pad", 22f) * k;
             var inner = new Box(box.X + pad, box.Y + pad, box.W - 2f * pad, box.H - 2f * pad);
             var headerH = ThemeTokens.GetFloat("size.info.header", 64f) * k;
+            var tabsH = ThemeTokens.GetFloat("size.info.tabs", 70f) * k;
             var summaryH = ThemeTokens.GetFloat("size.info.summary", 48f) * k;
+            var gap = 8f * k;
             var y = inner.Y;
             foreach (Transform c in _frame)
             {
@@ -146,34 +237,59 @@ namespace RuneSkin.InfoScreens
                 {
                     Geo.Place(_canvas, rt, new Box(inner.X, y, inner.W, headerH));
                     InfoArt.Label(title, TextAlignmentOptions.Center, headerH * 0.55f, 16f, true);
+                    InfoArt.TitleKnots(_canvas, title, new Box(inner.X, y, inner.W, headerH), _knotL, _knotR);
                 }
-                else if (c.name == "Closebutton") Geo.Place(_canvas, rt, new Box(inner.Right - headerH * 0.7f, y + headerH * 0.15f, headerH * 0.7f, headerH * 0.7f));
+                else if (c.name == "Closebutton") Geo.SetScale(rt, 0f); // the selected tab closes (mockup: no close button)
             }
             y += headerH;
-            // Summary row: death glyph, "total skill level" label + value.
-            var sy = y + summaryH * 0.15f;
-            var sh = summaryH * 0.7f;
-            if (_deathGlyph) Geo.Place(_canvas, _deathGlyph.rectTransform, new Box(inner.X + 6f * k, sy, sh, sh));
-            var tx = inner.X + sh + 16f * k;
+            _tabs.Layout(_canvas, new Box(inner.X, y, inner.W, tabsH), k);
+            y += tabsH + gap;
+            // Summary well: death glyph + loss, total skill level, sort toggles on the right.
+            var well = new Box(inner.X, y, inner.W, summaryH);
+            Geo.Place(_canvas, _summaryWell.rectTransform, well);
+            var sh = summaryH * 0.72f;
+            var sy = y + (summaryH - sh) / 2f;
+            if (_deathGlyph) Geo.Place(_canvas, _deathGlyph.rectTransform, new Box(inner.X + 10f * k, sy, sh, sh));
+            var tx = inner.X + 10f * k + sh + 10f * k;
+            Geo.Place(_canvas, _death.rectTransform, new Box(tx, sy, inner.W * 0.25f, sh));
+            InfoArt.Label(_death, TextAlignmentOptions.MidlineLeft, sh * 0.62f, 13f);
+            var togglesW = 2f * sh + 8f * k;
+            var right = inner.Right - 10f * k;
+            for (var i = 0; i < _sorts.Length; i++)
+            {
+                var s = _sorts[i];
+                var b = new Box(right - togglesW + i * (sh + 8f * k), sy, sh, sh);
+                Geo.Place(_canvas, s.Back.rectTransform, b);
+                Geo.Place(_canvas, s.Glyph.rectTransform, CraftingScreen.CraftingMath.Inset(b, sh * 0.2f, sh * 0.2f));
+                var on = _sort == s.Mode;
+                if (s.Back.GetComponent<SkinMark>() is SkinMark m && m.Role != (on ? "info.tab.selected" : "info.tab"))
+                {
+                    m.Role = on ? "info.tab.selected" : "info.tab";
+                    m.Outcome = Restyler.Apply(s.Back, m, ThemeTokens.Role(m.Role)) ? Outcome.Styled : Outcome.Degraded;
+                }
+                var want = ThemeTokens.GetColor(on ? "color.text.active" : "color.text.body", Color.white);
+                if (s.Glyph.color != want) s.Glyph.color = want;
+            }
             var topicT = Utils.FindChild(_root, "totalskills_topic") as RectTransform;
             var valueT = Utils.FindChild(_root, "totalskills") as RectTransform;
-            if (topicT && topicT.TryGetComponent<TMP_Text>(out var tt))
-            {
-                Geo.Place(_canvas, topicT, new Box(tx, sy, inner.W * 0.55f, sh));
-                InfoArt.Label(tt, TextAlignmentOptions.MidlineLeft, sh * 0.6f, 13f);
-            }
+            var valueRight = right - togglesW - 14f * k;
             if (valueT && valueT.TryGetComponent<TMP_Text>(out var tv))
             {
-                Geo.Place(_canvas, valueT, new Box(inner.Right - inner.W * 0.4f, sy, inner.W * 0.4f - 8f * k, sh));
-                InfoArt.Label(tv, TextAlignmentOptions.MidlineRight, sh * 0.6f, 13f);
+                Geo.Place(_canvas, valueT, new Box(valueRight - inner.W * 0.2f, sy, inner.W * 0.2f, sh));
+                InfoArt.Label(tv, TextAlignmentOptions.MidlineRight, sh * 0.62f, 13f);
             }
-            y += summaryH + 6f * k;
+            if (topicT && topicT.TryGetComponent<TMP_Text>(out var tt))
+            {
+                Geo.Place(_canvas, topicT, new Box(valueRight - inner.W * 0.45f, sy, inner.W * 0.25f - 6f * k, sh));
+                InfoArt.Label(tt, TextAlignmentOptions.MidlineRight, sh * 0.5f, 12f);
+            }
+            y += summaryH + gap;
             // List: the scroll view (parent chain of m_listRoot up to the frame) fills the rest.
             var list = new Box(inner.X, y, inner.W, inner.Bottom - y);
             var scroll = _dialog.m_listRoot.GetComponentInParent<ScrollRect>(true);
             var view = scroll ? (RectTransform)scroll.transform : null;
             var bar = scroll && scroll.verticalScrollbar ? (RectTransform)scroll.verticalScrollbar.transform : null;
-            var barW = 12f * k;
+            var barW = 16f * k;
             if (view) Geo.Place(_canvas, view, new Box(list.X, list.Y, list.W - barW - 6f * k, list.H));
             if (bar) Geo.Place(_canvas, bar, new Box(list.Right - barW, list.Y, barW, list.H));
             var pitch = _dialog.m_spacing;

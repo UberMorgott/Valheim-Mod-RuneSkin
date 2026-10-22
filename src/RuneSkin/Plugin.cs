@@ -22,7 +22,7 @@ namespace RuneSkin
     [BepInProcess("valheim.exe")]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Version = "0.4.0";
+        public const string Version = "0.4.1";
 
         public static ManualLogSource Log { get; private set; }
         public static ConfigEntry<float> SkinScale { get; private set; }
@@ -32,7 +32,7 @@ namespace RuneSkin
         public static ConfigEntry<KeyboardShortcut> StatusListKey { get; private set; }
         public static ConfigEntry<string> StatusListButton { get; private set; }
 
-        private static ConfigEntry<bool> _ownMenu, _ownTooltips, _ownHud, _ownInventory, _ownCrafting, _ownSkills, _ownTrophies, _requireAssets;
+        private static ConfigEntry<bool> _ownMenu, _ownTooltips, _ownHud, _ownInventory, _ownCrafting, _ownSkills, _ownTrophies, _ownAlmanac, _requireAssets;
         private Harmony _harmony;
 
         private void Awake()
@@ -52,6 +52,8 @@ namespace RuneSkin
                 "RuneSkin styles and lays out the skills dialog (needs Inventory). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
             _ownTrophies = Config.Bind("Ownership", "Trophies", true,
                 "RuneSkin styles and lays out the trophies panel (needs Inventory). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownAlmanac = Config.Bind("Ownership", "Almanac", true,
+                "RuneSkin restyles the Almanac mod's window (its layout and content stay Almanac's). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
             HudScale = Config.Bind("Hud", "Scale", 1f, new ConfigDescription(
                 "HUD cluster scale on top of the game's UI scale (fonts never go below the readable floor).",
                 new AcceptableValueRange<float>(0.75f, 1.5f)));
@@ -84,6 +86,9 @@ namespace RuneSkin
                 [OwnershipRegistry.Crafting] = _ownCrafting.Value && _ownInventory.Value,
                 [OwnershipRegistry.Skills] = _ownSkills.Value && _ownInventory.Value,
                 [OwnershipRegistry.Trophies] = _ownTrophies.Value && _ownInventory.Value,
+                // Restyle only, no Inventory needed. Owned whether or not Almanac is installed (the plugin load order
+                // is not known here); without it the hook finds no window and does nothing.
+                [OwnershipRegistry.Almanac] = _ownAlmanac.Value,
             }, _requireAssets.Value);
 
             ApiHost = new Host();
@@ -100,6 +105,11 @@ namespace RuneSkin
             if (OwnershipRegistry.IsOwned(OwnershipRegistry.Inventory) && OwnershipRegistry.IsOwned(OwnershipRegistry.Crafting)) _harmony.PatchAll(typeof(CraftingScreen.CraftingAdapter));
             if (OwnershipRegistry.IsOwned(OwnershipRegistry.Inventory) && OwnershipRegistry.IsOwned(OwnershipRegistry.Skills)) _harmony.PatchAll(typeof(InfoScreens.SkillsAdapter));
             if (OwnershipRegistry.IsOwned(OwnershipRegistry.Inventory) && OwnershipRegistry.IsOwned(OwnershipRegistry.Trophies)) _harmony.PatchAll(typeof(InfoScreens.TrophiesAdapter));
+            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Almanac))
+            {
+                ModScreens.AlmanacAdapter.Harmony = _harmony;
+                _harmony.PatchAll(typeof(ModScreens.AlmanacAdapter));
+            }
             Log.LogInfo($"[RuneSkin] {Version} ready (API v{Skin.ApiVersion})");
         }
 

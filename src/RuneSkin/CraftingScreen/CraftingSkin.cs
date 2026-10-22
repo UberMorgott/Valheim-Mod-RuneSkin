@@ -192,6 +192,8 @@ namespace RuneSkin.CraftingScreen
 
         // ---------------------------------------------------------------- lookups
 
+        private bool RepairShown() => _gui.m_repairButton && _gui.m_repairButton.gameObject.activeSelf && _gui.m_repairButton.interactable;
+
         private RectTransform TabsRoot() => _gui.m_tabCraft ? _gui.m_tabCraft.transform.parent as RectTransform : null;
         private RectTransform ListView() => _gui.m_recipeListScroll ? FindScrollRect() : null;
         private RectTransform RecipeList() => _crafting.Find("RecipeList") as RectTransform;
@@ -228,9 +230,12 @@ namespace RuneSkin.CraftingScreen
                 else if (_gui.m_repairPanel && t == _gui.m_repairPanel || _gui.m_repairPanelSelection && t == _gui.m_repairPanelSelection) ctx.Role(image, "skip", "vanilla repair plate (hidden, round repair button)");
                 else if (t.name == "Decription" && t.parent == _crafting) ctx.Role(image, "skip", "vanilla detail backdrop (replaced by the detail well)");
                 else if (t.name == "requirements" && t.parent && t.parent.name == "Decription") ctx.Role(image, "skip", "vanilla requirement row backdrop (hidden)");
+                else if (t.name == "MT_ChainTree") ctx.Role(image, "craft.missing", "RecipeChains 'missing' box (MorgottTweaks; RuneSkin adds its tree scroll)");
                 else if (image.GetComponent<ScrollRect>()) ctx.Role(image, "skip", "recipe scroll view hit area (drawn clear, list well behind)");
                 else if (_gui.m_craftingStationLevelRoot && t == _gui.m_craftingStationLevelRoot) ctx.Role(image, "craft.badge", "station level badge (InventoryGui.m_craftingStationLevelRoot)");
                 else if (_gui.m_craftingStationIcon && image == _gui.m_craftingStationIcon) ctx.Role(image, "content", "station icon (CraftingStation.m_icon)");
+                else if (_gui.m_craftButton && image == _gui.m_craftButton.targetGraphic) ctx.Role(image, "craft.button", "craft / upgrade button (button_craft_*, falls back to button_*)");
+                else if (t.name == DescView && t.parent && t.parent.name == "Decription") ctx.Role(image, "skip", "description scroll view hit area (RuneSkin, clear)");
                 else if (_gui.m_repairButton && image == _gui.m_repairButton.targetGraphic) ctx.Role(image, "craft.repair", "repair button (round)");
                 else if (_gui.m_repairButton && t.parent == _gui.m_repairButton.transform && t.name == "Image") ctx.Role(image, "craft.repair.glyph", "repair button hammer glyph");
                 else if (_gui.m_repairButtonGlow && image == _gui.m_repairButtonGlow) ctx.Role(image, "content", "repair glow (vanilla pulses it; Epic Loot finds RepairButton/Glow)");
@@ -245,7 +250,8 @@ namespace RuneSkin.CraftingScreen
                     else ctx.Role(image, "content", "recipe row icon / durability / magic background");
                 }
                 else if (IsRequirementCell(t)) ctx.Role(image, MissingShown(t.gameObject) ? "craft.socket.missing" : "craft.socket", "requirement socket (m_recipeRequirementList cell)");
-                else if (_gui.m_minStationLevelIcon && t == _gui.m_minStationLevelIcon.transform) ctx.Role(image, "craft.socket", "required station level: its own requirement socket");
+                else if (_gui.m_minStationLevelIcon && t == _gui.m_minStationLevelIcon.transform.parent && t.parent == Requirements()) ctx.Role(image, "craft.socket", "required station level: its own requirement socket (level, parent of MinLevel)");
+                else if (_gui.m_minStationLevelIcon && t == _gui.m_minStationLevelIcon.transform) ctx.Role(image, "content", "required station level icon (MinLevel, shows the station's icon)");
                 else if (t.name == "res_icon" || t.parent && t.parent.name == "level" || t.name == "MinLevel") ctx.Role(image, "content", "requirement icon / min station level glyph");
                 else if (t.name == "MT_ChainTree") ctx.Role(image, "craft.missing", "RecipeChains 'missing' box (MorgottTweaks)");
                 else if (_gui.m_recipeIcon && image == _gui.m_recipeIcon || t.name == "magicItemIconBG" || t.name == "MT_Icon") ctx.Role(image, "content", "item icon / magic background / category icon");
@@ -426,7 +432,9 @@ namespace RuneSkin.CraftingScreen
             i.Categories = _cats.Count;
             i.Search = filter && filter.Find("Search/MT_CraftSearch");
             i.Requirements = _reqActive.Count + (_gui.m_minStationLevelIcon && _gui.m_minStationLevelIcon.gameObject.activeSelf ? 1 : 0);
-            i.Repair = _gui.m_repairButton && _gui.m_repairButton.gameObject.activeSelf;
+            // Round repair button only while something can be repaired (vanilla UpdateRepair: interactable); otherwise
+            // the craft button takes the whole row (mockup-1: no empty socket beside it).
+            i.Repair = RepairShown();
             i.CraftType = _gui.m_itemCraftType && _gui.m_itemCraftType.gameObject.activeSelf;
             i.Quality = _gui.m_qualityPanel && _gui.m_qualityPanel.gameObject.activeSelf;
             i.TabOffset = _tabOffset;
@@ -491,7 +499,59 @@ namespace RuneSkin.CraftingScreen
             if (vnei && vnei.gameObject.activeSelf)
             {
                 var top = o.Search.IsEmpty ? o.List.Y : o.Search.Y;
-                Geo.Place(_canvas, vnei, new Box(o.List.X, top, o.Detail.Right - o.List.X, o.ButtonRow.Bottom - top));
+                var area = new Box(o.List.X, top, o.Detail.Right - o.List.X, o.ButtonRow.Bottom - top);
+                Geo.Place(_canvas, vnei, area);
+                VneiFit(vnei, area);
+            }
+        }
+
+        // VNEI's item browser (VNEI.UI.BaseUI) sizes its grid in whole 50-unit cells: root = X*50+10 by Y*50+100
+        // (BaseUI.RebuildSize); attached to crafting it takes the vanilla panel's size once (MainVneiHandler: SetSize
+        // from Crafting.sizeDelta). Here the cell counts follow the body box (BaseUI.SetSize(false, x, y), only on change)
+        // and the grid root is centred in it. Reflection: VNEI is optional and not referenced.
+        private static Type _vneiType;
+        private static System.Reflection.MethodInfo _vneiSetSize;
+        private static System.Reflection.FieldInfo _vneiRoot;
+        private static System.Reflection.PropertyInfo _vneiX, _vneiY;
+        private static bool _vneiLooked;
+
+        private void VneiFit(RectTransform vnei, Box area)
+        {
+            if (!_vneiLooked)
+            {
+                _vneiLooked = true;
+                _vneiType = HarmonyLib.AccessTools.TypeByName("VNEI.UI.BaseUI");
+                if (_vneiType != null)
+                {
+                    _vneiSetSize = HarmonyLib.AccessTools.Method(_vneiType, "SetSize", new[] { typeof(bool), typeof(int), typeof(int) });
+                    _vneiRoot = HarmonyLib.AccessTools.Field(_vneiType, "root");
+                    _vneiX = HarmonyLib.AccessTools.Property(_vneiType, "ItemSizeX");
+                    _vneiY = HarmonyLib.AccessTools.Property(_vneiType, "ItemSizeY");
+                }
+                if (_vneiSetSize == null || _vneiRoot == null || _vneiX == null || _vneiY == null)
+                    Plugin.Log.LogInfo("[RuneSkin] VNEI BaseUI.SetSize/root not found: its grid keeps its own size");
+            }
+            if (_vneiSetSize == null) return;
+            var ui = vnei.GetComponent(_vneiType);
+            if (!ui) return;
+            // Canvas units per VNEI local unit (its own scale chain).
+            var u = vnei.lossyScale.x / Mathf.Max(Geo.WorldPerUnit(_canvas), 1e-6f);
+            if (u <= 0f) return;
+            var (x, y) = CraftingMath.VneiCells(area.W, area.H, u);
+            try
+            {
+                if ((int)_vneiX.GetValue(ui, null) != x || (int)_vneiY.GetValue(ui, null) != y) _vneiSetSize.Invoke(ui, new object[] { false, x, y });
+                if (_vneiRoot.GetValue(ui) is RectTransform root && root != vnei)
+                {
+                    var w = (x * 50f + 10f) * u;
+                    var h = (y * 50f + 100f) * u;
+                    Geo.Place(_canvas, root, new Box(area.X + (area.W - w) / 2f, area.Y, w, h));
+                }
+            }
+            catch (Exception e)
+            {
+                _vneiSetSize = null;
+                Plugin.Log.LogWarning($"[RuneSkin] VNEI grid fit disabled: {e.GetBaseException().Message}");
             }
         }
 
@@ -614,6 +674,8 @@ namespace RuneSkin.CraftingScreen
             ["Tools"] = "tools",
             ["Ammo"] = "ammo",
             ["Melee"] = "weapons",
+            ["Ranged"] = "ranged",
+            ["Magic"] = "magic",
             ["Armor"] = "armor",
             ["Accessories"] = "utility",
             ["Food"] = "food",
@@ -783,21 +845,131 @@ namespace RuneSkin.CraftingScreen
                 var w = 96f * k;
                 Geo.Place(_canvas, (RectTransform)_gui.m_variantButton.transform, new Box(o.Detail.Right - w - 10f * k, o.Icon.Y, w, 28f * k));
             }
-            if (_gui.m_recipeDecription)
-            {
-                Geo.Place(_canvas, _gui.m_recipeDecription.rectTransform, o.Description);
-                var d = _gui.m_recipeDecription;
-                var size = ThemeTokens.GetFloat("size.craft.font.body", 16f) * k;
-                if (!d.enableAutoSizing || Mathf.Abs(d.fontSizeMax - size) > 0.1f)
-                {
-                    d.enableAutoSizing = true;
-                    d.fontSizeMax = size;
-                    d.fontSizeMin = Mathf.Min(size, 12f);
-                }
-                if (d.alignment != TextAlignmentOptions.TopLeft) d.alignment = TextAlignmentOptions.TopLeft;
-            }
             if (_gui.m_qualityPanel && !o.Quality.IsEmpty) Geo.Place(_canvas, (RectTransform)_gui.m_qualityPanel, o.Quality);
             RequirementGrid(o);
+            var description = o.Description;
+            var chain = Chain(o);
+            if (!chain.IsEmpty) description = new Box(description.X, description.Y, description.W, Mathf.Max(0f, chain.Y - _t.Gap * k * 0.5f - description.Y));
+            DescriptionView(description, k);
+        }
+
+        // ---------------------------------------------------------------- description scroll
+
+        private const string DescView = Prefix + "DescView";
+        private RectTransform _descView;
+        private ScrollRect _descScroll;
+        private string _descText;
+        private float _descWidth = -1f, _descSize = -1f;
+
+        // Long descriptions (Epic Loot, mod items) scroll inside their box instead of shrinking to micro text or being
+        // cut: the description text (m_recipeDecription, same object and name) moves into an own clipped view with a
+        // vertical ScrollRect; its height = its preferred height at the view width. Nothing finds it by path
+        // (RecipeChains reads its corners for x only: the view keeps the detail column's x).
+        private void DescriptionView(Box b, float k)
+        {
+            var d = _gui.m_recipeDecription;
+            if (!d) return;
+            var detail = _crafting.Find("Decription");
+            if (!_descView && detail)
+            {
+                var go = new GameObject(DescView, typeof(RectTransform));
+                _descView = (RectTransform)go.transform;
+                _descView.SetParent(detail, false);
+                _descView.SetSiblingIndex(d.transform.GetSiblingIndex());
+                var hit = go.AddComponent<Image>();
+                hit.color = Color.clear; // wheel / drag hit area, draws nothing
+                go.AddComponent<RectMask2D>();
+                _descScroll = go.AddComponent<ScrollRect>();
+                _descScroll.horizontal = false;
+                _descScroll.vertical = true;
+                _descScroll.movementType = ScrollRect.MovementType.Clamped;
+                _descScroll.inertia = false;
+                _descScroll.scrollSensitivity = 24f;
+                _descScroll.viewport = _descView;
+                d.rectTransform.SetParent(_descView, false);
+                _descScroll.content = d.rectTransform;
+                var rt = d.rectTransform;
+                rt.anchorMin = new Vector2(0f, 1f);
+                rt.anchorMax = new Vector2(1f, 1f);
+                rt.pivot = new Vector2(0.5f, 1f);
+                rt.anchoredPosition = Vector2.zero;
+                rt.sizeDelta = new Vector2(0f, 10f);
+                rt.localScale = Vector3.one;
+            }
+            if (!_descView) { Geo.Place(_canvas, d.rectTransform, b); return; }
+            if (b.H < 1f) b = new Box(b.X, b.Y, b.W, 1f);
+            Geo.Place(_canvas, _descView, b);
+            var size = ThemeTokens.GetFloat("size.craft.font.body", 16f) * k;
+            if (d.enableAutoSizing) d.enableAutoSizing = false;
+            if (Mathf.Abs(d.fontSize - size) > 0.1f) d.fontSize = size;
+            if (d.alignment != TextAlignmentOptions.TopLeft) d.alignment = TextAlignmentOptions.TopLeft;
+            if (d.textWrappingMode != TextWrappingModes.Normal) d.textWrappingMode = TextWrappingModes.Normal;
+            if (d.overflowMode != TextOverflowModes.Overflow) d.overflowMode = TextOverflowModes.Overflow;
+            var width = _descView.rect.width;
+            if (!ReferenceEquals(d.text, _descText) || Mathf.Abs(width - _descWidth) > 0.5f || Mathf.Abs(size - _descSize) > 0.1f)
+            {
+                var newText = !ReferenceEquals(d.text, _descText);
+                _descText = d.text;
+                _descWidth = width;
+                _descSize = size;
+                var h = Mathf.Max(d.GetPreferredValues(d.text ?? "", width, 0f).y + 4f, 1f);
+                d.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, h);
+                if (newText) _descScroll.verticalNormalizedPosition = 1f; // a new recipe starts at the top
+            }
+        }
+
+        // ---------------------------------------------------------------- RecipeChains box
+
+        // MorgottTweaks RecipeChains "missing" box (MT_ChainTree): it docks itself above the highest requirement cell
+        // at the description's x / width and sizes its height to the whole tree (RecipeChainsUi.DockInDetail). Here:
+        // its height is capped (size.craft.chain.max, and never over the description's minimum), the tree text scrolls
+        // inside it (ScrollRect on the box, viewport = the text area above its chain button), and the description ends
+        // above it. Returns the box's canvas rect (empty when it is hidden).
+        private RectTransform _chain;
+        private RectTransform _chainView;
+
+        private Box Chain(CraftingLayout o)
+        {
+            if (!_chain) _chain = _crafting.Find("MT_ChainTree") as RectTransform;
+            if (!_chain || !_chain.gameObject.activeInHierarchy) return default;
+            var k = _in.Scale;
+            var box = Geo.BoxOf(_canvas, _chain);
+            var top = (o.Icon.IsEmpty ? o.Description.Y : o.Icon.Bottom) + ThemeTokens.GetFloat("size.craft.description.min", 48f) * k;
+            var h = CraftingMath.ChainHeight(box.H, box.Bottom, top, ThemeTokens.GetFloat("size.craft.chain.max", 150f) * k, ThemeTokens.GetFloat("size.craft.chain.min", 72f) * k);
+            if (box.H > h + 0.5f)
+            {
+                var unit = Geo.WorldPerUnit(_canvas) / Mathf.Max(_chain.lossyScale.y, 1e-6f);
+                _chain.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, h * unit);
+                box = Geo.BoxOf(_canvas, _chain);
+            }
+            ChainScroll(box);
+            return box;
+        }
+
+        private void ChainScroll(Box box)
+        {
+            var text = _chain.Find("Text") as RectTransform;
+            if (!text) return;
+            if (!_chainView)
+            {
+                _chainView = (RectTransform)new GameObject(Prefix + "ChainView", typeof(RectTransform)).transform;
+                _chainView.SetParent(_chain, false);
+                _chainView.SetAsFirstSibling();
+                if (!_chain.GetComponent<RectMask2D>()) _chain.gameObject.AddComponent<RectMask2D>();
+                var sr = _chain.GetComponent<ScrollRect>() ?? _chain.gameObject.AddComponent<ScrollRect>();
+                sr.horizontal = false;
+                sr.vertical = true;
+                sr.movementType = ScrollRect.MovementType.Clamped;
+                sr.inertia = false;
+                sr.scrollSensitivity = 24f;
+                sr.viewport = _chainView;
+                sr.content = text;
+            }
+            // Viewport = the text area: from the box top down to the chain button (or the box bottom).
+            var button = _chain.Find("MT_ChainCraftButton") as RectTransform;
+            var bottom = box.Bottom;
+            if (button && button.gameObject.activeSelf) bottom = Geo.BoxOf(_canvas, button).Y;
+            Geo.Place(_canvas, _chainView, new Box(box.X, box.Y, box.W, Mathf.Max(1f, bottom - box.Y)));
         }
 
         private void RequirementGrid(CraftingLayout o)
@@ -828,25 +1000,22 @@ namespace RuneSkin.CraftingScreen
             var min = _gui.m_minStationLevelIcon;
             if (min && min.gameObject.activeSelf && slot < o.RequirementCells.Length)
             {
-                // Station level requirement: a socket like the materials, the station glyph + digit inside it.
+                // Station level requirement: a socket like the materials (its "level" parent), the station's own icon
+                // (MinLevel) in the face, the level digit (level_text) in the count band.
                 var cell = o.RequirementCells[slot];
-                Geo.Place(_canvas, min.rectTransform, cell);
-                if (min.preserveAspect) min.preserveAspect = false;
-                // Inside: the station's own icon in the face (what the level is for), the level digit in the count band.
-                foreach (Transform c in min.transform)
+                var socket = min.transform.parent as RectTransform;
+                if (socket && socket != Requirements()) Geo.Place(_canvas, socket, cell);
+                if (_gui.m_craftingStationIcon && _gui.m_craftingStationIcon.sprite && min.sprite != _gui.m_craftingStationIcon.sprite) min.sprite = _gui.m_craftingStationIcon.sprite;
+                if (min.type != Image.Type.Simple) min.type = Image.Type.Simple;
+                if (!min.preserveAspect) min.preserveAspect = true;
+                Geo.Place(_canvas, min.rectTransform, new Box(cell.X + cell.W * 0.2f, cell.Y + cell.H * 0.12f, cell.W * 0.6f, cell.H * 0.54f));
+                if (_gui.m_minStationLevelText)
                 {
-                    if (!(c is RectTransform cr)) continue;
-                    Geo.Place(_canvas, cr, new Box(cell.X + cell.W * 0.2f, cell.Y + cell.H * 0.08f, cell.W * 0.6f, cell.H * 0.58f));
-                    if (c.TryGetComponent<Image>(out var si) && _gui.m_craftingStationIcon && _gui.m_craftingStationIcon.sprite && si.sprite != _gui.m_craftingStationIcon.sprite)
-                    {
-                        si.sprite = _gui.m_craftingStationIcon.sprite;
-                        si.preserveAspect = true;
-                    }
-                    if (_gui.m_minStationLevelText) Geo.Place(_canvas, _gui.m_minStationLevelText.rectTransform, new Box(cell.X, cell.Y + cell.H * 0.72f, cell.W, cell.H * 0.26f));
+                    Geo.Place(_canvas, _gui.m_minStationLevelText.rectTransform, new Box(cell.X, cell.Y + cell.H * 0.72f, cell.W, cell.H * 0.26f));
+                    Label(_gui.m_minStationLevelText, TextAlignmentOptions.Center, ThemeTokens.GetFloat("size.craft.font.amount", 16f) * _in.Scale, 10f);
                 }
             }
         }
-
         // Socket internals (socket_req art: clear glass face, count band along the bottom, 9-sliced to the cell): label
         // along the top of the face, icon under it, amount centred in the band. Anchored to the cell, so clones inherit it.
         private void StyleSocket(RectTransform cell)
@@ -868,7 +1037,7 @@ namespace RuneSkin.CraftingScreen
                         }
                         break;
                     case "res_icon":
-                        Anchors(rt, new Vector2(0.22f, 0.28f), new Vector2(0.78f, 0.67f), Vector2.zero, Vector2.zero);
+                        Anchors(rt, new Vector2(0.15f, 0.26f), new Vector2(0.85f, 0.69f), Vector2.zero, Vector2.zero); // icon ~18% larger (Codex r2)
                         if (c.TryGetComponent<Image>(out var i) && !i.preserveAspect) i.preserveAspect = true;
                         break;
                     case "res_amount":
@@ -929,6 +1098,7 @@ namespace RuneSkin.CraftingScreen
                 }
             }
             var repair = _gui.m_repairButton;
+            if (repair && repair.gameObject.activeSelf) Geo.SetScale(repair.transform, o.Repair.IsEmpty ? 0f : 1f);
             if (repair && repair.gameObject.activeSelf && !o.Repair.IsEmpty)
             {
                 var rt = (RectTransform)repair.transform;
@@ -939,9 +1109,11 @@ namespace RuneSkin.CraftingScreen
                     if (c.name == "Image")
                     {
                         Geo.Place(_canvas, cr, CraftingMath.Inset(o.Repair, o.Repair.W * 0.27f, o.Repair.H * 0.27f));
-                        // Nothing to repair (vanilla: interactable off): the glyph dims with the button.
-                        var a = repair.interactable ? 1f : 0.6f;
-                        if (c.TryGetComponent<Image>(out var gi) && !Mathf.Approximately(gi.canvasRenderer.GetAlpha(), a)) gi.canvasRenderer.SetAlpha(a);
+                        if (c.TryGetComponent<Image>(out var gi))
+                        {
+                            if (!gi.enabled) gi.enabled = true;
+                            if (!Mathf.Approximately(gi.canvasRenderer.GetAlpha(), 1f)) gi.canvasRenderer.SetAlpha(1f);
+                        }
                     }
                     else if (c.name == "Glow") Geo.Place(_canvas, cr, CraftingMath.Inset(o.Repair, -o.Repair.W * 0.08f, -o.Repair.H * 0.08f));
                 }

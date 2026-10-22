@@ -24,8 +24,9 @@ namespace RuneSkin.InfoScreens
 
         private InventoryGui _gui;
         private RectTransform _root, _frame, _canvas, _strip;
-        private Image _stripWell;
+        private Image _stripWell, _knotL, _knotR;
         private TMP_Text _count;
+        private InfoTabs _tabs;
         private GameObject _tooltipPrefab;
         private readonly List<ItemDrop> _all = new List<ItemDrop>();
         private readonly HashSet<string> _bosses = new HashSet<string>();
@@ -71,6 +72,9 @@ namespace RuneSkin.InfoScreens
             _count.raycastTarget = false;
             var mark = DollCell.Mark(_count, "text.body", "unlocked / total trophies");
             mark.Outcome = Restyler.Apply(_count, mark, ThemeTokens.Role("text.body")) ? Outcome.Styled : Outcome.Degraded;
+            _knotL = InfoArt.OwnImage(_frame, "RuneSkinTrophiesKnotL", "ornament.knot", "title ornament (knot)");
+            _knotR = InfoArt.OwnImage(_frame, "RuneSkinTrophiesKnotR", "ornament.knot", "title ornament (knot)");
+            _tabs = new InfoTabs(gui, _frame, "OnOpenTrophies", () => _gui.OnCloseTrophies());
             ScreenRegistry.Register(_root, Context);
             ScreenRegistry.Restyle(_root);
             Plugin.Log.LogInfo("[RuneSkin] trophies panel attached");
@@ -275,12 +279,16 @@ namespace RuneSkin.InfoScreens
                 {
                     Geo.Place(_canvas, rt, new Box(inner.X, inner.Y, inner.W, headerH));
                     InfoArt.Label(title, TextAlignmentOptions.Center, headerH * 0.55f, 16f, true);
+                    InfoArt.TitleKnots(_canvas, title, new Box(inner.X, inner.Y, inner.W, headerH), _knotL, _knotR);
                 }
-                else if (c.name == "Closebutton") Geo.Place(_canvas, rt, new Box(inner.Right - headerH * 0.7f, inner.Y + headerH * 0.15f, headerH * 0.7f, headerH * 0.7f));
+                else if (c.name == "Closebutton") Geo.SetScale(rt, 0f); // the selected tab closes (mockup: no close button)
             }
-            Geo.Place(_canvas, _count.rectTransform, new Box(inner.Right - inner.W * 0.3f - headerH * 0.9f, inner.Y, inner.W * 0.3f, headerH));
-            InfoArt.Label(_count, TextAlignmentOptions.MidlineRight, headerH * 0.3f, 13f);
+            Geo.Place(_canvas, _count.rectTransform, new Box(inner.Right - inner.W * 0.26f - 8f * k, inner.Y, inner.W * 0.26f, headerH));
+            InfoArt.Label(_count, TextAlignmentOptions.MidlineRight, headerH * 0.34f, 13f);
             var y = inner.Y + headerH;
+            var tabsH = ThemeTokens.GetFloat("size.info.tabs", 70f) * k;
+            _tabs.Layout(_canvas, new Box(inner.X, y, inner.W, tabsH), k);
+            y += tabsH + gap;
 
             // Boss strip: cells + name labels, wrapping rows (any boss count).
             var bc = ThemeTokens.GetFloat("size.info.boss.cell", 112f) * k;
@@ -325,7 +333,7 @@ namespace RuneSkin.InfoScreens
             var view = _gui.m_trophieListRoot.GetComponentInParent<ScrollRect>(true);
             var vr = view ? (RectTransform)view.transform : null;
             var bar = _gui.m_trophyListScroll ? (RectTransform)_gui.m_trophyListScroll.transform : null;
-            var barW = 12f * k;
+            var barW = 16f * k;
             var grid = new Box(inner.X, y, inner.W, inner.Bottom - y);
             if (vr) Geo.Place(_canvas, vr, new Box(grid.X, grid.Y, grid.W - barW - 6f * k, grid.H));
             if (bar) Geo.Place(_canvas, bar, new Box(grid.Right - barW, grid.Y, barW, grid.H));
