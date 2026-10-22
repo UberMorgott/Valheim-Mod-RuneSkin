@@ -215,6 +215,7 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
       (harness rune-alphabet now probes the source font of dynamic faces). Harness RuneFaceAsset shared by m5 / m6 / m6b / m6c
       (tools 1fbe56e). Runs tools\out\20261022-135707 (01 + m5 + m6, 56/56), 20261022-135940 (same, AugaSkin parked, 56/56),
       20261022-140155 (m6b + m6c, 33/33, barber title Valheim-Norsebold): 0 missing glyphs.
+
 ### Batch M7a - Epic Loot panels (families EpicLootEnchanting / EpicLootBoard / EpicLootTemper, AugaSkin yields)
 
 - [ ] Enchanting table: `EnchantingUI` prefab (EnchantingTableUI.Start), MultiSelectItemList ElementPrefab rows,
@@ -283,6 +284,20 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
       m4-map-fog-large, m4-map-zoom-large, m4-map-click-large (raycast at the map centre hits the map), m4-map-pin-large
       (named pin + label). Before fix run tools\out\20261022-141046: fog-small / zoom-small FAIL (worst pixel diff 0.31,
       rendered _zoom missing); after: 20261022-141304 m4 39/39 PASS, 20261022-141439 m1 15/15 PASS.
+
+## 0.9.4 rune face preset (2026-10-22, user: rune texts "bold and smeared")
+
+- [x] Canonical rune preset = the main menu entries (user-approved): vanilla Valheim-Norsebold with the font asset's own
+      material, no faux bold. Root cause: texts that already had Norsebold (vanilla topics / titles in owned screens) kept
+      vanilla's "Valheim-Norsebold - Outline" material copies and FontStyles.Bold (Settings / changelog / character /
+      world / text-input / text-viewer / raven / sleep topics; inventory / crafting / compendium titles), since TMP keeps
+      the material when the font does not change. Restyler.Apply: loaded face -> font.material + Bold cleared (SkinMark
+      HasBoldOff, reverted with the mark).
+- [x] Harness: rune-preset scan after every state of m4 / m5 / m6 / m6b / m6c (RuneSkin-restyled texts on the rune face:
+      own material, no Bold); m5-rune-crisp per resolution (crop images ui-runeskin-m5-crisp-<res>-entry / -title, edge
+      sharpness title >= 0.85 x menu entry); 01-mainmenu rune-face-probe info lines (vanilla vs RuneSkin material dump:
+      identical for the menu entries). Before: run 20261022-142305 37 preset FAILs; after: 20261022-142706 (m4 + m5 + m6 +
+      m6b + m6c) 167/167 PASS, 20261022-143109 m5 42/42 (sharpness title 0.521 / 0.536 vs entry 0.522 / 0.526 at 1440p / 1080p).
 
 ## Full-coverage directive (user, 2026-10-22; into M7 after B1-B5, not started)
 

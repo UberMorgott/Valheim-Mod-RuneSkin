@@ -136,6 +136,18 @@ namespace RuneSkin.Restyle
                     mark.OrigFont = text.font;
                     mark.OrigFontMaterial = text.fontSharedMaterial;
                     text.font = mark.SetFont = role.Font;
+                    // Loaded face (the rune face = vanilla Valheim-Norsebold): the canonical preset is the main menu's look,
+                    // the font asset's own material and no faux bold. Texts that already had the face keep vanilla's
+                    // preset otherwise ("- Outline" copies, Bold topics read heavy / smeared).
+                    if (ThemeTokens.IsLoadedFont(role.Font))
+                    {
+                        if (role.Font.material) text.fontSharedMaterial = role.Font.material;
+                        if ((text.fontStyle & FontStyles.Bold) == FontStyles.Bold)
+                        {
+                            mark.HasBoldOff = true;
+                            text.fontStyle &= ~FontStyles.Bold;
+                        }
+                    }
                     mark.SetFontMaterial = text.fontSharedMaterial;
                 }
                 else if (role.FontToken != null) complete = false;
@@ -254,6 +266,7 @@ namespace RuneSkin.Restyle
                     text.font = mark.OrigFont;
                     if (mark.OrigFontMaterial) text.fontSharedMaterial = mark.OrigFontMaterial;
                 }
+                if (mark.HasBoldOff) text.fontStyle |= FontStyles.Bold;
                 if (mark.HasTextColor && text.color == mark.SetTextColor) text.color = mark.OrigTextColor;
                 if (mark.HasFit)
                 {
