@@ -89,7 +89,8 @@ namespace RuneSkin.Restyle
                 mark.OriginalSprite = original;
                 mark.hideFlags = HideFlags.HideInInspector;
             }
-            else if (mark.Role == c.Role && mark.ThemeRevision == ThemeTokens.Revision)
+            // Degraded marks are tried again: a font bound late (theme source "loaded") may exist by now.
+            else if (mark.Role == c.Role && mark.ThemeRevision == ThemeTokens.Revision && mark.Outcome != Outcome.Degraded)
             {
                 return new Classification { Role = c.Role, Outcome = mark.Outcome, Reason = mark.Reason };
             }
@@ -139,6 +140,7 @@ namespace RuneSkin.Restyle
                 }
                 else if (role.FontToken != null) complete = false;
                 if (role.TextColor.HasValue) { mark.HasTextColor = true; mark.OrigTextColor = text.color; text.color = mark.SetTextColor = role.TextColor.Value; }
+                if (role.FitInset > 0f) Fit(text, mark, role.FitInset);
             }
             else if (g is Text legacy)
             {
@@ -207,6 +209,30 @@ namespace RuneSkin.Restyle
             image.rectTransform.sizeDelta = s.rect.size * (100f / s.pixelsPerUnit);
         }
 
+        // A button label shrinks to fit its button: auto-size from its own size down to size.text.fit.min, side margins
+        // keep it clear of the plate caps (inset per side measured from the button edge, minus what the label rect
+        // already leaves). Theme fonts are wider than the vanilla faces the layouts were made for.
+        private static void Fit(TMP_Text text, SkinMark mark, float inset)
+        {
+            var button = text.GetComponentInParent<Selectable>(true);
+            if (!button) return;
+            mark.HasFit = true;
+            mark.OrigAutoSize = text.enableAutoSizing;
+            mark.OrigSizeMin = text.fontSizeMin;
+            mark.OrigSizeMax = text.fontSizeMax;
+            mark.OrigFontSize = text.fontSize;
+            var max = text.enableAutoSizing ? Mathf.Max(text.fontSizeMax, text.fontSize) : text.fontSize;
+            text.enableAutoSizing = true;
+            text.fontSizeMax = max;
+            text.fontSizeMin = Mathf.Min(max, ThemeTokens.GetFloat("size.text.fit.min", 13f));
+            // Long labels may take a second line before they shrink (wrapping on, the plate is tall enough).
+            mark.OrigWrap = text.textWrappingMode;
+            text.textWrappingMode = TextWrappingModes.Normal;
+            // Margins follow the laid-out button (layout groups size it after Awake): PlateLabelFit keeps them.
+            if (!text.TryGetComponent<PlateLabelFit>(out var fit)) fit = text.gameObject.AddComponent<PlateLabelFit>();
+            fit.Init(button.transform as RectTransform, inset);
+        }
+
         public static void Revert(SkinMark mark)
         {
             if (!mark) return;
@@ -229,6 +255,14 @@ namespace RuneSkin.Restyle
                     if (mark.OrigFontMaterial) text.fontSharedMaterial = mark.OrigFontMaterial;
                 }
                 if (mark.HasTextColor && text.color == mark.SetTextColor) text.color = mark.OrigTextColor;
+                if (mark.HasFit)
+                {
+                    text.enableAutoSizing = mark.OrigAutoSize;
+                    text.fontSizeMin = mark.OrigSizeMin;
+                    text.fontSizeMax = mark.OrigSizeMax;
+                    if (!mark.OrigAutoSize) text.fontSize = mark.OrigFontSize;
+                    text.textWrappingMode = mark.OrigWrap;
+                }
             }
             else if (g is Text legacy)
             {

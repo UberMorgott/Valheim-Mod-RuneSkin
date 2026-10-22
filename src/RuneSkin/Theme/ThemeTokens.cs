@@ -24,6 +24,7 @@ namespace RuneSkin.Theme
         public string FontToken;
         public TMP_FontAsset Font;
         public Color? TextColor;
+        public float FitInset;
         public Color? StateNormal, StateHover, StatePressed, StateSelected, StateDisabled;
         public bool? FillCenter;
         public Sprite SpriteHover, SpritePressed, SpriteSelected, SpriteDisabled;
@@ -67,7 +68,27 @@ namespace RuneSkin.Theme
 
         public static Sprite GetSprite(string token) => token != null && Sprites.TryGetValue(token, out var s) && s ? s : null;
 
-        public static TMP_FontAsset GetFont(string token) => token != null && Fonts.TryGetValue(token, out var f) && f ? f : null;
+        public static TMP_FontAsset GetFont(string token)
+        {
+            if (token == null) return null;
+            if (Fonts.TryGetValue(token, out var f) && f) return f;
+            if (!LoadedFonts.TryGetValue(token, out var name)) return null;
+            // Not loaded yet (or absent): searched at most every 2 s (FindObjectsOfTypeAll is not free).
+            if (Time.realtimeSinceStartup < _nextLoadedLookup) return null;
+            _nextLoadedLookup = Time.realtimeSinceStartup + 2f;
+            // Shared font another plugin / the game loads (source "loaded"): looked up by name once it exists.
+            f = Resources.FindObjectsOfTypeAll<TMP_FontAsset>().FirstOrDefault(a => a && a.name == name);
+            if (!f) return null;
+            Fonts[token] = f;
+            Plugin.Log?.LogInfo($"[RuneSkin] font '{token}' bound to loaded TMP asset '{name}'");
+            return f;
+        }
+
+        // token -> TMP asset name for fonts with source "loaded" (never ours: no fallback links, no shader swap).
+        private static readonly Dictionary<string, string> LoadedFonts = new Dictionary<string, string>();
+        private static float _nextLoadedLookup;
+
+        public static bool IsLoadedFont(TMP_FontAsset f) => f && LoadedFonts.ContainsValue(f.name);
 
         private static AssetBundle _bundle;
         private static readonly Dictionary<string, Sprite> BundleSprites = new Dictionary<string, Sprite>();
@@ -141,7 +162,12 @@ namespace RuneSkin.Theme
 
         public static float GetFloat(string token, float fallback) => Floats.TryGetValue(token, out var v) ? v : fallback;
 
-        public static ResolvedRole Role(string name) => name != null && Roles.TryGetValue(name, out var r) ? r : null;
+        public static ResolvedRole Role(string name)
+        {
+            if (name == null || !Roles.TryGetValue(name, out var r)) return null;
+            if (!r.Font && r.FontToken != null) r.Font = GetFont(r.FontToken); // loaded fonts bind late
+            return r;
+        }
 
         public static bool HasRole(string name) => name != null && Roles.ContainsKey(name);
 
@@ -175,7 +201,7 @@ namespace RuneSkin.Theme
             // Our TMP materials use the game's own SDF shader: a shader compiled into the bundle may not match the
             // game's graphics setup (art pipeline note), the game's instance always does.
             var gameShader = tail[0].material ? tail[0].material.shader : null;
-            foreach (var font in Fonts.Values.Where(f => f).Distinct())
+            foreach (var font in Fonts.Values.Where(f => f && !LoadedFonts.ContainsValue(f.name)).Distinct())
             {
                 if (gameShader && font.material && font.material.shader != gameShader)
                     font.material.shader = gameShader;
@@ -293,8 +319,15 @@ namespace RuneSkin.Theme
             }
             foreach (var p in FallbackTokens)
                 Diagnostics.SkinDiagnostics.Theme($"sprite '{p.Key}': {p.Value}");
+            LoadedFonts.Clear();
             foreach (var s in f.fonts ?? new AssetEntry[0])
             {
+                if (s.source == "loaded")
+                {
+                    LoadedFonts[s.token] = s.asset;
+                    Fonts[s.token] = null;
+                    continue;
+                }
                 BundleFonts.TryGetValue(s.asset, out var font);
                 if (!font && BundleLoaded) Diagnostics.SkinDiagnostics.Theme($"font '{s.token}': TMP asset '{s.asset}' not in bundle");
                 Fonts[s.token] = font;
@@ -319,6 +352,7 @@ namespace RuneSkin.Theme
                     FontToken = string.IsNullOrEmpty(r.font) ? null : r.font,
                     Font = string.IsNullOrEmpty(r.font) ? null : Fonts[r.font],
                     TextColor = C(r.textColor),
+                    FitInset = r.fitInset,
                     StateNormal = C(r.stateNormal),
                     StateHover = C(r.stateHover),
                     StatePressed = C(r.statePressed),

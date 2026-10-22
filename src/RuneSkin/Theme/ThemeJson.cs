@@ -23,7 +23,7 @@ namespace RuneSkin.Theme
                 bundle = Str(root, "bundle"),
                 colors = Arr(root, "colors").Select(o => new ColorEntry { token = Str(o, "token"), value = Str(o, "value") }).ToArray(),
                 sprites = Arr(root, "sprites").Select(o => new AssetEntry { token = Str(o, "token"), asset = Str(o, "asset"), fallback = Str(o, "fallback") }).ToArray(),
-                fonts = Arr(root, "fonts").Select(o => new AssetEntry { token = Str(o, "token"), asset = Str(o, "asset") }).ToArray(),
+                fonts = Arr(root, "fonts").Select(o => new AssetEntry { token = Str(o, "token"), asset = Str(o, "asset"), source = Str(o, "source") }).ToArray(),
                 floats = Arr(root, "floats").Select(o => new FloatEntry { token = Str(o, "token"), value = (float)Num(o, "value") }).ToArray(),
                 roles = Arr(root, "roles").Select(o => new RoleRule
                 {
@@ -37,6 +37,7 @@ namespace RuneSkin.Theme
                     fillCenter = Str(o, "fillCenter"),
                     font = Str(o, "font"),
                     textColor = Str(o, "textColor"),
+                    fitInset = (float)Num(o, "fitInset"),
                     stateNormal = Str(o, "stateNormal"),
                     stateHover = Str(o, "stateHover"),
                     statePressed = Str(o, "statePressed"),

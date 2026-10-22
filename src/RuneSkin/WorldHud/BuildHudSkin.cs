@@ -110,7 +110,7 @@ namespace RuneSkin.WorldHud
             foreach (var t in root.GetComponentsInChildren<TMP_Text>(true))
             {
                 if (ctx.AdapterRoles.ContainsKey(t)) continue;
-                if (t.name == "piece_name") ctx.Role(t, "text.header", "selected piece name");
+                if (t.name == "piece_name") ctx.Role(t, "text.display", "selected piece name (display serif)");
                 else if (t.name == "res_amount") ctx.Role(t, "skill.level", "requirement amount");
             }
             PreWorldKit.Common(ctx, root);

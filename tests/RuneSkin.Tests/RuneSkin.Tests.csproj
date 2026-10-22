@@ -30,6 +30,7 @@
     <Compile Include="..\..\src\RuneSkin\Theme\ThemeJson.cs" Link="Linked\ThemeJson.cs" />
     <Compile Include="..\..\src\RuneSkin\Hud\HudMath.cs" Link="Linked\HudMath.cs" />
     <Compile Include="..\..\src\RuneSkin\Restyle\PanelMath.cs" Link="Linked\PanelMath.cs" />
+    <Compile Include="..\..\src\RuneSkin\Restyle\LabelFit.cs" Link="Linked\LabelFit.cs" />
     <Compile Include="..\..\src\RuneSkin\InventoryScreen\InventoryMath.cs" Link="Linked\InventoryMath.cs" />
     <Compile Include="..\..\src\RuneSkin\CraftingScreen\CraftingMath.cs" Link="Linked\CraftingMath.cs" />
     <Compile Include="..\..\src\RuneSkin\InfoScreens\InfoMath.cs" Link="Linked\InfoMath.cs" />

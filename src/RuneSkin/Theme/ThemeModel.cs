@@ -35,6 +35,9 @@ namespace RuneSkin.Theme
         // Sprites only: token used while this asset is not in the bundle (art not delivered yet). The use is listed
         // in diagnostics as a fallback, so it never hides missing art.
         public string fallback;
+        // Fonts only: "loaded" = a TMP font asset already loaded by the game or another plugin (e.g. the rune face,
+        // AugaSkin's "Norsebold SDF"), looked up by name at first use; empty = our bundle.
+        public string source;
     }
 
     [Serializable]
@@ -58,6 +61,9 @@ namespace RuneSkin.Theme
         public string fillCenter; // "true" / "false" / empty = keep
         public string font;
         public string textColor;
+        // TMP label inside a Selectable (button plates): > 0 = the label shrinks (auto-size, max = its own size, min =
+        // float size.text.fit.min) to fit the button minus this inset per side (ref px; plate caps / knots).
+        public float fitInset;
         public string stateNormal;
         public string stateHover;
         public string statePressed;

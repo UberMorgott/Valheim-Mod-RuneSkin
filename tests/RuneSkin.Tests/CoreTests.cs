@@ -55,6 +55,33 @@ namespace RuneSkin.Tests
         [Fact]
         public void MinimalThemeIsValid() => Assert.Empty(ThemeSchema.Validate(Minimal()));
 
+        // Fonts: empty source = our bundle, "loaded" = a TMP asset the game / another plugin loads (rune face).
+        [Theory]
+        [InlineData(null, true)]
+        [InlineData("loaded", true)]
+        [InlineData("disk", false)]
+        public void FontSourceIsBundleOrLoaded(string source, bool valid)
+        {
+            var f = Minimal();
+            f.fonts = new[] { new AssetEntry { token = "font.rune", asset = "Norsebold SDF", source = source } };
+            Assert.Equal(valid, !ThemeSchema.Validate(f).Exists(e => e.Contains("source")));
+        }
+
+        // The shipped theme: three faces, the rune face bound late from a loaded asset, menu entries and headers on it.
+        [Fact]
+        public void DefaultThemeHasThreeFaces()
+        {
+            using var s = typeof(ThemeSchema).Assembly.GetManifestResourceStream("RuneSkin.default-theme.json");
+            using var r = new System.IO.StreamReader(s!);
+            var f = ThemeJson.Parse(r.ReadToEnd());
+            Assert.Equal(new[] { "font.display", "font.body", "font.rune" }, System.Array.ConvertAll(f.fonts, x => x.token));
+            Assert.Equal("loaded", System.Array.Find(f.fonts, x => x.token == "font.rune").source);
+            foreach (var role in new[] { "menu.entry", "button.label.menu", "text.header", "info.title" })
+                Assert.Equal("font.rune", System.Array.Find(f.roles, x => x.role == role).font);
+            foreach (var role in new[] { "text.display", "tooltip.topic", "craft.title", "dialog.subject", "button.label" })
+                Assert.Equal("font.display", System.Array.Find(f.roles, x => x.role == role).font);
+        }
+
         [Fact]
         public void UndefinedTokenReferenceIsAnError()
         {

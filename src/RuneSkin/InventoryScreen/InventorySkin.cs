@@ -328,7 +328,7 @@ namespace RuneSkin.InventoryScreen
             ctx.Role(e.m_amount, "text.body", "InventoryElement.m_amount");
             ctx.Role(e.m_quality, "text.body", "InventoryElement.m_quality");
             var binding = e.transform.Find("binding");
-            if (binding && binding.TryGetComponent<TMP_Text>(out var key)) ctx.Role(key, "text.header", "hotbar binding number (InventoryGrid.cs:286-294)");
+            if (binding && binding.TryGetComponent<TMP_Text>(out var key)) ctx.Role(key, "text.display", "hotbar binding number (InventoryGrid.cs:286-294)");
         }
 
         // ---------------------------------------------------------------- per frame

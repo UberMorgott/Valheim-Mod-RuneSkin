@@ -87,6 +87,14 @@ namespace RuneSkin.PreWorld
             Plates(fejd);
             Layout(fejd);
             ScreenRegistry.Restyle(fejd.transform);
+            // Modded notice (m_moddedText): the body face is wider than the vanilla one, the fixed box cut the last line
+            // (run 20261022-105515): shrinks to fit.
+            if (fejd.m_moddedText && fejd.m_moddedText.TryGetComponent<TMP_Text>(out var modded) && !modded.enableAutoSizing)
+            {
+                modded.fontSizeMax = modded.fontSize;
+                modded.fontSizeMin = ThemeTokens.GetFloat("size.text.fit.min", 13f);
+                modded.enableAutoSizing = true;
+            }
             if (fejd.m_versionLabel)
             {
                 fejd.m_versionLabel.alignment = TextAlignmentOptions.BottomRight;
@@ -481,10 +489,15 @@ namespace RuneSkin.PreWorld
             }
             if (fejd.m_menuList)
                 foreach (var b in fejd.m_menuList.GetComponentsInChildren<Button>(true))
-                    if (b.GetComponent<ButtonPlate>() is ButtonPlate p && p.Plate)
+                    // Any entry of the menu column (a mod's entry cloned from a plated one copies the ButtonPlate
+                    // without its plate reference, run 20261022-105202: its label stayed on the display face).
+                    if (b.GetComponent<ButtonPlate>())
                         foreach (var t in b.GetComponentsInChildren<TMP_Text>(true))
-                            if (!PreWorldKit.IsKeyHint(t.transform, b.transform)) ctx.Role(t, "button.label", "main menu entry label (plated)");
+                            if (!PreWorldKit.IsKeyHint(t.transform, b.transform)) ctx.Role(t, "button.label.menu", "main menu entry label (plated, rune face)");
             ctx.Role(fejd.m_versionLabel, "text.version", "FejdStartup.m_versionLabel");
+            // Merch store button (m_merchStoreButtonParent): its target graphic is the merch picture (sprite
+            // merch_overlay_final_*); as a "button" it became an empty plate (run 20261022-105515). Picture kept.
+            if (fejd.m_merchStoreButtonParent) ctx.Exclude(fejd.m_merchStoreButtonParent.transform, "merch store picture button (vanilla art)");
             Danger(ctx, fejd.m_removeCharacterDialog);
             Danger(ctx, fejd.m_removeWorldDialog);
             if (fejd.m_removeCharacterName) ctx.Role(fejd.m_removeCharacterName, "dialog.subject", "delete confirm: the character's name (gold)");
@@ -504,6 +517,7 @@ namespace RuneSkin.PreWorld
                     if (clone.Find("selected") is Transform cs && cs.TryGetComponent<Image>(out var csi)) ctx.Role(csi, "craft.row.selected", "world row selection (vanilla toggles it)");
                     foreach (var n in new[] { "modifiers", "seed" })
                         if (clone.Find(n) is Transform ct && ct.TryGetComponent<TMP_Text>(out var ctx2)) ctx.Role(ctx2, "text.muted", "world row second line");
+                    if (clone.Find("name") is Transform cn && cn.TryGetComponent<TMP_Text>(out var cnt)) ctx.Role(cnt, "row.label", "world row name (placed by WorldRow, no plate fit)");
                 }
             // World row template: a list row (row_recipe plates like the character list), muted second-line texts.
             if (fejd.m_worldListElement && root == fejd.m_worldListElement.transform)
@@ -512,6 +526,7 @@ namespace RuneSkin.PreWorld
                 if (root.Find("selected") is Transform sel && sel.TryGetComponent<Image>(out var si)) ctx.Role(si, "craft.row.selected", "world row selection (vanilla toggles it)");
                 foreach (var n in new[] { "modifiers", "seed" })
                     if (root.Find(n) is Transform tt && tt.TryGetComponent<TMP_Text>(out var tx)) ctx.Role(tx, "text.muted", "world row second line");
+                if (root.Find("name") is Transform nt && nt.TryGetComponent<TMP_Text>(out var nx)) ctx.Role(nx, "row.label", "world row name (placed by WorldRow, no plate fit)");
             }
             PreWorldKit.Common(ctx, root);
             return ctx;

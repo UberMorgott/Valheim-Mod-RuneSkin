@@ -44,6 +44,7 @@ namespace RuneSkin.Theme
             {
                 Token(s.token, "font");
                 if (string.IsNullOrEmpty(s.asset)) errors.Add($"font '{s.token}': asset missing");
+                if (!string.IsNullOrEmpty(s.source) && s.source != "loaded") errors.Add($"font '{s.token}': source '{s.source}' unknown (empty = bundle, \"loaded\")");
                 fontTokens.Add(s.token);
             }
             foreach (var v in f.floats ?? new FloatEntry[0])
