@@ -81,7 +81,14 @@ namespace RuneSkin.Ownership
         public const string InventoryExtras = RuneSkin.API.SkinFamilies.InventoryExtras;
         public const string Radial = RuneSkin.API.SkinFamilies.Radial;
 
-        public static readonly string[] Known = { Menu, Tooltips, Hud, Inventory, Crafting, Skills, Trophies, Almanac, Minimap, EnemyHud, MessageHud, DamageText, MainMenu, Settings, Connection, BuildHud, Crosshair, ActionHud, ShipHud, KeyHints, LoadScreen, Chat, Popups, TextDialogs, Compendium, SplitDialog, Store, Barber, DevPanels, Feedback, ModUi, EpicLootEnchanting, EpicLootBoard, EpicLootTemper, ModHud, InventoryExtras, Radial };
+        // Batch P (features that were AugaSkin's, still live with RuneSkin): pause-menu Compendium entry, summon frames,
+        // other players' shield rails, mouse cursor.
+        public const string MenuCompendium = RuneSkin.API.SkinFamilies.MenuCompendium;
+        public const string SummonFrames = RuneSkin.API.SkinFamilies.SummonFrames;
+        public const string PlayerShields = RuneSkin.API.SkinFamilies.PlayerShields;
+        public const string Cursor = RuneSkin.API.SkinFamilies.Cursor;
+
+        public static readonly string[] Known = { Menu, Tooltips, Hud, Inventory, Crafting, Skills, Trophies, Almanac, Minimap, EnemyHud, MessageHud, DamageText, MainMenu, Settings, Connection, BuildHud, Crosshair, ActionHud, ShipHud, KeyHints, LoadScreen, Chat, Popups, TextDialogs, Compendium, SplitDialog, Store, Barber, DevPanels, Feedback, ModUi, EpicLootEnchanting, EpicLootBoard, EpicLootTemper, ModHud, InventoryExtras, Radial, MenuCompendium, SummonFrames, PlayerShields, Cursor };
 
         private static readonly HashSet<string> Owned = new HashSet<string>();
         public static bool Frozen { get; private set; }

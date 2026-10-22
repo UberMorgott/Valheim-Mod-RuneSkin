@@ -82,6 +82,18 @@ namespace RuneSkin.Tests
             Assert.True(Step(Root, new Node { WorldCanvas = true }, 1, true).Blocked);
         }
 
+        // An opted-out plugin's component blocks a would-be unit, never the vanilla boundary: BossAwakening's WorldBoss
+        // on _GameMain (run 20261022-181305: no fallback unit under _GameMain at all) must not hide every screen below.
+        [Fact]
+        public void OptedOutPluginOnTheBoundaryPassesThrough()
+        {
+            var v = Step(Root, new Node { Boundary = true, Game = true, Foreign = true, OptedOutPlugin = true }, 0, true);
+            Assert.False(v.Blocked);
+            Assert.True(Step(v, new Node { Foreign = true }, 1, true).HasUnit);
+            Assert.True(Step(Root, new Node { Foreign = true, OptedOutPlugin = true }, 1, true).Blocked);
+            Assert.False(Step(Root, new Node { FamilyRoot = true, OptedOutPlugin = true }, 1, true).Blocked);
+        }
+
         // The topmost foreign object wins: children inherit their parent's unit.
         [Fact]
         public void ChildrenInheritTheTopmostUnit()

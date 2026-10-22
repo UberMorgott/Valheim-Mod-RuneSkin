@@ -45,7 +45,13 @@ namespace RuneSkin.Theme
                 Token(s.token, "font");
                 if (string.IsNullOrEmpty(s.asset)) errors.Add($"font '{s.token}': asset missing");
                 if (!string.IsNullOrEmpty(s.source) && s.source != "loaded") errors.Add($"font '{s.token}': source '{s.source}' unknown (empty = bundle, \"loaded\")");
+                if (!string.IsNullOrEmpty(s.legacy) && s.source == "loaded") errors.Add($"font '{s.token}': legacy face only for bundle fonts (a loaded face carries its own source font)");
                 fontTokens.Add(s.token);
+            }
+            foreach (var t in f.textures ?? new AssetEntry[0])
+            {
+                Token(t.token, "texture");
+                if (string.IsNullOrEmpty(t.asset)) errors.Add($"texture '{t.token}': asset missing");
             }
             foreach (var v in f.floats ?? new FloatEntry[0])
             {

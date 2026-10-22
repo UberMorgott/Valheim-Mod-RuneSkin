@@ -14,6 +14,8 @@ namespace RuneSkin.Theme
         public ColorEntry[] colors;
         public AssetEntry[] sprites;
         public AssetEntry[] fonts;
+        // Standalone readable textures in the bundle (not atlas sprites), e.g. the mouse cursor.
+        public AssetEntry[] textures;
         public FloatEntry[] floats;
         public RoleRule[] roles;
         public SpriteRoleEntry[] spriteRoles;
@@ -38,6 +40,9 @@ namespace RuneSkin.Theme
         // Fonts only: "loaded" = a TMP font asset already loaded by the game or another plugin (e.g. the rune face,
         // vanilla's "Valheim-Norsebold"), looked up by name at first use; empty = our bundle.
         public string source;
+        // Bundle fonts only: the same face as a legacy dynamic UnityEngine.Font in the bundle (uGUI Text and IMGUI draw with
+        // a Font; the baked static TMP face carries none). Empty = no legacy face.
+        public string legacy;
     }
 
     [Serializable]

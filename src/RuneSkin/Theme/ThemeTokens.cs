@@ -94,12 +94,26 @@ namespace RuneSkin.Theme
 
         // Legacy uGUI Text and IMGUI styles draw with a UnityEngine.Font, not a TMP asset. A dynamic TMP face keeps its
         // source font at runtime (the rune face = vanilla Valheim-Norsebold); the static bundle faces do not (BuildBundles
-        // drops the reference when it bakes them) -> null: those texts keep their own face, theme colour only.
+        // drops the reference when it bakes them), so the bundle ships each one again as a legacy dynamic Font (theme font
+        // entry "legacy"). Null = neither: those texts keep their own face, theme colour only.
         public static Font LegacyFont(string token)
         {
+            if (token != null && LegacyFonts.TryGetValue(token, out var legacy) && legacy) return legacy;
             var f = GetFont(token);
             return f ? f.sourceFontFile : null;
         }
+
+        // A legacy face of the theme (diagnostics): a bundle legacy Font or a theme TMP face's source font.
+        public static bool IsLegacyThemeFont(Font f) =>
+            f && (BundleLegacyFonts.ContainsValue(f) || Fonts.Values.Any(t => t && t.sourceFontFile == f));
+
+        private static readonly Dictionary<string, Font> LegacyFonts = new Dictionary<string, Font>();
+        private static readonly Dictionary<string, Font> BundleLegacyFonts = new Dictionary<string, Font>();
+        private static readonly Dictionary<string, Texture2D> Textures = new Dictionary<string, Texture2D>();
+        private static readonly Dictionary<string, Texture2D> BundleTextures = new Dictionary<string, Texture2D>();
+
+        // A standalone bundle texture (theme "textures"; readable RGBA32, e.g. the cursor), null when absent.
+        public static Texture2D GetTexture(string token) => token != null && Textures.TryGetValue(token, out var t) && t ? t : null;
 
         private static AssetBundle _bundle;
         private static readonly Dictionary<string, Sprite> BundleSprites = new Dictionary<string, Sprite>();
@@ -200,7 +214,8 @@ namespace RuneSkin.Theme
             }
             foreach (var token in requires)
             {
-                var asset = (Sprites.TryGetValue(token, out var s) && s) || (Fonts.TryGetValue(token, out var f) && f);
+                var asset = (Sprites.TryGetValue(token, out var s) && s) || (Fonts.TryGetValue(token, out var f) && f) ||
+                            (Textures.TryGetValue(token, out var t) && t);
                 var ok = asset || Colors.ContainsKey(token) || Floats.ContainsKey(token);
                 if (!ok) missing?.Add(token);
             }
@@ -273,7 +288,11 @@ namespace RuneSkin.Theme
 
             foreach (var f in _bundle.LoadAllAssets<TMP_FontAsset>())
                 if (f && !BundleFonts.ContainsKey(f.name)) BundleFonts.Add(f.name, f);
-            Plugin.Log.LogInfo($"[RuneSkin] bundle: {BundleSprites.Count} sprites, {BundleFonts.Count} TMP fonts");
+            foreach (var f in _bundle.LoadAllAssets<Font>())
+                if (f && !BundleLegacyFonts.ContainsKey(f.name)) BundleLegacyFonts.Add(f.name, f);
+            foreach (var t in _bundle.LoadAllAssets<Texture2D>())
+                if (t && t.isReadable && !BundleTextures.ContainsKey(t.name)) BundleTextures.Add(t.name, t);
+            Plugin.Log.LogInfo($"[RuneSkin] bundle: {BundleSprites.Count} sprites, {BundleFonts.Count} TMP fonts, {BundleLegacyFonts.Count} legacy fonts, {BundleTextures.Count} textures");
         }
 
         private static string ReadEmbedded()
@@ -339,8 +358,22 @@ namespace RuneSkin.Theme
             foreach (var p in FallbackTokens)
                 Diagnostics.SkinDiagnostics.Theme($"sprite '{p.Key}': {p.Value}");
             LoadedFonts.Clear();
+            LegacyFonts.Clear();
+            Textures.Clear();
+            foreach (var t in f.textures ?? new AssetEntry[0])
+            {
+                BundleTextures.TryGetValue(t.asset, out var tex);
+                if (!tex && BundleLoaded) Diagnostics.SkinDiagnostics.Theme($"texture '{t.token}': readable texture '{t.asset}' not in bundle");
+                Textures[t.token] = tex;
+            }
             foreach (var s in f.fonts ?? new AssetEntry[0])
             {
+                if (!string.IsNullOrEmpty(s.legacy))
+                {
+                    BundleLegacyFonts.TryGetValue(s.legacy, out var legacy);
+                    if (!legacy && BundleLoaded) Diagnostics.SkinDiagnostics.Theme($"font '{s.token}': legacy Font '{s.legacy}' not in bundle");
+                    LegacyFonts[s.token] = legacy;
+                }
                 if (s.source == "loaded")
                 {
                     LoadedFonts[s.token] = s.asset;

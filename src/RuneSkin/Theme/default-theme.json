@@ -29,6 +29,7 @@
     { "token": "color.hud.eitr", "value": "#7A5CF5FF" },
     { "token": "color.hud.adrenaline", "value": "#FF8A3DFF" },
     { "token": "color.hud.es", "value": "#70D8E6FF" },
+    { "token": "color.hud.ally", "value": "#5FBF5AFF" },
     { "token": "color.hud.es.dim", "value": "#70D8E659" },
     { "token": "color.hud.shield", "value": "#46C2E0C8" },
     { "token": "color.hud.shield.text", "value": "#A6F2FFFF" },
@@ -304,11 +305,24 @@
     { "token": "sprite.glyph.refresh", "asset": "glyph_refresh" }
   ],
   "fonts": [
-    { "token": "font.display", "asset": "RuneSkin-Display Cormorant-Bold SDF" },
-    { "token": "font.body", "asset": "RuneSkin-Body PTSans-Regular SDF" },
+    { "token": "font.display", "asset": "RuneSkin-Display Cormorant-Bold SDF", "legacy": "Cormorant-Bold" },
+    { "token": "font.body", "asset": "RuneSkin-Body PTSans-Regular SDF", "legacy": "PT_Sans-Web-Regular" },
     { "token": "font.rune", "asset": "Valheim-Norsebold", "source": "loaded" }
   ],
+  "textures": [
+    { "token": "texture.cursor", "asset": "cursor" }
+  ],
   "floats": [
+    { "token": "size.hud.summon.frame", "value": 44 },
+    { "token": "size.hud.summon.gap", "value": 6 },
+    { "token": "size.hud.summon.bar", "value": 7 },
+    { "token": "size.hud.summon.letter", "value": 20 },
+    { "token": "size.hud.summon.status", "value": 11 },
+    { "token": "share.hud.summon.icon.inset", "value": 0.18 },
+    { "token": "size.enemy.shield.rail", "value": 5 },
+    { "token": "size.enemy.shield.gap", "value": 2 },
+    { "token": "size.cursor.hot.x", "value": 0 },
+    { "token": "size.cursor.hot.y", "value": 0 },
     { "token": "size.text.fit.min", "value": 12 },
     { "token": "share.text.fit.inset", "value": 0.16 },
     { "token": "share.text.fit.oneline", "value": 0.8 },
@@ -719,9 +733,9 @@
     { "role": "info.glyph.sort.level", "sprite": "sprite.glyph.sort.level", "color": "color.text.body", "imageType": "Simple", "preserveAspect": true },
     { "role": "info.glyph.sort.name", "sprite": "sprite.glyph.sort.name", "color": "color.text.body", "imageType": "Simple", "preserveAspect": true },
     { "role": "almanac.tab.selected", "sprite": "sprite.tab.selected", "color": "color.frame", "imageType": "Sliced", "fillCenter": "true" },
-    { "role": "text.legacy", "textColor": "color.text.body" },
-    { "role": "text.legacy.title", "textColor": "color.text.header" },
-    { "role": "text.legacy.accent", "textColor": "color.text.item.title" },
+    { "role": "text.legacy", "font": "font.body", "textColor": "color.text.body" },
+    { "role": "text.legacy.title", "font": "font.display", "textColor": "color.text.header" },
+    { "role": "text.legacy.accent", "font": "font.body", "textColor": "color.text.item.title" },
     { "role": "map.checkbox", "sprite": "sprite.checkbox.box", "color": "color.frame", "imageType": "Sliced", "fillCenter": "true" },
     { "role": "map.check", "sprite": "sprite.glyph.check", "color": "color.text.accent", "imageType": "Simple", "preserveAspect": true },
     { "role": "toggle.box", "sprite": "sprite.checkbox.box", "color": "color.frame", "imageType": "Simple", "preserveAspect": true },
@@ -751,9 +765,9 @@
     { "role": "teleport.ring", "sprite": "sprite.minimap.ring", "color": "color.frame", "imageType": "Simple", "preserveAspect": true },
     { "role": "teleport.swirl", "sprite": "sprite.glyph.teleport.swirl", "color": "color.hud.glyph", "imageType": "Simple", "preserveAspect": true },
     { "role": "legacy.title", "font": "font.rune", "textColor": "color.text.header" },
-    { "role": "legacy.body", "textColor": "color.text.body" },
-    { "role": "legacy.label", "textColor": "color.text.body" },
-    { "role": "legacy.muted", "textColor": "color.state.disabled" },
+    { "role": "legacy.body", "font": "font.body", "textColor": "color.text.body" },
+    { "role": "legacy.label", "font": "font.body", "textColor": "color.text.body" },
+    { "role": "legacy.muted", "font": "font.body", "textColor": "color.state.disabled" },
     { "role": "plate.currency", "sprite": "sprite.plate.currency", "color": "color.frame", "imageType": "Sliced", "fillCenter": "true" },
     { "role": "glyph.ench.enchant", "sprite": "sprite.glyph.ench.enchant", "color": "color.text.body", "imageType": "Simple", "preserveAspect": true },
     { "role": "glyph.ench.sacrifice", "sprite": "sprite.glyph.ench.sacrifice", "color": "color.text.body", "imageType": "Simple", "preserveAspect": true },
@@ -823,6 +837,10 @@
     { "family": "EpicLootTemper", "requires": [ "sprite.frame.panel", "sprite.fill.glass", "sprite.frame.inset", "sprite.row.recipe.normal", "sprite.button.normal", "font.display", "font.body" ] },
     { "family": "ModHud", "requires": [ "sprite.hud.socket", "sprite.frame.tooltip", "font.display", "font.body" ] },
     { "family": "InventoryExtras", "requires": [ "sprite.frame.panel", "sprite.fill.glass", "sprite.slot.recess", "sprite.row.recipe.normal", "sprite.button.normal", "font.display", "font.body" ] },
-    { "family": "Radial", "requires": [ "font.display", "font.body" ] }
+    { "family": "Radial", "requires": [ "font.display", "font.body" ] },
+    { "family": "MenuCompendium", "requires": [ "font.display", "font.body" ] },
+    { "family": "SummonFrames", "requires": [ "sprite.hud.socket.hotbar", "sprite.hud.rail.trough", "sprite.hud.rail.fill", "font.body" ] },
+    { "family": "PlayerShields", "requires": [ "sprite.hud.rail.trough", "sprite.hud.rail.fill" ] },
+    { "family": "Cursor", "requires": [ "texture.cursor" ] }
   ]
 }

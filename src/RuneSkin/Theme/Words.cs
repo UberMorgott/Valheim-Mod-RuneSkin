@@ -43,6 +43,13 @@ namespace RuneSkin.Theme
             { "runeskin_pin_mod", new[] { "Mod pins", "Метки модов" } },
             // Pre-world (M5).
             { "runeskin_characters", new[] { "Characters", "Персонажи" } },
+            // Summon frames (batch P): status line under the creature icon; {0} = seconds.
+            { "runeskin_summon_spawning", new[] { "Spawning", "Призыв" } },
+            { "runeskin_summon_respawn", new[] { "Respawn {0}s", "Возврат {0}с" } },
+            { "runeskin_summon_off", new[] { "Off", "Выкл" } },
+            { "runeskin_summon_noreserve", new[] { "No reserve", "Нет резерва" } },
+            { "runeskin_summon_waiting", new[] { "Respawning", "Возврат" } },
+            { "runeskin_summon_stay", new[] { "Stay", "Стоит" } },
         };
 
         public static void Apply(Localization loc, string language)

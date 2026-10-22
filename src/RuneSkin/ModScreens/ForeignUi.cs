@@ -262,7 +262,7 @@ namespace RuneSkin.ModScreens
                 else if (kind == ForeignMath.AssemblyKind.Foreign)
                 {
                     n.Foreign = true;
-                    if (_optOut.Contains(asm)) n.OptedOut = true;
+                    if (_optOut.Contains(asm)) n.OptedOutPlugin = true;
                 }
             }
             Behaviours.Clear();

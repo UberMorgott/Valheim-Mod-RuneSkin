@@ -449,7 +449,61 @@ func cmdBuild() {
 	must(err)
 	must(os.WriteFile(filepath.Join(spritesDir, "sprites.json"), append(b, '\n'), 0o644))
 	fmt.Printf("build: %d sprites -> %s\n", len(man.Sprites), spritesDir)
+	buildTextures()
 	cmdCheck()
+}
+
+// Standalone textures (not atlas sprites): art/src/kit/textures.json cuts -> art/textures/<name>.png +
+// textures.json. BuildBundles imports them as readable RGBA32 textures (cursor: Cursor.SetCursor needs a
+// readable, uncompressed texture, which an atlas sprite never is).
+const texturesDir = "art/textures"
+
+type TexCut struct {
+	Cut
+	Usage   string     `json:"usage"`   // cursor
+	Hotspot [2]float64 `json:"hotspot"` // output px from the top-left (cursor click point)
+}
+
+type OutTexture struct {
+	Name    string     `json:"name"`
+	File    string     `json:"file"`
+	Size    [2]int     `json:"size"`
+	Usage   string     `json:"usage"`
+	Hotspot [2]float64 `json:"hotspot"`
+	Notes   string     `json:"notes"`
+}
+
+func buildTextures() {
+	b, err := os.ReadFile(filepath.Join(kitDir, "textures.json"))
+	if os.IsNotExist(err) {
+		return
+	}
+	must(err)
+	var spec struct {
+		Textures []TexCut `json:"textures"`
+	}
+	must(json.Unmarshal(b, &spec))
+	must(os.MkdirAll(texturesDir, 0o755))
+	var out struct {
+		Source   string       `json:"source"`
+		Textures []OutTexture `json:"textures"`
+	}
+	out.Source = "Codex image-gen kit sheets art/src/kit/*.png, cut by art/tools (go run ./art/tools build)"
+	for _, t := range spec.Textures {
+		img := renderCut(t.Cut)
+		file := t.Name + ".png"
+		savePNG(filepath.Join(texturesDir, file), img)
+		w, h := img.Bounds().Dx(), img.Bounds().Dy()
+		if t.Hotspot[0] < 0 || t.Hotspot[1] < 0 || t.Hotspot[0] >= float64(w) || t.Hotspot[1] >= float64(h) {
+			fmt.Printf("%s: hotspot %v outside %dx%d\n", t.Name, t.Hotspot, w, h)
+			os.Exit(1)
+		}
+		out.Textures = append(out.Textures, OutTexture{t.Name, file, [2]int{w, h}, t.Usage, t.Hotspot, t.Notes})
+	}
+	ob, err := json.MarshalIndent(out, "", "  ")
+	must(err)
+	must(os.WriteFile(filepath.Join(texturesDir, "textures.json"), append(ob, '\n'), 0o644))
+	fmt.Printf("build: %d textures -> %s\n", len(out.Textures), texturesDir)
 }
 
 func cmdCheck() {

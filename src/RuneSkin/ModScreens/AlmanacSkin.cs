@@ -21,7 +21,7 @@ namespace RuneSkin.ModScreens
     // Viewport/ListRoot + Scrollbar, templates Viewport/ListElement {Selected, Background(Button)/Icon, Notice, Name,
     // Description} and Viewport/Button {Selected, Text}), TextView, GamblePanel, Description (RightPanel: Icon, Name,
     // MainButton, Requirements, InfoView), SearchField / SearchField (1), Currency, Closebutton). Texts are legacy
-    // UnityEngine.UI.Text: colour from the theme, font kept (theme fonts are TMP SDF). Elements are cloned per tab
+    // UnityEngine.UI.Text: theme colour and the theme face as a legacy Font (bundle PT Sans / Cormorant). Elements are cloned per tab
     // (GridView / TextView / InfoView Create*): a postfix on every Create* / On*Tab / Show marks the window dirty and
     // the next LateUpdate restyles it (styled templates make clones cheap: their marks carry the originals).
     public sealed class AlmanacSkin : MonoBehaviour
@@ -160,7 +160,7 @@ namespace RuneSkin.ModScreens
                 else if (t.name == "topic" && t.parent == root) ctx.Role(text, "text.legacy.title", "window title");
                 else if (t.parent && t.parent.name == "Selected" && InTab(root, t)) ctx.Role(text, "text.legacy.accent", "selected tab label");
                 else if (t.name == "Name" && t.parent && t.parent.name == "Description") ctx.Role(text, "text.legacy.accent", "detail title (item title colour)");
-                else ctx.Role(text, "text.legacy", "Almanac text (legacy uGUI: theme colour, own font)");
+                else ctx.Role(text, "text.legacy", "Almanac text (legacy uGUI: theme colour, legacy body face)");
             }
             foreach (var text in root.GetComponentsInChildren<TMP_Text>(true))
                 if (!(text.GetComponent<SkinMark>() is SkinMark m && m.Internal))

@@ -161,11 +161,24 @@ namespace RuneSkin.Restyle
             }
             else if (g is Text legacy)
             {
-                // Legacy uGUI text (mods built on UnityEngine.UI.Text, e.g. Almanac): theme colour; the face only where the
-                // role's TMP face carries a source font (dynamic: the rune face), the static bundle faces have none.
+                // Legacy uGUI text (mods built on UnityEngine.UI.Text, e.g. Almanac): theme colour and the role's face as a
+                // legacy Font (ThemeTokens.LegacyFont: the bundle's dynamic PT Sans / Cormorant, the rune face's source).
                 if (role.TextColor.HasValue) { mark.HasTextColor = true; mark.OrigTextColor = legacy.color; legacy.color = mark.SetTextColor = role.TextColor.Value; }
-                var face = role.FontToken != null ? ThemeTokens.LegacyFont(role.FontToken) : null;
-                if (face && legacy.font != face) { mark.HasLegacyFont = true; mark.OrigLegacyFont = legacy.font; legacy.font = mark.SetLegacyFont = face; }
+                var bold = (legacy.fontStyle & FontStyle.Bold) == FontStyle.Bold; // Bold or BoldAndItalic
+                var face = role.FontToken != null ? ThemeTokens.LegacyFont(LegacyFaces.FaceToken(role.FontToken, bold)) : null;
+                if (face && legacy.font != face)
+                {
+                    mark.HasLegacyFont = true;
+                    mark.OrigLegacyFont = legacy.font;
+                    legacy.font = mark.SetLegacyFont = face;
+                    // No faux bold: our faces are single weights, a Bold style would be smeared synthetically. The weight
+                    // comes from the face instead (LegacyFaceToken: bold body text takes the bold display face).
+                    if (bold)
+                    {
+                        mark.HasBoldOff = true;
+                        legacy.fontStyle = legacy.fontStyle == FontStyle.BoldAndItalic ? FontStyle.Italic : FontStyle.Normal;
+                    }
+                }
             }
 
             if (role.HasSpriteStates && g is Image && role.ImageUsable)
@@ -303,7 +316,11 @@ namespace RuneSkin.Restyle
             else if (g is Text legacy)
             {
                 if (mark.HasTextColor && legacy.color == mark.SetTextColor) legacy.color = mark.OrigTextColor;
-                if (mark.HasLegacyFont && legacy.font == mark.SetLegacyFont) legacy.font = mark.OrigLegacyFont;
+                if (mark.HasLegacyFont && legacy.font == mark.SetLegacyFont)
+                {
+                    legacy.font = mark.OrigLegacyFont;
+                    if (mark.HasBoldOff) legacy.fontStyle = legacy.fontStyle == FontStyle.Italic ? FontStyle.BoldAndItalic : FontStyle.Bold;
+                }
             }
             if (mark.HasSpriteStates && g)
             {

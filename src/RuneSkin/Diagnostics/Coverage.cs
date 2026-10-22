@@ -27,7 +27,7 @@ namespace RuneSkin.Diagnostics
             foreach (var report in SkinDiagnostics.Reports)
                 foreach (var row in report.Rows)
                     if (row.Graphic) rows[row.Graphic] = new KeyValuePair<string, ReportRow>(report.ScreenId, row);
-            int visible = 0, styled = 0, explained = 0, own = 0, unstyled = 0, m7 = 0, foreignFont = 0;
+            int visible = 0, styled = 0, explained = 0, own = 0, unstyled = 0, m7 = 0, foreignFont = 0, legacyTheme = 0, legacyForeign = 0;
             var perScreen = new SortedDictionary<string, int[]>(StringComparer.Ordinal); // styled, explained, unstyled
             var lines = new List<string>();
             var screen = new Rect(0, 0, Screen.width, Screen.height);
@@ -63,13 +63,15 @@ namespace RuneSkin.Diagnostics
                 }
                 if (M7(screenId) && status != "unstyled") m7++;
                 if (status == "styled" && g is TMP_Text t && t.font && !t.font.name.StartsWith("RuneSkin", StringComparison.Ordinal) && !Theme.ThemeTokens.IsLoadedFont(t.font)) foreignFont++;
+                // Legacy uGUI texts that took a role: on a theme legacy face (bundle PT Sans / Cormorant, rune source) or not.
+                if (status == "styled" && g is UnityEngine.UI.Text lt) { if (Theme.ThemeTokens.IsLegacyThemeFont(lt.font)) legacyTheme++; else legacyForeign++; }
                 var key = screenId ?? "(none)";
                 if (!perScreen.TryGetValue(key, out var c)) perScreen[key] = c = new int[3];
                 c[status == "styled" ? 0 : status == "unstyled" ? 2 : 1]++;
                 if (status == "unstyled")
                     lines.Add($"UNSTYLED {SkinDiagnostics.PathOf(g.transform, null)} | {g.GetType().Name} {SkinDiagnostics.Describe(g)} | screen={key} | {reason}");
             }
-            var head = $"coverage state={state} visible={visible} styled={styled} explained={explained} own={own} unstyled={unstyled} m7={m7} before={unstyled + m7} units={ModScreens.ForeignUi.UnitCount} styledForeignFont={foreignFont}";
+            var head = $"coverage state={state} visible={visible} styled={styled} explained={explained} own={own} unstyled={unstyled} m7={m7} before={unstyled + m7} units={ModScreens.ForeignUi.UnitCount} styledForeignFont={foreignFont} legacyThemeFace={legacyTheme} legacyForeignFace={legacyForeign}";
             var output = new List<string> { head };
             foreach (var p in perScreen)
                 output.Add($"screen {p.Key} styled={p.Value[0]} explained={p.Value[1]} unstyled={p.Value[2]}");

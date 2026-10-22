@@ -2,7 +2,7 @@
 // Unity.exe -batchmode -quit -nographics -projectPath <repo>/unity -executeMethod BuildBundles.Build -logFile -
 // Steps: TMP shaders (from the editor's ugui package) -> sync art/sprites + art/fonts -> sprite import (9-slice
 // borders, pivot, PPU from art/sprites/sprites.json) -> SpriteAtlas -> static TMP SDF font assets (bake report in
-// art/fonts/bake-report.txt) -> AssetBundle "runeskin" (StandaloneWindows64, LZ4) -> unity/Build/runeskin
+// art/fonts/bake-report.txt) -> legacy dynamic Fonts + readable textures (art/textures) -> AssetBundle "runeskin" (StandaloneWindows64, LZ4) -> unity/Build/runeskin
 // -> contents listing loaded back from the built file (unity/Build/runeskin.contents.txt).
 using System;
 using System.Collections.Generic;
@@ -36,6 +36,16 @@ public static class BuildBundles
         ("RuneSkin-Body PTSans-Regular SDF", "PT_Sans-Web-Regular.ttf", 60, 7),
     };
 
+    // The same source files as legacy dynamic UnityEngine.Font assets (asset name = file name without extension): uGUI
+    // Text and IMGUI draw with a Font, never a TMP asset, and the baked TMP faces drop their source font. Dynamic =
+    // glyphs rasterised from the embedded font data at runtime (Cyrillic included), no OS font lookup.
+    static readonly string[] LegacyFonts = { "PT_Sans-Web-Regular.ttf", "Cormorant-Bold.otf" };
+
+    const string TextureDir = Root + "/Textures";
+
+    [Serializable] public class TexDef { public string name, file, usage; public int[] size; public float[] hotspot; }
+    [Serializable] public class TexManifest { public TexDef[] textures; }
+
     static string Art => Path.GetFullPath(Path.Combine(Application.dataPath, "../../art"));
 
     public static void Build()
@@ -47,6 +57,8 @@ public static class BuildBundles
             var sprites = ImportSprites(man);
             BuildAtlas(sprites);
             var fonts = BakeFonts();
+            fonts.AddRange(ImportLegacyFonts());
+            fonts.AddRange(ImportTextures());
             foreach (var p in sprites.Select(AssetDatabase.GetAssetPath).Distinct().Append(AtlasPath).Concat(fonts))
                 AssetImporter.GetAtPath(p).SetAssetBundleNameAndVariant(BundleName, "");
             AssetDatabase.SaveAssets();
@@ -265,6 +277,60 @@ public static class BuildBundles
         return paths;
     }
 
+    // Source fonts (synced by BakeFonts) re-imported as dynamic legacy fonts with their data embedded.
+    static List<string> ImportLegacyFonts()
+    {
+        var paths = new List<string>();
+        foreach (var file in LegacyFonts)
+        {
+            var path = $"{FontDir}/Source/{file}";
+            var ti = AssetImporter.GetAtPath(path) as TrueTypeFontImporter ?? throw new Exception("no font importer at " + path);
+            ti.fontTextureCase = FontTextureCase.Dynamic;
+            ti.includeFontData = true;
+            ti.fontRenderingMode = FontRenderingMode.Smooth;
+            ti.fontReferences = new Font[0];
+            ti.fontNames = new string[0]; // no OS font fallback: the embedded data or nothing
+            ti.SaveAndReimport();
+            var font = AssetDatabase.LoadAssetAtPath<Font>(path) ?? throw new Exception("no legacy font " + path);
+            Debug.Log($"RuneSkin: legacy font {font.name} ({file}) dynamic {font.dynamic}");
+            paths.Add(path);
+        }
+        return paths;
+    }
+
+    // art/textures (Go build output): readable, uncompressed, unmipped RGBA textures (cursor).
+    static List<string> ImportTextures()
+    {
+        var manPath = Path.Combine(Art, "textures", "textures.json");
+        if (!File.Exists(manPath)) return new List<string>();
+        var man = JsonUtility.FromJson<TexManifest>(File.ReadAllText(manPath));
+        Sync(Path.Combine(Art, "textures"), man.textures.Select(t => t.file).ToList(), TextureDir);
+        var paths = new List<string>();
+        foreach (var t in man.textures)
+        {
+            var path = $"{TextureDir}/{t.file}";
+            var ti = (TextureImporter)AssetImporter.GetAtPath(path);
+            ti.textureType = t.usage == "cursor" ? TextureImporterType.Cursor : TextureImporterType.Default;
+            ti.isReadable = true;
+            ti.mipmapEnabled = false;
+            ti.alphaIsTransparency = true;
+            ti.sRGBTexture = true;
+            ti.npotScale = TextureImporterNPOTScale.None;
+            ti.wrapMode = TextureWrapMode.Clamp;
+            ti.filterMode = FilterMode.Bilinear;
+            ti.textureCompression = TextureImporterCompression.Uncompressed;
+            var ps = ti.GetPlatformTextureSettings("Standalone");
+            ps.overridden = true;
+            ps.format = TextureImporterFormat.RGBA32;
+            ti.SetPlatformTextureSettings(ps);
+            ti.SaveAndReimport();
+            var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path) ?? throw new Exception("no texture at " + path);
+            if (tex.name != t.name) throw new Exception($"texture name {tex.name} != {t.name}");
+            paths.Add(path);
+        }
+        return paths;
+    }
+
     static void Line(StringBuilder b, string s) => b.Append(s).Append('\n');
 
     static string FontVersion(Font font)
@@ -302,12 +368,26 @@ public static class BuildBundles
                 Line(sb, $"TMP_FontAsset {f.name}: {f.atlasPopulationMode}, chars {f.characterTable.Count}, atlas {f.atlasWidth}x{f.atlasHeight}, " +
                     $"shader {f.material?.shader?.name}, RU+EN missing {miss?.Count ?? -1}");
             }
+            var legacy = all.OfType<Font>().ToList();
+            var legacyBad = new List<string>();
+            foreach (var want in LegacyFonts.Select(Path.GetFileNameWithoutExtension))
+            {
+                var f = legacy.FirstOrDefault(x => x.name == want);
+                var miss = f ? charset.Count(c => !char.IsWhiteSpace(c) && !f.HasCharacter(c)) : -1;
+                Line(sb, $"Font {want}: {(f ? $"dynamic {f.dynamic}, RU+EN missing {miss}" : "ABSENT")}");
+                if (!f || !f.dynamic || miss != 0) legacyBad.Add(want);
+            }
+            var texMan = Path.Combine(Art, "textures", "textures.json");
+            var texDefs = File.Exists(texMan) ? JsonUtility.FromJson<TexManifest>(File.ReadAllText(texMan)).textures : new TexDef[0];
+            var texAbsent = texDefs.Where(t => !all.OfType<Texture2D>().Any(x => x.name == t.name && x.isReadable && x.format == TextureFormat.RGBA32))
+                .Select(t => t.name).ToList();
             var names = new HashSet<string>(sprites.Select(s => s.name));
             var absent = man.sprites.Where(s => !names.Contains(s.name)).Select(s => s.name).ToList();
-            Line(sb, $"check: sprites.json {man.sprites.Length}, in bundle {sprites.Count}, absent [{string.Join(",", absent)}], fonts {fonts.Count}");
+            Line(sb, $"check: sprites.json {man.sprites.Length}, in bundle {sprites.Count}, absent [{string.Join(",", absent)}], fonts {fonts.Count}, " +
+                $"legacy fonts {legacy.Count} bad [{string.Join(",", legacyBad)}], textures {texDefs.Length} absent/unreadable [{string.Join(",", texAbsent)}]");
             File.WriteAllText(file + ".contents.txt", sb.ToString());
             Debug.Log("RuneSkin contents:\n" + sb);
-            if (absent.Count > 0 || fonts.Count != Fonts.Length)
+            if (absent.Count > 0 || fonts.Count != Fonts.Length || legacyBad.Count > 0 || texAbsent.Count > 0)
                 throw new Exception("bundle incomplete");
             Debug.Log("RuneSkin: BUILD OK");
         }

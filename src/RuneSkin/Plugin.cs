@@ -22,7 +22,7 @@ namespace RuneSkin
     [BepInProcess("valheim.exe")]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Version = "0.12.0";
+        public const string Version = "0.13.0";
 
         public static ManualLogSource Log { get; private set; }
         public static ConfigEntry<float> SkinScale { get; private set; }
@@ -40,6 +40,7 @@ namespace RuneSkin
         private static ConfigEntry<bool> _ownLoadScreen, _ownChat, _ownPopups, _ownTextDialogs, _ownCompendium, _ownSplitDialog;
         private static ConfigEntry<bool> _ownStore, _ownBarber, _ownDevPanels, _ownFeedback;
         private static ConfigEntry<bool> _ownModUi, _ownElEnchanting, _ownElBoard, _ownElTemper, _ownModHud, _ownInventoryExtras, _ownRadial;
+        private static ConfigEntry<bool> _ownMenuCompendium, _ownSummonFrames, _ownPlayerShields, _ownCursor;
         private static ConfigEntry<string> _modUiOptOut;
         private Harmony _harmony;
 
@@ -122,6 +123,14 @@ namespace RuneSkin
                 "RuneSkin styles the achievements panel, the variant dialog and the dragged item. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
             _ownRadial = Config.Bind("Ownership", "Radial", true,
                 "RuneSkin styles the radial menus (texts; wheel art and icons stay). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+            _ownMenuCompendium = Config.Bind("Ownership", "MenuCompendium", true,
+                "RuneSkin adds a Compendium entry under Settings in the pause menu (needs Menu). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownSummonFrames = Config.Bind("Ownership", "SummonFrames", true,
+                "RuneSkin shows a frame per summon next to the hotbar (icon, health with the summon's energy shield, respawn / stay / off state). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownPlayerShields = Config.Bind("Ownership", "PlayerShields", true,
+                "RuneSkin shows other players' energy shield and absorb shield as rails under their overhead health bar (MorgottTweaks publishes them). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownCursor = Config.Bind("Ownership", "Cursor", true,
+                "RuneSkin sets its rune mouse cursor. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
             HudScale = Config.Bind("Hud", "Scale", 1f, new ConfigDescription(
                 "HUD cluster scale on top of the game's UI scale (fonts never go below the readable floor).",
                 new AcceptableValueRange<float>(0.75f, 1.5f)));
@@ -191,6 +200,11 @@ namespace RuneSkin
                 [OwnershipRegistry.ModHud] = _ownModHud.Value,
                 [OwnershipRegistry.InventoryExtras] = _ownInventoryExtras.Value,
                 [OwnershipRegistry.Radial] = _ownRadial.Value,
+                // The entry is styled by the Menu family's pass: without Menu it stays the other skin's.
+                [OwnershipRegistry.MenuCompendium] = _ownMenuCompendium.Value && _ownMenu.Value,
+                [OwnershipRegistry.SummonFrames] = _ownSummonFrames.Value,
+                [OwnershipRegistry.PlayerShields] = _ownPlayerShields.Value,
+                [OwnershipRegistry.Cursor] = _ownCursor.Value,
             }, _requireAssets.Value);
 
             ApiHost = new Host();
@@ -233,6 +247,11 @@ namespace RuneSkin
             ModScreens.ForeignUi.Init(gameObject, _harmony, _modUiOptOut.Value);
             ModScreens.JotunnHook.Init(_harmony);
             ModScreens.ImguiFonts.Init(gameObject, _harmony);
+            // Batch P features.
+            if (OwnershipRegistry.IsOwned(OwnershipRegistry.MenuCompendium)) _harmony.PatchAll(typeof(MenuCompendium));
+            if (OwnershipRegistry.IsOwned(OwnershipRegistry.SummonFrames)) _harmony.PatchAll(typeof(PlayerHud.SummonFramesAdapter));
+            if (OwnershipRegistry.IsOwned(OwnershipRegistry.PlayerShields)) _harmony.PatchAll(typeof(WorldHud.PlayerShields));
+            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Cursor)) CursorSkin.Apply();
             Log.LogInfo($"[RuneSkin] {Version} ready (API v{Skin.ApiVersion})");
         }
 
@@ -241,7 +260,9 @@ namespace RuneSkin
         // Re-reads the theme (override file) and re-applies every live root. Ownership never changes at runtime.
         public static void ReloadTheme()
         {
-            if (ThemeTokens.Load()) ScreenRegistry.RestyleAll();
+            if (!ThemeTokens.Load()) return;
+            ScreenRegistry.RestyleAll();
+            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Cursor)) CursorSkin.Apply();
         }
 
         // Coverage scan for tools (AutotestDriver calls it by reflection): visible graphics styled / explained / unstyled,

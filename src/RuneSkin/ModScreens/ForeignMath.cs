@@ -52,7 +52,10 @@ namespace RuneSkin.ModScreens
             public bool Foreign;         // a MonoBehaviour of another plugin on the object
             public bool Game;            // a MonoBehaviour of the game on the object (vanilla object or vanilla clone)
             public bool Own;             // a RuneSkin component on the object or a RuneSkin-named object
-            public bool OptedOut;        // object / assembly name in the opt-out list
+            public bool OptedOut;        // object name in the opt-out list
+            // A MonoBehaviour of an opted-out plugin on the object. Blocks only a would-be unit: on the vanilla boundary
+            // (BossAwakening's WorldBoss sits on _GameMain, Game.instance) it must not take every screen below with it.
+            public bool OptedOutPlugin;
             public bool WorldCanvas;     // world-space canvas (in-world signs, name plates): never restyled
         }
 
@@ -71,7 +74,7 @@ namespace RuneSkin.ModScreens
         {
             if (parent.Blocked) return parent;
             if (parent.HasUnit) return parent;
-            if (n.OptedOut || n.Own || n.WorldCanvas) return new Verdict { Blocked = true };
+            if (n.OptedOut || n.Own || n.WorldCanvas || (n.OptedOutPlugin && !n.Boundary && !n.FamilyRoot)) return new Verdict { Blocked = true };
             var underRoot = parent.UnderRoot || n.FamilyRoot;
             if (!n.Boundary && !n.FamilyRoot)
             {

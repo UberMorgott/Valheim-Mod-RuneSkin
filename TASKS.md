@@ -248,13 +248,20 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
 
 ### Batch P - port AugaSkin features (non-style, still live with RuneSkin)
 
-- [ ] Pause menu Compendium entry (PauseMenu_Setup.AddCompendium + Menu_UpdateNavigation_Patch gamepad chain).
+- [x] Pause menu Compendium entry (0.13.0, family MenuCompendium, Screens\MenuCompendium.cs: copy of the Settings entry, gamepad
+      chain spliced; AugaSkin 2.2.23 yields). Run 20261022-181305: entry after Settings + nav PASS, click opens TextsDialog
+      (check FAIL only on Menu.IsVisible's 2-frame lag, harness fixed to m_root, not re-run).
 - [ ] Character stats window: 5th Info button + panel (CharacterStatsPanel.cs, 568 lines; RuneSkin InfoTabs mirrors the button).
-- [ ] Summon frames under the hotbar (SummonFrames.cs, cfg Hud.ShowSummonFrames; RuneSkin LargeMap / MessageSkin already
-      leave room for them).
-- [ ] Other players' energy-shield strip under their overhead bars (EnergyShieldHud.cs, cfg Hud.ShowEnergyShield; MorgottTweaks
-      ShieldShare cfg text names AugaSkin) - into RuneSkin EnemyHud.
-- [ ] Custom cursor (Auga.ApplyCursor, bundle "Cursor2"): own cursor art or vanilla.
+- [x] Summon frames (0.13.0, family SummonFrames, Hud\SummonFrames.cs + SummonMath.cs: MorgottTweaks mt_sum_ui slots or loaded
+      summons, row below the hotbar or above it when the hotbar sits low; socket_hotbar + rail art, $runeskin_summon_* words).
+      Run 181305: 3 slot frames (fill 0.50, ES 1.00, trophy icons, RU status words), loaded path PASS, on screen, no Auga frames
+      (slot check FAIL only on English words in the harness, fixed, not re-run).
+- [x] Other players' shield rails (0.13.0, family PlayerShields, WorldHud\PlayerShields.cs, own EnemyHud.UpdateHuds postfix:
+      mt_es / mt_es_max + mt_shield / mt_shield_max rails under "Health", close up). Run 181305 (local player on the player HUD,
+      as 26b): p-shields + p-shields-closeup PASS, no Auga strips. Open: MorgottTweaks ShieldShare cfg text still names AugaSkin.
+- [x] Custom cursor (0.13.0, family Cursor, Theme\CursorSkin.cs): Codex art art/src/kit/cursor.png (prompt next to it) cut by
+      art/src/kit/textures.json -> art/textures/cursor.png 32x32, bundle readable RGBA32 texture (theme "textures"). Run 181305
+      p-cursor PASS (AugaSkin 2.2.23 skips ApplyCursor).
 - [ ] Drop with AugaSkin (Auga-only, no port): AugaLog message log + LastHitTracker, ComplexTooltip text patch, Text_Patch
       AlwaysUpper/TitleCase, ButtonSfx_Patch (Auga bundle buttons), GuiBar_Patch (Filled fills; check RuneSkin bars do not
       rely on it), AugaBindingDisplay, auga_audit console, MovableHudElement offsets of non-owned parts, translations.json.
@@ -446,5 +453,13 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
       temper 43 -> 0, achievements 83 -> 0, radial 23 -> 0, vnei 304 -> 0.
 - [x] Default opt-out now AugaSkin, BossAwakening, BA_WorldBossBar: run 174728 showed the BossAwakening raid bar under
       EnemyHud as a fallback unit (EnemyHud / Vaettir bars = the enemy HUD track).
-- [ ] Open: legacy uGUI body texts and IMGUI keep their own face (needs a legacy Font / dynamic body face in the art bundle);
-      Jotunn ModCompatibility window not shot (only on a version mismatch); Vaettir target / raid / Hamingja (other track).
+- [x] Legacy faces (0.13.0): the bundle ships PT Sans / Cormorant again as legacy dynamic UnityEngine.Font (BuildBundles
+      ImportLegacyFonts, contents check RU+EN missing 0), theme font entry "legacy"; legacy roles take font.body, bold texts the
+      display face with the Bold flag cleared (LegacyFaces, no faux bold); ImguiFonts uses them (bold GUIStyles -> display).
+      Coverage head adds legacyThemeFace / legacyForeignFace. Run 181305 p-legacy-fonts PASS.
+- [x] Coverage scan fix (MessageHud top-left icon): run 181305 m7-world PASS outsideHud=0 (was the 13 FAILs; hudroot 3 = HUD tracks), menu 0 (legacyThemeFace 1).
+- [x] ModUi opt-out root cause (run 181305, AugaSkin enabled: NO fallback unit under _GameMain - EL / VNEI / Almanac all
+      unstyled): the default opt-out "BossAwakening" matched BossAwakening's WorldBoss component on _GameMain (Game.instance),
+      blocking every screen below. Fix: a plugin opt-out blocks only a would-be unit, never the vanilla boundary / family roots
+      (ForeignMath.Node.OptedOutPlugin, test OptedOutPluginOnTheBoundaryPassesThrough). Not re-run (one-launch limit).
+- [ ] Open: Jotunn ModCompatibility window not shot (only on a version mismatch); Vaettir target / raid / Hamingja (other track).

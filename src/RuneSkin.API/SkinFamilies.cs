@@ -1,7 +1,7 @@
 namespace RuneSkin.API
 {
     /// <summary>
-    /// Screen family names for <see cref="Skin.IsOwned"/> (ApiVersion 8). A family is the ownership unit: while RuneSkin
+    /// Screen family names for <see cref="Skin.IsOwned"/> (ApiVersion 9). A family is the ownership unit: while RuneSkin
     /// owns one, no other skin may style its screens. Names are stable strings; an older RuneSkin answers false for a
     /// family it does not know.
     /// </summary>
@@ -83,5 +83,13 @@ namespace RuneSkin.API
         public const string InventoryExtras = "InventoryExtras";
         /// <summary>Radial menus (emotes, hotbar wheel; Valheim.UI.RadialBase) (M7c, ApiVersion 8).</summary>
         public const string Radial = "Radial";
+        /// <summary>Pause menu Compendium entry under Settings (batch P, ApiVersion 9).</summary>
+        public const string MenuCompendium = "MenuCompendium";
+        /// <summary>Summon frames next to the hotbar (batch P, ApiVersion 9).</summary>
+        public const string SummonFrames = "SummonFrames";
+        /// <summary>Energy shield / absorb shield rails under other players' overhead bars (batch P, ApiVersion 9).</summary>
+        public const string PlayerShields = "PlayerShields";
+        /// <summary>Mouse cursor (batch P, ApiVersion 9).</summary>
+        public const string Cursor = "Cursor";
     }
 }

@@ -1,0 +1,7 @@
+{
+  "textures": [
+    {"name": "cursor", "sheet": "cursor.png", "rect": [159, 138, 704, 704], "key": "magenta", "size": [32, 32],
+     "usage": "cursor", "hotspot": [0, 0],
+     "notes": "mouse cursor (Cursor.SetCursor, hardware 32x32): carved slate arrow, light bevel rim, cyan rune; tip = top-left pixel (sheet bbox [161,140,441,700], crop 704 = 22 x 32)"}
+  ]
+}

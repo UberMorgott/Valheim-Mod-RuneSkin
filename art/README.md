@@ -73,6 +73,10 @@ Style targets and palette: `STYLE.md`.
 - Bake: `TMP_FontAsset.CreateFontAsset` (SDFAA) + `TryAddCharacters(charset, includeFontFeatures)` then Static,
   source font dropped, atlas non-readable, material shader `TextMeshPro/Distance Field` (same approach as the
   AugaSkin fork's `FontAtlasBake.cs`, baked directly instead of spliced).
+- Legacy faces (0.13.0): the same two source files also ship as legacy dynamic `UnityEngine.Font` assets (`PT_Sans-Web-Regular`,
+  `Cormorant-Bold`; embedded font data, no OS fallback) for uGUI `Text` and IMGUI; theme font entry `legacy`.
+- Standalone textures (0.13.0): `art/src/kit/textures.json` (same cut fields + `usage` / `hotspot`) -> `art/textures/*.png` +
+  `textures.json`, imported readable RGBA32 (cursor: `Cursor.SetCursor` needs a readable texture, never an atlas sprite).
 
 ## M3 sprites (crafting, skills, trophies)
 
