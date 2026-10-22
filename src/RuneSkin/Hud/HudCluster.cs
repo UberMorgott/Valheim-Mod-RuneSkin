@@ -250,6 +250,15 @@ namespace RuneSkin.PlayerHud
             }
         }
 
+        // Remaining absorb of every vanilla shield effect (SE_Shield: m_totalAbsorbDamage - m_damage, SE_Shield.cs:23-57).
+        public static float VanillaShield(Player p)
+        {
+            var sum = 0f;
+            foreach (var se in p.GetSEMan().GetStatusEffects())
+                if (se is SE_Shield s) sum += Mathf.Max(0f, s.m_totalAbsorbDamage - s.m_damage);
+            return sum;
+        }
+
         private void Sample(Player p, float dt)
         {
             // One outer width for every main bar (mockup hud-status-b; the max is the number, not the length). The
@@ -280,11 +289,14 @@ namespace RuneSkin.PlayerHud
                 _health.Tick(dt);
                 var count = HudMath.Stripes(_pending, hp, hpB, _health.WindowLength, ThemeTokens.GetFloat("size.hud.stripe.min", 4f), BarView.MaxStripes, _stripes);
                 for (var i = 0; i < count; i++) _stripeKinds[i] = _stripes[i].Key < 0 ? (int)DotKind.Other : _stripes[i].Key;
-                _health.Render(hp, hpB, hpC, _stripes, count, _stripeKinds, null, overlaySprite, overlayColor, false, dt, true); // "54/100" (mockup)
+                // Shield = MorgottTweaks energy shield (provider pool) + vanilla staff shields (SE_Shield), one layer
+                // over the HP fill, label "HP + shield" (user call 2026-10-22; the ES rail is gone).
+                _health.SetShield((esOn ? Mathf.Max(0f, es.Current) : 0f) + VanillaShield(p));
+                _health.Render(hp, hpB, hpC, _stripes, count, _stripeKinds, null, overlaySprite, overlayColor, false, dt, false);
             }
 
             // ES rail: same outer width as the health frame (rail window = health window + inset difference).
-            var railOn = esOn && !esMain;
+            var railOn = false;
             _es.SetVisible(railOn);
             if (railOn)
             {

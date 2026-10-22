@@ -369,6 +369,16 @@ namespace RuneSkin.Tests
             Assert.True(s >= 42f);
         }
 
+        [Theory]
+        [InlineData(0f, 340f, 400f, 0f)]       // no shield
+        [InlineData(-5f, 340f, 400f, 0f)]      // nonsense shield
+        [InlineData(85f, 340f, 400f, 100f)]    // quarter of max HP = quarter of the window
+        [InlineData(340f, 340f, 400f, 400f)]   // equal to max
+        [InlineData(900f, 340f, 400f, 400f)]   // shield > max HP: clamped to the window
+        [InlineData(50f, 0f, 400f, 0f)]        // no max HP
+        public void ShieldOverlayWidth(float shield, float max, float window, float want) =>
+            Assert.Equal(want, HudMath.ShieldOverlay(shield, max, window), 3);
+
         [Fact]
         public void StatusCellKeepsThemeMinimum() => Assert.Equal(60f, HudMath.StatusCell(60f, 0.6f, 20f, 10f, 3f));
     }

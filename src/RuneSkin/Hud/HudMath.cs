@@ -157,6 +157,14 @@ namespace RuneSkin.PlayerHud
             public bool MoreCell;   // the last cell is the "+N" cell
         }
 
+        // Shield layer over the HP fill (user call 2026-10-22: one translucent layer ON the health bar, no rail):
+        // width = shield / max HP of the window, clamped to the window; no shield / no max = 0.
+        public static float ShieldOverlay(float shield, float maxHp, float windowPx)
+        {
+            if (!(shield > 0f) || !(maxHp > 0f) || !(windowPx > 0f) || float.IsInfinity(shield)) return 0f;
+            return Math.Min(1f, shield / maxHp) * windowPx;
+        }
+
         // Side of a square status cell that holds its icon (top, iconShare of the side) and one timer / icon-text line
         // under it (textH tall, textW wide + pad each side) without the text leaving the cell: never below minCell.
         public static float StatusCell(float minCell, float iconShare, float textW, float textH, float pad)
