@@ -292,7 +292,7 @@ namespace RuneSkin.WorldHud
                 {
                     if (img.name == "UnlockIcon") continue;
                     if (img.name == "icon_bkg") _art.Reskin(img, "sprite.slot.recess", "color.frame", "unlock message icon socket");
-                    else if (img.sprite) { _art.Reskin(img, "sprite.hud.frame.small", "color.frame", "unlock message plate"); img.fillCenter = true; }
+                    else if (img.sprite) { _art.Reskin(img, "sprite.hud.frame.small", "color.frame", "unlock message plate"); img.fillCenter = true; _unlockPlates[go] = img.rectTransform; }
                 }
                 foreach (var t in go.GetComponentsInChildren<TMP_Text>(true))
                 {
@@ -305,7 +305,29 @@ namespace RuneSkin.WorldHud
                     if (!title) { t.enableAutoSizing = true; t.fontSizeMax = t.fontSize; t.fontSizeMin = Mathf.Max(10f, t.fontSize * 0.7f); t.overflowMode = TextOverflowModes.Ellipsis; }
                 }
             }
-            if (_unlocks.Count > 256) _unlocks.Clear();
+            if (_unlocks.Count > 256) { _unlocks.Clear(); _unlockPlates.Clear(); }
+            AlignUnlocks(list);
+        }
+
+        // Left edge of every unlock plate on the notification stack's (Codex M4 r3), per frame: the notification plate
+        // is placed once its text arrives (TopLeft), which can be after the unlock instance was restyled (run
+        // 20261022-065352: a one-time shift at restyle found the plate not yet placed). Only while the plate exists.
+        private readonly Vector3[] _ca = new Vector3[4], _cb = new Vector3[4];
+
+        private readonly Dictionary<GameObject, RectTransform> _unlockPlates = new Dictionary<GameObject, RectTransform>();
+
+        private void AlignUnlocks(List<GameObject> list)
+        {
+            if (!_plate || string.IsNullOrEmpty(_topText)) return;
+            _plate.rectTransform.GetWorldCorners(_ca);
+            foreach (var go in list)
+            {
+                if (!go || !(go.transform is RectTransform urt) || !(urt.parent is RectTransform up)) continue;
+                // The visible plate's left edge (the instance root can be a zero-size anchor point).
+                (_unlockPlates.TryGetValue(go, out var plate) && plate ? plate : urt).GetWorldCorners(_cb);
+                var dx = up.InverseTransformPoint(_ca[0]).x - up.InverseTransformPoint(_cb[0]).x;
+                if (Mathf.Abs(dx) > 0.5f) urt.anchoredPosition += new Vector2(dx, 0f);
+            }
         }
 
         public void Record() => SkinDiagnostics.Record(_art.Report(transform));

@@ -1270,7 +1270,10 @@ namespace RuneSkin.InventoryScreen
 
         private void RestoreQuickBar()
         {
-            if (_quickGroup && _quickGroup.alpha != 1f) _quickGroup.alpha = 1f;
+            // Stays hidden under the large map (LargeMap hides every HotkeyBar; this per-frame restore showed the
+            // EAQS quick-slot bar over the open map, run 20261022-071214).
+            var a = Minimap.IsOpen() ? 0f : 1f;
+            if (_quickGroup && _quickGroup.alpha != a) _quickGroup.alpha = a;
         }
 
         private void DollScrollInput()

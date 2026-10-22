@@ -29,6 +29,7 @@ namespace RuneSkin.PreWorld
             PreWorldKit.Panels(root, "size.panel.pad");
             MainMenuSkin.TabSelected(root);
             Column(settings, panel);
+            GamepadInset(settings);
             ScreenRegistry.Register(root, () => Context(settings));
             ScreenRegistry.Restyle(root);
         }
@@ -76,6 +77,29 @@ namespace RuneSkin.PreWorld
             }
         }
 
+        // Controller page (the one holding the vanilla GamepadMap diagram): its rows touched the well's top edge and the
+        // diagram's outer labels reached the rim (Codex M5 r4). The page content scales about its centre
+        // (scale.settings.gamepad), leaving an even margin inside the well; vanilla layout inside untouched.
+        private static void GamepadInset(Settings settings)
+        {
+            var handler = settings.m_tabHandler;
+            if (!handler) return;
+            var k = ThemeTokens.GetFloat("scale.settings.gamepad", 0.93f);
+            foreach (var tab in handler.m_tabs)
+            {
+                var page = tab?.m_page;
+                if (!page || page.GetComponent<LiftMark>()) continue;
+                var map = false;
+                foreach (var t in page.GetComponentsInChildren<Transform>(true))
+                    if (t.name.IndexOf("GamepadMap", StringComparison.Ordinal) >= 0) { map = true; break; }
+                if (!map) continue;
+                page.gameObject.AddComponent<LiftMark>();
+                var c = page.rect.center;
+                page.localScale = new Vector3(k, k, 1f);
+                page.localPosition += (Vector3)(c * (1f - k));
+            }
+        }
+
         // The window grows by s (both sides, it stays centred) and every child of it moves so that the content keeps its
         // size and sits right of a new s-wide band on the left, where the category column goes. A child anchored at x = a
         // moves by s(1 - a) (its anchor point already moved by (a - 0.5)s with the edges).
@@ -105,11 +129,26 @@ namespace RuneSkin.PreWorld
             if (settings.m_tabHandler)
                 foreach (var tab in settings.m_tabHandler.m_tabs)
                     if (tab?.m_button && tab.m_button.targetGraphic) ctx.Role(tab.m_button.targetGraphic, "tab", "Settings tab button (category column)");
-            if (settings.m_okButton && settings.m_okButton.targetGraphic) ctx.Role(settings.m_okButton.targetGraphic, "button", "Settings Ok (primary)");
+            MainMenuSkin.Primary(ctx, settings.m_okButton);
             var title = root.Find("Panel/Title");
             if (title && title.TryGetComponent<TMP_Text>(out var tt)) ctx.Role(tt, "text.header", "Settings title");
             PreWorldKit.Common(ctx, root);
             return ctx;
+        }
+    }
+
+    // Keeps a graphic on the vertical centre of a text rect (laid out after Awake), change-only writes.
+    public sealed class FollowTextCenter : MonoBehaviour
+    {
+        public RectTransform Text;
+
+        private void LateUpdate()
+        {
+            if (!Text || !(transform is RectTransform rt) || !(rt.parent is RectTransform host)) return;
+            var c = host.InverseTransformPoint(Text.TransformPoint(Text.rect.center));
+            // Anchored y relative to the anchor point (anchors at y 0.5 of the host).
+            var y = c.y - (host.rect.yMin + host.rect.height * rt.anchorMin.y);
+            if (Mathf.Abs(rt.anchoredPosition.y - y) > 0.5f) rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, y);
         }
     }
 
@@ -161,14 +200,22 @@ namespace RuneSkin.PreWorld
                 rt.pivot = new Vector2(0f, 0.5f);
                 // One row with the status text (Codex M5 r1: the spinner sat below it): same vertical centre.
                 var text = dialog.GetComponentInChildren<TMPro.TMP_Text>(true);
-                var y = 0f;
+                // Same vertical centre as the status line: the text is centred in the panel (vanilla layout; a rect
+                // measured here in Awake is not laid out yet and put the spinner low, run 20261022-064153), so the
+                // spinner sits on the panel's middle, clear of the corner caps on the left.
                 if (text)
                 {
-                    var tr = text.rectTransform;
-                    y = host.InverseTransformPoint(tr.TransformPoint(tr.rect.center)).y - host.rect.center.y;
+                    text.verticalAlignment = TMPro.VerticalAlignmentOptions.Middle;
                     text.fontSize = Mathf.Max(text.fontSize, ThemeTokens.GetFloat("size.connect.font", 20f));
                 }
-                rt.anchoredPosition = new Vector2(ThemeTokens.GetFloat("size.spinner.dialog.left", 34f), y);
+                rt.anchoredPosition = new Vector2(ThemeTokens.GetFloat("size.spinner.dialog.left", 34f), 0f);
+                // The status line sits above the panel middle once laid out (run 20261022-071214: spinner ~20 ref
+                // low): follow the laid-out text centre.
+                if (text)
+                {
+                    var follow = s.gameObject.AddComponent<FollowTextCenter>();
+                    follow.Text = text.rectTransform;
+                }
                 host.localScale = new Vector3(1.2f, 1.2f, 1f);
             }
             ScreenRegistry.Register(dialog, () =>

@@ -24,6 +24,24 @@ namespace RuneSkin.Tests
         [InlineData(null, "?")]
         public void Initials(string name, string expected) => Assert.Equal(expected, PreWorldMath.Initial(name));
 
+        // M5 polish roles: lit menu entries, primary (Start / Ok) plates with gold labels, danger-red confirm label.
+        [Theory]
+        [InlineData("button.menu", "sprite.button.hover", null)]
+        [InlineData("button.primary", "sprite.button.selected", null)]
+        [InlineData("button.label.primary", null, "color.text.item.title")]
+        [InlineData("button.label.danger", null, "color.text.missing")]
+        public void PolishRoles(string role, string sprite, string textColor)
+        {
+            using var stream = typeof(RuneSkin.Theme.ThemeSchema).Assembly.GetManifestResourceStream("RuneSkin.default-theme.json");
+            Assert.NotNull(stream);
+            using var reader = new System.IO.StreamReader(stream);
+            var theme = RuneSkin.Theme.ThemeJson.Parse(reader.ReadToEnd());
+            var rule = System.Array.Find(theme.roles, r => r.role == role);
+            Assert.NotNull(rule);
+            if (sprite != null) Assert.Equal(sprite, rule.sprite);
+            if (textColor != null) Assert.Equal(textColor, rule.textColor);
+        }
+
         [Fact]
         public void TabColumnSteps()
         {

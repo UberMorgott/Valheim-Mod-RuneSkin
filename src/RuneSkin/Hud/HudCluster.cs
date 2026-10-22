@@ -221,7 +221,9 @@ namespace RuneSkin.PlayerHud
         private void HotbarVisibility()
         {
             if (!_hotbarGroup) return;
-            var a = InventoryGui.IsVisible() ? 0f : 1f;
+            // Hidden under the inventory and under the large map (LargeMap hides it too; this per-frame write put it
+            // back over the open map, run 20261022-064153).
+            var a = InventoryGui.IsVisible() || Minimap.IsOpen() ? 0f : 1f;
             if (!Mathf.Approximately(_hotbarGroup.alpha, a)) _hotbarGroup.alpha = a;
         }
 

@@ -40,12 +40,36 @@ namespace RuneSkin.PreWorld
             PreWorldKit.Panels(root, "size.panel.pad", img => (menuList && img.transform.IsChildOf(menuList)) || VanillaCorner(img.transform, root));
             TabSelected(root);
             DefaultCancel(fejd.m_removeCharacterDialog);
+            // The character's name in the delete confirm (OnCharacterRemove :2857 writes it): the header size of the
+            // restyle no longer fits its short vanilla line box and TMP truncation hid the whole line (run
+            // 20261022-064153); it overflows its box instead, one line.
+            if (fejd.m_removeCharacterName)
+            {
+                fejd.m_removeCharacterName.overflowMode = TextOverflowModes.Overflow;
+                fejd.m_removeCharacterName.textWrappingMode = TextWrappingModes.NoWrap;
+                // "Name (save source)" at 40 px ran past the 540 dialog (run 20261022-065352): shrinks to the width.
+                fejd.m_removeCharacterName.fontSizeMax = ThemeTokens.GetFloat("size.dialog.subject.font", 30f);
+                fejd.m_removeCharacterName.fontSizeMin = 16f;
+                fejd.m_removeCharacterName.enableAutoSizing = true;
+            }
             DefaultCancel(fejd.m_removeWorldDialog);
+            DialogButtons(fejd.m_removeCharacterDialog);
+            DialogButtons(fejd.m_removeWorldDialog);
             Spinner(fejd.m_loading);
             Spinner(fejd.m_pleaseWait);
             CharacterList.Build(fejd);
             ScreenRegistry.Register(root, () => Context(fejd));
             ScreenRegistry.Restyle(root);
+            WorldRow(fejd);
+            // Start-game mode tabs (Начать игру / Присоединиться): taller plates, larger labels (Codex M5 r3).
+            if (fejd.m_startGamePanel)
+            {
+                // The mode handler, not the server filter tabs (those live under ServerListGui).
+                var servers = fejd.m_startGamePanel.GetComponentInChildren<ServerListGui>(true);
+                foreach (var h in fejd.m_startGamePanel.GetComponentsInChildren<TabHandler>(true))
+                    if (!servers || (h.transform != servers.transform && !h.transform.IsChildOf(servers.transform) && h != servers.m_serverListTabHandler))
+                        TabLabels(h, "size.startgame.tab");
+            }
             if (fejd.m_worldListElement) RegisterTemplate(fejd.m_worldListElement.transform, fejd);
             Plugin.Log.LogInfo("[RuneSkin] main menu attached");
         }
@@ -73,6 +97,99 @@ namespace RuneSkin.PreWorld
             ScreenRegistry.Restyle(template);
         }
 
+        // World rows (mockup m5-world-a: two-line rows): the template (FejdStartup.m_worldListElement, 519x28 vanilla)
+        // grows to size.world.row.h and the vanilla row pitch (m_worldListElementStep, UpdateWorldList :1311-1328) with
+        // it; name on the top line, seed + modifiers under it, save-source icon at the right edge. Runs in Awake,
+        // before the first UpdateWorldList clones the template.
+        private static void WorldRow(FejdStartup fejd)
+        {
+            var row = fejd.m_worldListElement ? fejd.m_worldListElement.transform as RectTransform : null;
+            if (!row || row.GetComponent<LiftMark>()) return;
+            row.gameObject.AddComponent<LiftMark>();
+            var h = ThemeTokens.GetFloat("size.world.row.h", 58f);
+            if (Mathf.Approximately(row.anchorMin.y, row.anchorMax.y)) row.sizeDelta = new Vector2(row.sizeDelta.x, h);
+            fejd.m_worldListElementStep = h + ThemeTokens.GetFloat("size.world.row.gap", 6f);
+            // The vanilla selection image is tinted orange; under row_recipe_selected that read as a solid orange bar
+            // (run 20261022-065352): untinted, the sprite carries the selection.
+            // The vanilla image is sprite-less (a flat fill): the template carries the selection sprite itself so every
+            // clone copies it (run 20261022-071214: clones drew a flat white block over the row text).
+            if (row.Find("selected") is Transform sel && sel.TryGetComponent<Image>(out var selImg))
+            {
+                selImg.color = Color.white;
+                var s = ThemeTokens.GetSprite("sprite.row.recipe.selected");
+                if (s)
+                {
+                    selImg.sprite = s;
+                    selImg.type = Image.Type.Sliced;
+                    selImg.fillCenter = true;
+                }
+                else selImg.color = new Color(1f, 1f, 1f, 0.15f);
+                selImg.raycastTarget = false;
+            }
+            // Codex M5 r4: metadata under the name (mockup: "Сид: ... • ..."): name across the top line, seed left and
+            // modifiers right on the second line, both muted.
+            var sub = ThemeTokens.GetFloat("size.world.sub.font", 17f);
+            Place(row, "name", new Vector2(0f, 0.5f), new Vector2(1f, 1f), new Vector2(16f, 0f), new Vector2(-46f, -2f), ThemeTokens.GetFloat("size.world.name.font", 24f), TextAlignmentOptions.BottomLeft);
+            Place(row, "seed", Vector2.zero, new Vector2(0.45f, 0.5f), new Vector2(16f, 4f), new Vector2(0f, 0f), sub, TextAlignmentOptions.TopLeft);
+            Place(row, "modifiers", new Vector2(0.45f, 0f), new Vector2(1f, 0.5f), new Vector2(8f, 4f), new Vector2(-46f, 0f), sub, TextAlignmentOptions.TopRight);
+            foreach (var icon in new[] { "source_cloud", "source_local", "source_legacy" })
+                if (row.Find(icon) is RectTransform ir)
+                {
+                    ir.anchorMin = ir.anchorMax = new Vector2(1f, 0.5f);
+                    ir.pivot = new Vector2(1f, 0.5f);
+                    ir.anchoredPosition = new Vector2(-12f, 0f);
+                    ir.sizeDelta = new Vector2(26f, 26f);
+                }
+        }
+
+        // Tab labels of a vanilla tab row (server filters: 4 tabs x 125 ref share the 520 list width, "Сообщество"
+        // clipped at the knot caps, Codex M5 r3): the label spans the plate minus a small inset and shrinks to fit;
+        // optional taller plates (start-game mode tabs). Tokens <prefix>.inset / .font / .font.min / .h.
+        public static void TabLabels(TabHandler handler, string prefix)
+        {
+            var inset = ThemeTokens.GetFloat(prefix + ".inset", 14f);
+            var font = ThemeTokens.GetFloat(prefix + ".font", 18f);
+            var min = ThemeTokens.GetFloat(prefix + ".font.min", 13f);
+            var h = ThemeTokens.GetFloat(prefix + ".h", 0f);
+            foreach (var tab in handler.m_tabs)
+            {
+                if (tab == null || !tab.m_button) continue;
+                var rt = (RectTransform)tab.m_button.transform;
+                if (h > 0f && Mathf.Approximately(rt.anchorMin.y, rt.anchorMax.y)) rt.sizeDelta = new Vector2(rt.sizeDelta.x, Mathf.Max(rt.sizeDelta.y, h));
+                foreach (var t in rt.GetComponentsInChildren<TMP_Text>(true))
+                {
+                    if (PreWorldKit.IsKeyHint(t.transform, rt)) continue;
+                    var tr = t.rectTransform;
+                    tr.anchorMin = Vector2.zero;
+                    tr.anchorMax = Vector2.one;
+                    tr.offsetMin = new Vector2(inset, 0f);
+                    tr.offsetMax = new Vector2(-inset, 0f);
+                    t.alignment = TextAlignmentOptions.Center;
+                    t.textWrappingMode = TextWrappingModes.NoWrap;
+                    t.fontSizeMax = font;
+                    t.fontSizeMin = min;
+                    t.fontSize = font;
+                    t.enableAutoSizing = true;
+                }
+            }
+        }
+
+        private static void Place(Transform row, string child, Vector2 min, Vector2 max, Vector2 offMin, Vector2 offMax, float size, TextAlignmentOptions align)
+        {
+            if (!(row.Find(child) is RectTransform rt) || !rt.TryGetComponent<TMP_Text>(out var t)) return;
+            rt.anchorMin = min;
+            rt.anchorMax = max;
+            rt.offsetMin = offMin;
+            rt.offsetMax = offMax;
+            t.enableAutoSizing = false;
+            t.fontSize = size;
+            t.alignment = align;
+            t.textWrappingMode = TextWrappingModes.NoWrap;
+            // Overflow, not Ellipsis: a line box shorter than the line height made TMP drop the whole line (character
+            // list, run 20261022-053130); long texts run past their box instead of vanishing.
+            t.overflowMode = TextOverflowModes.Overflow;
+        }
+
         // Main menu composition (mockup m5-menu-a): logo top-left, the entry column under it on the left, no panel
         // behind the column (the vanilla MenuList backdrop is off). Positions only; the Animator-free MenuList keeps
         // its VerticalLayoutGroup.
@@ -98,7 +215,19 @@ namespace RuneSkin.PreWorld
                     var rt = (RectTransform)b.transform;
                     rt.sizeDelta = new Vector2(Mathf.Max(rt.sizeDelta.x, ThemeTokens.GetFloat("size.menu.link.w", 240f)), ThemeTokens.GetFloat("size.menu.link.h", 36f));
                     foreach (var t in b.GetComponentsInChildren<TMP_Text>(true))
-                        if (!PreWorldKit.IsKeyHint(t.transform, b.transform)) { t.enableAutoSizing = false; t.fontSize = ThemeTokens.GetFloat("size.menu.link.font", 16f); t.alignment = TextAlignmentOptions.Center; }
+                        if (!PreWorldKit.IsKeyHint(t.transform, b.transform))
+                        {
+                            t.enableAutoSizing = false;
+                            t.fontSize = ThemeTokens.GetFloat("size.menu.link.font", 16f);
+                            t.alignment = TextAlignmentOptions.Center;
+                            t.overflowMode = TextOverflowModes.Overflow;
+                            // Label across the plate (the vanilla text box sat left: labels read small and off-centre).
+                            var tr = t.rectTransform;
+                            tr.anchorMin = Vector2.zero;
+                            tr.anchorMax = Vector2.one;
+                            tr.offsetMin = new Vector2(24f, 0f);
+                            tr.offsetMax = new Vector2(-24f, 0f);
+                        }
                 }
             if (links && links.TryGetComponent<VerticalLayoutGroup>(out var lv)) lv.spacing = Mathf.Max(lv.spacing, 6f);
             // Scaled screens (Codex M5 r1: panels / rows / buttons read small next to the mockups): the start-game
@@ -126,6 +255,35 @@ namespace RuneSkin.PreWorld
             for (var p = t; p && p != root; p = p.parent)
                 if (p.name == "Feedback" || p.name == "ContactInfo") return true;
             return false;
+        }
+
+        // Remove-dialog buttons sized for the modal (Codex M5 r1: much too small): wider / taller plates, larger labels;
+        // centres stay vanilla (the two sit ~160 ref apart, so 150 keeps a gap).
+        private static void DialogButtons(GameObject dialog)
+        {
+            if (!dialog) return;
+            var w = ThemeTokens.GetFloat("size.dialog.button.w", 150f);
+            var h = ThemeTokens.GetFloat("size.dialog.button.h", 46f);
+            foreach (var b in dialog.GetComponentsInChildren<Button>(true))
+            {
+                var rt = (RectTransform)b.transform;
+                if (!Mathf.Approximately(rt.anchorMin.x, rt.anchorMax.x)) continue; // stretched layouts keep theirs
+                rt.sizeDelta = new Vector2(Mathf.Max(rt.sizeDelta.x, w), Mathf.Max(rt.sizeDelta.y, h));
+                foreach (var t in b.GetComponentsInChildren<TMP_Text>(true))
+                {
+                    if (PreWorldKit.IsKeyHint(t.transform, b.transform)) continue;
+                    // The vanilla label box is shorter than a 22 px line: TMP truncation dropped the label (run
+                    // 20261022-065352). The label fills the plate and overflows instead.
+                    var tr = t.rectTransform;
+                    tr.anchorMin = Vector2.zero;
+                    tr.anchorMax = Vector2.one;
+                    tr.offsetMin = tr.offsetMax = Vector2.zero;
+                    t.alignment = TextAlignmentOptions.Center;
+                    t.overflowMode = TextOverflowModes.Overflow;
+                    t.enableAutoSizing = false;
+                    t.fontSize = ThemeTokens.GetFloat("size.dialog.button.font", 22f);
+                }
+            }
         }
 
         private static void Scale(Transform t, string token, float fallback)
@@ -159,7 +317,8 @@ namespace RuneSkin.PreWorld
             {
                 if (button.GetComponent<ButtonPlate>()) continue;
                 if (!(button.targetGraphic is TMP_Text) && button.transition != Selectable.Transition.Animation) continue;
-                ButtonPlate.Ensure(button);
+                // Menu entries read with the lit rim of the mockup (m5-menu-a: every entry glows, hover brighter).
+                ButtonPlate.Ensure(button, "button.menu");
                 if (!button.TryGetComponent<LayoutElement>(out var le)) le = button.gameObject.AddComponent<LayoutElement>();
                 le.minWidth = le.preferredWidth = w;
                 le.minHeight = le.preferredHeight = h;
@@ -238,10 +397,32 @@ namespace RuneSkin.PreWorld
             ctx.Role(fejd.m_versionLabel, "text.version", "FejdStartup.m_versionLabel");
             Danger(ctx, fejd.m_removeCharacterDialog);
             Danger(ctx, fejd.m_removeWorldDialog);
+            if (fejd.m_removeCharacterName) ctx.Role(fejd.m_removeCharacterName, "dialog.subject", "delete confirm: the character's name (gold)");
+            // Primary actions (mockups m5-char-a / m5-world-a: Start = lit plate, gold label).
+            Primary(ctx, fejd.m_csStartButton);
+            Primary(ctx, fejd.m_worldStart);
             foreach (var handler in root.GetComponentsInChildren<TabHandler>(true))
                 foreach (var tab in handler.m_tabs)
                     if (tab?.m_button && tab.m_button.targetGraphic) ctx.Role(tab.m_button.targetGraphic, "tab", "TabHandler tab button");
             CharacterList.Roles(ctx);
+            // World row clones under the list: same roles as their template (the root pass would call the sprite-less
+            // vanilla selection a scrim).
+            if (fejd.m_worldListRoot)
+                foreach (Transform clone in fejd.m_worldListRoot)
+                {
+                    if (clone.Find("bkg") is Transform cb && cb.TryGetComponent<Image>(out var cbi)) ctx.Role(cbi, "craft.row", "world row plate");
+                    if (clone.Find("selected") is Transform cs && cs.TryGetComponent<Image>(out var csi)) ctx.Role(csi, "craft.row.selected", "world row selection (vanilla toggles it)");
+                    foreach (var n in new[] { "modifiers", "seed" })
+                        if (clone.Find(n) is Transform ct && ct.TryGetComponent<TMP_Text>(out var ctx2)) ctx.Role(ctx2, "text.muted", "world row second line");
+                }
+            // World row template: a list row (row_recipe plates like the character list), muted second-line texts.
+            if (fejd.m_worldListElement && root == fejd.m_worldListElement.transform)
+            {
+                if (root.Find("bkg") is Transform bkg && bkg.TryGetComponent<Image>(out var bi)) ctx.Role(bi, "craft.row", "world row plate");
+                if (root.Find("selected") is Transform sel && sel.TryGetComponent<Image>(out var si)) ctx.Role(si, "craft.row.selected", "world row selection (vanilla toggles it)");
+                foreach (var n in new[] { "modifiers", "seed" })
+                    if (root.Find(n) is Transform tt && tt.TryGetComponent<TMP_Text>(out var tx)) ctx.Role(tx, "text.muted", "world row second line");
+            }
             PreWorldKit.Common(ctx, root);
             return ctx;
         }
@@ -252,7 +433,19 @@ namespace RuneSkin.PreWorld
             if (!dialog) return;
             foreach (var b in dialog.GetComponentsInChildren<Button>(true))
                 if (b.name.IndexOf("Yes", StringComparison.OrdinalIgnoreCase) >= 0 && b.targetGraphic)
-                    ctx.Role(b.targetGraphic, "button.danger", "remove dialog confirm (danger)");
+                {
+                    if (b.targetGraphic is Image) ctx.Role(b.targetGraphic, "button.danger", "remove dialog confirm (danger)");
+                    foreach (var t in b.GetComponentsInChildren<TMP_Text>(true))
+                        if (!PreWorldKit.IsKeyHint(t.transform, b.transform)) ctx.Role(t, "button.label.danger", "remove dialog confirm label (danger red)");
+                }
+        }
+
+        public static void Primary(ScreenContext ctx, Button b)
+        {
+            if (!b) return;
+            if (b.targetGraphic is Image) ctx.Role(b.targetGraphic, "button.primary", "primary action (lit plate)");
+            foreach (var t in b.GetComponentsInChildren<TMP_Text>(true))
+                if (!PreWorldKit.IsKeyHint(t.transform, b.transform)) ctx.Role(t, "button.label.primary", "primary action label (gold)");
         }
 
         // Delete confirm opens with the focus on Cancel (mockup m5-char-a, Codex pick): Enter never deletes by accident.
@@ -340,6 +533,7 @@ namespace RuneSkin.PreWorld
             {
                 if (__instance.m_serverListElement && FejdStartup.instance)
                     MainMenuSkin.RegisterTemplate(__instance.m_serverListElement.transform, FejdStartup.instance);
+                if (__instance.m_serverListTabHandler) MainMenuSkin.TabLabels(__instance.m_serverListTabHandler, "size.server.tab");
             }
             catch (Exception e) { Plugin.Log.LogError($"[RuneSkin] server row restyle failed: {e}"); }
         }

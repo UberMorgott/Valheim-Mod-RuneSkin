@@ -46,6 +46,9 @@ namespace RuneSkin.PreWorld
             _panel.anchoredPosition = new Vector2(ThemeTokens.GetFloat("size.charlist.margin", 70f), ThemeTokens.GetFloat("size.charlist.y", 30f));
             _panel.sizeDelta = new Vector2(ThemeTokens.GetFloat("size.charlist.w", 520f), ThemeTokens.GetFloat("size.charlist.h", 640f));
             PanelDecor.Ensure(_panel, "size.panel.pad", glass: true, plaque: false);
+            // Below the remove-character confirm (same parent): the list drew over the modal's left edge (Codex M5 r4).
+            if (fejd.m_removeCharacterDialog && fejd.m_removeCharacterDialog.transform.parent == host)
+                _panel.SetSiblingIndex(fejd.m_removeCharacterDialog.transform.GetSiblingIndex());
             _header = Text("Header", _panel, "font.display", "color.text.header", ThemeTokens.GetFloat("size.charlist.header", 28f), TextAlignmentOptions.Center);
             var hr = _header.rectTransform;
             hr.anchorMin = new Vector2(0f, 1f);

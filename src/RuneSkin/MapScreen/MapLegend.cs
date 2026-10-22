@@ -170,6 +170,8 @@ namespace RuneSkin.MapScreen
         {
             var tip = b.GetComponent<UITooltip>();
             if (tip && !string.IsNullOrEmpty(tip.m_text)) return Words.Get(tip.m_text);
+            var known = EpicLootFilterName(b);
+            if (known != null) return known;
             if (tip && !string.IsNullOrEmpty(tip.m_topic)) return Words.Get(tip.m_topic);
             var n = b.name.Replace("(Clone)", "").Replace("PinFilter", " ").Replace("Filter", " ").Trim('_', ' ');
             // Words of a CamelCase object name ("AdventurePinFilter800" -> "Adventure 800").
@@ -181,6 +183,65 @@ namespace RuneSkin.MapScreen
             }
             var s = sb.ToString().Trim();
             return string.IsNullOrEmpty(s) ? Words.Get("$runeskin_pin_mod") : s;
+        }
+
+        // Epic Loot's adventure pin filters (static fields _bountyPinFilter / _treasurePinFilter, its own pin names
+        // $mod_epicloot_merchant_bounties / $mod_epicloot_merchant_treasuremaps): untitled buttons, named here
+        // with Epic Loot's own localized section names (its pin-name keys are "$1" formats) (Codex M4 r3: generic "mod pins" labels).
+        private static System.Collections.Generic.List<(System.Reflection.FieldInfo Field, string Key)> _elFilters;
+
+        private static string EpicLootFilterName(Button b)
+        {
+            if (_elFilters == null)
+            {
+                _elFilters = new System.Collections.Generic.List<(System.Reflection.FieldInfo, string)>();
+                foreach (var asm in System.AppDomain.CurrentDomain.GetAssemblies())
+                {
+                    if (asm.GetName().Name != "EpicLoot") continue;
+                    System.Type[] types;
+                    try { types = asm.GetTypes(); }
+                    catch (System.Reflection.ReflectionTypeLoadException e) { types = e.Types; }
+                    foreach (var t in types)
+                    {
+                        if (t == null) continue;
+                        const System.Reflection.BindingFlags F = System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic;
+                        var bounty = t.GetField("_bountyPinFilter", F);
+                        var treasure = t.GetField("_treasurePinFilter", F);
+                        if (bounty != null) _elFilters.Add((bounty, "$mod_epicloot_merchant_bounties"));
+                        if (treasure != null) _elFilters.Add((treasure, "$mod_epicloot_merchant_treasuremaps"));
+                    }
+                }
+                Plugin.Log.LogInfo($"[RuneSkin] map legend: Epic Loot pin filter fields {_elFilters.Count} [{string.Join(",", _elFilters.ConvertAll(f => f.Field.DeclaringType?.Name + "." + f.Field.Name + (f.Field.IsStatic ? " static" : "")))}]");
+            }
+            foreach (var (field, key) in _elFilters)
+            {
+                object v = null;
+                try
+                {
+                    if (field.IsStatic) v = field.GetValue(null);
+                    else if (typeof(Component).IsAssignableFrom(field.DeclaringType))
+                        foreach (var owner in UnityEngine.Object.FindObjectsByType(field.DeclaringType, FindObjectsInactive.Include, FindObjectsSortMode.None))
+                            if ((v = field.GetValue(owner)) != null) break;
+                }
+                catch (System.Exception) { continue; }
+                var go = v is GameObject g ? g : (v as Component) ? ((Component)v).gameObject : null;
+                var hit = go && (go == b.gameObject || b.transform.IsChildOf(go.transform) || go.transform.IsChildOf(b.transform));
+                // The field holds Epic Loot's AdventurePinFilter object (run 20261022-071214), which keeps its button /
+                // GameObject in its own fields.
+                if (!hit && v != null && !go)
+                    foreach (var f in v.GetType().GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic))
+                    {
+                        object inner;
+                        try { inner = f.GetValue(v); }
+                        catch (System.Exception) { continue; }
+                        var ig = inner is GameObject ig0 ? ig0 : (inner as Component) ? ((Component)inner).gameObject : null;
+                        if (ig && ig == b.gameObject) { hit = true; go = ig; break; } // exact: both filters share parent refs (run 20261022-072233 named both rows "bounties")
+                    }
+                if (!hit) continue;
+                var label = Localization.instance != null ? Localization.instance.Localize(key) : key;
+                return string.IsNullOrEmpty(label) || label.StartsWith("[", System.StringComparison.Ordinal) ? null : label;
+            }
+            return null;
         }
 
         private PinRow NewRow()
