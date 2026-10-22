@@ -37,7 +37,14 @@ namespace RuneSkin.Ownership
         public const string MessageHud = "MessageHud";
         public const string DamageText = "DamageText";
 
-        public static readonly string[] Known = { Menu, Tooltips, Hud, Inventory, Crafting, Skills, Trophies, Almanac, Minimap, EnemyHud, MessageHud, DamageText };
+        // M5 pre-world screens (restyled in place, no prefab swaps): FejdStartup's screens (main menu, character select /
+        // create, world / server select, create world, server options, dialogs, loading) + the scene's UnifiedPopup; the
+        // Settings window (main menu and pause menu); ZNet's password / connecting dialogs.
+        public const string MainMenu = "MainMenu";
+        public const string Settings = "Settings";
+        public const string Connection = "Connection";
+
+        public static readonly string[] Known = { Menu, Tooltips, Hud, Inventory, Crafting, Skills, Trophies, Almanac, Minimap, EnemyHud, MessageHud, DamageText, MainMenu, Settings, Connection };
 
         private static readonly HashSet<string> Owned = new HashSet<string>();
         public static bool Frozen { get; private set; }

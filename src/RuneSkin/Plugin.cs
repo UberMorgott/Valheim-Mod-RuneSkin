@@ -22,7 +22,7 @@ namespace RuneSkin
     [BepInProcess("valheim.exe")]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Version = "0.5.1";
+        public const string Version = "0.6.0";
 
         public static ManualLogSource Log { get; private set; }
         public static ConfigEntry<float> SkinScale { get; private set; }
@@ -33,7 +33,7 @@ namespace RuneSkin
         public static ConfigEntry<string> StatusListButton { get; private set; }
 
         private static ConfigEntry<bool> _ownMenu, _ownTooltips, _ownHud, _ownInventory, _ownCrafting, _ownSkills, _ownTrophies, _ownAlmanac, _requireAssets;
-        private static ConfigEntry<bool> _ownMinimap, _ownEnemyHud, _ownMessageHud, _ownDamageText;
+        private static ConfigEntry<bool> _ownMinimap, _ownEnemyHud, _ownMessageHud, _ownDamageText, _ownMainMenu, _ownSettings, _ownConnection;
         private Harmony _harmony;
 
         private void Awake()
@@ -63,6 +63,12 @@ namespace RuneSkin
                 "RuneSkin restyles centre messages, top-left notifications, unlock messages and the biome-discovered banner. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
             _ownDamageText = Config.Bind("Ownership", "DamageText", true,
                 "RuneSkin restyles floating damage numbers (font, outline, colour per hit type). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownMainMenu = Config.Bind("Ownership", "MainMenu", true,
+                "RuneSkin styles the pre-world screens (main menu, character select / create, world and server select, dialogs, loading). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+            _ownSettings = Config.Bind("Ownership", "Settings", true,
+                "RuneSkin styles the Settings window (category list, sliders, checkboxes, dropdowns, key bindings). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownConnection = Config.Bind("Ownership", "Connection", true,
+                "RuneSkin styles the server password and connecting dialogs. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
             HudScale = Config.Bind("Hud", "Scale", 1f, new ConfigDescription(
                 "HUD cluster scale on top of the game's UI scale (fonts never go below the readable floor).",
                 new AcceptableValueRange<float>(0.75f, 1.5f)));
@@ -102,6 +108,9 @@ namespace RuneSkin
                 [OwnershipRegistry.EnemyHud] = _ownEnemyHud.Value,
                 [OwnershipRegistry.MessageHud] = _ownMessageHud.Value,
                 [OwnershipRegistry.DamageText] = _ownDamageText.Value,
+                [OwnershipRegistry.MainMenu] = _ownMainMenu.Value,
+                [OwnershipRegistry.Settings] = _ownSettings.Value,
+                [OwnershipRegistry.Connection] = _ownConnection.Value,
             }, _requireAssets.Value);
 
             ApiHost = new Host();
@@ -129,6 +138,9 @@ namespace RuneSkin
             if (OwnershipRegistry.IsOwned(OwnershipRegistry.EnemyHud)) _harmony.PatchAll(typeof(WorldHud.EnemyHudAdapter));
             if (OwnershipRegistry.IsOwned(OwnershipRegistry.MessageHud)) _harmony.PatchAll(typeof(WorldHud.MessageAdapter));
             if (OwnershipRegistry.IsOwned(OwnershipRegistry.DamageText)) _harmony.PatchAll(typeof(WorldHud.DamageTextAdapter));
+            if (OwnershipRegistry.IsOwned(OwnershipRegistry.MainMenu)) _harmony.PatchAll(typeof(PreWorld.MainMenuAdapter));
+            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Settings)) _harmony.PatchAll(typeof(PreWorld.SettingsAdapter));
+            if (OwnershipRegistry.IsOwned(OwnershipRegistry.Connection)) _harmony.PatchAll(typeof(PreWorld.ConnectionAdapter));
             Log.LogInfo($"[RuneSkin] {Version} ready (API v{Skin.ApiVersion})");
         }
 

@@ -87,6 +87,11 @@ namespace RuneSkin.Classify
             {
                 if (image.material && image.material.name.IndexOf("blur", StringComparison.OrdinalIgnoreCase) >= 0)
                     return Classification.Of("skip", $"blur material '{image.material.name}'");
+                if (Controls(ctx.Family))
+                {
+                    var control = ControlRole(image);
+                    if (control.HasValue) return control.Value;
+                }
                 var selectable = g.GetComponentInParent<Selectable>(true);
                 if (selectable && selectable.targetGraphic == g)
                 {
@@ -137,6 +142,52 @@ namespace RuneSkin.Classify
                 return Classification.Of(text.fontSize >= header ? "text.header" : "text.body",
                     text.fontSize >= header ? "TMP size >= size.text.header.min" : "TMP body text");
             }
+            return null;
+        }
+
+        // Families whose screens are vanilla control forms (M5: main menu screens, settings, connection dialogs): the
+        // controls are classified by their component wiring (art\README.md "M5 sprites": slider A, toggle = checkbox,
+        // dropdown A, input = field_search). Older families keep their adapter-specific roles.
+        public static readonly HashSet<string> ControlFamilies = new HashSet<string> { "MainMenu", "Settings", "Connection" };
+
+        private static bool Controls(string family) => family != null && ControlFamilies.Contains(family);
+
+        // Component wiring of uGUI / TMP controls: Toggle.graphic / targetGraphic, Slider.fillRect / handleRect,
+        // TMP_Dropdown targetGraphic / template (its item toggles), input fields. Null = not part of a control.
+        private static Classification? ControlRole(Image image)
+        {
+            var rt = image.rectTransform;
+            var dropdown = image.GetComponentInParent<TMP_Dropdown>(true);
+            if (dropdown)
+            {
+                if (dropdown.targetGraphic == image) return Classification.Of("dropdown.field", "TMP_Dropdown.targetGraphic");
+                if (dropdown.template && rt == dropdown.template) return Classification.Of("dropdown.list", "TMP_Dropdown.template (opened list)");
+                var itemToggle = image.GetComponentInParent<Toggle>(true);
+                if (itemToggle && dropdown.template && itemToggle.transform.IsChildOf(dropdown.template))
+                {
+                    if (itemToggle.graphic == image) return Classification.Of("toggle.check", "dropdown item Toggle.graphic");
+                    if (itemToggle.targetGraphic == image) return Classification.Of("dropdown.item", "dropdown item Toggle.targetGraphic");
+                }
+                if (dropdown.template && rt.IsChildOf(dropdown.template))
+                {
+                    var bar = image.GetComponentInParent<Scrollbar>(true);
+                    if (bar) return bar.targetGraphic == image ? Classification.Of("scrollbar.handle", "dropdown list scrollbar handle") : Classification.Of("scrollbar.track", "dropdown list scrollbar track");
+                    return Classification.Of("skip", "dropdown list structure (viewport / content)");
+                }
+                if (image.name.IndexOf("Arrow", StringComparison.OrdinalIgnoreCase) >= 0) return Classification.Of("dropdown.arrow", "TMP_Dropdown arrow");
+            }
+            var toggle = image.GetComponentInParent<Toggle>(true);
+            if (toggle && (toggle.graphic == image || toggle.targetGraphic == image))
+                return Classification.Of(toggle.graphic == image ? "toggle.check" : "toggle.box", toggle.graphic == image ? "Toggle.graphic (check mark)" : "Toggle.targetGraphic (box)");
+            var slider = image.GetComponentInParent<Slider>(true);
+            if (slider)
+            {
+                if (slider.fillRect == rt) return Classification.Of("slider.fill", "Slider.fillRect");
+                if (slider.handleRect == rt || slider.targetGraphic == image) return Classification.Of("slider.handle", "Slider.handleRect");
+                return Classification.Of("slider.track", "graphic inside a Slider (track)");
+            }
+            var input = image.GetComponentInParent<TMP_InputField>(true);
+            if (input && input.targetGraphic == image) return Classification.Of("field", "TMP_InputField.targetGraphic");
             return null;
         }
 
