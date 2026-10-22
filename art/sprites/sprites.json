@@ -4622,6 +4622,138 @@
       "notes": "M6 ship speed ladder: stop (Hud.m_rudder idle); reverse = glyph_chevron_down"
     },
     {
+      "name": "glyph_ench_convert",
+      "file": "glyph_ench_convert.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.ench.convert",
+      "notes": "M7 Epic Loot enchanting tab Convert Materials (left of the label); tint like glyph_ench_*"
+    },
+    {
+      "name": "glyph_ench_disenchant",
+      "file": "glyph_ench_disenchant.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.ench.disenchant",
+      "notes": "M7 Epic Loot enchanting tab Disenchant"
+    },
+    {
+      "name": "glyph_board_stash",
+      "file": "glyph_board_stash.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.board.stash",
+      "notes": "M7 Epic Loot adventure board tab Secret Stash"
+    },
+    {
+      "name": "glyph_board_gamble",
+      "file": "glyph_board_gamble.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.board.gamble",
+      "notes": "M7 Epic Loot adventure board tab Gamble"
+    },
+    {
+      "name": "glyph_board_treasure",
+      "file": "glyph_board_treasure.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.board.treasure",
+      "notes": "M7 Epic Loot adventure board tab Treasure Maps"
+    },
+    {
+      "name": "glyph_board_bounty",
+      "file": "glyph_board_bounty.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.board.bounty",
+      "notes": "M7 Epic Loot adventure board tab Bounties"
+    },
+    {
       "name": "band_runes",
       "file": "band_runes.png",
       "size": [
@@ -4664,6 +4796,138 @@
       "fillCenter": false,
       "token": "bar.frame.action",
       "notes": "M6 slim progress frame (Hud.m_actionProgress / m_staggerProgress, Vaettir raid timer, Hamingja bleed-out): dark knot end caps, window transparent, inset L/R 40 T/B 9 sprite px; trough bar_trough, fill bar_fill tinted (action rune_glow, raid #f08a3a, bleed-out #8f989f worn silver, not bright white)"
+    },
+    {
+      "name": "frame_target",
+      "file": "frame_target.png",
+      "size": [
+        224,
+        100
+      ],
+      "border": {
+        "left": 52,
+        "bottom": 26,
+        "right": 52,
+        "top": 26
+      },
+      "pivot": [
+        0.5,
+        1
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "frame.target",
+      "notes": "M7 Vaettir target panel housing (aimed enemy, top-centre): chamfered iron corners with leather straps, glass interior baked, content inset 20 sprite px; tier stays on the HP bar (frame_enemy_\u003ctier\u003e over bar_trough + bar_enemy_fill), name coloured by tier"
+    },
+    {
+      "name": "plate_marker",
+      "file": "plate_marker.png",
+      "size": [
+        152,
+        68
+      ],
+      "border": {
+        "left": 36,
+        "bottom": 14,
+        "right": 36,
+        "top": 14
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "plate.marker",
+      "notes": "M7 Hamingja ally marker housing (name + distance / timer + slim bar), leather clasps on the short ends, content inset L/R 30 T/B 10; edge marker adds arrow_marker on the screen-edge side"
+    },
+    {
+      "name": "plate_currency",
+      "file": "plate_currency.png",
+      "size": [
+        144,
+        63
+      ],
+      "border": {
+        "left": 42,
+        "bottom": 16,
+        "right": 42,
+        "top": 16
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "plate.currency",
+      "notes": "M7 compact counter plate (Epic Loot adventure board currencies, trader purse): bevelled iron, two leather clamps on the top edge (inside the L/R borders), icon left + count right"
+    },
+    {
+      "name": "arrow_marker",
+      "file": "arrow_marker.png",
+      "size": [
+        52,
+        96
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "arrow.marker",
+      "notes": "M7 off-screen ally marker arrow (points left; rotate / flip toward the ally), faceted iron with cyan inlay"
+    },
+    {
+      "name": "gem_rarity",
+      "file": "gem_rarity.png",
+      "size": [
+        64,
+        64
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "gem.rarity",
+      "notes": "M7 Epic Loot rarity toggle face: neutral faceted gem, Image.color = rarity colour (magic #4fa8f0, rare #f0c419, epic #b062f0, legendary #f08a3a, mythic #e0413a); unavailable = text_disabled tint"
+    },
+    {
+      "name": "gem_setting",
+      "file": "gem_setting.png",
+      "size": [
+        88,
+        88
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "gem.setting",
+      "notes": "M7 selected rarity mount: iron rhombus ring drawn around gem_rarity (1.4x the gem); focus adds ring_select tint rune_glow"
     }
   ]
 }

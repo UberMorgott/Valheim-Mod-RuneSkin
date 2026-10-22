@@ -152,3 +152,11 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 - Picks (Codex, user asleep; mockups D:\tmp\cx-augaskin\m6-*.png, reasons in art\PROGRESS.md): build = A (text tabs + wide grid, + B stealth eye), trader = A (one list), text = A (+ B raven bubble), black screens = B (tip banner, spinner when no progress, teleport ring + swirl), ship = B (vertical ladder + rudder socket, light raid line, mount panel only when riding), dialogs = A.
 - Rejected: build B (icon-only fixed categories), trader B (separate sell inventory), text B (drop caps, no panel input), load A (invented "you died" heading / player count), ship A (horizontal plate), dialogs B (book spread, invented tabs).
 - Code pickup: art\README.md "M6 sprites". New sprites: glyph_stealth_eye, glyph_crosshair, glyph_ship_oar, glyph_ship_sail_half/full, glyph_rudder, glyph_teleport_swirl, glyph_stop, band_runes, bar_frame_action.
+
+## M7 art (2026-10-22) - mod panels
+
+- Mod panels needing art (docs/screen-inventory.md): Epic Loot enchanting table + adventure board, Vaettir target panel + raid timer, Hamingja bleed-out + ally markers; portal map / Jotunn panels compose from the kit; the rest are owned or have no UI.
+- Picks (Codex; mockups D:\tmp\cx-augaskin\m7-*.png): enchanting = A (text tab column + checkbox rows + detail well = Epic Loot's own controls; tabs/rarities from its config), adventure board = A (labelled tabs, native tab contents, status text not colour only), mod HUD = A (+ B compact ally-marker housing; target + raid stacked top-centre).
+- Rejected: enchanting B (icon-only tabs, item grid, ritual ring), board B (card inventories, separate gamble view), mod HUD B (raid ring, bleed-out replacing the HP bar).
+- Code pickup: art\README.md "M7 sprites". New sprites: glyph_ench_convert, glyph_ench_disenchant, glyph_board_stash/gamble/treasure/bounty, frame_target, plate_marker, plate_currency, arrow_marker, gem_rarity, gem_setting.
+- Open (art): shared tab_* reads flat next to the mockups (forged bevel) - global redraw needs a re-review of every screen; glyph_ship_sail_half Codex 7.

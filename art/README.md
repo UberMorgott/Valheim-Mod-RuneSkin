@@ -17,7 +17,7 @@ graphics device ("Unsupported Format 0", editor crash).
 Review aids (not part of the build, output in `art/review/`, git-ignored):
 `go -C art/tools run . compare` -> `compare-inventory.png`, `compare-hud.png`, `compare-corner.png`,
 `compare-groups.png` ([mockup | ours] rebuilt from our sprites with Unity Sliced/Tiled rules; mockups in
-`D:\tmp\cx-augaskin`); `go -C art/tools run . sheet` -> `contact-sheet.png`. M2/M3: `compare-m2`, `compare-m3` (crafting: `compare-crafting-m3.png`, `compare-groups-m3.png`), `compare-m3s` (skills/trophies: `compare-skills-m3.png`, `compare-trophies-m3.png`, `compare-groups-m3s.png`), `compare-m4` (`compare-hud-m4a/b.png`, `compare-map-m4.png`, `compare-groups-m4.png`), `compare-m5` (`compare-{menu,char,world,load,settings}-m5.png`, `compare-groups-m5.png`), `compare-m6` (`compare-{build,trader,text,load,ship,dialogs}-m6.png`, `compare-groups-m6.png`).
+`D:\tmp\cx-augaskin`); `go -C art/tools run . sheet` -> `contact-sheet.png`. M2/M3: `compare-m2`, `compare-m3` (crafting: `compare-crafting-m3.png`, `compare-groups-m3.png`), `compare-m3s` (skills/trophies: `compare-skills-m3.png`, `compare-trophies-m3.png`, `compare-groups-m3s.png`), `compare-m4` (`compare-hud-m4a/b.png`, `compare-map-m4.png`, `compare-groups-m4.png`), `compare-m5` (`compare-{menu,char,world,load,settings}-m5.png`, `compare-groups-m5.png`), `compare-m6` (`compare-{build,trader,text,load,ship,dialogs}-m6.png`, `compare-groups-m6.png`), `compare-m7` (`compare-{ench,board,modhud}-m7.png`, `compare-groups-m7.png`).
 
 ## Rule: Codex makes the pixels
 
@@ -185,3 +185,26 @@ groups 8/10, ship ladder 7 (reefed sail, round cap). New: `glyph_stealth_eye`, `
 - Compendium (`TextsDialog`): panel, `tab_*` on `tab_strip`, topic list `frame_inset` + `row_recipe_*` (unread = `pip_quality_full`),
   reading pane `frame_strip`. Split dialog: panel + `slot_cell_recess` + slider (M5) + buttons. Barber: panel, style cells
   `slot_cell_recess`, selected `tab_square_selected`, colour slider = `bar_skill_trough` + vanilla gradient + `slider_handle_*`.
+
+## M7 sprites (mod panels)
+
+Picks (Codex): Epic Loot enchanting `m7-ench-a`, adventure board `m7-board-a`, mod HUD `m7-modhud-a` with the ally-marker housing
+from B. Codex final: 10 of 10 groups 8/10 (tab_* redraw kept out of scope: shared set). New: `glyph_ench_convert`,
+`glyph_ench_disenchant`, `glyph_board_stash|gamble|treasure|bounty`, `frame_target`, `plate_marker`, `plate_currency`,
+`arrow_marker`, `gem_rarity`, `gem_setting`.
+- Epic Loot enchanting table (`EnchantingUI` prefab, re-skinned in place): panel + title on the rail with `knot` + `badge_level_star`
+  (table level); tab column `tab_*` + glyph left of the label (`glyph_ench_sacrifice|convert|enchant|augment|disenchant`,
+  table upgrade `glyph_act_upgrade`), tabs/labels from Epic Loot config; item list `frame_inset` + `row_recipe_*`, icon
+  `slot_cell_recess` + `ring_select` tinted with the rarity colour, multi-select `checkbox_box` + `glyph_check`; detail well: rarity
+  toggles `gem_rarity` tinted per rarity (magic #4fa8f0, rare #f0c419, epic #b062f0, legendary #f08a3a, mythic #e0413a; only the
+  rarities Epic Loot offers), selected = `gem_setting` around the gem; effects with `glyph_ench_enchant` bullets; cost
+  `socket_req(_missing)`; main button `button_*` + `glyph_ench_enchant`.
+- Adventure board: panel + rail title, tabs `tab_*` + `glyph_board_*`; bounty rows `row_recipe_*`, target portrait `button_round`,
+  rewards `socket_req`, status plate `field_search` + text (available text_active, accepted rune_glow, done text_ok; always text, not
+  colour only), accept `button_normal|disabled`; currencies `plate_currency` (+ `glyph_coins`).
+- Vaettir target panel: `frame_target` (Sliced, content inset 20 sprite px) housing the tier socket, tier-coloured serif name, HP bar
+  (`bar_trough` + `bar_enemy_fill` + tick lines + `frame_enemy_<tier>`) and status sockets `socket_status`; raid timer: rail title with
+  `knot` + `bar_frame_action` over `bar_trough` + `bar_fill` tint #f08a3a. Boss bar stays `frame_boss` (M4).
+- Hamingja bleed-out: popup + ember serif title + `bar_frame_action` + `bar_fill` tint #8f989f (worn silver) + timer; surrender
+  `button_normal` "[E] ..." only when Hamingja offers it. Ally markers: `plate_marker` (name, distance / timer, slim
+  `bar_skill_trough`/`bar_skill_fill`), off-screen = `arrow_marker` (points left; flip/rotate) on the edge side; downed = `glyph_death`.

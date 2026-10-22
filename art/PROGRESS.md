@@ -82,3 +82,15 @@
 - [x] Pick (Codex, user asleep, AgentLink chat 11cdaf31): build A (text tabs keep unknown mod categories; + B stealth eye), trader A (one list = StoreGui), text A (one scrolling text, plain input; + B raven bubble), load B (bottom tip housing; no invented death heading/progress), ship B (vertical ladder fits the native indicators, light raid line), dialogs A (list/detail, slider split, appearance grids reuse controls)
 - [x] Kit sheets m6glyphs (eye, crosshair, oar, rudder), m6fix2 (sails as longship icons, outlined stop, wispy swirl), m6fix3 (band_runes, bar_frame_action); 10 new sprites
 - [x] compare-m6: Codex 3 rounds -> 15 of 16 groups 8/10; ship ladder 7 (reefed sail reads as a T, round cap)
+
+## M7 mod panels (2026-10-22)
+
+- [x] Mockups m7-{ench,board,modhud}-{a,b}; pick (Codex): enchanting A (text tabs + checkbox rows + detail map to Epic Loot's controls), board A (labelled tabs + rows keep native workflows), mod HUD A (+ B ally-marker housing)
+- [x] Kit sheets m7glyphs (convert, disenchant, stash, gamble, treasure map, bounty), m7kit (frame_target, plate_marker, plate_currency, arrow_marker, gem_rarity, gem_setting); 12 new sprites
+- [x] compare-m7: Codex 3 rounds -> 10 of 10 groups 8/10
+- [x] Bundle BUILD OK 222/222
+
+## Open points (M6/M7)
+
+- Shared `tab_*` reads flat next to the mockups (Codex M7: forged iron bevel, chamfered corners); a redraw touches every screen, needs a global re-review.
+- glyph_ship_sail_half still reads close to a "T" at small size (Codex 7).
