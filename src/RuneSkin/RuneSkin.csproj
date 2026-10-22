@@ -6,7 +6,7 @@
     <AssemblyName>RuneSkin</AssemblyName>
     <RootNamespace>RuneSkin</RootNamespace>
     <!-- Keep in sync with Plugin.Version. -->
-    <Version>0.3.2</Version>
+    <Version>0.6.2</Version>
     <!-- Plugin internals are not public API; XML docs are required on RuneSkin.API only. -->
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
@@ -40,6 +40,10 @@
     <Reference Include="assembly_guiutils">
       <HintPath>$(ValheimManagedDir)\assembly_guiutils.dll</HintPath>
       <Publicize>true</Publicize>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="gui_framework">
+      <HintPath>$(ValheimManagedDir)\gui_framework.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="assembly_utils">

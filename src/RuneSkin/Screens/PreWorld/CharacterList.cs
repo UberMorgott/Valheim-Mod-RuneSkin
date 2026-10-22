@@ -16,7 +16,7 @@ namespace RuneSkin.PreWorld
     // are hidden (the list replaces them), the rest of the panel (name, buttons, remove dialog) is vanilla restyled.
     public static class CharacterList
     {
-        private const string Name = "RuneSkin_CharacterList";
+        public const string PanelName = "RuneSkin_CharacterList";
         private static RectTransform _panel, _content;
         private static ScrollRect _scroll;
         private static TMP_Text _header;
@@ -35,12 +35,12 @@ namespace RuneSkin.PreWorld
         public static void Build(FejdStartup fejd)
         {
             var host = fejd.m_selectCharacterPanel ? fejd.m_selectCharacterPanel.transform : null;
-            if (!host || host.Find(Name)) return;
+            if (!host || host.Find(PanelName)) return;
             // A new FejdStartup (logout back to the main menu, Game.Logout -> start scene) gets a new list: the rows of
             // the previous scene are destroyed (run 20261022-055949: Sync touched them, NRE on every menu return).
             Rows.Clear();
             Pending.Clear();
-            _panel = Rect(Name, host);
+            _panel = Rect(PanelName, host);
             _panel.anchorMin = _panel.anchorMax = new Vector2(0f, 0.5f);
             _panel.pivot = new Vector2(0f, 0.5f);
             _panel.anchoredPosition = new Vector2(ThemeTokens.GetFloat("size.charlist.margin", 70f), ThemeTokens.GetFloat("size.charlist.y", 30f));

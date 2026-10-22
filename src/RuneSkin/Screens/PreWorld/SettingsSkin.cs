@@ -145,7 +145,12 @@ namespace RuneSkin.PreWorld
         private void LateUpdate()
         {
             if (!Text || !(transform is RectTransform rt) || !(rt.parent is RectTransform host)) return;
-            var c = host.InverseTransformPoint(Text.TransformPoint(Text.rect.center));
+            // Centre of the rendered glyphs (TMP textBounds, text-local), not of the text box: a Middle-aligned line
+            // box still puts the caps above its rect centre (Codex M5 final: rune circle below the label's centre).
+            var tmp = Text.GetComponent<TMPro.TMP_Text>();
+            var local = Text.rect.center;
+            if (tmp && tmp.textInfo != null && tmp.textInfo.characterCount > 0 && tmp.textBounds.size.y > 0f) local = tmp.textBounds.center;
+            var c = host.InverseTransformPoint(Text.TransformPoint(local));
             // Anchored y relative to the anchor point (anchors at y 0.5 of the host).
             var y = c.y - (host.rect.yMin + host.rect.height * rt.anchorMin.y);
             if (Mathf.Abs(rt.anchoredPosition.y - y) > 0.5f) rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, y);

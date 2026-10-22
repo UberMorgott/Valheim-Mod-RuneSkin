@@ -48,5 +48,35 @@ namespace RuneSkin.Tests
             Assert.Equal(0f, PreWorldMath.TabOffset(0, 52f, 8f));
             Assert.Equal(120f, PreWorldMath.TabOffset(2, 52f, 8f));
         }
+
+        // Character framing: feet / head project to the wanted viewport rows, the centre to the wanted column.
+        [Theory]
+        [InlineData(0f, 0.55f, 0.26f, 0.93f, 16f / 9f)]
+        [InlineData(0.3f, 0.6f, 0.2f, 0.9f, 21f / 9f)]
+        public void FrameMarkerProjects(float yawSin, float vx, float bottom, float top, float aspect)
+        {
+            var yawCos = (float)System.Math.Sqrt(1f - yawSin * yawSin);
+            var rot = new UnityEngine.Quaternion(0f, yawSin, 0f, yawCos);
+            var foot = new UnityEngine.Vector3(3f, 1f, 20f);
+            var far = foot - rot * UnityEngine.Vector3.forward * 40f;
+            var p = PreWorldMath.FrameMarker(rot, foot, 1.9f, 60f, aspect, vx, bottom, top, far);
+            float Vy(UnityEngine.Vector3 w) => Project(rot, p, w, aspect).y;
+            Assert.Equal(bottom, Vy(foot), 2);
+            Assert.Equal(top, Vy(foot + UnityEngine.Vector3.up * 1.9f), 2);
+            Assert.Equal(vx, Project(rot, p, foot + UnityEngine.Vector3.up * 0.95f, aspect).x, 2);
+            // Already closer than wanted: stays.
+            var near = foot - rot * UnityEngine.Vector3.forward * 0.5f;
+            Assert.Equal(near, PreWorldMath.FrameMarker(rot, foot, 1.9f, 60f, aspect, vx, bottom, top, near));
+        }
+
+        private static UnityEngine.Vector2 Project(UnityEngine.Quaternion rot, UnityEngine.Vector3 cam, UnityEngine.Vector3 w, float aspect)
+        {
+            var d = w - cam;
+            var z = UnityEngine.Vector3.Dot(d, rot * UnityEngine.Vector3.forward);
+            var x = UnityEngine.Vector3.Dot(d, rot * UnityEngine.Vector3.right);
+            var y = UnityEngine.Vector3.Dot(d, rot * UnityEngine.Vector3.up);
+            var tan = (float)System.Math.Tan(30.0 * System.Math.PI / 180.0);
+            return new UnityEngine.Vector2(0.5f + x / (2f * z * tan * aspect), 0.5f + y / (2f * z * tan));
+        }
     }
 }

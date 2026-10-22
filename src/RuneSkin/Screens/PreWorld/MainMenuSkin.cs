@@ -69,7 +69,14 @@ namespace RuneSkin.PreWorld
                 foreach (var h in fejd.m_startGamePanel.GetComponentsInChildren<TabHandler>(true))
                     if (!servers || (h.transform != servers.transform && !h.transform.IsChildOf(servers.transform) && h != servers.m_serverListTabHandler))
                         TabLabels(h, "size.startgame.tab");
+                Field(fejd.m_serverPassword);
+                if (servers)
+                {
+                    Field(servers.m_filterInputField);
+                    Field(servers.m_addServerTextInput);
+                }
             }
+            CharacterFraming.Ensure(fejd);
             if (fejd.m_worldListElement) RegisterTemplate(fejd.m_worldListElement.transform, fejd);
             Plugin.Log.LogInfo("[RuneSkin] main menu attached");
         }
@@ -151,11 +158,24 @@ namespace RuneSkin.PreWorld
             var font = ThemeTokens.GetFloat(prefix + ".font", 18f);
             var min = ThemeTokens.GetFloat(prefix + ".font.min", 13f);
             var h = ThemeTokens.GetFloat(prefix + ".h", 0f);
+            var w = ThemeTokens.GetFloat(prefix + ".w", 0f);
+            var buttons = new List<RectTransform>();
             foreach (var tab in handler.m_tabs)
+                if (tab != null && tab.m_button) buttons.Add((RectTransform)tab.m_button.transform);
+            // Widest plate that keeps a gap to the nearest sibling tab (centres stay vanilla).
+            if (w > 0f)
             {
-                if (tab == null || !tab.m_button) continue;
-                var rt = (RectTransform)tab.m_button.transform;
-                if (h > 0f && Mathf.Approximately(rt.anchorMin.y, rt.anchorMax.y)) rt.sizeDelta = new Vector2(rt.sizeDelta.x, Mathf.Max(rt.sizeDelta.y, h));
+                var gap = ThemeTokens.GetFloat(prefix + ".gap", 8f);
+                foreach (var a in buttons)
+                    foreach (var b in buttons)
+                        if (a != b && a.parent == b.parent) w = Mathf.Min(w, Mathf.Abs(a.localPosition.x - b.localPosition.x) - gap);
+            }
+            foreach (var rt in buttons)
+            {
+                Grow(rt, w, h);
+            }
+            foreach (var rt in buttons)
+            {
                 foreach (var t in rt.GetComponentsInChildren<TMP_Text>(true))
                 {
                     if (PreWorldKit.IsKeyHint(t.transform, rt)) continue;
@@ -172,6 +192,76 @@ namespace RuneSkin.PreWorld
                     t.enableAutoSizing = true;
                 }
             }
+        }
+
+        // Grows a vanilla rect to at least w x h about its pivot, whatever its anchors: fixed anchors through sizeDelta,
+        // stretched axes through the offsets; a parent layout group reads the LayoutElement (0 = axis untouched).
+        public static void Grow(RectTransform rt, float w, float h)
+        {
+            if (!rt) return;
+            var size = rt.rect.size;
+            var d = new Vector2(w > 0f ? Mathf.Max(0f, w - size.x) : 0f, h > 0f ? Mathf.Max(0f, h - size.y) : 0f);
+            if (d == Vector2.zero) return;
+            var fixedX = Mathf.Approximately(rt.anchorMin.x, rt.anchorMax.x);
+            var fixedY = Mathf.Approximately(rt.anchorMin.y, rt.anchorMax.y);
+            var sd = rt.sizeDelta;
+            if (fixedX) sd.x += d.x;
+            if (fixedY) sd.y += d.y;
+            rt.sizeDelta = sd;
+            if (!fixedX)
+            {
+                rt.offsetMin -= new Vector2(d.x * rt.pivot.x, 0f);
+                rt.offsetMax += new Vector2(d.x * (1f - rt.pivot.x), 0f);
+            }
+            if (!fixedY)
+            {
+                rt.offsetMin -= new Vector2(0f, d.y * rt.pivot.y);
+                rt.offsetMax += new Vector2(0f, d.y * (1f - rt.pivot.y));
+            }
+            if (rt.parent && rt.parent.GetComponent<LayoutGroup>())
+            {
+                if (!rt.TryGetComponent<LayoutElement>(out var le)) le = rt.gameObject.AddComponent<LayoutElement>();
+                if (w > 0f) le.minWidth = le.preferredWidth = Mathf.Max(le.preferredWidth, w);
+                if (h > 0f) le.minHeight = le.preferredHeight = Mathf.Max(le.preferredHeight, h);
+            }
+        }
+
+        // Text input fields of the start-game panel (world password FejdStartup.m_serverPassword, server filter
+        // ServerListGui.m_filterInputField, add-server address): vanilla 206x30 TextInputBG boxes whose text area covers
+        // only the left half. Mockup m5-world-a: a taller field_search box (role "field" from the classifier), text
+        // across the box with an inset, body-size text; selection highlight in the rune glow instead of the vanilla
+        // white block (Codex M5 final: "password / filter field retain vanilla styling").
+        public static void Field(TMP_InputField input)
+        {
+            if (!input) return;
+            var rt = (RectTransform)input.transform;
+            Grow(rt, ThemeTokens.GetFloat("size.field.w", 0f), ThemeTokens.GetFloat("size.field.h", 40f));
+            var inset = ThemeTokens.GetFloat("size.field.inset", 12f);
+            if (input.textViewport)
+            {
+                var vp = input.textViewport;
+                vp.anchorMin = Vector2.zero;
+                vp.anchorMax = Vector2.one;
+                vp.offsetMin = new Vector2(inset, 3f);
+                vp.offsetMax = new Vector2(-inset, -3f);
+                foreach (var child in vp.GetComponentsInChildren<RectTransform>(true))
+                {
+                    if (child == vp) continue;
+                    child.anchorMin = Vector2.zero;
+                    child.anchorMax = Vector2.one;
+                    child.offsetMin = child.offsetMax = Vector2.zero;
+                }
+            }
+            var font = ThemeTokens.GetFloat("size.field.font", 19f);
+            foreach (var t in new[] { input.textComponent, input.placeholder as TMP_Text })
+            {
+                if (!t) continue;
+                t.enableAutoSizing = false;
+                t.fontSize = font;
+                t.verticalAlignment = VerticalAlignmentOptions.Middle;
+            }
+            input.pointSize = font;
+            input.selectionColor = ThemeTokens.GetColor("color.field.selection", new Color(0.35f, 0.85f, 1f, 0.35f));
         }
 
         private static void Place(Transform row, string child, Vector2 min, Vector2 max, Vector2 offMin, Vector2 offMax, float size, TextAlignmentOptions align)
