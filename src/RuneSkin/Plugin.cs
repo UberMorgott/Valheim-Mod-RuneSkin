@@ -22,7 +22,7 @@ namespace RuneSkin
     [BepInProcess("valheim.exe")]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Version = "0.8.0";
+        public const string Version = "0.9.0";
 
         public static ManualLogSource Log { get; private set; }
         public static ConfigEntry<float> SkinScale { get; private set; }
@@ -36,6 +36,7 @@ namespace RuneSkin
         private static ConfigEntry<bool> _ownMinimap, _ownEnemyHud, _ownMessageHud, _ownDamageText, _ownMainMenu, _ownSettings, _ownConnection;
         private static ConfigEntry<bool> _ownBuildHud, _ownCrosshair, _ownActionHud, _ownShipHud, _ownKeyHints;
         private static ConfigEntry<bool> _ownLoadScreen, _ownChat, _ownPopups, _ownTextDialogs, _ownCompendium, _ownSplitDialog;
+        private static ConfigEntry<bool> _ownStore, _ownBarber, _ownDevPanels, _ownFeedback;
         private Harmony _harmony;
 
         private void Awake()
@@ -93,6 +94,14 @@ namespace RuneSkin
                 "RuneSkin styles the compendium / lore dialog. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
             _ownSplitDialog = Config.Bind("Ownership", "SplitDialog", true,
                 "RuneSkin styles the split stack dialog. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownStore = Config.Bind("Ownership", "Store", true,
+                "RuneSkin styles the trader store (Haldor, Hildir, Bog Witch; Epic Loot's own trader panels excluded). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownBarber = Config.Bind("Ownership", "Barber", true,
+                "RuneSkin styles the barber / mirror. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownDevPanels = Config.Bind("Ownership", "DevPanels", true,
+                "RuneSkin styles the F5 console and the F2 connect panel. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+            _ownFeedback = Config.Bind("Ownership", "Feedback", true,
+                "RuneSkin styles the feedback dialog. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
             HudScale = Config.Bind("Hud", "Scale", 1f, new ConfigDescription(
                 "HUD cluster scale on top of the game's UI scale (fonts never go below the readable floor).",
                 new AcceptableValueRange<float>(0.75f, 1.5f)));
@@ -146,6 +155,10 @@ namespace RuneSkin
                 [OwnershipRegistry.TextDialogs] = _ownTextDialogs.Value,
                 [OwnershipRegistry.Compendium] = _ownCompendium.Value,
                 [OwnershipRegistry.SplitDialog] = _ownSplitDialog.Value,
+                [OwnershipRegistry.Store] = _ownStore.Value,
+                [OwnershipRegistry.Barber] = _ownBarber.Value,
+                [OwnershipRegistry.DevPanels] = _ownDevPanels.Value,
+                [OwnershipRegistry.Feedback] = _ownFeedback.Value,
             }, _requireAssets.Value);
 
             ApiHost = new Host();
@@ -180,6 +193,7 @@ namespace RuneSkin
                 OwnershipRegistry.IsOwned(OwnershipRegistry.ShipHud) || OwnershipRegistry.IsOwned(OwnershipRegistry.KeyHints))
                 _harmony.PatchAll(typeof(WorldHud.PlayHudAdapter));
             if (GameScreens.GameScreensAdapter.AnyOwned()) _harmony.PatchAll(typeof(GameScreens.GameScreensAdapter));
+            if (GameScreens.TradeScreensAdapter.AnyOwned()) _harmony.PatchAll(typeof(GameScreens.TradeScreensAdapter));
             Log.LogInfo($"[RuneSkin] {Version} ready (API v{Skin.ApiVersion})");
         }
 

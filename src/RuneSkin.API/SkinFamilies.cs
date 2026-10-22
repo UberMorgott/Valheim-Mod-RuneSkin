@@ -1,7 +1,7 @@
 namespace RuneSkin.API
 {
     /// <summary>
-    /// Screen family names for <see cref="Skin.IsOwned"/> (ApiVersion 6). A family is the ownership unit: while RuneSkin
+    /// Screen family names for <see cref="Skin.IsOwned"/> (ApiVersion 7). A family is the ownership unit: while RuneSkin
     /// owns one, no other skin may style its screens. Names are stable strings; an older RuneSkin answers false for a
     /// family it does not know.
     /// </summary>
@@ -59,5 +59,13 @@ namespace RuneSkin.API
         public const string Compendium = "Compendium";
         /// <summary>Split stack dialog (M6).</summary>
         public const string SplitDialog = "SplitDialog";
+        /// <summary>Trader store (Haldor, Hildir, Bog Witch) (M6).</summary>
+        public const string Store = "Store";
+        /// <summary>Barber / mirror (the in-world character customisation) (M6).</summary>
+        public const string Barber = "Barber";
+        /// <summary>Developer panels: F5 console and F2 connect panel (M6).</summary>
+        public const string DevPanels = "DevPanels";
+        /// <summary>Feedback dialog (M6).</summary>
+        public const string Feedback = "Feedback";
     }
 }

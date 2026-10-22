@@ -27,6 +27,10 @@ namespace RuneSkin.WorldHud
                 StripWell(hud.m_buildHud.transform.Find("SelectedInfo"));
                 Register(hud.m_buildHud.transform, ScreenId + ".Selected");
             }
+            // Hovered piece author window (crossplay author name / platform id; kit popup): its own root unless it lives
+            // under the selected-piece strip (then that registration covers it).
+            var author = hud.m_hoveredPieceAuthorWindow ? hud.m_hoveredPieceAuthorWindow.transform : null;
+            if (author && !(hud.m_buildHud && author.IsChildOf(hud.m_buildHud.transform))) Register(author, ScreenId + ".Author");
             Plugin.Log.LogInfo("[RuneSkin] build HUD attached");
         }
 

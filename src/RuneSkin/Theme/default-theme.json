@@ -755,6 +755,10 @@
     { "family": "Popups", "requires": [ "sprite.frame.tooltip", "sprite.frame.panel", "sprite.fill.glass", "sprite.button.normal", "font.display", "font.body" ] },
     { "family": "TextDialogs", "requires": [ "sprite.frame.panel", "sprite.fill.glass", "sprite.frame.inset", "sprite.band.runes", "sprite.field.search", "sprite.button.normal", "sprite.button.selected", "font.display", "font.body" ] },
     { "family": "Compendium", "requires": [ "sprite.frame.panel", "sprite.fill.glass", "sprite.frame.inset", "sprite.row.recipe.normal", "sprite.row.recipe.selected", "sprite.hud.frame.strip", "font.display", "font.body" ] },
-    { "family": "SplitDialog", "requires": [ "sprite.frame.panel", "sprite.fill.glass", "sprite.slot.recess", "sprite.slider.handle.normal", "sprite.bar.skill.trough", "sprite.button.normal", "font.display", "font.body" ] }
+    { "family": "SplitDialog", "requires": [ "sprite.frame.panel", "sprite.fill.glass", "sprite.slot.recess", "sprite.slider.handle.normal", "sprite.bar.skill.trough", "sprite.button.normal", "font.display", "font.body" ] },
+    { "family": "Store", "requires": [ "sprite.frame.panel", "sprite.fill.glass", "sprite.frame.inset", "sprite.row.recipe.normal", "sprite.row.recipe.selected", "sprite.slot.recess", "sprite.button.normal", "sprite.button.selected", "font.display", "font.body" ] },
+    { "family": "Barber", "requires": [ "sprite.frame.panel", "sprite.fill.glass", "sprite.slider.handle.normal", "sprite.button.normal", "sprite.button.selected", "font.display", "font.body" ] },
+    { "family": "DevPanels", "requires": [ "sprite.frame.tooltip", "sprite.frame.panel", "sprite.field.search", "font.body" ] },
+    { "family": "Feedback", "requires": [ "sprite.frame.panel", "sprite.fill.glass", "sprite.field.search", "sprite.button.normal", "sprite.checkbox.box", "font.display", "font.body" ] }
   ]
 }

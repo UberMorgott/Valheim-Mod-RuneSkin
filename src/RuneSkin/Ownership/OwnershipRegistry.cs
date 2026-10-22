@@ -62,7 +62,14 @@ namespace RuneSkin.Ownership
         public const string Compendium = RuneSkin.API.SkinFamilies.Compendium;
         public const string SplitDialog = RuneSkin.API.SkinFamilies.SplitDialog;
 
-        public static readonly string[] Known = { Menu, Tooltips, Hud, Inventory, Crafting, Skills, Trophies, Almanac, Minimap, EnemyHud, MessageHud, DamageText, MainMenu, Settings, Connection, BuildHud, Crosshair, ActionHud, ShipHud, KeyHints, LoadScreen, Chat, Popups, TextDialogs, Compendium, SplitDialog };
+        // M6 batch 3 (GameScreens\TradeScreens.cs): trader store, barber, developer panels (console, connect panel),
+        // feedback dialog.
+        public const string Store = RuneSkin.API.SkinFamilies.Store;
+        public const string Barber = RuneSkin.API.SkinFamilies.Barber;
+        public const string DevPanels = RuneSkin.API.SkinFamilies.DevPanels;
+        public const string Feedback = RuneSkin.API.SkinFamilies.Feedback;
+
+        public static readonly string[] Known = { Menu, Tooltips, Hud, Inventory, Crafting, Skills, Trophies, Almanac, Minimap, EnemyHud, MessageHud, DamageText, MainMenu, Settings, Connection, BuildHud, Crosshair, ActionHud, ShipHud, KeyHints, LoadScreen, Chat, Popups, TextDialogs, Compendium, SplitDialog, Store, Barber, DevPanels, Feedback };
 
         private static readonly HashSet<string> Owned = new HashSet<string>();
         public static bool Frozen { get; private set; }
