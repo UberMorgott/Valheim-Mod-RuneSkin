@@ -507,3 +507,4 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
 - [x] Unit tests EnemyBarTests (visibility, pick cap, fades, distance scale, stagger build / decay / active / immune).
 - Art pipeline note: a fresh worktree's unity\ has no Library -> the first batch build crashes in the atlas packer
   ("Unsupported Format 0"); copying the main checkout's unity\Library first builds fine.
+- [x] Verified: runs tools\out\20261022-184813 and 20261022-185607 (ui-runeskin-enemybars + m4) 74/74 PASS each; Codex fidelity in game normal 9 / magic 8 / rare 8 / unique 8 (run -184813), Vaettir boss bar 8 (run -185607: bar height from width, name on the rune face).
