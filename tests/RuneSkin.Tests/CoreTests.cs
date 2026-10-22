@@ -63,7 +63,7 @@ namespace RuneSkin.Tests
         public void FontSourceIsBundleOrLoaded(string source, bool valid)
         {
             var f = Minimal();
-            f.fonts = new[] { new AssetEntry { token = "font.rune", asset = "Norsebold SDF", source = source } };
+            f.fonts = new[] { new AssetEntry { token = "font.rune", asset = "Valheim-Norsebold", source = source } };
             Assert.Equal(valid, !ThemeSchema.Validate(f).Exists(e => e.Contains("source")));
         }
 

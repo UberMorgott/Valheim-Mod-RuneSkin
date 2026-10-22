@@ -281,7 +281,7 @@
   "fonts": [
     { "token": "font.display", "asset": "RuneSkin-Display Cormorant-Bold SDF" },
     { "token": "font.body", "asset": "RuneSkin-Body PTSans-Regular SDF" },
-    { "token": "font.rune", "asset": "Norsebold SDF", "source": "loaded" }
+    { "token": "font.rune", "asset": "Valheim-Norsebold", "source": "loaded" }
   ],
   "floats": [
     { "token": "size.text.fit.min", "value": 12 },

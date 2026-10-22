@@ -206,18 +206,15 @@ theme `font.rune` -> AugaSkin's loaded "Norsebold SDF" (default-theme.json:284).
 design references, no copied code. Open: Codex style references `D:\tmp\cx-augaskin\mockup-1.png` / `work\ref\*` are gone
 from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the kit is a style derivative, not a copy).
 
-### Batch F - own rune face (blocked on a user decision)
+### Batch F - own rune face (decided: (a) vanilla Norsebold)
 
-- [ ] Original Norse (Joel Carrouche, fontspace "Norse" zip, v1.001, 2011): 311 glyphs, 0 Cyrillic. EULA "free font licence
-      1.3": use + embed in applications OK, no modification, no redistribution of the font file. The Cyrillic Norse
-      (v2.20, 518 glyphs, 74 Cyrillic) exists only in Auga's AugaUnity\Assets\Fonts (not an original distribution).
-- [ ] Decide: (a) theme `font.rune` = vanilla runtime "Valheim-Norsebold" (source "loaded", nothing redistributed, Cyrillic
-      if the game's asset has it - verify with m5/m6-rune-font); or (b) bundle a SDF baked from Norse 1.001 (Latin + runes,
-      .otf gitignored, EULA text in art/fonts/licenses) with vanilla Norsebold as fallback for Cyrillic (harness
-      rune-font check demands no fallback - would need a rule change); or (c) an OFL runic/Norse face with Cyrillic.
-- [ ] Then: harness RuneFont.cs `RuneFaceAsset` + M6b/M6c `ThemeFace` / barber title font name, autotest 01 + m5 + m6,
-      bump, remove the "loaded AugaSkin font" comment in ThemeModel.cs.
-
+- [x] Original Norse (Joel Carrouche, fontspace "Norse" zip, v1.001, 2011): 311 glyphs, 0 Cyrillic, EULA no redistribution;
+      Cyrillic Norse v2.20 only in Auga's AugaUnity (not an original distribution) -> not used.
+- [x] F0 (0.9.2): theme `font.rune` = vanilla runtime TMP asset "Valheim-Norsebold" (source "loaded", bound late by name,
+      nothing redistributed; AugaSkin "Norsebold SDF" lookup gone). Face: dynamic, full Russian alphabet incl. Ё ё Й й
+      (harness rune-alphabet now probes the source font of dynamic faces). Harness RuneFaceAsset shared by m5 / m6 / m6b / m6c
+      (tools 1fbe56e). Runs tools\out\20261022-135707 (01 + m5 + m6, 56/56), 20261022-135940 (same, AugaSkin parked, 56/56),
+      20261022-140155 (m6b + m6c, 33/33, barber title Valheim-Norsebold): 0 missing glyphs.
 ### Batch M7a - Epic Loot panels (families EpicLootEnchanting / EpicLootBoard / EpicLootTemper, AugaSkin yields)
 
 - [ ] Enchanting table: `EnchantingUI` prefab (EnchantingTableUI.Start), MultiSelectItemList ElementPrefab rows,

@@ -36,7 +36,7 @@ namespace RuneSkin.Theme
         // in diagnostics as a fallback, so it never hides missing art.
         public string fallback;
         // Fonts only: "loaded" = a TMP font asset already loaded by the game or another plugin (e.g. the rune face,
-        // AugaSkin's "Norsebold SDF"), looked up by name at first use; empty = our bundle.
+        // vanilla's "Valheim-Norsebold"), looked up by name at first use; empty = our bundle.
         public string source;
     }
 
