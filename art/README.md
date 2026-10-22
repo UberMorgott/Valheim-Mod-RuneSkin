@@ -17,7 +17,7 @@ graphics device ("Unsupported Format 0", editor crash).
 Review aids (not part of the build, output in `art/review/`, git-ignored):
 `go -C art/tools run . compare` -> `compare-inventory.png`, `compare-hud.png`, `compare-corner.png`,
 `compare-groups.png` ([mockup | ours] rebuilt from our sprites with Unity Sliced/Tiled rules; mockups in
-`D:\tmp\cx-augaskin`); `go -C art/tools run . sheet` -> `contact-sheet.png`. M2/M3: `compare-m2`, `compare-m3` (crafting: `compare-crafting-m3.png`, `compare-groups-m3.png`), `compare-m3s` (skills/trophies: `compare-skills-m3.png`, `compare-trophies-m3.png`, `compare-groups-m3s.png`), `compare-m4` (`compare-hud-m4a/b.png`, `compare-map-m4.png`, `compare-groups-m4.png`), `compare-m5` (`compare-{menu,char,world,load,settings}-m5.png`, `compare-groups-m5.png`).
+`D:\tmp\cx-augaskin`); `go -C art/tools run . sheet` -> `contact-sheet.png`. M2/M3: `compare-m2`, `compare-m3` (crafting: `compare-crafting-m3.png`, `compare-groups-m3.png`), `compare-m3s` (skills/trophies: `compare-skills-m3.png`, `compare-trophies-m3.png`, `compare-groups-m3s.png`), `compare-m4` (`compare-hud-m4a/b.png`, `compare-map-m4.png`, `compare-groups-m4.png`), `compare-m5` (`compare-{menu,char,world,load,settings}-m5.png`, `compare-groups-m5.png`), `compare-m6` (`compare-{build,trader,text,load,ship,dialogs}-m6.png`, `compare-groups-m6.png`).
 
 ## Rule: Codex makes the pixels
 
@@ -148,3 +148,40 @@ count (scroll).
   hit >= 44); Toggle = `checkbox_box` + `glyph_check`; TMP_Dropdown = `field_search` + `glyph_chevron_down`, list
   `frame_inset` + `row_recipe_selected` item highlight (opens upward when no room); keybind = label + `plate_key` field,
   waiting = `ring_select` tint rune_glow + "Нажмите клавишу..."; bottom `button_*` (Apply gold text).
+
+## M6 sprites (vanilla in-game screens)
+
+Inventory of unowned screens: `docs/screen-inventory.md`. Picks (Codex, user asleep; mockups in `D:\tmp\cx-augaskin`): build HUD
+`m6-build-a` (+ stealth eye from B), trader `m6-trader-a`, sign input + text viewer `m6-text-a` (+ raven bubble from B), black screens
+`m6-load-b` (respawn without a progress bar), ship HUD `m6-ship-b`, compendium / split / barber `m6-dialogs-a`. Codex final: 15 of 16
+groups 8/10, ship ladder 7 (reefed sail, round cap). New: `glyph_stealth_eye`, `glyph_crosshair`, `glyph_ship_oar`,
+`glyph_ship_sail_half|full`, `glyph_rudder`, `glyph_teleport_swirl`, `glyph_stop`, `band_runes`, `bar_frame_action`.
+- Panel titles (trader, text viewer, compendium, respawn banner): serif caps on the top rail with `knot` left + mirrored right
+  (no `header_plaque` when the title is long).
+- Build HUD (`Hud.m_pieceSelectionWindow`): standard panel; category row `tab_*` on `tab_strip` (any count, mod tabs, scroll);
+  piece grid `slot_cell_recess`, hovered/selected `slot_cell_selected`; scroll `scroll_*`; selected strip (`m_buildHud`) = `frame_inset`
+  well + icon in `slot_cell_recess` + requirement cells `socket_req` / `socket_req_missing` (counts text_ok / text_missing) + key hint
+  `plate_key`.
+- Crosshair: `glyph_crosshair` (40 sprite px, tint text_body ~0.9; bow crosshair stays vanilla); hover text sans + `plate_key`;
+  piece health `bar_skill_trough` + `bar_skill_fill` (tint text_ok, vanilla gradient colour allowed); stealth `glyph_stealth_eye`
+  (tint text_body hidden / ember targeted) + slim `bar_skill_fill` tint rune_glow under it.
+- Trader (`StoreGui`): one list (any item count) in `frame_inset`, rows `row_recipe_*` with icon `slot_cell_recess`, price right-aligned with
+  `glyph_coins` tint text_active (unaffordable price text_missing); buy/sell = `tab_*`; detail well title text_item_title; purse
+  `frame_small` (or M7 `plate_currency`); buy/sell button `button_*` gold label.
+- Text input (`TextInput`): panel, field `field_search` + `ring_select` tint rune_glow (focus), counter text_disabled only when the input
+  has a limit, `button_selected` (OK) + `button_normal`. Text viewer (`TextViewer`): panel, `frame_inset` well, `band_runes` (Tiled,
+  height 22 ref) above and below the text, serif body, close = `button_normal` with the key hint. Raven bubble: panel (big caps) +
+  raven content + `button_normal` "[E] ...".
+- Black screens (`Hud.m_loadingScreen`): tip = panel banner bottom-centre (title + `divider` + tip); respawn/sleep without real
+  progress = `spinner_runes` inside `button_round`; sleep = `glyph_time_moon`; teleport = `minimap_ring` + `glyph_teleport_swirl`
+  (tint rune_glow, slow rotation).
+- Ship HUD: vertical popup column (small caps), ladder glyphs top-down `glyph_ship_sail_full`, `glyph_ship_sail_half`,
+  `glyph_ship_oar`, `glyph_stop`, `glyph_chevron_down` (reverse); active = `slot_cell_selected` + glyph tint rune_glow; rudder
+  `button_round` + `glyph_rudder` rotated by the rudder value; wind stays on the minimap ring.
+- Action progress / stagger: `bar_frame_action` (Sliced, window inset L/R 40, T/B 9 sprite px) over `bar_trough` + `bar_fill` tint
+  rune_glow; label serif. Event/raid line: `band_message` + `banner_rule` (small, mirrored) + ember serif text.
+- Mount panel: popup + portrait in `button_round` + `bar_skill_trough`/`bar_skill_fill` (red / yellow). Chat: popup, names text_active,
+  input `field_search`. Key hints: `plate_key` + sans label (row or column).
+- Compendium (`TextsDialog`): panel, `tab_*` on `tab_strip`, topic list `frame_inset` + `row_recipe_*` (unread = `pip_quality_full`),
+  reading pane `frame_strip`. Split dialog: panel + `slot_cell_recess` + slider (M5) + buttons. Barber: panel, style cells
+  `slot_cell_recess`, selected `tab_square_selected`, colour slider = `bar_skill_trough` + vanilla gradient + `slider_handle_*`.

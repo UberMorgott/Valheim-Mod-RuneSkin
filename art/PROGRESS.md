@@ -74,3 +74,11 @@
 - [x] Kit sheets m5kit (danger buttons, slider diamond x3, checkbox), spinner2 (rune spinner); reuse: frame_boss as loading frame, plate_key keybinds, tab_* categories
 - [x] compare-m5: Codex 3 rounds -> 8 of 10 groups >= 8; connecting spinner 7.5 (tail glow weak), loading fill 7.5 (flat) - round cap
 - [x] Bundle BUILD OK 200/200
+
+## M6 vanilla in-game screens (2026-10-22)
+
+- [x] Inventory of unowned screens: docs/screen-inventory.md (24 vanilla entries, 20 mod entries)
+- [x] Mockups m6-{build,trader,text,load,ship,dialogs}-{a,b} (Codex image gen, D:\tmp\cx-augaskin, prompts D:\tmp\cx-augaskin\work\m67)
+- [x] Pick (Codex, user asleep, AgentLink chat 11cdaf31): build A (text tabs keep unknown mod categories; + B stealth eye), trader A (one list = StoreGui), text A (one scrolling text, plain input; + B raven bubble), load B (bottom tip housing; no invented death heading/progress), ship B (vertical ladder fits the native indicators, light raid line), dialogs A (list/detail, slider split, appearance grids reuse controls)
+- [x] Kit sheets m6glyphs (eye, crosshair, oar, rudder), m6fix2 (sails as longship icons, outlined stop, wispy swirl), m6fix3 (band_runes, bar_frame_action); 10 new sprites
+- [x] compare-m6: Codex 3 rounds -> 15 of 16 groups 8/10; ship ladder 7 (reefed sail reads as a T, round cap)

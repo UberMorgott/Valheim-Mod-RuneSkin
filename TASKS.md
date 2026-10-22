@@ -145,3 +145,10 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 - [x] Codex final (run -072233): menu 8, delete 8, settings 8, controller 8, unlock 8; characters 7.5, worlds 7.5, servers 7.5, connecting 7.5, large map 7.5
 - [ ] Below 8: character preview small / far (frame it in the free centre); start-game mode tabs still shallow (TabLabels height not applied: check their anchors) + world password / server filter fields need field_search; connecting rune circle sits below the label (align rendered sprite bounds); Epic Loot filter rows showed "Задание: $1" for both -> keys $mod_epicloot_merchant_bounties / treasuremaps + exact button match in 0.6.1 (unverified)
 - [ ] Harness: ui-runeskin-m1 debuffs failed in rain (Wet re-applied); Seasonality Summer pin added in tools 64091ec, unverified
+
+## M6 art (2026-10-22) - vanilla in-game screens
+
+- Inventory: docs/screen-inventory.md - 24 vanilla entries still unowned (build HUD, crosshair/hover, stealth, action progress, ship HUD, mount, event bar, black screens, chat, key hints, StoreGui, TextInput, TextViewer, raven, TextsDialog, split, barber, piece author, small popups, console, saves/changelog/feedback/credits/server options, connect panel; radials listed only = icons-in-radial-menus session) and 20 mod entries (M7).
+- Picks (Codex, user asleep; mockups D:\tmp\cx-augaskin\m6-*.png, reasons in art\PROGRESS.md): build = A (text tabs + wide grid, + B stealth eye), trader = A (one list), text = A (+ B raven bubble), black screens = B (tip banner, spinner when no progress, teleport ring + swirl), ship = B (vertical ladder + rudder socket, light raid line, mount panel only when riding), dialogs = A.
+- Rejected: build B (icon-only fixed categories), trader B (separate sell inventory), text B (drop caps, no panel input), load A (invented "you died" heading / player count), ship A (horizontal plate), dialogs B (book spread, invented tabs).
+- Code pickup: art\README.md "M6 sprites". New sprites: glyph_stealth_eye, glyph_crosshair, glyph_ship_oar, glyph_ship_sail_half/full, glyph_rudder, glyph_teleport_swirl, glyph_stop, band_runes, bar_frame_action.

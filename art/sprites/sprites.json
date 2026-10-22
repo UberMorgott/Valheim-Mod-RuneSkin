@@ -4444,6 +4444,226 @@
       "fillCenter": true,
       "token": "checkbox.box",
       "notes": "M5 Toggle background (28 ref); checkmark = glyph_check tint rune_glow ~70%; off = empty box; focus = ring_select"
+    },
+    {
+      "name": "glyph_stealth_eye",
+      "file": "glyph_stealth_eye.png",
+      "size": [
+        96,
+        56
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.stealth.eye",
+      "notes": "M6 stealth indicator above the crosshair (Hud.m_hidden / m_targeted): tint text_body when hidden, ember when targeted; stealth bar under it = bar_skill_fill tint rune_glow"
+    },
+    {
+      "name": "glyph_crosshair",
+      "file": "glyph_crosshair.png",
+      "size": [
+        40,
+        40
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.crosshair",
+      "notes": "M6 Hud.m_crosshair: four ticks + dot, tint text_body alpha ~0.9 (crosshairBow keeps vanilla)"
+    },
+    {
+      "name": "glyph_ship_oar",
+      "file": "glyph_ship_oar.png",
+      "size": [
+        80,
+        80
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.ship.oar",
+      "notes": "M6 ship speed ladder: slow / paddle (Hud.m_rudderSlow); tint text_body, active rune_glow"
+    },
+    {
+      "name": "glyph_ship_sail_half",
+      "file": "glyph_ship_sail_half.png",
+      "size": [
+        80,
+        80
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.ship.sail.half",
+      "notes": "M6 ship speed ladder: half sail (Hud.m_halfSail)"
+    },
+    {
+      "name": "glyph_ship_sail_full",
+      "file": "glyph_ship_sail_full.png",
+      "size": [
+        80,
+        80
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.ship.sail.full",
+      "notes": "M6 ship speed ladder: full sail (Hud.m_fullSail)"
+    },
+    {
+      "name": "glyph_rudder",
+      "file": "glyph_rudder.png",
+      "size": [
+        112,
+        112
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.rudder",
+      "notes": "M6 ship rudder (Hud.m_shipRudderIcon/Indicator): wheel on button_round, rotate with the rudder value"
+    },
+    {
+      "name": "glyph_teleport_swirl",
+      "file": "glyph_teleport_swirl.png",
+      "size": [
+        320,
+        320
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.teleport.swirl",
+      "notes": "M6 teleport black screen (Hud.m_teleportingProgress): soft spiral inside minimap_ring, tint rune_glow, slow rotation"
+    },
+    {
+      "name": "glyph_stop",
+      "file": "glyph_stop.png",
+      "size": [
+        80,
+        80
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.stop",
+      "notes": "M6 ship speed ladder: stop (Hud.m_rudder idle); reverse = glyph_chevron_down"
+    },
+    {
+      "name": "band_runes",
+      "file": "band_runes.png",
+      "size": [
+        193,
+        52
+      ],
+      "border": {
+        "left": 38,
+        "bottom": 0,
+        "right": 38,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "band.runes",
+      "notes": "M6 TextViewer (runestones, lore): dim carved rune band above/below the text, knot caps at the ends, rune row tiles horizontally; height 22 ref"
+    },
+    {
+      "name": "bar_frame_action",
+      "file": "bar_frame_action.png",
+      "size": [
+        204,
+        43
+      ],
+      "border": {
+        "left": 42,
+        "bottom": 9,
+        "right": 42,
+        "top": 9
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": false,
+      "token": "bar.frame.action",
+      "notes": "M6 slim progress frame (Hud.m_actionProgress / m_staggerProgress, Vaettir raid timer, Hamingja bleed-out): dark knot end caps, window transparent, inset L/R 40 T/B 9 sprite px; trough bar_trough, fill bar_fill tinted (action rune_glow, raid #f08a3a, bleed-out #8f989f worn silver, not bright white)"
     }
   ]
 }

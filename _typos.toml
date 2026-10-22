@@ -22,3 +22,8 @@ equiped = "equiped"
 Decription = "Decription"
 # Vanilla field InventoryGui.m_recipeDecription (assembly_valheim InventoryGui.cs:117).
 m_recipeDecription = "m_recipeDecription"
+
+# Vanilla class PlayerCustomizaton (assembly_valheim PlayerCustomizaton.cs, barber UI), named in docs/screen-inventory.md.
+PlayerCustomizaton = "PlayerCustomizaton"
+# BossAwakening world boss bar object name BA_WorldBossBar (AugaSkin exemption), named in docs/screen-inventory.md.
+BA_WorldBossBar = "BA_WorldBossBar"
