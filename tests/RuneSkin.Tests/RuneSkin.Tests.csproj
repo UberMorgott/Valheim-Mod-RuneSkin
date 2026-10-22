@@ -37,6 +37,7 @@
     <Compile Include="..\..\src\RuneSkin\CraftingScreen\CraftingMath.cs" Link="Linked\CraftingMath.cs" />
     <Compile Include="..\..\src\RuneSkin\InfoScreens\InfoMath.cs" Link="Linked\InfoMath.cs" />
     <Compile Include="..\..\src\RuneSkin\MapScreen\MinimapMath.cs" Link="Linked\MinimapMath.cs" />
+    <Compile Include="..\..\src\RuneSkin\MapScreen\PinLabelMath.cs" Link="Linked\PinLabelMath.cs" />
     <Compile Include="..\..\src\RuneSkin\WorldHud\EnemyHudMath.cs" Link="Linked\EnemyHudMath.cs" />
     <Compile Include="..\..\src\RuneSkin\WorldHud\PlayHudMath.cs" Link="Linked\PlayHudMath.cs" />
     <Compile Include="..\..\src\RuneSkin\WorldHud\HoldPromptMath.cs" Link="Linked\HoldPromptMath.cs" />

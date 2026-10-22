@@ -95,7 +95,7 @@ namespace RuneSkin.MapScreen
             var click = _small.Find("MapClick");
             if (click) click.SetParent(_mask, false);
             _mapImage.rectTransform.SetParent(_mask, false);
-            if (_map.m_pinNameRootSmall) _map.m_pinNameRootSmall.SetParent(_mask, false);
+            MatchNameRoots(); // name pins inside the map image, over its pin root (PinLabels.cs): clipped by the mask too
             var mapRt = _mapImage.rectTransform;
             mapRt.anchorMin = mapRt.anchorMax = mapRt.pivot = new Vector2(0.5f, 0.5f);
             mapRt.anchoredPosition = Vector2.zero;
@@ -165,6 +165,7 @@ namespace RuneSkin.MapScreen
                     _pinsDirty = false;
                     _pinsCulled = PinsVersion;
                     CullPins();
+                    PlaceLabels();
                 }
                 FitPlaque();
             }
@@ -245,12 +246,16 @@ namespace RuneSkin.MapScreen
                 _letters[i].fontSize = ThemeTokens.GetFloat("size.minimap.letter", 17f) * k;
             }
             var w = ThemeTokens.GetFloat("size.minimap.wind", 30f) * k;
-            // Upper-right on the band (45 deg), socket 60x74 sprite px, glyph recess centre at (45 %, 58 %).
+            // Upper-right on the band (45 deg), socket 60x74 sprite px (teardrop, tip top-right). The round recess the
+            // wind arrow turns in spans x 7..49, y 24..64 px from the TOP: centre (28.5, 44) = anchor (0.475, 0.40) in
+            // Unity's bottom-up space, diameter 43 px = 0.72 of the width. The old anchor (0.45, 0.58) read the y from the
+            // top, so the arrow spun on the recess rim, off-centre (user screenshot 2026-10-22: "arrow is crooked").
             var diag = band * 0.7071f;
             Center(_windSocket.rectTransform, new Vector2(diag, diag), new Vector2(w, w * 74f / 60f));
-            var gs = w * ThemeTokens.GetFloat("ratio.minimap.wind.glyph", 0.82f);
+            var gs = w * ThemeTokens.GetFloat("ratio.minimap.wind.glyph", 0.7f);
             var g = _windGlyph.rectTransform;
-            g.anchorMin = g.anchorMax = new Vector2(0.45f, 0.58f);
+            g.anchorMin = g.anchorMax = new Vector2(MinimapMath.WindRecessX, MinimapMath.WindRecessY);
+            _windGlyph.preserveAspect = true;
             g.pivot = new Vector2(0.5f, 0.5f);
             g.anchoredPosition = Vector2.zero;
             g.sizeDelta = new Vector2(gs, gs);
@@ -339,9 +344,7 @@ namespace RuneSkin.MapScreen
                 var local = (Vector2)map.InverseTransformPoint(pin.m_uiElement.position) - map.rect.center;
                 var square = Mathf.Abs(local.x) <= map.rect.width * 0.5f && Mathf.Abs(local.y) <= map.rect.height * 0.5f;
                 var visible = square && MinimapMath.InsideDisc(local.x, local.y, r, pin.m_uiElement.rect.width * 0.5f);
-                Show(pin.m_uiElement.gameObject, visible);
-                var label = pin.m_NamePinData != null ? pin.m_NamePinData.PinNameGameObject : null;
-                if (label) Show(label, visible);
+                Show(pin.m_uiElement.gameObject, visible); // its label follows in PlaceLabels (PinLabels.cs)
             }
         }
 

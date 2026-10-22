@@ -51,6 +51,13 @@ namespace RuneSkin.MapScreen
         // Minimap.UpdateWindMarker (Minimap.cs:1702-1706) writes it.
         public static float WindAngle(float headingDeg) => -headingDeg;
 
+        // Anchor (bottom-up fraction) of a sprite point given in image pixels from the top-left (art measurements).
+        public static float AnchorX(float px, float width) => width > 0f ? px / width : 0.5f;
+        public static float AnchorY(float pxFromTop, float height) => height > 0f ? 1f - pxFromTop / height : 0.5f;
+
+        // minimap_wind_socket (60x74): round recess x 7..49, y 24..64 px from the top -> centre (28.5, 44.5).
+        public static readonly float WindRecessX = AnchorX(28.5f, 60f), WindRecessY = AnchorY(44.5f, 74f);
+
         // Large map zoom slider (legend): Minimap.LargeZoom is the visible map share (m_minZoom close .. m_maxZoom
         // whole map), scaled geometrically by the wheel; the slider runs on its log so a step feels even.
         // 0 = whole map (max), 1 = closest (min).

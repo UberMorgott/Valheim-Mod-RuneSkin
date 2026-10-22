@@ -136,6 +136,9 @@ namespace RuneSkin.MapScreen
                 }
             }
             LegendRows(inset);
+            // Every frame while open: a label vanilla activates late (DelayActivation 1 s, Minimap.cs:883-890) or a zoom /
+            // pan re-place (UpdatePins) is hung under its pin and decluttered before the canvas draws (PinLabels.cs).
+            PlaceLabels();
             // Title plaque: cursor biome, else the player's biome (small map text) when the cursor is off the map.
             var big = _map.m_biomeNameLarge;
             if (big && string.IsNullOrEmpty(big.text) && _map.m_biomeNameSmall) big.text = _map.m_biomeNameSmall.text;
