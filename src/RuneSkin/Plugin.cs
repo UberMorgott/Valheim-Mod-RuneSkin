@@ -107,8 +107,8 @@ namespace RuneSkin
                 "RuneSkin styles the feedback dialog. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
             _ownModUi = Config.Bind("Ownership", "ModUi", true,
                 "RuneSkin restyles every window no other family owns (other mods' canvases and panels, Jotunn windows, IMGUI fonts, other mods' main menu lines): theme panels, controls and fonts, the mod's own layout kept. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _modUiOptOut = Config.Bind("Ownership", "ModUiOptOut", "AugaSkin,BA_WorldBossBar",
-                "Comma-separated object or plugin assembly names the fallback restyler (ModUi) never touches, with everything below them. Read once at startup.");
+            _modUiOptOut = Config.Bind("Ownership", "ModUiOptOut", "AugaSkin,BossAwakening,BA_WorldBossBar",
+                "Comma-separated object or plugin assembly names the fallback restyler (ModUi) never touches, with everything below them (default: AugaSkin's own UI; BossAwakening's boss / raid / target bars keep their own design, styled by the EnemyHud track). Read once at startup.");
             _ownElEnchanting = Config.Bind("Ownership", "EpicLootEnchanting", true,
                 "RuneSkin styles Epic Loot's enchanting table window and its dialogs. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
             _ownElBoard = Config.Bind("Ownership", "EpicLootBoard", true,

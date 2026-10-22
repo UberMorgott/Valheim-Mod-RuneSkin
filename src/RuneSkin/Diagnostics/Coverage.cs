@@ -108,6 +108,8 @@ namespace RuneSkin.Diagnostics
         private static bool FamilyDrawn(Transform t)
         {
             bool Under(Component c, string family) => c && Ownership.OwnershipRegistry.IsOwned(family) && t.IsChildOf(c.transform);
+            var msg = MessageHud.instance;
+            if (msg && msg.m_messageIcon && Ownership.OwnershipRegistry.IsOwned(Ownership.OwnershipRegistry.MessageHud) && t.IsChildOf(msg.m_messageIcon.transform.parent)) return true;
             return Under(MessageHud.instance, Ownership.OwnershipRegistry.MessageHud) || Under(Minimap.instance, Ownership.OwnershipRegistry.Minimap) ||
                    Under(EnemyHud.instance, Ownership.OwnershipRegistry.EnemyHud) || Under(DamageText.instance, Ownership.OwnershipRegistry.DamageText);
         }

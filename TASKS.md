@@ -416,5 +416,14 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
       a source font: the static bundle face has none -> IMGUI keeps its font), Diagnostics\Coverage (Plugin.Coverage: visible
       graphics styled / explained / own / unstyled, m7 + before counts, unit list).
 - [x] Tests ForeignUiTests (assembly kinds, Step rules, window panel, glyph maps, theme families).
+- [x] Harness ui-runeskin-m7 (tools 48ed1eb), AugaSkin parked: run tools\out\20261022-174219 46/60 (coverage gaps: inner control art
+      Unknown, legacy Dropdown, EL rarity toggles squeezed, achievement row icons as cells, family-drawn HUD counted unstyled) ->
+      fixes -> run 20261022-174728 47/60: every adapter check PASS (enchant 7 tabs, board, temper, achievements, radial, vnei:
+      unstyled in the window 0, unit present; m7-layout 14/14, m7-rune-preset 14/14, menu 0 unstyled); the 13 m7-unstyled FAILs =
+      one vanilla item icon of the top-left message (MessageHud family code) the scan did not count as family-drawn (scan fixed
+      after the run, not re-run). Coverage before -> after (M7 graphics on screen): enchant 50-98 -> 0, board 125 -> 0 (4 hud),
+      temper 43 -> 0, achievements 83 -> 0, radial 23 -> 0, vnei 304 -> 0.
+- [x] Default opt-out now AugaSkin, BossAwakening, BA_WorldBossBar: run 174728 showed the BossAwakening raid bar under
+      EnemyHud as a fallback unit (EnemyHud / Vaettir bars = the enemy HUD track).
 - [ ] Open: legacy uGUI body texts and IMGUI keep their own face (needs a legacy Font / dynamic body face in the art bundle);
       Jotunn ModCompatibility window not shot (only on a version mismatch); Vaettir target / raid / Hamingja (other track).
