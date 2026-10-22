@@ -30,6 +30,7 @@
     <Compile Include="..\..\src\RuneSkin\Theme\ThemeJson.cs" Link="Linked\ThemeJson.cs" />
     <Compile Include="..\..\src\RuneSkin\Hud\HudMath.cs" Link="Linked\HudMath.cs" />
     <Compile Include="..\..\src\RuneSkin\Hud\StripMath.cs" Link="Linked\StripMath.cs" />
+    <Compile Include="..\..\src\RuneSkin\Hud\GaugeState.cs" Link="Linked\GaugeState.cs" />
     <Compile Include="..\..\src\RuneSkin\Restyle\PanelMath.cs" Link="Linked\PanelMath.cs" />
     <Compile Include="..\..\src\RuneSkin\Restyle\LabelFit.cs" Link="Linked\LabelFit.cs" />
     <Compile Include="..\..\src\RuneSkin\Restyle\LayoutMath.cs" Link="Linked\LayoutMath.cs" />

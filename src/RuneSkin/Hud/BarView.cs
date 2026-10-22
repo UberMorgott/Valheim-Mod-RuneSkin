@@ -41,8 +41,12 @@ namespace RuneSkin.PlayerHud
         // Plain (HUD strip, mockup hud-3): the bar shows its fill, lag, shield band and the plain value only - no DoT
         // stripes, reserve hatch / edge / lock, paused rune, "cur/avail" or "+ shield" texts.
         public bool Plain;
-        // Shield as a thin line above the bar (HUD strip) instead of the band inside the window.
+        // Shield as a thin line above the bar (older strip) instead of the band inside the window.
         public bool ShieldLine;
+        // Shield as a glow around the bar's perimeter (mockup hud-4M3): lit from the left end cap along the top and the
+        // bottom edges together, the right cap at full; plus a faint sheen over the fill, both shield / max long.
+        public bool ShieldPerimeter;
+        private Image _shCapL, _shMid, _shCapR, _sheen;
         private static int EdgeMode => EdgeModeOverride >= 0 ? EdgeModeOverride : (int)ThemeTokens.GetFloat("mode.hud.bar.edge", 2f);
         private float _frontCore, _frontClock;
         // Shield layer (health bar only): translucent shield-coloured strip over the fill, HudMath.ShieldOverlay wide.
@@ -131,6 +135,11 @@ namespace RuneSkin.PlayerHud
                     _shieldEdge.gameObject.SetActive(false);
                 }
             }
+            if (mainValue && ThemeTokens.GetSprite("sprite.hud.strip4.shield.mid"))
+            {
+                _sheen = art.Image("ShieldSheen", _window, "sprite.hud.strip4.fill", "color.hud.shield.sheen", Image.Type.Sliced);
+                _sheen.gameObject.SetActive(false);
+            }
             _reserved = art.Image("Reserved", _window, "sprite.hud.reserved", "color.hud.reserve", Image.Type.Tiled);
             _reservedEdge = art.Image("ReservedEdge", _window, "sprite.hud.reserved.edge", "color.hud.reserve.edge", Image.Type.Simple);
             _lock = art.Image("Lock", _window, "sprite.hud.glyph.lock", "color.hud.glyph", Image.Type.Simple);
@@ -148,6 +157,15 @@ namespace RuneSkin.PlayerHud
                 _overLag = RightBorder(_lag, scale);
             }
             if (glyphToken != null) Glyph(frameToken, glyphToken, scale);
+            if (_sheen)
+            {
+                _shCapL = art.Image("ShieldCapL", Root, "sprite.hud.strip4.shield.l", "color.hud.shield.glow", Image.Type.Simple);
+                _shMid = art.Image("ShieldRun", Root, "sprite.hud.strip4.shield.mid", "color.hud.shield.glow", Image.Type.Tiled);
+                _shCapR = art.Image("ShieldCapR", Root, "sprite.hud.strip4.shield.r", "color.hud.shield.glow", Image.Type.Simple);
+                _shCapL.gameObject.SetActive(false);
+                _shMid.gameObject.SetActive(false);
+                _shCapR.gameObject.SetActive(false);
+            }
             if (!rail)
             {
                 _overlay = art.Image("Overlay", Root, "sprite.hud.overlay.frost", "color.overlay.frost", Image.Type.Simple);
@@ -298,6 +316,7 @@ namespace RuneSkin.PlayerHud
         private void Layout()
         {
             var l = Mathf.Max(0f, _length);
+            _shownRun = -1f; // the shield perimeter follows the width
             Root.sizeDelta = new Vector2(l + _insetL + _insetR, Height);
             _window.sizeDelta = new Vector2(l, _h);
             Full(_trough.rectTransform, _cap ? HudMath.ClippedEnd(l, l, _overTrough) : l);
@@ -447,7 +466,11 @@ namespace RuneSkin.PlayerHud
                     PlaceOverlay();
                 }
             }
-            if (_shield)
+            if (ShieldPerimeter && _sheen)
+            {
+                Perimeter(_shieldValue, max, l);
+            }
+            else if (_shield)
             {
                 HudMath.ShieldBand(_shieldValue, max, l, _h, ThemeTokens.GetFloat("share.hud.shield.band", 0.4f), out var sx, out var sy, out var sw, out var sh);
                 if (ShieldLine)
@@ -520,6 +543,60 @@ namespace RuneSkin.PlayerHud
                 r.sizeDelta = size;
                 r.anchoredPosition = new Vector2(_insetL + Mathf.Max(0f, l - size.x) * WetSpots[i], _insetB);
             }
+        }
+
+        // Shield perimeter glow + sheen (ShieldPerimeter). Outer box = the bar root grown by size.hud.strip4.shield.out;
+        // caps at the sprites' aspect, the run between them tiled, shield / max of the straight part.
+        private float _shownRun = -1f, _shownCapL = -1f, _shownCapR = -1f;
+
+        private void Perimeter(float shield, float max, float l)
+        {
+            var run = StripMath.ShieldRun(shield, max, out var capL, out var capR);
+            if (Mathf.Abs(run - _shownRun) < 0.0005f && capL == _shownCapL && capR == _shownCapR) return;
+            _shownRun = run;
+            _shownCapL = capL;
+            _shownCapR = capR;
+            if (_shield && _shield.gameObject.activeSelf) _shield.gameObject.SetActive(false);
+            var o = ThemeTokens.GetFloat("size.hud.strip4.shield.out", 3f);
+            var h = Height + 2f * o;
+            var w = Width + 2f * o;
+            var cw = CapWidth(_shCapL, h);
+            var cwr = CapWidth(_shCapR, h);
+            var straight = Mathf.Max(0f, w - cw - cwr);
+            PlaceAt(_shCapL, -o, -o, cw, h, capL > 0f);
+            if (_shCapL.gameObject.activeSelf) _shCapL.canvasRenderer.SetAlpha(capL);
+            PlaceAt(_shMid, -o + cw, -o, straight * run, h, run > 0f);
+            PlaceAt(_shCapR, -o + cw + straight, -o, cwr, h, capR > 0f);
+            // Sheen over the fill: shield / max of the window, from its start.
+            var sw = l * run;
+            var on = sw > 0.05f;
+            if (_sheen.gameObject.activeSelf != on) _sheen.gameObject.SetActive(on);
+            if (on)
+            {
+                var sr = _sheen.rectTransform;
+                sr.anchoredPosition = Vector2.zero;
+                sr.sizeDelta = new Vector2(sw, _h);
+            }
+        }
+
+        private static float CapWidth(Image img, float h)
+        {
+            var s = img ? img.sprite : null;
+            return s ? h * s.rect.width / Mathf.Max(1f, s.rect.height) : 0f;
+        }
+
+        private static void PlaceAt(Image img, float x, float y, float w, float h, bool on)
+        {
+            if (!img) return;
+            on = on && w > 0.05f && img.sprite;
+            if (img.gameObject.activeSelf != on) img.gameObject.SetActive(on);
+            if (!on) return;
+            var rt = img.rectTransform;
+            rt.anchorMin = rt.anchorMax = rt.pivot = Vector2.zero;
+            var p = new Vector2(x, y);
+            var s = new Vector2(w, h);
+            if (rt.anchoredPosition != p) rt.anchoredPosition = p;
+            if (rt.sizeDelta != s) rt.sizeDelta = s;
         }
 
         // Shield amount drawn over the health fill on the next Render (0 = none).

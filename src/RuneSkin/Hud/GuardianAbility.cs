@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace RuneSkin.PlayerHud
 {
-    // Guardian (boss) power as an ability-zone slot (round socket, last in the zone), registered through the same
+    // Guardian (boss) power as an ability-zone slot (first cell of the zone, mockup hud-4M3), registered through the same
     // RuneSkin.API registry other mods use. Data = vanilla Hud.UpdateGuardianPower's source Player.GetGuardianPowerHUD
     // (Player.cs:6313: m_guardianSE + m_guardianPowerCooldown); active = the power's own SE in SEMan (ring = remaining /
     // ttl), cooldown sweep = left / m_cooldown. Key label = the vanilla "GP" binding (Player.cs:993, default F), read
@@ -23,8 +23,8 @@ namespace RuneSkin.PlayerHud
             _slot = Skin.RegisterAbilitySlot(EpicLootBridge.Owner, new AbilitySlotDescriptor
             {
                 Id = "guardian.power",
-                Order = 1000,
-                Round = true,
+                Order = 10, // first cell (mockup hud-4M3: F guardian, then the Epic Loot set skill)
+                Round = false,
                 GetState = State,
                 Activate = p => p.StartGuardianPower()
             });

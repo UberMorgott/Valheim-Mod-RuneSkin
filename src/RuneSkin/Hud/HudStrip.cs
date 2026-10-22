@@ -3,68 +3,92 @@ using RuneSkin.Api;
 using RuneSkin.API;
 using RuneSkin.InventoryScreen;
 using RuneSkin.Theme;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace RuneSkin.PlayerHud
 {
-    // The bottom HUD strip (Track H, mockup hud-2-final, decisions 2026-10-22): panels (two wings behind a centre
-    // block, knotwork ends), hotbar = player inventory row 0 in 8 bowl cells, ability zone 0..4 from the RuneSkin.API
-    // ability registry, food 0..N (capacity list "food", vanilla 3), potions 0..N (capacity list "potions" =
-    // MorgottTweaks PotionSlotCount, else the active EAQS quick cells), captions. Counts are polled every frame (pull
-    // providers, cheap) and the geometry is recomputed only when one of them or the screen / config changed
-    // (LayoutKey); every cell write is change-only, cells are pooled, nothing allocates per frame.
+    // The bottom HUD strip, mockup hud-4M3 (user approved 2026-10-22). Frame pieces are Codex redraws of the mockup at
+    // 4x (art\src\kit\cuts.json strip4_*): the two wings (9-slice, knot end-cap = fixed left border, rails tiled; the
+    // right wing is the left one mirrored), the bar block and the hotbar block (9-slice, braided borders tiled), the
+    // hotbar | ability divider, the two medallions (knot frame + the shared triquetra glyph sprite.ornament.triquetra)
+    // and the knot dividers between split resource bars. Hotbar = player inventory row 0 in 8 cells, abilities 1..2 from
+    // the RuneSkin.API ability registry (guardian power, Epic Loot set skill), food 0..N (capacity list "food", vanilla
+    // 3), potions 0..N (capacity list "potions" = MorgottTweaks PotionSlotCount, else the active EAQS quick cells). Counts
+    // are polled every frame (pull providers, cheap) and the geometry is recomputed only when one of them or the screen /
+    // config changed (LayoutKey); every cell write is change-only, cells are pooled, nothing allocates per frame.
     public sealed class HudStrip
     {
         public const int HotbarCells = 8;
+        public const int MaxRowDividers = 3;
 
         private readonly HudArt _art;
         private readonly RectTransform _root, _back;
         private RectTransform _front;
-        private readonly Image _body, _rail, _endL, _endR, _jointL, _jointR, _barKnotL, _barKnotR;
+        private readonly Image _wingL, _wingR, _bars, _block, _divider;
+        private Image _medL, _medR, _glyphL, _glyphR;
+        private readonly Image[] _rowDiv = new Image[MaxRowDividers];
         private readonly StripCell[] _hotbar = new StripCell[HotbarCells];
-        private readonly List<StripCell> _food = new List<StripCell>(5), _potions = new List<StripCell>(6), _abilities = new List<StripCell>(4);
-        private readonly List<bool> _abilityRound = new List<bool>(4);
+        private readonly List<StripCell> _food = new List<StripCell>(5), _potions = new List<StripCell>(6), _abilities = new List<StripCell>(2);
         private readonly List<EaqsBridge.QuickInfo> _quick = new List<EaqsBridge.QuickInfo>(6);
         private float _quickReadAt;
         private int _quickRevision;
 
         // Valid ability slots this frame: provider index + state.
-        private readonly int[] _abilityIndex = new int[8];
-        private readonly AbilitySlotState[] _abilityState = new AbilitySlotState[8];
-        private readonly bool[] _abilityIsRound = new bool[8];
-        private readonly bool[] _abilityValid = new bool[8];
+        private readonly int[] _abilityIndex = new int[4];
+        private readonly AbilitySlotState[] _abilityState = new AbilitySlotState[4];
 
         public int FoodCount { get; private set; }
         public int PotionCount { get; private set; }
         public int AbilityCount { get; private set; }
         public StripMath.Layout L;
 
+        // Art px -> strip units (the cuts are 2x the mockup's 1080p px).
+        private static float ArtScale => ThemeTokens.GetFloat("share.hud.strip4.art", 0.5f);
+
         public HudStrip(HudArt art, RectTransform root)
         {
             _art = art;
             _root = root;
             _back = HudArt.Rect("StripBack", root);
-            // Frame pieces cut from mockup hud-3 (art\src\kit\cuts.json strip3_*): one tiled body (double rails + slate fill)
-            // over the whole width, knotwork ends, joints between the wings and the centre block, knot blocks at the
-            // ends of the bar bed. Untinted: the mockup's own colours.
-            _body = art.Image("Body", _back, "sprite.hud.strip3.body", "color.hud.strip.plate", Image.Type.Tiled);
-            _rail = art.Image("Rails", _back, "sprite.hud.strip3.rail", "color.hud.strip.frame", Image.Type.Tiled);
-            _endL = art.Image("KnotLeft", _back, "sprite.hud.strip3.end.l", "color.hud.strip.frame", Image.Type.Simple);
-            _endR = art.Image("KnotRight", _back, "sprite.hud.strip3.end.r", "color.hud.strip.frame", Image.Type.Simple);
-            _jointL = art.Image("JointLeft", _back, "sprite.hud.strip3.joint.l", "color.hud.strip.frame", Image.Type.Simple);
-            _jointR = art.Image("JointRight", _back, "sprite.hud.strip3.joint.r", "color.hud.strip.frame", Image.Type.Simple);
-            _barKnotL = art.Image("BarKnotLeft", _back, "sprite.hud.strip3.barknot.l", "color.hud.strip.frame", Image.Type.Simple);
-            _barKnotR = art.Image("BarKnotRight", _back, "sprite.hud.strip3.barknot.r", "color.hud.strip.frame", Image.Type.Simple);
+            // Draw order: wings (tucked under the centre) -> bar block -> hotbar block -> divider; the bars follow (HudCluster),
+            // then the medallions and the cells (BuildFront).
+            _wingL = Piece("WingLeft", _back, "sprite.hud.strip4.wing", Image.Type.Tiled);
+            _wingR = Piece("WingRight", _back, "sprite.hud.strip4.wing", Image.Type.Tiled);
+            _bars = Piece("BarBlock", _back, "sprite.hud.strip4.bars", Image.Type.Tiled);
+            _block = Piece("HotbarBlock", _back, "sprite.hud.strip4.block", Image.Type.Tiled);
+            _divider = Piece("Divider", _back, "sprite.hud.strip4.divider", Image.Type.Simple);
         }
-        // Cells over the bars and panels: created after the bar views (sibling order = draw order).
+
+        private Image Piece(string name, Transform parent, string token, Image.Type type)
+        {
+            var img = _art.Image(name, parent, token, "color.hud.strip.frame", type);
+            _art.Track(img, ArtScale);
+            return img;
+        }
+
+        // Resource-row dividers (knots between split bars) live in the bar layer: HudCluster parents them after the bars.
+        public void BuildRowDividers(Transform parent)
+        {
+            for (var i = 0; i < MaxRowDividers; i++)
+            {
+                _rowDiv[i] = Piece("RowDivider" + i, parent, "sprite.hud.strip4.rowdiv", Image.Type.Simple);
+                _rowDiv[i].gameObject.SetActive(false);
+            }
+        }
+
+        // Medallions and cells over the bars and panels: created after the bar views (sibling order = draw order).
         public void BuildFront()
         {
             _front = HudArt.Rect("StripCells", _root);
+            _medL = Piece("MedallionLeft", _front, "sprite.hud.strip4.medallion", Image.Type.Simple);
+            _medR = Piece("MedallionRight", _front, "sprite.hud.strip4.medallion", Image.Type.Simple);
+            _glyphL = _art.Image("GlyphLeft", _medL.rectTransform, "sprite.ornament.triquetra", "color.ornament.glow", Image.Type.Simple);
+            _glyphR = _art.Image("GlyphRight", _medR.rectTransform, "sprite.ornament.triquetra", "color.ornament.glow", Image.Type.Simple);
+            _glyphL.preserveAspect = _glyphR.preserveAspect = true;
             for (var i = 0; i < HotbarCells; i++)
             {
-                _hotbar[i] = new StripCell(_art, _front, "Hotbar" + i, false);
+                _hotbar[i] = new StripCell(_art, _front, "Hotbar" + i, CellKind.Hotbar);
                 _hotbar[i].SetGhost(_art, "sprite.hud.strip.ghost.hotbar");
                 var input = _hotbar[i].Root.gameObject.AddComponent<StripInput>();
                 input.Hotbar = i;
@@ -94,17 +118,15 @@ namespace RuneSkin.PlayerHud
             // Potion cells = MorgottTweaks PotionSlotCount (capacity list "potions"), clamped to EAQS's quick cells; without
             // the provider, EAQS's own quick slot count.
             PotionCount = Providers.TryCapacity("potions", p, out var pc) && pc.Valid ? Mathf.Clamp(pc.Count, 0, _quick.Count > 0 ? _quick.Count : 6) : ActiveQuick();
-            var max = Mathf.Clamp((int)ThemeTokens.GetFloat("count.hud.ability.max", 4f), 0, _abilityIndex.Length);
+            // 1..2 ability cells (mockup hud-4M3): the guardian power and the equipped Epic Loot set skill; only valid
+            // slots take a cell, the block closes its width around them.
+            var max = Mathf.Clamp((int)ThemeTokens.GetFloat("count.hud.ability.max", 2f), 0, _abilityIndex.Length);
             var n = 0;
-            // Only valid slots take a cell (0..4, empty ones collapse: user call 2026-10-22 after the in-game test).
             for (var i = 0; i < Providers.AbilitySlotCount && n < max; i++)
             {
-                var valid = Providers.TryAbility(i, p, out var s, out var round);
-                if (!valid) continue;
+                if (!Providers.TryAbility(i, p, out var s, out _)) continue;
                 _abilityIndex[n] = i;
                 _abilityState[n] = s;
-                _abilityIsRound[n] = round;
-                _abilityValid[n] = valid;
                 n++;
             }
             AbilityCount = n;
@@ -127,7 +149,6 @@ namespace RuneSkin.PlayerHud
                 var h = FoodCount;
                 h = h * 31 + PotionCount;
                 h = h * 31 + AbilityCount;
-                for (var i = 0; i < AbilityCount; i++) h = h * 3 + (_abilityIsRound[i] ? 1 : 2);
                 h = h * 31 + _quickRevision;
                 return h;
             }
@@ -140,21 +161,29 @@ namespace RuneSkin.PlayerHud
             return new StripMath.Input
             {
                 Width = width,
-                Cell = ThemeTokens.GetFloat("size.hud.strip.cell", 76f),
-                CellH = ThemeTokens.GetFloat("size.hud.strip.cell.h", 62f),
-                Gap = ThemeTokens.GetFloat("size.hud.strip.gap", 9f),
-                ZoneGap = ThemeTokens.GetFloat("size.hud.strip.zone.gap", 26f),
-                Pad = ThemeTokens.GetFloat("size.hud.strip.pad", 12f),
-                DurH = ThemeTokens.GetFloat("size.hud.strip.dur", 10f),
+                Cell = ThemeTokens.GetFloat("size.hud.strip.cell", 78f),
+                CellH = ThemeTokens.GetFloat("size.hud.strip.cell.h", 94f),
+                Gap = ThemeTokens.GetFloat("size.hud.strip.gap", 11f),
+                ZoneGap = ThemeTokens.GetFloat("size.hud.strip.zone.gap", 34f),
+                BlockPadX = ThemeTokens.GetFloat("size.hud.strip.block.pad.x", 26f),
+                BlockPadT = ThemeTokens.GetFloat("size.hud.strip.block.pad.t", 16f),
+                BlockPadB = ThemeTokens.GetFloat("size.hud.strip.block.pad.b", 8f),
+                DurH = ThemeTokens.GetFloat("size.hud.strip.dur", 14f),
                 BarsH = barsH,
-                MinBarsW = ThemeTokens.GetFloat("size.hud.strip.min.bars", 600f),
-                KnotW = ThemeTokens.GetFloat("size.hud.strip.knot", 40f),
-                WingOverlap = 0f,
-                FoodCell = ThemeTokens.GetFloat("size.hud.strip.food.cell", 72f),
-                PotionCell = ThemeTokens.GetFloat("size.hud.strip.potion.cell", 68f),
-                PotionH = ThemeTokens.GetFloat("size.hud.strip.potion.h", 66f),
-                TimerH = ThemeTokens.GetFloat("size.hud.strip.timer", 18f),
-                MinCell = ThemeTokens.GetFloat("size.hud.strip.wing.min", 48f),
+                MinCenterW = ThemeTokens.GetFloat("size.hud.strip.min.bars", 700f),
+                WingH = ThemeTokens.GetFloat("size.hud.strip.wing.h", 130f),
+                KnotW = ThemeTokens.GetFloat("size.hud.strip.knot", 70f),
+                WingTuck = ThemeTokens.GetFloat("size.hud.strip.wing.tuck", 14f),
+                MedW = ThemeTokens.GetFloat("size.hud.strip.med.w", 200f),
+                MedH = ThemeTokens.GetFloat("size.hud.strip.med.h", 150f),
+                MedY = ThemeTokens.GetFloat("size.hud.strip.med.y", 172f),
+                MedTuck = ThemeTokens.GetFloat("size.hud.strip.med.tuck", 12f),
+                FoodCell = ThemeTokens.GetFloat("size.hud.strip.food.cell", 84f),
+                PotionCell = ThemeTokens.GetFloat("size.hud.strip.potion.cell", 76f),
+                PotionH = ThemeTokens.GetFloat("size.hud.strip.potion.h", 88f),
+                TimerH = ThemeTokens.GetFloat("size.hud.strip.timer", 24f),
+                MinCell = ThemeTokens.GetFloat("size.hud.strip.wing.min", 52f),
+                SlotPad = ThemeTokens.GetFloat("size.hud.strip.slot.pad", 8f),
                 Hotbar = HotbarCells,
                 Abilities = AbilityCount,
                 Food = FoodCount,
@@ -165,42 +194,38 @@ namespace RuneSkin.PlayerHud
         public void Apply(in StripMath.Layout l, in StripMath.Input i)
         {
             L = l;
-            // Body over the whole width, ends at native aspect (strip height), joints at the centre block edges (from the
-            // top down to the bar bed).
-            Box(_body.rectTransform, 0f, 0f, i.Width, l.Height);
-            // One plate row: the tiled texture drawn at the strip height (HudArt.Track scales the tile).
-            if (_body.sprite) _art.Track(_body, ThemeTokens.GetFloat("share.hud.strip.plate", 2f) * l.Height / Mathf.Max(1f, _body.sprite.rect.height * 100f / _body.sprite.pixelsPerUnit));
-            Box(_rail.rectTransform, 0f, 0f, i.Width, l.Height);
-            Native(_endL, 0f, 0f, l.Height, 0f);
-            Native(_endR, i.Width, 0f, l.Height, 1f);
-            // Joints from the top down to the bar bed's knot blocks (they start a pad above the bars).
-            var jointH = l.Height - (l.BarsY + i.BarsH + i.Pad);
-            Native(_jointL, l.CenterX, l.Height - jointH, jointH, 0.5f);
-            Native(_jointR, l.CenterX + l.CenterW, l.Height - jointH, jointH, 0.5f);
-            var cell = i.Cell;
+            Box(_wingL.rectTransform, 0f, 0f, l.LeftW, l.WingH, false);
+            Box(_wingR.rectTransform, l.RightX, 0f, l.RightW, l.WingH, true);
+            var lap = ThemeTokens.GetFloat("size.hud.strip.block.overlap", 6f);
+            Box(_block.rectTransform, l.CenterX, l.BlockY - lap, l.CenterW, l.BlockH + lap, false);
+            var divOn = AbilityCount > 0 && _divider.sprite;
+            if (_divider.gameObject.activeSelf != divOn) _divider.gameObject.SetActive(divOn);
+            if (divOn) Native(_divider, l.DividerX, l.CellsY - i.DurH, i.CellH + i.DurH, 0.5f);
+            Box(_medL.rectTransform, l.MedLX, l.MedY, i.MedW, i.MedH, false);
+            Box(_medR.rectTransform, l.MedRX, l.MedY, i.MedW, i.MedH, true);
+            Glyph(_glyphL, i.MedW, i.MedH);
+            Glyph(_glyphR, i.MedW, i.MedH);
             for (var n = 0; n < HotbarCells; n++)
             {
                 var c = _hotbar[n];
-                c.Size(cell, i.DurH, false);
-                c.Place(StripMath.CellX(l.HotbarX, n, cell, i.Gap), l.CellsY);
+                c.Size(i.Cell, i.CellH, i.DurH, false);
+                c.Place(StripMath.CellX(l.HotbarX, n, i.Cell, i.Gap), l.CellsY);
             }
-            Pool(_abilities, AbilityCount, "Ability", false);
+            Pool(_abilities, AbilityCount, "Ability", CellKind.Hotbar);
             for (var n = 0; n < AbilityCount; n++)
             {
-                var c = AbilityCell(n);
-                // The round guardian socket reads lighter than a square cell at the same box: a little larger, centred.
-                var side = _abilityIsRound[n] ? cell * ThemeTokens.GetFloat("share.hud.strip.round", 1.14f) : cell;
-                c.Size(side, 0f, false);
-                c.Place(StripMath.CellX(l.AbilityX, n, cell, i.Gap) - (side - cell) / 2f, l.CellsY - (side - cell) / 2f);
+                var c = _abilities[n];
+                c.Size(i.Cell, i.CellH, 0f, false);
+                c.Place(StripMath.CellX(l.AbilityX, n, i.Cell, i.Gap), l.CellsY);
                 c.Root.GetComponent<StripInput>().Ability = _abilityIndex[n];
             }
-            Pool(_food, FoodCount, "Food", true);
+            Pool(_food, FoodCount, "Food", CellKind.Food);
             for (var n = 0; n < FoodCount; n++)
             {
                 _food[n].Size(l.FoodCell, 0f, true);
                 _food[n].Place(l.FoodX + n * l.FoodStep, l.FoodY);
             }
-            Pool(_potions, PotionCount, "Potion", false);
+            Pool(_potions, PotionCount, "Potion", CellKind.Potion);
             for (var n = 0; n < PotionCount; n++)
             {
                 _potions[n].Size(l.PotionCell, l.PotionH, 0f, false);
@@ -209,35 +234,55 @@ namespace RuneSkin.PlayerHud
             }
         }
 
-        private static string EaqsKey(string text) => string.IsNullOrEmpty(text) ? null : EpicLootBridge.Label(text);
-
-        // Round sockets need their own cell objects: an ability cell is rebuilt when its shape changes.
-        private StripCell AbilityCell(int n)
+        // The bar block frame: its top is fixed under the hotbar block, its height follows the bar rows (no resource
+        // row: the frame closes right under the HP row and the space below shows the scene, mockup hud-4M3-nostam).
+        public void BarFrame(float height)
         {
-            var round = _abilityIsRound[n];
-            while (_abilityRound.Count < _abilities.Count) _abilityRound.Add(false);
-            if (_abilityRound[n] != round)
-            {
-                Object.Destroy(_abilities[n].Root.gameObject);
-                _abilities[n] = MakeAbility(n, round);
-                _abilityRound[n] = round;
-            }
-            return _abilities[n];
+            var top = L.BarsY + L.BarsH;
+            Box(_bars.rectTransform, L.CenterX, top - height, L.CenterW, height, false);
         }
 
-        private StripCell MakeAbility(int n, bool round)
+        // Knot divider i between split resource bars: centred at x (strip units), over the row [y, y + h]; hidden when
+        // h <= 0 (fewer entries).
+        public void RowDivider(int i, float x, float y, float h, float alpha)
         {
-            var c = new StripCell(_art, _front, "Ability" + n, round);
+            if (i < 0 || i >= MaxRowDividers || !_rowDiv[i]) return;
+            var on = h > 0f && alpha > 0.01f && _rowDiv[i].sprite;
+            if (_rowDiv[i].gameObject.activeSelf != on) _rowDiv[i].gameObject.SetActive(on);
+            if (!on) return;
+            Native(_rowDiv[i], x, y, h, 0.5f);
+            if (!Mathf.Approximately(_rowDiv[i].canvasRenderer.GetAlpha(), alpha)) _rowDiv[i].canvasRenderer.SetAlpha(alpha);
+        }
+
+        // Triquetra glyph in the medallion's disc (sprite-relative centre / diameter, theme floats of the art).
+        private static void Glyph(Image g, float w, float h)
+        {
+            if (!g) return;
+            var rt = g.rectTransform;
+            rt.anchorMin = rt.anchorMax = Vector2.zero;
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            var d = h * ThemeTokens.GetFloat("share.hud.strip4.med.glyph", 0.42f);
+            var p = new Vector2(w * ThemeTokens.GetFloat("share.hud.strip4.med.disc.x", 0.58f), h * ThemeTokens.GetFloat("share.hud.strip4.med.disc.y", 0.5f));
+            if (rt.anchoredPosition != p) rt.anchoredPosition = p;
+            var s = new Vector2(d, d);
+            if (rt.sizeDelta != s) rt.sizeDelta = s;
+        }
+
+        private static string EaqsKey(string text) => string.IsNullOrEmpty(text) ? null : EpicLootBridge.Label(text);
+
+        private StripCell MakeAbility(int n)
+        {
+            var c = new StripCell(_art, _front, "Ability" + n, CellKind.Hotbar);
             c.SetGhost(_art, "sprite.hud.strip.ghost.ability");
             c.Root.gameObject.AddComponent<StripInput>();
             return c;
         }
 
-        private void Pool(List<StripCell> list, int n, string name, bool round)
+        private void Pool(List<StripCell> list, int n, string name, CellKind kind)
         {
             while (list.Count < n)
             {
-                var c = name == "Ability" ? MakeAbility(list.Count, false) : new StripCell(_art, _front, name + list.Count, round);
+                var c = name == "Ability" ? MakeAbility(list.Count) : new StripCell(_art, _front, name + list.Count, kind);
                 if (name == "Food") c.SetGhost(_art, "sprite.hud.strip.ghost.food");
                 else if (name == "Potion") c.SetGhost(_art, "sprite.hud.strip.ghost.potion");
                 list.Add(c);
@@ -267,18 +312,7 @@ namespace RuneSkin.PlayerHud
                 _potions[i].Durability(-1f, false);
             }
             FoodCells(p);
-            for (var i = 0; i < AbilityCount; i++)
-            {
-                if (_abilityValid[i]) { AbilityFill(_abilities[i], _abilityState[i]); continue; }
-                var c = _abilities[i]; // registered but empty: placeholder rune
-                c.Empty(true);
-                c.Icon(null, Color.white);
-                c.Key(null);
-                c.Sweep(0f);
-                c.Ring(-1f, Color.white);
-                c.Timer(-1f, false);
-                c.Glow(false);
-            }
+            for (var i = 0; i < AbilityCount; i++) AbilityFill(_abilities[i], _abilityState[i]);
         }
 
         private static readonly string[] Digits = { "1", "2", "3", "4", "5", "6", "7", "8" };
@@ -330,7 +364,7 @@ namespace RuneSkin.PlayerHud
                     c.Timer(-1f, true);
                     continue;
                 }
-                // Pulses when it can be eaten again (Hud.cs:1028-1031); ring = time left / burn time; timer under it.
+                // Pulses when it can be eaten again (Hud.cs:1028-1031); ring = time left / burn time; timer on its arc.
                 var tint = food.CanEatAgain() ? new Color(1f, 1f, 1f, 0.7f + Mathf.Sin(Time.time * 5f) * 0.3f) : Color.white;
                 c.Icon(food.m_item.GetIcon(), tint);
                 var burn = food.m_item.m_shared.m_foodBurnTime;
@@ -339,19 +373,21 @@ namespace RuneSkin.PlayerHud
             }
         }
 
+        // Ability cell (mockup hud-4M3 F / G cells): icon, key top-left, cooldown = cyan arc running out + dimmed icon,
+        // active effect = ring.
         private static void AbilityFill(StripCell c, in AbilitySlotState s)
         {
             c.Empty(false);
             var cooling = s.CooldownLeft > 0f;
             c.Icon(s.Icon, cooling ? ThemeTokens.GetColor("color.hud.gp.cooldown", new Color(1f, 1f, 1f, 0.45f)) : Color.white);
             c.Key(s.Key);
-            c.Sweep(cooling && s.CooldownTotal > 0f ? Mathf.Clamp01(s.CooldownLeft / s.CooldownTotal) : 0f);
+            c.Sweep(0f);
             var active = s.ActiveLeft > 0f;
-            c.Ring(active ? (s.ActiveTotal > 0f ? Mathf.Clamp01(s.ActiveLeft / s.ActiveTotal) : 1f) : -1f, ThemeTokens.GetColor("color.hud.glyph", Color.cyan));
+            var arc = cooling && s.CooldownTotal > 0f ? 1f - Mathf.Clamp01(s.CooldownLeft / s.CooldownTotal)
+                : active && s.ActiveTotal > 0f ? Mathf.Clamp01(s.ActiveLeft / s.ActiveTotal) : -1f;
+            c.Ring(arc, ThemeTokens.GetColor("color.hud.glyph", Color.cyan));
             c.Timer(cooling ? s.CooldownLeft : active ? s.ActiveLeft : -1f, false);
-            c.Glow(false); // the active ring marks it; a halo on top read as a blur (Codex in-game r1)
-            // Round slots (guardian power) wear their teal ring while ready too (mockup hud-3 F socket).
-            if (c.IsRound && !active && !cooling) c.Ring(1f, ThemeTokens.GetColor("color.hud.glyph", Color.cyan));
+            c.Glow(false);
         }
 
         // Potion cell i as a box of the strip root (inventory EAQS quick cells sit on it while the inventory is open).
@@ -367,9 +403,15 @@ namespace RuneSkin.PlayerHud
 
         public RectTransform HotbarRect(int i) => i >= 0 && i < HotbarCells && _hotbar[i] != null ? _hotbar[i].Root : null;
 
-        private static void Box(RectTransform rt, float x, float y, float w, float h)
+        // Box with its bottom-left at (x, y); mirrored = flipped horizontally inside the same box (right wing / medallion).
+        private static void Box(RectTransform rt, float x, float y, float w, float h, bool mirrored)
         {
-            rt.anchorMin = rt.anchorMax = rt.pivot = Vector2.zero;
+            rt.anchorMin = rt.anchorMax = Vector2.zero;
+            var pivot = mirrored ? new Vector2(1f, 0f) : Vector2.zero;
+            if (rt.pivot != pivot) rt.pivot = pivot;
+            var scale = mirrored ? new Vector3(-1f, 1f, 1f) : Vector3.one;
+            if (rt.localScale != scale) rt.localScale = scale;
+            // Mirrored around the right edge pivot: the flipped box still covers [x, x + w].
             var p = new Vector2(x, y);
             var s = new Vector2(Mathf.Max(0f, w), Mathf.Max(0f, h));
             if (rt.anchoredPosition != p) rt.anchoredPosition = p;
@@ -381,16 +423,7 @@ namespace RuneSkin.PlayerHud
         {
             var s = img.sprite;
             var w = s ? h * s.rect.width / Mathf.Max(1f, s.rect.height) : 0f;
-            Box(img.rectTransform, x - w * px, y, w, h);
-        }
-
-        // Knot blocks at both ends of the bar bed (bars rect in strip units: x, bottom, width, height of the bar block).
-        public void BarKnots(Rect bars)
-        {
-            var pad = ThemeTokens.GetFloat("size.hud.strip.pad", 12f);
-            var h = bars.height + 2f * pad;
-            Native(_barKnotL, bars.x, bars.y - pad, h, 1f);
-            Native(_barKnotR, bars.xMax, bars.y - pad, h, 0f);
+            Box(img.rectTransform, x - w * px, y, w, h, false);
         }
     }
 }

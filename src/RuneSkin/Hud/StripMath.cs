@@ -2,47 +2,53 @@ using System;
 
 namespace RuneSkin.PlayerHud
 {
-    // Pure geometry of the HUD strip (mockups hud-2-final -> hud-3, user calls 2026-10-22): one compact strip along the
-    // bottom, nearly the full width, no captions. Centre block = hotbar (8 bowl cells) + ability zone (0..4) on top, the
-    // HP / shield bar and the stamina | eitr halves under them. Wings left (food 0..N) and right (potions 0..N) sit behind
-    // the centre block, BOTTOM-aligned with it (their contents end on the bars' bottom line), knotwork ends at the outer
-    // edges. All values in strip units (reference px of the strip root, y up from the strip bottom).
+    // Pure geometry of the HUD strip, mockup hud-4M3 (user approved 2026-10-22). Centre column: the bar block at the
+    // bottom (HP row on top, the resource row under it; a missing resource row only shortens the block's frame, nothing
+    // above moves) and the hotbar block on it (8 hotbar cells, a braided divider, 1..2 ability cells). The two triquetra
+    // medallions sit against the hotbar block's sides. Wings left (food 0..N) and right (potions 0..N) are one slot row
+    // each at the bottom, from the knotwork end-cap at the outer edge to the bar block (tucked under it). All values in
+    // strip units (mockup 1080p px), y up from the strip bottom.
     public static class StripMath
     {
-        // The knot ornament reaches KnotReserve of its width into the wing span.
-        public const float KnotReserve = 0.6f;
-
         public struct Input
         {
             public float Width;          // strip outer width
             public float Cell;           // hotbar / ability cell width
-            public float CellH;          // hotbar / ability cell height (compact strip: landscape cells)
+            public float CellH;          // hotbar / ability cell height
             public float Gap;            // gap between cells of one zone
-            public float ZoneGap;        // hotbar -> ability zone
-            public float Pad;            // inner padding of every panel
+            public float ZoneGap;        // hotbar -> ability zone (the divider sits in it)
+            public float BlockPadX;      // hotbar block: side frame + inner margin
+            public float BlockPadT, BlockPadB; // hotbar block: top rail + margin, bottom margin (under the durability line)
             public float DurH;           // durability line + gap under the hotbar cells
-            public float BarsH;          // the whole bar block (HP row + stamina | eitr row)
-            public float MinBarsW;       // narrowest bar block
-            public float KnotW;          // wing end ornament width
-            public float WingOverlap;    // how far a wing reaches under the centre block
+            public float BarsH;          // bar block, full height (two rows); fixed so the hotbar never moves
+            public float MinCenterW;     // narrowest centre column
+            public float WingH;          // wing row height (rails included)
+            public float KnotW;          // wing end-cap width (no slots over it)
+            public float WingTuck;       // how far a wing reaches under the bar block
+            public float MedW, MedH;     // medallion box
+            public float MedY;           // medallion centre above the strip bottom
+            public float MedTuck;        // how far a medallion's join reaches under the hotbar block
             public float FoodCell, PotionCell, PotionH, TimerH;
             public float MinCell;        // wing slots never scale below this
+            public float SlotPad;        // margin inside a wing at its block end
             public int Hotbar, Abilities, Food, Potions;
         }
 
         public struct Layout
         {
-            public float Height;                         // whole strip (= centre block)
-            public float CenterX, CenterW;
-            public float HotbarX, AbilityX, CellsY;     // cell row: left edges, bottom of the cells
+            public float Height;                         // whole strip (bar block + hotbar block)
+            public float CenterX, CenterW;               // centre column (bar block and hotbar block share it)
+            public float BarsX, BarsY, BarsW, BarsH;     // bar block (full height)
+            public float BlockY, BlockH;                 // hotbar block on top of the bar block
+            public float HotbarX, AbilityX, CellsY;      // cell row: left edges, bottom of the cells
             public float HotbarW, AbilityW;
-            public float BarsX, BarsY, BarsW;           // bar block
-            public float WingY, WingH;                  // both wings
-            public float LeftW, RightX, RightW;         // left wing [0, LeftW], right wing [RightX, RightX + RightW]
+            public float DividerX;                       // centre x of the hotbar | ability divider (no abilities: unused)
+            public float MedLX, MedRX, MedY;             // medallion boxes: left edges, bottom
+            public float WingH;
+            public float LeftW, RightX, RightW;          // left wing [0, LeftW], right wing [RightX, RightX + RightW]
             public float FoodX, FoodCell, FoodStep, FoodY;
             public float PotionX, PotionCell, PotionH, PotionStep, PotionY;
-            public float FoodCenterX, PotionCenterX;    // wing content centres
-            public bool Fits;                           // false: centre + minimal wings exceed the width
+            public bool Fits;                            // false: centre + minimal wings exceed the width
         }
 
         public static float Zone(int n, float cell, float gap) => n > 0 ? n * cell + (n - 1) * Math.Max(0f, gap) : 0f;
@@ -63,34 +69,34 @@ namespace RuneSkin.PlayerHud
             var o = new Layout();
             o.HotbarW = Zone(i.Hotbar, i.Cell, i.Gap);
             o.AbilityW = Zone(i.Abilities, i.Cell, i.Gap);
+            // The block closes its width around the live ability count (no set skill: one cell, no empty socket).
             var topW = o.HotbarW + (i.Abilities > 0 ? i.ZoneGap + o.AbilityW : 0f);
-            var inner = Math.Max(topW, i.MinBarsW);
-            o.CenterW = inner + 2f * i.Pad;
+            o.CenterW = Math.Max(topW + 2f * i.BlockPadX, i.MinCenterW);
             o.CenterX = (i.Width - o.CenterW) / 2f;
-            // Bottom-up: pad, bars, durability line, cells, pad.
-            o.BarsX = o.CenterX + i.Pad;
-            o.BarsW = inner;
-            o.BarsY = i.Pad;
-            o.CellsY = o.BarsY + i.BarsH + i.DurH;
-            o.Height = o.CellsY + i.CellH + i.Pad;
-            o.HotbarX = o.CenterX + i.Pad + (inner - topW) / 2f;
+            o.BarsX = o.CenterX;
+            o.BarsW = o.CenterW;
+            o.BarsY = 0f;
+            o.BarsH = i.BarsH;
+            o.BlockY = i.BarsH;
+            o.BlockH = i.BlockPadB + i.DurH + i.CellH + i.BlockPadT;
+            o.Height = o.BlockY + o.BlockH;
+            o.CellsY = o.BlockY + i.BlockPadB + i.DurH;
+            o.HotbarX = o.CenterX + (o.CenterW - topW) / 2f;
             o.AbilityX = o.HotbarX + o.HotbarW + (i.Abilities > 0 ? i.ZoneGap : 0f);
+            o.DividerX = o.HotbarX + o.HotbarW + i.ZoneGap / 2f;
+            // Medallions against the block sides, their joins tucked under the block frame.
+            o.MedY = i.MedY - i.MedH / 2f;
+            o.MedLX = o.CenterX - i.MedW + i.MedTuck;
+            o.MedRX = o.CenterX + o.CenterW - i.MedTuck;
 
-            // Wings on the strip bottom: food bowls with their timer line under them, potion cells; contents bottom-aligned
-            // on the bars' bottom line (pad).
-            var foodH = i.FoodCell + i.TimerH;
-            o.WingY = 0f;
-            o.WingH = Math.Min(o.Height, i.Pad + Math.Max(foodH, i.PotionH) + i.Pad);
-            o.LeftW = Math.Max(0f, o.CenterX + i.WingOverlap);
-            o.RightX = o.CenterX + o.CenterW - i.WingOverlap;
+            // Wings: one slot row each at the bottom, end-cap at the outer edge, tucked under the bar block.
+            o.WingH = i.WingH;
+            o.LeftW = Math.Max(0f, o.CenterX + i.WingTuck);
+            o.RightX = o.CenterX + o.CenterW - i.WingTuck;
             o.RightW = Math.Max(0f, i.Width - o.RightX);
-
-            // Usable span of a wing: from past the knot to the centre block's edge.
-            var knot = i.KnotW * KnotReserve;
-            var span = Math.Max(0f, o.CenterX - knot - 2f * i.Pad);
-            // Wing slots (user rules 2026-10-22): wing fixed, the live count spread evenly over it - equal gaps incl. the
-            // margins to the wing ends; when they do not fit the gaps shrink to the minimum, then all slots scale down
-            // together to the min-size token.
+            var span = Math.Max(0f, o.CenterX - i.KnotW - i.SlotPad);
+            // Wing slots (user rules 2026-10-22): the live count spread evenly over the row - equal gaps incl. the margins
+            // to the row ends; when they do not fit the gaps shrink to the minimum, then all slots scale down together.
             WingSlots(i.Food, i.FoodCell, span, i.Gap, i.MinCell, out var foodCell, out var fg);
             WingSlots(i.Potions, i.PotionCell, span, i.Gap, i.MinCell, out var potCell, out var pg);
             o.FoodCell = foodCell;
@@ -100,13 +106,11 @@ namespace RuneSkin.PlayerHud
             o.PotionStep = o.PotionCell + pg;
             var foodW = Zone(i.Food, o.FoodCell, fg);
             var potW = Zone(i.Potions, o.PotionCell, pg);
-            o.FoodCenterX = knot + i.Pad + span / 2f;
-            o.PotionCenterX = o.CenterX + o.CenterW + i.Pad + span / 2f;
-            o.FoodX = o.FoodCenterX - foodW / 2f;
-            o.PotionX = o.PotionCenterX - potW / 2f;
-            o.FoodY = o.BarsY + i.TimerH;
-            o.PotionY = o.BarsY;
-            o.Fits = o.CenterX >= knot + 2f * i.Pad && (i.Food == 0 || o.FoodCell >= i.FoodCell * 0.6f) && (i.Potions == 0 || o.PotionCell >= i.PotionCell * 0.6f);
+            o.FoodX = i.KnotW + (span - foodW) / 2f;
+            o.PotionX = o.CenterX + o.CenterW + i.SlotPad + (span - potW) / 2f;
+            o.FoodY = (i.WingH - o.FoodCell) / 2f; // the timer sits on the ring's lower arc (mockup), inside the box
+            o.PotionY = (i.WingH - o.PotionH) / 2f;
+            o.Fits = o.CenterX >= i.KnotW + i.SlotPad && (i.Food == 0 || o.FoodCell >= i.FoodCell * 0.6f) && (i.Potions == 0 || o.PotionCell >= i.PotionCell * 0.6f);
             return o;
         }
 
@@ -127,15 +131,56 @@ namespace RuneSkin.PlayerHud
             cell = Math.Max(Math.Min(wantCell, minCell), Math.Min(wantCell, (span - (n + 1) * gap) / n));
         }
 
+        // Resource row (under the HP row): the present entries share the width evenly; weights animate 0..1 when an entry
+        // appears / goes (eitr food eaten / expired) so the split slides instead of jumping. Writes x / width of entry i
+        // into xs / ws (row-local, gaps between visible entries); returns the summed weight (0 = empty row).
+        public static float RowSplit(float rowW, float gap, float[] weights, int n, float[] xs, float[] ws)
+        {
+            var total = 0f;
+            for (var k = 0; k < n; k++) total += Math.Max(0f, Math.Min(1f, weights[k]));
+            if (total <= 0f)
+            {
+                for (var k = 0; k < n; k++) { xs[k] = 0f; ws[k] = 0f; }
+                return 0f;
+            }
+            // Gaps fade in with the entries next to them: (total - 1) gaps' worth for total weight.
+            var gaps = Math.Max(0f, total - 1f) * gap;
+            var unit = Math.Max(0f, rowW - gaps) / total;
+            var x = 0f;
+            var before = 0f; // summed weight of the entries left of k
+            for (var k = 0; k < n; k++)
+            {
+                var w = Math.Max(0f, Math.Min(1f, weights[k]));
+                x += gap * Math.Min(1f, before) * w; // the gap in front of k fades with k and with what precedes it
+                xs[k] = x;
+                ws[k] = unit * w;
+                x += ws[k];
+                before += w;
+            }
+            return total;
+        }
+
+        // Shield perimeter (mockup hud-4M3): the glow starts on the left end cap and runs along the top and bottom edges
+        // together; full at shield >= max (right cap lit). Returns the lit share of the straight part 0..1 and the caps.
+        public static float ShieldRun(float shield, float max, out float leftCap, out float rightCap)
+        {
+            leftCap = rightCap = 0f;
+            if (!(max > 0f) || !(shield > 0f)) return 0f;
+            var f = Math.Min(1f, shield / max);
+            leftCap = Math.Min(1f, f * 20f); // fades in over the first 5 %
+            rightCap = f >= 0.995f ? 1f : 0f;
+            return f;
+        }
+
         // Strip scale (strip units -> reference px): the configured height over the natural one, clamped.
         public static float HeightScale(float wantH, float naturalH) =>
-            naturalH > 0f && wantH > 0f ? Math.Max(0.4f, Math.Min(2.5f, wantH / naturalH)) : 1f;
+            naturalH > 0f && wantH > 0f ? Math.Max(0.2f, Math.Min(2.5f, wantH / naturalH)) : 1f;
 
         // Strip outer width in screen px: share of the (safe / 16:9 box) width.
         public static float WidthPx(float boxW, float share) => Math.Max(0f, boxW) * Math.Max(0.3f, Math.Min(1f, share));
 
-        // Status groups above the strip (user call 2026-10-22): buffs on one side, debuffs on the other, `perRow` cells a
-        // row, rows growing upward. Width of a full row (the group's Arrange width).
+        // Status groups above the wings: buffs on one side, debuffs on the other, `perRow` cells a row, rows growing
+        // upward. Width of a full row (the group's Arrange width).
         public static float RowWidth(int perRow, float cell, float gap) => Zone(Math.Max(1, perRow), cell, gap);
     }
 }

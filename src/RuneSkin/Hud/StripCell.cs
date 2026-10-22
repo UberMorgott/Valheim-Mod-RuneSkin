@@ -9,6 +9,9 @@ namespace RuneSkin.PlayerHud
     // the cell (teal), sunken bowl, rarity rim (Epic Loot colour) over the bowl rim, large centred icon, key number
     // top-left, stack count bottom-right, set-item gem top-right, durability pill under the cell, cooldown sweep and a
     // radial ring (food time / active ability) for the other zones. Built once; every write is change-only.
+    // Socket art per zone (mockup hud-4M3): hotbar / ability cell, round food socket, square potion socket.
+    public enum CellKind { Hotbar, Food, Potion }
+
     public sealed class StripCell
     {
         public readonly RectTransform Root;
@@ -36,21 +39,29 @@ namespace RuneSkin.PlayerHud
 
         public bool IsRound => _round;
 
-        public StripCell(HudArt art, Transform parent, string name, bool round)
+        public StripCell(HudArt art, Transform parent, string name, CellKind kind)
         {
+            var round = kind == CellKind.Food;
             _round = round;
+            var socket = kind == CellKind.Food ? "sprite.hud.strip4.socket.round" : kind == CellKind.Potion ? "sprite.hud.strip4.socket.square" : "sprite.hud.strip4.cell";
             Root = HudArt.Rect(name, parent);
             // Dark seat around the cell (mockup hud-3: cells sunk into the plate).
-            _shadow = art.Image("Seat", Root, round ? "sprite.hud.strip.bowl" : "sprite.hud.strip3.cell", "color.hud.strip.seat", round ? Image.Type.Simple : Image.Type.Sliced);
+            _shadow = art.Image("Seat", Root, socket, "color.hud.strip.seat", round ? Image.Type.Simple : Image.Type.Sliced);
             _glow = art.Image("Glow", Root, "sprite.hud.strip.glow", "color.hud.strip.halo", Image.Type.Simple);
             _glow.gameObject.SetActive(false);
             // Selection ring just outside the bowl rim (teal, with the glow): the rarity rim stays visible inside it.
-            _select = art.Image("Select", Root, round ? "sprite.hud.gp.ring" : "sprite.hud.strip.rim", "color.hud.strip.glow", round ? Image.Type.Simple : Image.Type.Sliced);
+            _select = art.Image("Select", Root, round ? "sprite.hud.gp.ring" : "sprite.hud.strip4.rim", "color.hud.strip.glow", round ? Image.Type.Simple : Image.Type.Sliced);
             _select.gameObject.SetActive(false);
-            Bowl = art.Image("Bowl", Root, round ? "sprite.hud.strip.bowl" : "sprite.hud.strip3.cell", round ? "color.hud.strip.bowl" : "color.hud.strip.panel",
+            Bowl = art.Image("Bowl", Root, socket, round ? "color.hud.strip.bowl" : "color.hud.strip.panel",
                 round ? Image.Type.Simple : Image.Type.Sliced, raycast: true);
-            _rim = art.Image("Rim", Root, "sprite.hud.strip.rim", "color.frame", Image.Type.Sliced);
+            _rim = art.Image("Rim", Root, "sprite.hud.strip4.rim", "color.frame", Image.Type.Sliced);
             _rim.gameObject.SetActive(false);
+            // strip4 art is drawn at 2x the mockup's px: borders at half their sprite size.
+            var artScale = ThemeTokens.GetFloat("share.hud.strip4.art", 0.5f);
+            art.Track(_shadow, artScale);
+            art.Track(Bowl, artScale);
+            art.Track(_rim, artScale);
+            if (!round) art.Track(_select, artScale);
             // Faint silhouette of the slot kind (food bowl, flask, rune...) while the cell is empty (SetGhost).
             _ghost = art.Image("Ghost", Root, null, "color.hud.strip.ghost", Image.Type.Simple);
             _ghost.preserveAspect = true;
@@ -58,7 +69,7 @@ namespace RuneSkin.PlayerHud
             _icon = art.Image("Icon", Root, null, "color.frame", Image.Type.Simple);
             _icon.preserveAspect = true;
             _icon.enabled = false;
-            _sweep = art.Image("Sweep", Root, "sprite.hud.strip3.cell", "color.hud.strip.cooldown", Image.Type.Simple);
+            _sweep = art.Image("Sweep", Root, "sprite.hud.strip4.cell", "color.hud.strip.cooldown", Image.Type.Simple);
             if (_sweep.sprite)
             {
                 _sweep.type = Image.Type.Filled;
@@ -131,8 +142,8 @@ namespace RuneSkin.PlayerHud
             Box(_key.rectTransform, inset, h * 0.5f, w - 2f * inset, h * 0.5f - inset);
             Box(_count.rectTransform, inset, inset * 0.8f, w - 2f * inset, h * 0.5f);
             var timerH = ThemeTokens.GetFloat("size.hud.strip.timer", 18f);
-            if (timerBelow)
-                Box(_timer.rectTransform, -w * 0.1f, -timerH, w * 1.2f, timerH);
+            if (timerBelow) // food: on the ring's lower arc (mockup hud-4M3 "8m")
+                Box(_timer.rectTransform, -w * 0.1f, h * 0.02f, w * 1.2f, timerH);
             else
                 Box(_timer.rectTransform, 0f, 0f, w, h);
             var line = ThemeTokens.GetFloat("size.hud.strip.dur.line", 5f);

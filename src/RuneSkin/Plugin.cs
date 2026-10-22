@@ -37,6 +37,10 @@ namespace RuneSkin
         public static ConfigEntry<int> StatusPerRow { get; private set; }
         public static ConfigEntry<int> StatusRows { get; private set; }
         public static ConfigEntry<string> BuffSide { get; private set; }
+        public static ConfigEntry<bool> CenterGauges { get; private set; }
+        public static ConfigEntry<float> GaugeIdleDelay { get; private set; }
+        public static ConfigEntry<float> GaugeOpacity { get; private set; }
+        public static ConfigEntry<bool> RageInRow { get; private set; }
         public static ConfigEntry<KeyboardShortcut> StatusListKey { get; private set; }
         public static ConfigEntry<string> StatusListButton { get; private set; }
         public static ConfigEntry<KeyboardShortcut> StatsKey { get; private set; }
@@ -171,6 +175,14 @@ namespace RuneSkin
                 "Rows of status icons per side before the rest folds into \"+N\" (F7 lists all).", new AcceptableValueRange<int>(1, 6)));
             BuffSide = Config.Bind("HudStrip", "BuffSide", "Left", new ConfigDescription(
                 "Side of the HUD strip the buffs grow from (debuffs take the other side).", new AcceptableValueList<string>("Left", "Right")));
+            CenterGauges = Config.Bind("HudCenter", "Enabled", true,
+                "Rage (adrenaline) ring around the crosshair and the player's stagger column beside it, shown while they change (the vanilla stagger bar and adrenaline bar are hidden).");
+            GaugeIdleDelay = Config.Bind("HudCenter", "IdleDelay", 1.5f, new ConfigDescription(
+                "Seconds a centre gauge stays after its value stopped changing before it fades out (a full rage ring stays while full).", new AcceptableValueRange<float>(0.2f, 10f)));
+            GaugeOpacity = Config.Bind("HudCenter", "Opacity", 0.85f, new ConfigDescription(
+                "Opacity of the centre gauges while shown.", new AcceptableValueRange<float>(0.2f, 1f)));
+            RageInRow = Config.Bind("HudCenter", "RageInBottomRow", false,
+                "Also show rage (adrenaline) as a bar in the strip's resource row next to stamina / eitr while it is above 0.");
             StatusListKey = Config.Bind("Hud", "StatusListKey", new KeyboardShortcut(UnityEngine.KeyCode.F7),
                 "Opens / closes the full list of status effects when the strip shows a +N cell.");
             StatusListButton = Config.Bind("Hud", "StatusListGamepadButton", "JoyDPadDown",

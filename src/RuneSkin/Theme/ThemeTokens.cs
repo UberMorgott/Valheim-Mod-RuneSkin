@@ -139,6 +139,19 @@ namespace RuneSkin.Theme
         private static readonly List<SpriteAtlas> Atlases = new List<SpriteAtlas>();
 
         // Late binding of our SpriteAtlas: Unity asks for an atlas a sprite references when it was not loaded with it.
+        // Atlas pages carry mipmaps (BuildBundles): a negative bias keeps minified HUD art crisp (ART PIPELINE rule:
+        // mipmaps on with a sharp bias). Once per bundle load, each page once.
+        private static void SharpenMips()
+        {
+            var bias = GetFloat("bias.atlas.mip", -0.5f);
+            var seen = new HashSet<Texture2D>();
+            foreach (var s in BundleSprites.Values)
+            {
+                var tex = s ? s.texture : null;
+                if (!tex || !seen.Add(tex) || tex.mipmapCount <= 1) continue;
+                tex.mipMapBias = bias;
+            }
+        }
         private static void OnAtlasRequested(string tag, Action<SpriteAtlas> done)
         {
             var atlas = Atlases.FirstOrDefault(a => a && (a.tag == tag || a.name == tag));
@@ -313,6 +326,8 @@ namespace RuneSkin.Theme
                     if (!BundleSprites.ContainsKey(name)) BundleSprites.Add(name, s);
                 }
             }
+
+            SharpenMips();
 
             foreach (var f in _bundle.LoadAllAssets<TMP_FontAsset>())
                 if (f && !BundleFonts.ContainsKey(f.name)) BundleFonts.Add(f.name, f);
