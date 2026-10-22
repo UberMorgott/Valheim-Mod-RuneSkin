@@ -250,21 +250,25 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
 
 - [x] Pause menu Compendium entry (0.13.0, family MenuCompendium, Screens\MenuCompendium.cs: copy of the Settings entry, gamepad
       chain spliced; AugaSkin 2.2.23 yields). Run 20261022-181305: entry after Settings + nav PASS, click opens TextsDialog
-      (check FAIL only on Menu.IsVisible's 2-frame lag, harness fixed to m_root, not re-run).
+      (check FAIL only on Menu.IsVisible's 2-frame lag, harness fixed to m_root). Run 20261022-184353: p 11/11 PASS.
 - [ ] Character stats window: 5th Info button + panel (CharacterStatsPanel.cs, 568 lines; RuneSkin InfoTabs mirrors the button).
 - [x] Summon frames (0.13.0, family SummonFrames, Hud\SummonFrames.cs + SummonMath.cs: MorgottTweaks mt_sum_ui slots or loaded
       summons, row below the hotbar or above it when the hotbar sits low; socket_hotbar + rail art, $runeskin_summon_* words).
       Run 181305: 3 slot frames (fill 0.50, ES 1.00, trophy icons, RU status words), loaded path PASS, on screen, no Auga frames
-      (slot check FAIL only on English words in the harness, fixed, not re-run).
+      (slot check FAIL only on English words in the harness, fixed). Run 20261022-184353: p-summon-slots PASS.
 - [x] Other players' shield rails (0.13.0, family PlayerShields, WorldHud\PlayerShields.cs, own EnemyHud.UpdateHuds postfix:
       mt_es / mt_es_max + mt_shield / mt_shield_max rails under "Health", close up). Run 181305 (local player on the player HUD,
-      as 26b): p-shields + p-shields-closeup PASS, no Auga strips. Open: MorgottTweaks ShieldShare cfg text still names AugaSkin.
+      as 26b): p-shields + p-shields-closeup PASS, no Auga strips. MorgottTweaks 1.124.2 ShareShieldAbsorb cfg text skin-neutral (a69c668).
 - [x] Custom cursor (0.13.0, family Cursor, Theme\CursorSkin.cs): Codex art art/src/kit/cursor.png (prompt next to it) cut by
       art/src/kit/textures.json -> art/textures/cursor.png 32x32, bundle readable RGBA32 texture (theme "textures"). Run 181305
       p-cursor PASS (AugaSkin 2.2.23 skips ApplyCursor).
-- [ ] Drop with AugaSkin (Auga-only, no port): AugaLog message log + LastHitTracker, ComplexTooltip text patch, Text_Patch
-      AlwaysUpper/TitleCase, ButtonSfx_Patch (Auga bundle buttons), GuiBar_Patch (Filled fills; check RuneSkin bars do not
-      rely on it), AugaBindingDisplay, auga_audit console, MovableHudElement offsets of non-owned parts, translations.json.
+- [x] Drop with AugaSkin (reviewed 0.13.1, no RuneSkin port): AugaLog message log (MorgottTweaks DeathMessages announces
+      deaths) + LastHitTracker (only reader = AugaLog's death line; AugaSkin 2.2.24 skips its Player.OnDamaged feed under
+      MessageHud), ComplexTooltip (Auga tooltip prefab, Tooltips owned), Text_Patch AlwaysUpper/TitleCase (Auga
+      components only), ButtonSfx_Patch (Auga bundle buttons; vanilla sets select sfx on 2 of 59), GuiBar_Patch (vanilla
+      GuiBar has no Filled path; RuneSkin fills are Sliced, PlayHud.Fill; FoodRow / GuardianSocket rings are own
+      Filled images, not GuiBars), AugaBindingDisplay (Auga settings prefab, Settings owned), auga_audit console (dev),
+      MovableHudElement offsets (zero by default, owned parts have none), translations.json (Auga strings).
 
 ### Batch X - remove AugaSkin from the pack
 
@@ -413,9 +417,16 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
 - [x] Tests PreviewMathTests (placement, texture size, camera fit, yaw, layer pick).
 - [x] Runs 20261022-174939 / 20261022-175538 (ui-runeskin-preview): live, nonempty, isolated, time, helmet, drag PASS;
       leak: LiveClones / LiveTextures / RTs / rigs 0, materials 5770 -> 5770.
-- [ ] Open: leak check builds 11 / 10 cycles (one extra rebuild somewhere) and memory +20 MB measured without GC
-      (harness now collects first) - re-check on the next run.
-- [ ] Open: ui-runeskin-m0 tooltip live=False (cursor target not on the hovered cell; harness logs element / target now).
+- [x] 0.13.1: a disable while the inventory stays open keeps the clone (OnDisable tore down -> rebuild on re-enable;
+      run 20261022-181305 builds 11 / 10); meshes made while building owned + destroyed like materials; History.
+      Run 20261022-184353: builds 0 (control) + 10 + 10, every teardown "inventory hidden", Material / Mesh / Texture2D /
+      RT / controller / clip counts flat.
+- [x] +17 MB (run 181305) is mostly not the preview: control batch (10 open / close, preview disabled) +12.8 MB managed;
+      preview batch B minus control +2.7 MB.
+- [ ] Open: residual +9 GameObjects / +45 Components per 10 builds (batch A +8 / +32, control -5 / -23) - preview-leak
+      FAIL on it; harness preview-objects (tools 77f4e2d) names them on the next run.
+- [x] ui-runeskin-m0 tooltip PASS in run 20261022-184353 (harness: UITooltip reads the Input System pointer, which did
+      not follow OS cursor warps; driver now queues the Mouse position too, tools a7131c2).
 
 ## Full-coverage directive (user, 2026-10-22; into M7 after B1-B5, not started)
 
