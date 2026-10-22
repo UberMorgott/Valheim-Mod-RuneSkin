@@ -351,5 +351,25 @@ namespace RuneSkin.Tests
             Assert.True(ResourceCheck.IsSane(new CapacityState { Valid = true, Count = 0 }));
             Assert.False(ResourceCheck.IsSane(new CapacityState { Valid = true, Count = -1 }));
         }
+
+        // Status cell: the worst-case timer / icon text ("88m 88s", 7 glyphs; PT Sans digits + "m"/"s" average under
+        // 0.62 em, line 1.3 em) fits inside the cell width with its pad and under the icon, at the shipped font sizes.
+        [Theory]
+        [InlineData(15f)]
+        [InlineData(19f)]
+        [InlineData(24f)]
+        public void StatusCellHoldsWorstTimer(float font)
+        {
+            var textW = 7 * 0.62f * font;
+            var textH = 1.3f * font;
+            const float pad = 3f, share = 0.6f;
+            var s = HudMath.StatusCell(42f, share, textW, textH, pad);
+            Assert.True(s >= textW + 2f * pad, $"width {s} < {textW + 2f * pad}");
+            Assert.True(s * share + textH + pad <= s + 0.01f, $"icon {s * share} + text {textH} over {s}");
+            Assert.True(s >= 42f);
+        }
+
+        [Fact]
+        public void StatusCellKeepsThemeMinimum() => Assert.Equal(60f, HudMath.StatusCell(60f, 0.6f, 20f, 10f, 3f));
     }
 }

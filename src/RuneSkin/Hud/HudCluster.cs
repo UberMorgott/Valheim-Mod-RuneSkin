@@ -469,7 +469,7 @@ namespace RuneSkin.PlayerHud
         {
             var gap = ThemeTokens.GetFloat("size.hud.gap", 5f);
             var statusPad = ThemeTokens.GetFloat("size.hud.status.pad", 6f);
-            var cell = ThemeTokens.GetFloat("size.hud.status.cell", 42f);
+            var cell = StatusStrip.CellSize;
             var foodPad = ThemeTokens.GetFloat("size.hud.food.pad", 8f);
             var itemGap = ThemeTokens.GetFloat("size.hud.food.gap", 6f) * 2f;
             var blockGap = ThemeTokens.GetFloat("size.hud.band.gap", 16f);
@@ -606,7 +606,7 @@ namespace RuneSkin.PlayerHud
             // Debuff strip under the bars: as tall as its rows, nothing at all without debuffs.
             // The bars keep one strip row reserved, so they never jump when the first debuff arrives.
             var used = _strip.Arrange(barW, stripBudget);
-            var rowH = ThemeTokens.GetFloat("size.hud.status.cell", 42f) + ThemeTokens.GetFloat("size.hud.status.gap", 4f);
+            var rowH = StatusStrip.CellSize + ThemeTokens.GetFloat("size.hud.status.gap", 4f);
             y += statusPad + Mathf.Max(used, rowH);
             _strip.Root.anchoredPosition = new Vector2(0f, y);
             y += gap + statusPad; // the strip panel reaches pad above its cells
@@ -662,7 +662,7 @@ namespace RuneSkin.PlayerHud
                 if (quick && Bounds(quick, out var qMin, out var qMax)) foreignW += (qMax.x - qMin.x) / perRef + gap * 2f;
             }
             // Buff row above the food: one row, same dynamic-length frame, "+N" overflow.
-            var cellB = ThemeTokens.GetFloat("size.hud.status.cell", 42f);
+            var cellB = StatusStrip.CellSize;
             var buffTop = rowTop + ThemeTokens.GetFloat("size.hud.food.pad", 8f) + statusPad + gap;
             var usedB = _buffs.Arrange(barW, cellB + ThemeTokens.GetFloat("size.hud.status.gap", 4f));
             _buffs.Root.anchoredPosition = new Vector2(0f, buffTop + usedB);

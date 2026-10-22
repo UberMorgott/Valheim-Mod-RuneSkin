@@ -157,6 +157,16 @@ namespace RuneSkin.PlayerHud
             public bool MoreCell;   // the last cell is the "+N" cell
         }
 
+        // Side of a square status cell that holds its icon (top, iconShare of the side) and one timer / icon-text line
+        // under it (textH tall, textW wide + pad each side) without the text leaving the cell: never below minCell.
+        public static float StatusCell(float minCell, float iconShare, float textW, float textH, float pad)
+        {
+            var share = Math.Min(0.9f, Math.Max(0f, iconShare));
+            var byWidth = textW + 2f * pad;
+            var byHeight = (textH + pad) / (1f - share);
+            return (float)Math.Ceiling(Math.Max(minCell, Math.Max(byWidth, byHeight)));
+        }
+
         // Rows that fit a height budget.
         public static int MaxRows(float budget, float cell, float gap) =>
             cell <= 0f || budget < cell ? 0 : (int)Math.Floor((budget + gap) / (cell + gap));

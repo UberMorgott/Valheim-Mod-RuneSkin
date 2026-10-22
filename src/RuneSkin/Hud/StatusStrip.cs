@@ -59,11 +59,33 @@ namespace RuneSkin.PlayerHud
         private readonly bool _harmful;
         public int ExcludeHash;
 
+        // Cell side (ref px): the theme's size.hud.status.cell grown until the worst-case timer / icon text
+        // (size.hud.status.sample width in the timer font, e.g. "88m 88s" from mods' GetIconText) fits inside the
+        // cell under the icon (HudMath.StatusCell). Measured once per theme revision with a TMP probe.
+        public const string WorstText = "88m 88s";
+        private static float _cellSize = -1f;
+        private static int _cellRevision = -1;
+        public static float CellSize => _cellSize > 0f && _cellRevision == ThemeTokens.Revision ? _cellSize : ThemeTokens.GetFloat("size.hud.status.cell", 42f);
+        public const float IconShare = 0.6f;
+
+        private void Measure()
+        {
+            if (_cellSize > 0f && _cellRevision == ThemeTokens.Revision) return;
+            var font = ThemeTokens.GetFloat("size.hud.font.status", 15f);
+            var probe = _art.Text("TimerProbe", Root, "font.body", "color.hud.timer", font, TextAlignmentOptions.Center);
+            var size = probe.GetPreferredValues(WorstText, 0f, 0f);
+            Object.Destroy(probe.gameObject);
+            _cellSize = HudMath.StatusCell(ThemeTokens.GetFloat("size.hud.status.cell", 42f), IconShare, size.x, size.y, ThemeTokens.GetFloat("size.hud.status.text.pad", 3f));
+            _cellRevision = ThemeTokens.Revision;
+            Plugin.Log.LogInfo($"[RuneSkin] status cell {_cellSize:0} ref px ('{WorstText}' {size.x:0.0}x{size.y:0.0} at {font})");
+        }
+
         public StatusStrip(HudArt art, Transform parent, bool harmful, string name)
         {
             _art = art;
             _harmful = harmful;
             Root = HudArt.Rect(name, parent);
+            Measure();
             // One framed dark-glass panel behind the cells (mockup hud-status-b), only while effects exist.
             _panel = HudArt.Rect("Panel", Root);
             // frame_strip carries its own dark interior (art notes); separator_v studs between entries.
@@ -105,7 +127,7 @@ namespace RuneSkin.PlayerHud
         // Lays out within width x budget (ref px, top edge at y = 0 going down). Returns the used height.
         public float Arrange(float width, float budget)
         {
-            var cell = ThemeTokens.GetFloat("size.hud.status.cell", 38f);
+            var cell = StatusStrip.CellSize;
             var gap = ThemeTokens.GetFloat("size.hud.status.gap", 4f);
             var flow = HudMath.Wrap(_entries.Count, cell, gap, width, HudMath.MaxRows(budget, cell, gap));
             Layout = flow;
@@ -209,7 +231,7 @@ namespace RuneSkin.PlayerHud
         // Full list: every entry, icon + localized name + timer, above the strip (clamped by the cluster layout).
         private void BuildPopup()
         {
-            var cell = ThemeTokens.GetFloat("size.hud.status.cell", 38f);
+            var cell = StatusStrip.CellSize;
             var gap = ThemeTokens.GetFloat("size.hud.status.gap", 4f);
             if (!_popup)
             {
@@ -274,7 +296,7 @@ namespace RuneSkin.PlayerHud
                 ir.anchorMin = new Vector2(0.5f, 1f);
                 ir.anchorMax = new Vector2(0.5f, 1f);
                 ir.pivot = new Vector2(0.5f, 1f);
-                ir.sizeDelta = new Vector2(size * 0.62f, size * 0.62f);
+                ir.sizeDelta = new Vector2(size * IconShare, size * IconShare);
                 ir.anchoredPosition = Vector2.zero;
             }
             Image plate = null;
@@ -288,8 +310,17 @@ namespace RuneSkin.PlayerHud
             c.Timer = _art.Text("Timer", c.Root, more ? "font.display" : "font.body", "color.hud.timer",
                 ThemeTokens.GetFloat(more ? "size.hud.font.number" : "size.hud.font.status", 15f), TextAlignmentOptions.Center);
             var tr = c.Timer.rectTransform;
-            tr.sizeDelta = more ? new Vector2(size, size) : new Vector2(size + 16f, size * 0.38f);
-            tr.anchoredPosition = more ? Vector2.zero : new Vector2(-8f, 0f);
+            // Timer / icon text inside the cell under the icon (cell sized for WorstText); anything longer shrinks
+            // (auto-size down to the timer floor) instead of running into the neighbour.
+            tr.sizeDelta = more ? new Vector2(size, size) : new Vector2(size, size * (1f - IconShare));
+            tr.anchoredPosition = Vector2.zero;
+            if (!more)
+            {
+                c.Timer.enableAutoSizing = true;
+                c.Timer.fontSizeMax = c.Timer.fontSize;
+                c.Timer.fontSizeMin = Mathf.Min(c.Timer.fontSize, ThemeTokens.GetFloat("floor.text.timer.px", 12f));
+                c.Timer.overflowMode = TextOverflowModes.Overflow;
+            }
             return c;
         }
 
