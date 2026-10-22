@@ -510,6 +510,7 @@ namespace RuneSkin.WorldHud
             {
                 // boss-c draws its own rail; Vaettir's rarity frame on a boss HUD would add a second frame.
                 if (s.Vt && s.Vt.enabled) s.Vt.enabled = false;
+                if (s.Own && !s.Own.enabled) s.Own.enabled = true; // the boss-c rail (the VT rule above may have hidden it)
                 return;
             }
             var vtOn = s.Vt && s.Vt.enabled && s.Vt.sprite;
@@ -643,7 +644,8 @@ namespace RuneSkin.WorldHud
                     .Append(" boss=").Append(s.Boss ? 1 : 0).Append(" bossC=").Append(s.BossC ? 1 : 0)
                     .Append(" bossFit=").Append(s.BossFit.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture))
                     .Append(" bossSpan=").Append((_rootCanvas && s.Boss ? _bossSpan * s.BossFit / _rootCanvas.rect.width : -1f).ToString("0.000", System.Globalization.CultureInfo.InvariantCulture))
-                    .Append(" weld=").Append((s.Weld && s.Weld.enabled ? s.Weld.rectTransform.anchorMin.x : -1f).ToString("0.000", System.Globalization.CultureInfo.InvariantCulture));
+                    .Append(" weld=").Append((s.Flare && s.Flare.enabled ? s.Flare.rectTransform.anchorMin.x : -1f).ToString("0.000", System.Globalization.CultureInfo.InvariantCulture))
+                    .Append(" bossFrame=").Append(s.Own && s.Own.enabled ? 1 : 0);
             }
             return sb.ToString();
         }
