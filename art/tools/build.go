@@ -69,6 +69,7 @@ type Cut struct {
 	BgTol       float64      `json:"bgTol,omitempty"`       // key "bg": colour step that still counts as the smooth background (keyBackground)
 	BgSides     string       `json:"bgSides,omitempty"`     // key "bg": crop sides the background flood starts from (default tlrb)
 	Clear       [][4]int     `json:"clear,omitempty"`       // crop-space rects made transparent after keying (bar windows)
+	ClearDark   [][5]int     `json:"clearDark,omitempty"`   // crop-space [x, y, w, h, max]: pixels whose brightest channel is <= max become transparent (dark glass inside an ornament corner)
 	Clone       []int        `json:"clone,omitempty"`       // [x, y, w, h, srcX, srcW] crop space: fill the rect with mirror-tiled source columns srcX..+srcW of the same rows (clear a baked caption off a plate field)
 	SquashRight [][4]float64 `json:"squashRight,omitempty"` // [y0, y1, factor, x0]: rows y0..y1 resampled only for columns >= x0, re-centred (a bar window thinner next to a round socket that keeps its shape)
 	Squash      [][3]float64 `json:"squash,omitempty"`      // crop-space row bands [y0, y1, factor] resampled vertically (a rail painted thicker than the mockup's)
@@ -82,6 +83,7 @@ type Cut struct {
 	FillCenter  bool         `json:"fillCenter"`
 	Token       string       `json:"token"`
 	Notes       string       `json:"notes"`
+	Atlas       string       `json:"atlas,omitempty"` // "hires": packed into the second atlas (4096, mipmaps) for 4x redraws
 }
 
 type Spec struct {
@@ -99,6 +101,7 @@ type OutSprite struct {
 	FillCenter bool       `json:"fillCenter"`
 	Token      string     `json:"token"`
 	Notes      string     `json:"notes"`
+	Atlas      string     `json:"atlas,omitempty"`
 }
 
 type Manifest struct {
@@ -152,6 +155,9 @@ func renderCut(c Cut) *image.NRGBA {
 	}
 	if len(c.Clear) > 0 {
 		clearRects(src, c.Clear)
+	}
+	if len(c.ClearDark) > 0 {
+		clearDark(src, c.ClearDark)
 	}
 	if len(c.Clone) == 6 {
 		cloneColumns(src, c.Clone)
@@ -493,7 +499,7 @@ func cmdBuild() {
 		file := c.Name + ".png"
 		savePNG(filepath.Join(spritesDir, file), img)
 		man.Sprites = append(man.Sprites, OutSprite{c.Name, file, [2]int{img.Bounds().Dx(), img.Bounds().Dy()},
-			c.Border, c.Pivot, c.ImageType, c.FillCenter, c.Token, c.Notes})
+			c.Border, c.Pivot, c.ImageType, c.FillCenter, c.Token, c.Notes, c.Atlas})
 	}
 	b, err := json.MarshalIndent(man, "", "  ")
 	must(err)

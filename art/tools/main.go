@@ -58,6 +58,8 @@ func main() {
 		cmdCompareM7()
 	case "compare-eb":
 		cmdCompareEB()
+	case "compare-stats":
+		cmdCompareStats()
 	case "strip":
 		cmdStrip()
 	case "rowmatch":

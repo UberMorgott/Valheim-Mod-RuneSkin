@@ -111,6 +111,22 @@ func clearRects(img *image.NRGBA, rects [][4]int) {
 	}
 }
 
+// clearDark makes the dark pixels (brightest channel <= max) of crop-space rects transparent: the glass inside an
+// ornament corner goes, the lighter metal stays.
+func clearDark(img *image.NRGBA, rects [][5]int) {
+	for _, r := range rects {
+		w := image.Rect(r[0], r[1], r[0]+r[2], r[1]+r[3]).Intersect(img.Bounds())
+		for y := w.Min.Y; y < w.Max.Y; y++ {
+			for x := w.Min.X; x < w.Max.X; x++ {
+				i := img.PixOffset(x, y)
+				if int(max(img.Pix[i], img.Pix[i+1], img.Pix[i+2])) <= r[4] {
+					img.Pix[i+3] = 0
+				}
+			}
+		}
+	}
+}
+
 // keyRed clears saturated HP-fill red pixels (R > 110, G < 60, B < 60) with their soft fringe (R > 2.2 x max(G, B)).
 func keyRed(img *image.NRGBA) {
 	for i := 0; i < len(img.Pix); i += 4 {
