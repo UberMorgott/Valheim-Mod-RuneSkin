@@ -95,7 +95,10 @@ namespace RuneSkin.PlayerHud
             _knot2L = Piece("Knot2Left", _back, "sprite.hud.strip7.knot2", Image.Type.Simple);
             _knot2R = Piece("Knot2Right", _back, Own("sprite.hud.strip7.knot2"), Image.Type.Simple);
             foreach (var img in new[] { _capL, _capR, _stubL, _stubR, _railL, _railR, _knotL, _knotR, _endL, _endR, _knot2L, _knot2R }) img.gameObject.SetActive(Target);
-            if (Target && ThemeTokens.GetSprite("sprite.hud.strip7.field")) _field = Piece("BarField", _back, "sprite.hud.strip7.field", Image.Type.Simple);
+            // always built like the other target pieces (run 20261023-191817: created only when the sprite resolved at
+            // construction -> never built in game, the scene showed between the HP and stamina channels)
+            _field = Piece("BarField", _back, "sprite.hud.strip7.field", Image.Type.Simple);
+            _field.gameObject.SetActive(Target);
             _bars = Piece("BarBlock", _back, "sprite.hud.strip4.bars", Image.Type.Sliced);
             _iconHp = Piece("IconHealth", _back, "sprite.hud.strip7.icon.hp", Image.Type.Simple);
             _iconSt = Piece("IconStamina", _back, "sprite.hud.strip7.icon.st", Image.Type.Simple);
@@ -553,6 +556,9 @@ namespace RuneSkin.PlayerHud
             side = Mathf.Min(L.PotionCell, L.PotionH);
             return true;
         }
+
+        // Visible potion cell i (shown cells only): the EAQS quick cell of the open inventory is placed exactly over it.
+        public RectTransform PotionRect(int i) => i >= 0 && i < L.PotionShown && i < _potions.Count && _potions[i] != null && _potions[i].Root.gameObject.activeInHierarchy ? _potions[i].Root : null;
 
         public RectTransform HotbarRect(int i) => i >= 0 && i < HotbarCells && _hotbar[i] != null ? _hotbar[i].Root : null;
 

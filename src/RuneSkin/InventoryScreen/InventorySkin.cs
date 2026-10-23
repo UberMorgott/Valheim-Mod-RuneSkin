@@ -1371,6 +1371,14 @@ namespace RuneSkin.InventoryScreen
                 // (localPosition (i * m_elementSpace, 0), HotkeyBar.cs:110) at the prefab's size.
                 Box b;
                 var band = PlayerHud.HudCluster.Instance;
+                // The strip's own visible potion cell (user 2026-10-23: a potion put into a cell slid off it - the cell
+                // followed the hidden vanilla QuickSlotsHotkeyBar element, not the strip cell; SetBand has no caller).
+                var stripCell = band ? band.PotionCellRect(i) : null;
+                if (stripCell)
+                {
+                    PlaceQuickCell(e, Geo.ForeignBox(_canvas, stripCell));
+                    continue;
+                }
                 if (band && band.BandQuickCell(i, out var space, out var bl, out var bandSize))
                 {
                     // Inventory band profile: the band's own quick sockets (size.hud.band.cell, mockup ratios).

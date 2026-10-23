@@ -836,6 +836,9 @@ namespace RuneSkin.PlayerHud
             return true;
         }
 
+        // Visible strip potion cell i (null when not shown / no strip).
+        public RectTransform PotionCellRect(int i) => _hudStrip != null && _childrenOn && isActiveAndEnabled ? _hudStrip.PotionRect(i) : null;
+
         // Bottom-left world point of the potion zone (the inventory puts its quick cells there when it has no box).
         public Vector3 QuickAnchor => _root.TransformPoint(new Vector3(_hudStrip.L.PotionX, _hudStrip.L.PotionY, 0f));
 
