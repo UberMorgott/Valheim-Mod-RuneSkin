@@ -32,6 +32,12 @@ Shader "RuneSkin/UI Bar"
         _Depth ("Well inner shadow", Float) = 0.45
         _Rim ("End rim brightness", Float) = 0.35
         _GlowWidth ("Glow width share of height", Float) = 0.16
+        // Neon shield (mode 1, _Neon 1): _GlowWidth is then the outline's inset from the quad edge (share of the quad
+        // height) = the quad outset around the bar window, so the bloom has room outside the window.
+        _Neon ("Neon tube glow 0/1", Float) = 0
+        _NeonCore ("Neon core half width, share of window height", Float) = 0.05
+        _NeonBloom ("Neon widest bloom, share of window height", Float) = 0.6
+        _NeonPower ("Neon brightness", Float) = 1
         // Living fills (barfx): procedural shader-math only (no textures), all off at _FxOn 0 / _Pool < 0.
         _Pool ("Pool: -1 plain, 0 blood, 1 energy, 2 arcane", Float) = -1
         _FxOn ("Fx on", Float) = 1
@@ -112,6 +118,7 @@ Shader "RuneSkin/UI Bar"
             float _RuneSkinFxClock;   // global shader clock, written once per frame by BarFxConfig.TickClock
             float _Pool, _FxOn, _FxIntensity, _FxSpeed, _FxClock, _HitAt, _HitSize, _HealAt, _PulseAt, _Regen, _Exhaust;
             float _RuneSkinLinear;    // global, 1 when the game renders in linear colour space (BarFxConfig.TickClock)
+            float _Neon, _NeonCore, _NeonBloom, _NeonPower;
 
             // The living fills were designed and approved (v3) in gamma space. In a linear-space game (Valheim) their
             // colour math runs on gamma-encoded inputs and frag linearises the result, so in-game matches the renders
@@ -468,9 +475,59 @@ Shader "RuneSkin/UI Bar"
                 return fixed4(_GlowColor.rgb * a, d > 0.0 ? a * 0.85 : 0.0);   // inside: additive only, never darkens
             }
 
+            // Neon tube shield (user call 2026-10-23 "like neon light in the dark"): a thin near-white core line on the
+            // window's pill outline + three gaussian bloom layers of saturated shield colour (wide outside over the
+            // metal, narrower inside over the fill), additive (alpha only under the core, so the line stays crisp over
+            // bright blood). Lit from the left up to _Shield of the WINDOW width (top and bottom together), the right
+            // cap at full; the last ~1.5 window heights before the shield end burn brighter, the tip blooms past it.
+            // Slow pulse + rare buzz flicker + a faint highlight travelling along the lit run. Single pass, no grab
+            // pass, no texture: 1 pill SDF + ~8 exp + 1 value noise per pixel of the quad.
+            fixed4 neon(float2 uv)
+            {
+                float w = clamp(_GlowWidth, 0.0, 0.45);
+                float hw = 0.5 * _Aspect - w;               // window half width, quad-height units
+                float winH = 1.0 - 2.0 * w;                 // window height, quad-height units
+                float2 p = float2((uv.x - 0.5) * _Aspect, uv.y - 0.5);
+                float d = pill(p, hw, 0.5 * winH);          // signed distance to the window outline
+                float px = max(fwidth(p.y), 1e-5);
+                float tr = _FxClock >= 0.0 ? _FxClock : _RuneSkinFxClock;
+                // along the window: share 0..1, distance past the shield end in quad-height units
+                float xw = saturate((p.x + hw) / (2.0 * hw));
+                float full = step(0.995, _Shield);
+                float e = (xw - _Shield) * 2.0 * hw * (1.0 - full) - full * 10.0;
+                float on = step(0.0001, _Shield);
+                float lineLit = (1.0 - smoothstep(-px, px, e)) * on;
+                float tipLit = exp(-pow(max(e, 0.0) / (0.5 * winH), 2.0)) * on;
+                float hot = exp(-max(-e, 0.0) / (1.5 * winH)) * (1.0 - full);
+                // time: slow breathing + a rare short buzz dip (neon flicker) + travelling highlight
+                float pulse = 0.88 + 0.12 * sin(tr * 2.3);
+                float buzz = 1.0 - 0.22 * step(0.82, vnoise(float2(tr * 13.0, 3.7))) * step(0.6, vnoise(float2(tr * 0.7, 8.1)));
+                float runLen = max(_Shield, 0.02) * 2.0 * hw;
+                float travelPos = frac(tr * 0.22) * (runLen + 2.0) - 1.0;
+                float trav = exp(-pow((xw * 2.0 * hw - travelPos) / (0.9 * winH), 2.0));
+                // profile across the tube
+                float core = exp(-pow(d / max(_NeonCore * winH, 0.8 * px), 2.0));
+                float b = _NeonBloom * winH;
+                float k = d > 0.0 ? 1.0 : 0.45;             // inward (over the fill) blooms narrower
+                float bl1 = exp(-pow(d / (0.18 * b * k), 2.0));
+                float bl2 = exp(-pow(d / (0.45 * b * k), 2.0));
+                float bl3 = exp(-pow(d / (b * k), 2.0));
+                float inner = d > 0.0 ? 1.0 : 0.6;
+                float3 sat = normalize(max(_GlowColor.rgb, 1e-3)) * 1.25;                 // saturated tube colour
+                sat = lerp(_GlowColor.rgb, sat, 0.6);
+                float3 white = lerp(_GlowColor.rgb, float3(1, 1, 1), 0.72);
+                float flick = pulse * buzz;
+                float lit = lineLit * (1.0 + 1.3 * hot + 0.45 * trav);
+                float3 c = white * core * lit * (0.9 + 0.1 * flick)
+                    + sat * (1.0 * bl1 + 0.6 * bl2 * inner + 0.32 * bl3 * inner) * flick * (1.0 + 1.1 * hot + 0.35 * trav * lineLit) * (lineLit + tipLit * (1.0 - lineLit));
+                c *= _NeonPower * _GlowColor.a;
+                float a = saturate(core * lineLit * 0.55);
+                return fixed4(c, a);
+            }
+
             fixed4 frag(v2f IN) : SV_Target
             {
-                fixed4 c = _Mode < 0.5 ? fill(IN.uv) : glow(IN.uv);
+                fixed4 c = _Mode < 0.5 ? fill(IN.uv) : (_Neon > 0.5 ? neon(IN.uv) : glow(IN.uv));
                 if (GammaMath()) { float pa = max(c.a, 1e-4); c.rgb = GammaToLinearSpace(saturate(c.rgb / pa)) * pa; }
                 c *= IN.color.a;
                 c.rgb *= IN.color.rgb;
