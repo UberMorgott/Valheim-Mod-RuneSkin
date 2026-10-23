@@ -9103,6 +9103,52 @@
       "atlas": "strip"
     },
     {
+      "name": "strip7_knot_in",
+      "file": "strip7_knot_in.png",
+      "size": [
+        86,
+        98
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip7_knot_in",
+      "notes": "Target panel: inner rail diamond (bar-block end of the rail run), 4x crop by the mockup agent",
+      "atlas": "strip"
+    },
+    {
+      "name": "strip7_knot_in_r",
+      "file": "strip7_knot_in_r.png",
+      "size": [
+        86,
+        98
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip7_knot_in_r",
+      "notes": "Target panel: inner rail diamond (bar-block end of the rail run), 4x crop by the mockup agent",
+      "atlas": "strip"
+    },
+    {
       "name": "strip6_wing",
       "file": "strip6_wing.png",
       "size": [
