@@ -130,6 +130,7 @@ namespace RuneSkin.InfoScreens
             var hiSprite = ThemeTokens.GetSprite("sprite.stats.chrome.tl");
             if (hiSprite && hiSprite.texture) hiSprite.texture.mipMapBias = T("size.stats.mip.bias", -0.5f);
             _button = CreateButton(gui);
+            WindowMove.OnMoved(WindowMove.Stats, () => _layoutDirty = true);
             ScreenRegistry.Register(_root, Context);
             Plugin.Log.LogInfo($"[RuneSkin] character stats window attached (button={(bool)_button})");
         }
@@ -607,8 +608,13 @@ namespace RuneSkin.InfoScreens
         private Box D(float x, float y, float w, float h)
         {
             var r = _canvas.rect;
-            return StatsMath.Map(r.width, r.height, _scale, x, y, w, h);
+            var b = StatsMath.Map(r.width, r.height, _scale, x, y, w, h);
+            return new Box(b.X + _moved.x, b.Y + _moved.y, b.W, b.H);
         }
+
+        // User offset of the window (WindowMove, canvas units), applied to every design rect; the scrim stays full screen.
+        private Vector2 _moved;
+        private WindowDrag _drag;
 
         private void Place(RectTransform rt, Box b) => Geo.Place(_canvas, rt, b);
 
@@ -637,6 +643,11 @@ namespace RuneSkin.InfoScreens
             if (_scale <= 0f) return;
             Place(_root, new Box(0f, 0f, rect.width, rect.height));
             Place(_scrim.rectTransform, new Box(0f, 0f, rect.width, rect.height));
+            _moved = Vector2.zero;
+            _moved = WindowMove.Applied(WindowMove.Stats, D(0f, 0f, StatsMath.DesignW, StatsMath.DesignH), _canvas);
+            // Title band of the chrome = the drag band (the close button keeps its clicks).
+            _drag = WindowMove.Handle(_root, WindowMove.Stats);
+            if (_drag) Place(_drag.rectTransform, D(T("size.stats.drag.x", 48f), T("size.stats.drag.y", 16f), T("size.stats.drag.w", 1740f), T("size.stats.drag.h", 110f)));
             foreach (var p in _pieces)
             {
                 var k = "size.stats.piece." + p.Name;

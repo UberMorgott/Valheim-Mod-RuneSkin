@@ -272,6 +272,9 @@ namespace RuneSkin.InfoScreens
             var inner = new Box(box.X + pad, box.Y + pad, box.W - 2f * pad, box.H - 2f * pad);
             var headerH = ThemeTokens.GetFloat("size.info.header", 64f) * k;
             var gap = ThemeTokens.GetFloat("size.info.trophy.gap", 8f) * k;
+            // Title band = a drag band of the docked inventory group (this panel docks over its columns).
+            var band = WindowMove.Handle(_frame, WindowMove.Inventory);
+            if (band) Geo.Place(_canvas, band.rectTransform, new Box(inner.X, inner.Y, inner.W, headerH));
             foreach (var c in Children.Of(_frame))
             {
                 if (!(c is RectTransform rt) || !c.gameObject.activeSelf) continue;
