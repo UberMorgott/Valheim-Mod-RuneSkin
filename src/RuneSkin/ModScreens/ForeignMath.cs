@@ -108,6 +108,60 @@ namespace RuneSkin.ModScreens
             return null;
         }
 
+        // Children of an Epic Loot enchanting tab (EnchantingUI prefab, Panel/Tabs/<feature>): "Image" = the tab's icon,
+        // "Text" = its caption (FeatureStatus.UnlockedContainer: hidden while the feature is locked), "Image/Locked" =
+        // FeatureStatus.LockedContainer (Radial Glow) with "LockIcon" (padlock) - shown exactly while the feature is
+        // locked. The padlock's name holds "Icon", so name matching alone took it for the tab icon.
+        public enum ElTabPart { None, Icon, Caption, LockBadge, LockGlyph }
+
+        public static ElTabPart ElTabPartOf(string name, string parentName)
+        {
+            if (string.IsNullOrEmpty(name)) return ElTabPart.None;
+            if (name == "Locked") return ElTabPart.LockBadge;
+            if (name == "LockIcon" || parentName == "Locked") return ElTabPart.LockGlyph;
+            if (name == "Text") return ElTabPart.Caption;
+            var lower = name.ToLowerInvariant();
+            if (name == "Image" || lower.Contains("icon")) return ElTabPart.Icon;
+            return ElTabPart.None;
+        }
+
+        // ---------------------------------------------------------------- Epic Loot enchanting tab cells
+
+        // Box in a cell's space from its top-left corner (x right, y down).
+        public struct Box
+        {
+            public float X, Y, W, H;
+            public Box(float x, float y, float w, float h) { X = x; Y = y; W = w; H = h; }
+            public float CentreX => X + W / 2f;
+        }
+
+        // One tab cell of the enchanting table's vertical tab column (ElTabCell): the icon centred at the top, the caption
+        // box (room for two lines) under it, the lock badge on the icon's top-right corner. Every tab gets the same boxes
+        // whatever its caption or lock state, so the column reads as one grid. The icon + gap + caption block is
+        // centred vertically; a cell too short for it shrinks the icon first (never below a third of the cell).
+        public static void ElTabLayout(float w, float h, float icon, float gap, float captionH, float pad, float badge,
+            out Box iconBox, out Box captionBox, out Box badgeBox)
+        {
+            w = Math.Max(0f, w);
+            h = Math.Max(0f, h);
+            var room = h - 2f * pad;
+            var side = Math.Max(Math.Min(icon, room - gap - captionH), Math.Min(icon, h / 3f));
+            var block = side + gap + captionH;
+            var top = Math.Max(0f, (float)Math.Round((h - block) / 2f));
+            iconBox = new Box((float)Math.Round((w - side) / 2f), top, side, side);
+            var capY = top + side + gap;
+            captionBox = new Box(pad, capY, Math.Max(0f, w - 2f * pad), Math.Max(0f, Math.Min(captionH, h - capY)));
+            // Badge centred on the icon's top-right corner, pulled in so it stays inside the cell.
+            var bx = Math.Min(iconBox.X + side - badge / 2f, w - pad - badge);
+            var by = Math.Max(iconBox.Y - badge / 2f, pad / 2f);
+            badgeBox = new Box((float)Math.Round(bx), (float)Math.Round(by), badge, badge);
+        }
+
+        // Width of the tab plates inside the column's mask: the plate's own width, never wider than the mask minus a
+        // margin on each side (Epic Loot pads the column -10 on the right so its plates ran under the mask edge).
+        public static float ElTabWidth(float plate, float mask, float margin) =>
+            Math.Max(0f, Math.Min(plate, mask - 2f * margin));
+
         // Epic Loot adventure board list / tab -> glyph role (art m7 board-a).
         public static string BoardGlyph(string name)
         {
