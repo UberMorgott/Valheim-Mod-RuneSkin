@@ -135,14 +135,6 @@ namespace RuneSkin.PlayerHud
                 _eitr.UseShader(barShader, "color.hud.bar.fx.eitr", BarFxPool.Arcane);
                 _adrenaline.UseShader(barShader, "color.hud.bar.fx.adrenaline");
             }
-            // Target panel: the bar block piece is the outer frame only - each channel draws its own pill rim (the
-            // stamina | eitr split moves, so the rims cannot be baked into the block).
-            if (HudStrip.Target)
-            {
-                float rx = ThemeTokens.GetFloat("size.hud.strip7.rim.x", 4.3f), ry = ThemeTokens.GetFloat("size.hud.strip7.rim.y", 4.3f);
-                foreach (var b in new[] { _health, _stamina, _eitr, _adrenaline })
-                    b.Rim("sprite.hud.strip7.rim", "color.hud.strip.frame", rx, ry, ThemeTokens.GetFloat("share.hud.strip4.art", 1f));
-            }
             _row[0] = _stamina;
             _row[1] = _eitr;
             _row[2] = _adrenaline;
@@ -591,7 +583,7 @@ namespace RuneSkin.PlayerHud
                 h = h * 31 + (_root.parent ? _root.parent.lossyScale.x : 0f).GetHashCode();
                 h = h * 31 + (_canvas && _canvas.rootCanvas ? _canvas.rootCanvas.scaleFactor : 0f).GetHashCode();
                 h = h * 31 + (Plugin.HudScale?.Value ?? 1f).GetHashCode();
-                h = h * 31 + (Plugin.StripWidth?.Value ?? 1f).GetHashCode();
+                h = h * 31 + (Plugin.StripWidth?.Value ?? 0.96f).GetHashCode();
                 h = h * 31 + ResponsiveContext.SkinScale.GetHashCode();
                 h = h * 31 + SlotCanvasScale().GetHashCode();
                 h = h * 31 + (Plugin.UltrawideBox?.Value ?? true ? 1 : 0);
@@ -613,6 +605,7 @@ namespace RuneSkin.PlayerHud
             }
             Status();
             ChatTick();
+            _clear.Tick(_hud, _root);
             var cells = _strip.CellCount + _buffs.CellCount + _summonParented;
             if (cells != _floorCells)
             {
@@ -642,7 +635,7 @@ namespace RuneSkin.PlayerHud
             // the width is HudStrip.Width of the box and only the wings' straight rails stretch to fill it.
             var slotPx = StripMath.SlotPx(ThemeTokens.GetFloat("size.slot", 70f), ResponsiveContext.SkinScale, SlotCanvasScale());
             _pxPerUnit = StripMath.UnitPx(slotPx, ThemeTokens.GetFloat("size.hud.strip.cell", 85f));
-            var widthPx = StripMath.WidthPx(boxW, Plugin.StripWidth?.Value ?? 1f);
+            var widthPx = StripMath.WidthPx(boxW, Plugin.StripWidth?.Value ?? 0.96f);
             var input = _hudStrip.Input(widthPx / _pxPerUnit, barsH);
             var l = StripMath.Compute(input);
             _hudStrip.Apply(l, input);
@@ -661,10 +654,8 @@ namespace RuneSkin.PlayerHud
             RowPlace();
             _ = plaqueOn;
             // Screen placement: centred in the box, the bottom margin above the safe area.
-            // Target panel (user 2026-10-23): flush with the screen bottom - the lowest frame edge (the end medallion tips
-            // under the wings) on the safe-area bottom, nothing clipped, no world under the panel.
-            var margin = HudStrip.Target ? 0f : ThemeTokens.GetFloat("size.hud.strip.margin", 8f) * s;
-            var bottom = safe.y + margin - (HudStrip.Target ? _hudStrip.FrameBottom * _pxPerUnit : 0f);
+            var margin = ThemeTokens.GetFloat("size.hud.strip.margin", 8f) * s;
+            var bottom = safe.y + margin;
             var left = boxX + (boxW - widthPx) / 2f;
             PlaceAtScreen(_root, new Vector2(left, bottom), _pxPerUnit);
             _stripWidth = input.Width;
@@ -674,13 +665,21 @@ namespace RuneSkin.PlayerHud
             // InventoryMath's standard gap (size.inv.gap) from the strip top.
             _reservedTop = bottom + l.Height * _pxPerUnit + ThemeTokens.GetFloat("size.panel.glass.inset", 0f) * s;
             TextFloors();
-            _chatTopUnits = l.Height;
-            _chatGapPx = ThemeTokens.GetFloat("size.hud.strip.chat.gap", 12f) * s;
-            Plugin.Log.LogInfo($"[RuneSkin] HUD strip layout: width {widthPx:0}px origin ({left:0.##},{bottom:0.##})px slot {slotPx:0.#}px scale {_pxPerUnit:0.####} height {l.Height:0} units = {l.Height * _pxPerUnit:0} px " +
+            ChatClear(bottom + l.Height * _pxPerUnit + ThemeTokens.GetFloat("size.hud.strip.chat.gap", 12f) * s);
+            // Bottom-anchored HUD elements (build piece info, action bar, ship ladder, key hints ...) clear the drawn
+            // strip top by size.hud.strip.clear.gap (StripClear).
+            _stripTopPx = bottom + l.Height * _pxPerUnit;
+            _stripLeftPx = left;
+            _stripRightPx = left + widthPx;
+            _clearGapPx = ThemeTokens.GetFloat("size.hud.strip.clear.gap", 12f) * s;
+            _clear.SetStrip(_stripTopPx, _stripLeftPx, _stripRightPx, _clearGapPx);
+            Plugin.Log.LogInfo($"[RuneSkin] HUD strip layout: width {widthPx:0}px slot {slotPx:0.#}px scale {_pxPerUnit:0.###} height {l.Height:0} units = {l.Height * _pxPerUnit:0} px " +
                                $"({100f * l.Height * _pxPerUnit / Mathf.Max(1f, Screen.height):0.0} % of {Screen.height}), food {l.FoodShown}/{_hudStrip.FoodCount} potions {l.PotionShown}/{_hudStrip.PotionCount} (wing fits {l.FoodMax}) abilities {_hudStrip.AbilityCount}{(l.Fits ? "" : " (tight)")}");
         }
 
         private float _stripWidth, _statusBase;
+        private float _stripTopPx, _stripLeftPx, _stripRightPx, _clearGapPx;
+        private readonly StripClear _clear = new StripClear();
 
         // GUI canvas scale the inventory grid is drawn with (InventorySkin: its root canvas scaleFactor); the HUD's own
         // root canvas before the inventory exists (both live under the same GuiScaler).
@@ -705,63 +704,68 @@ namespace RuneSkin.PlayerHud
                 if (f) f.Apply();
         }
 
-        // The vanilla chat box (bottom right, Terminal.m_chatWindow; vanilla never moves it, Chat.cs) sits over the
-        // strip's right wing once the strip spans the screen: lifted so its drawn graphics clear the strip top + a gap.
-        // Root cause of the stale lifts (runs 20261023-161531 / -175632: lifted from wherever the box was after a
-        // resolution change, or not at all): everything is now relative and live - the graphics' bottom is measured
-        // once in the window's own units (position independent), the home anchored position is taken once before any
-        // move, and every frame the wanted position = home + max(0, strip top - home bottom) in the window parent's
-        // units, both converted through their own canvases at that frame (no screen px cached across frames).
-        private static RectTransform _chatWindow;
-        private static Vector2 _chatHome;
-        private float _chatBottomW = float.NaN, _chatTopUnits = -1f, _chatGapPx;
-        private bool _chatWasActive;
+        // The vanilla chat box (bottom right, Terminal.m_chatWindow; vanilla never moves it, Chat.cs) sits on the strip's
+        // right wing once the strip spans the screen: lifted so the box (its drawn graphics, not the window rect) clears
+        // the strip top. Measured while the window is shown (a hidden chat keeps stale rects): pending until then.
+        private RectTransform _chatWindow;
+        private Vector2 _chatHome;
+        private float _chatTarget;
+        private bool _chatPending, _chatWasActive;
         private readonly List<Graphic> _chatGraphics = new List<Graphic>(16);
         private readonly Vector3[] _corners = new Vector3[4];
+
+        private void ChatClear(float stripTopPx)
+        {
+            _chatTarget = stripTopPx;
+            _chatPending = true;
+            ChatTick();
+        }
 
         private void ChatTick()
         {
             var chat = Chat.instance;
             var w = chat ? chat.m_chatWindow : null;
-            if (!w || !(w.parent is RectTransform parent) || _chatTopUnits < 0f) return;
+            var active = w && w.gameObject.activeInHierarchy;
+            // every time the chat shows, measure again (run 20261023-161531: measured once on a stale canvas scale
+            // right after a resolution change, then never again)
+            if (active && !_chatWasActive) _chatPending = true;
+            _chatWasActive = active;
+            if (!_chatPending || !active) return;
+            var rootCanvas = w.GetComponentInParent<Canvas>();
+            rootCanvas = rootCanvas ? rootCanvas.rootCanvas : null;
+            if (rootCanvas && Mathf.Abs(rootCanvas.scaleFactor - ResponsiveContext.GuiFactor) > 0.001f) return; // CanvasScaler not caught up
             if (w != _chatWindow)
             {
                 _chatWindow = w;
-                _chatHome = w.anchoredPosition; // before any move of ours
-                _chatBottomW = float.NaN;
+                _chatHome = w.anchoredPosition;
             }
-            var active = w.gameObject.activeInHierarchy;
-            if (active && !_chatWasActive) _chatBottomW = float.NaN; // re-measure on show (laid out while shown)
-            _chatWasActive = active;
-            if (float.IsNaN(_chatBottomW))
+            if (w.anchoredPosition != _chatHome) w.anchoredPosition = _chatHome;
+            var canvas = w.GetComponentInParent<Canvas>();
+            if (!canvas) return;
+            var cam = canvas.rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.rootCanvas.worldCamera;
+            w.GetComponentsInChildren(false, _chatGraphics);
+            var bottom = float.MaxValue;
+            foreach (var g in _chatGraphics)
             {
-                if (!active) return;
-                w.GetComponentsInChildren(false, _chatGraphics);
-                var min = float.MaxValue;
-                foreach (var g in _chatGraphics)
-                {
-                    if (!g.enabled || g.rectTransform.rect.width < 1f || g.rectTransform.rect.height < 1f) continue;
-                    g.rectTransform.GetWorldCorners(_corners);
-                    min = Mathf.Min(min, w.InverseTransformPoint(_corners[0]).y);
-                }
-                if (min == float.MaxValue) return; // laid out next frame
-                _chatBottomW = min;
+                if (!g.enabled || g.rectTransform.rect.width < 1f || g.rectTransform.rect.height < 1f) continue;
+                g.rectTransform.GetWorldCorners(_corners);
+                bottom = Mathf.Min(bottom, RectTransformUtility.WorldToScreenPoint(cam, _corners[0]).y);
             }
-            var hudCanvas = _canvas ? _canvas.rootCanvas : null;
-            var chatCanvas = w.GetComponentInParent<Canvas>();
-            chatCanvas = chatCanvas ? chatCanvas.rootCanvas : null;
-            if (!hudCanvas || !chatCanvas) return;
-            var hudCam = hudCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : hudCanvas.worldCamera;
-            var chatCam = chatCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : chatCanvas.worldCamera;
-            var top = RectTransformUtility.WorldToScreenPoint(hudCam, _root.TransformPoint(new Vector3(0f, _chatTopUnits, 0f)));
-            top.y += _chatGapPx;
-            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, top, chatCam, out var topLocal)) return;
-            var bottomNow = parent.InverseTransformPoint(w.TransformPoint(new Vector3(0f, _chatBottomW, 0f))).y;
-            var homeBottom = bottomNow - (w.anchoredPosition.y - _chatHome.y);
-            var want = _chatHome + new Vector2(0f, Mathf.Max(0f, topLocal.y - homeBottom));
-            if ((w.anchoredPosition - want).sqrMagnitude < 0.01f) return;
-            w.anchoredPosition = want;
-            Plugin.Log.LogInfo($"[RuneSkin] chat box at {want.y - _chatHome.y:0.#} units above home (strip top {top.y:0} px)");
+            if (bottom == float.MaxValue) return; // laid out next frame: still pending
+            _chatPending = false;
+            var lift = _chatTarget - bottom;
+            if (lift <= 0f)
+            {
+                Plugin.Log.LogInfo($"[RuneSkin] chat box clear of the strip (bottom {bottom:0} px, strip top {_chatTarget:0} px)");
+                return;
+            }
+            // screen px -> the window's anchored units (its parent's scale)
+            w.GetWorldCorners(_corners);
+            var p0 = RectTransformUtility.WorldToScreenPoint(cam, _corners[0]).y;
+            var up = RectTransformUtility.WorldToScreenPoint(cam, _corners[0] + w.parent.TransformVector(Vector3.up)).y - p0;
+            if (!(up > 0f)) return;
+            w.anchoredPosition = _chatHome + new Vector2(0f, lift / up);
+            Plugin.Log.LogInfo($"[RuneSkin] chat box lifted {lift:0} px (bottom {bottom:0} px -> strip top {_chatTarget:0} px)");
         }
 
         // Status groups above the strip (user call 2026-10-22): buffs on one side, debuffs on the other (Hud.BuffSide),
@@ -829,6 +833,16 @@ namespace RuneSkin.PlayerHud
 
         // Screen y (pixels, bottom-up) of the strip top incl. a reserved status row; 0 while the HUD is hidden.
         public float ReservedScreenTop => _childrenOn && isActiveAndEnabled ? _reservedTop : 0f;
+
+        // Drawn strip box in screen px (bottom-up; top without the reserved inset) and the keep-out gap of the bottom
+        // HUD elements (harness: strip-clear checks); 0 while the HUD is hidden.
+        public float StripTopPx => _childrenOn && isActiveAndEnabled ? _stripTopPx : 0f;
+        public float StripLeftPx => _stripLeftPx;
+        public float StripRightPx => _stripRightPx;
+        public float ClearGapPx => _clearGapPx;
+
+        // Applied lift per tracked bottom element, screen px (harness, diagnostics).
+        public IEnumerable<KeyValuePair<string, float>> ClearLifts() => _clear.Lifts();
 
         // Strip hotbar cell i (harness, drop tests).
         public RectTransform HotbarCell(int i) => _hudStrip?.HotbarRect(i);
