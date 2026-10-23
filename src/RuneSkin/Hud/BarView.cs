@@ -66,6 +66,9 @@ namespace RuneSkin.PlayerHud
         private float _insetL, _insetR, _insetB, _insetT, _h;
         private float _length = -1f;
         private float _lagValue = -1f, _lagHold, _lastCur = -1f;
+        // Smoothed fill share (0..1) drawn this frame: eases toward the live value (BarFill.Smooth), so a small pool
+        // moves pixel by pixel instead of in whole-point steps (user 2026-10-23); -1 = snap on the next frame.
+        private float _shownShare = -1f, _shownVel;
         private float _shownCur = -1f, _shownAvail = -1f, _shownExtra = -1f;
         private int _shownStripes = -1;
         private string _shownFill, _shownOverlaySprite;
@@ -396,7 +399,8 @@ namespace RuneSkin.PlayerHud
             // Damage-lag ghost: absolute value, holds then eases down; heals and max changes never create one.
             // Rising value (regen, heal) snaps the ghost to the fill: a ghost only ever follows a decrease (user live
             // test 2026-10-22: a ghost easing after an earlier hit read as a trail while the bar refilled).
-            if (_lagValue < 0f || cur >= _lagValue || cur > _lastCur + 0.001f) { _lagValue = cur; _lagHold = 0f; }
+            var rising = _lagValue < 0f || cur >= _lagValue || cur > _lastCur + 0.001f;
+            if (rising) { _lagValue = cur; _lagHold = 0f; }
             else
             {
                 if (cur < _lastCur - 0.001f) _lagHold = ThemeTokens.GetFloat("time.hud.lag.hold", 0.6f);
@@ -409,6 +413,13 @@ namespace RuneSkin.PlayerHud
             }
             _lagValue = Mathf.Min(_lagValue, max);
             _lastCur = cur;
+            // drawn fill: the live float value eased over BarFxConfig.FillSmoothing (numbers stay exact, the damage-lag
+            // ghost keeps its own hold / ease and never sits under the drawn fill)
+            _shownShare = BarFill.Smooth(_shownShare, ref _shownVel, cur / max, Time.unscaledDeltaTime, BarFxConfig.FillSmoothSeconds); // unscaled: eases in a paused game too
+            var shown = _shownShare * max;
+            // a heal / regen snaps the ghost to the DRAWN fill (no ghost ahead of a rising fill); a hit keeps it at least
+            // at the drawn fill while the fill eases down
+            _lagValue = rising ? Mathf.Min(shown, max) : Mathf.Max(_lagValue, Mathf.Min(shown, max));
 
             var fillToken = tint ?? _fillColor;
             if (fillToken != _shownFill || inert != _shownInert)
@@ -418,8 +429,8 @@ namespace RuneSkin.PlayerHud
                 _fill.color = ThemeTokens.GetColor(inert ? "color.hud.inert" : fillToken, Color.white);
             }
             {
-                var fillW = l * cur / max;
-                Place(_fill, 0f, HudMath.ClippedEnd(fillW, l, _overFill), cur > 0f);
+                var fillW = l * shown / max;
+                Place(_fill, 0f, HudMath.ClippedEnd(fillW, l, _overFill), shown > 0f);
                 var mode = EdgeMode;
                 if (_edge) Edge(_edge, fillW, 0f, _h, mode == 2 && cur > 0f && fillW < l - 0.5f);
                 if (_front && mode != 0 && _front.gameObject.activeSelf) _front.gameObject.SetActive(false);
@@ -440,7 +451,7 @@ namespace RuneSkin.PlayerHud
                     }
                 }
                 var lagW = l * _lagValue / max;
-                Place(_lag, 0f, HudMath.ClippedEnd(lagW, l, _overLag), _lagValue > cur + 0.01f);
+                Place(_lag, 0f, HudMath.ClippedEnd(lagW, l, _overLag), _lagValue > shown + 0.01f);
                 HudMath.Reserved(avail, max, l, out var rs, out var rw);
                 var reserve = rw >= 0.5f && !Plain;
                 Place(_reserved, rs, rw, reserve);
@@ -500,7 +511,7 @@ namespace RuneSkin.PlayerHud
                     PlaceOverlay();
                 }
             }
-            if (_fx) FxRender(cur, max, fillToken, inert);
+            if (_fx) FxRender(cur, shown, max, fillToken, inert);
             else if (ShieldPerimeter && _sheen)
             {
                 Perimeter(_shieldValue, max, l);
@@ -729,7 +740,7 @@ namespace RuneSkin.PlayerHud
             if (!Mathf.Approximately(ga, _fxGlowAspect)) { _fxGlowAspect = ga; _fxGlowMat.SetFloat(PAspect, ga); }
         }
 
-        private void FxRender(float cur, float max, string fillToken, bool inert)
+        private void FxRender(float cur, float shown, float max, string fillToken, bool inert)
         {
             var color = inert ? "color.hud.inert" : fillToken == _fillColor ? _fxColorToken : fillToken;
             if (color != _fxColor)
@@ -737,9 +748,9 @@ namespace RuneSkin.PlayerHud
                 _fxColor = color;
                 FxSetColor(PFillColor, ThemeTokens.GetColor(color, Color.white));
             }
-            var f = Mathf.Clamp01(cur / max);
-            if (Mathf.Abs(f - _fxFill) > 0.0001f) { _fxFill = f; FxSet(PFill, f); }
-            var lag = Mathf.Clamp01(Mathf.Max(_lagValue, cur) / max);
+            var f = Mathf.Clamp01(shown / max);
+            if (Mathf.Abs(f - _fxFill) > 0.00001f) { _fxFill = f; FxSet(PFill, f); }
+            var lag = Mathf.Clamp01(Mathf.Max(_lagValue, shown) / max);
             if (Mathf.Abs(lag - _fxLag) > 0.0001f) { _fxLag = lag; FxSet(PLag, lag); }
             // the living look only for the bar's own pool (an energy shield shown in the HP window stays plain)
             FxEvents(fillToken == _fillColor && !inert ? _fxPool : BarFxPool.Plain, cur, max);

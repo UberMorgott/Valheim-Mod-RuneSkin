@@ -33,6 +33,7 @@
     <Compile Include="..\..\src\RuneSkin\Hud\StripClearMath.cs" Link="Linked\StripClearMath.cs" />
     <Compile Include="..\..\src\RuneSkin\Hud\GaugeState.cs" Link="Linked\GaugeState.cs" />
     <Compile Include="..\..\src\RuneSkin\Hud\BarFxState.cs" Link="Linked\BarFxState.cs" />
+    <Compile Include="..\..\src\RuneSkin\Hud\BarFill.cs" Link="Linked\BarFill.cs" />
     <Compile Include="..\..\src\RuneSkin\Restyle\PanelMath.cs" Link="Linked\PanelMath.cs" />
     <Compile Include="..\..\src\RuneSkin\Restyle\LabelFit.cs" Link="Linked\LabelFit.cs" />
     <Compile Include="..\..\src\RuneSkin\Restyle\LayoutMath.cs" Link="Linked\LayoutMath.cs" />

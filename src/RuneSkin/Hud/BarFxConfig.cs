@@ -15,6 +15,11 @@ namespace RuneSkin.PlayerHud
         public static ConfigEntry<bool> EitrOn { get; private set; }
         public static ConfigEntry<float> EitrIntensity { get; private set; }
         public static ConfigEntry<float> Speed { get; private set; }
+        public static ConfigEntry<float> FillSmoothing { get; private set; }
+
+        // Seconds the drawn fill takes to cover 95 % of a value change (BarFill.Smooth); theme default
+        // time.hud.bar.smooth when the config is not bound.
+        public static float FillSmoothSeconds => FillSmoothing?.Value ?? ThemeTokens.GetFloat("time.hud.bar.smooth", 0.25f);
 
         internal static void Bind(ConfigFile config)
         {
@@ -32,6 +37,9 @@ namespace RuneSkin.PlayerHud
                 "Strength of the eitr bar effects (0 = plain fill, 1 = approved look).", new AcceptableValueRange<float>(0f, 1.5f)));
             Speed = config.Bind("HudBars", "EffectSpeed", 1f, new ConfigDescription(
                 "Animation speed of the living bar fills (all bars).", new AcceptableValueRange<float>(0.25f, 3f)));
+            FillSmoothing = config.Bind("HudBars", "FillSmoothing", ThemeTokens.GetFloat("time.hud.bar.smooth", 0.25f), new ConfigDescription(
+                "Seconds a bar fill takes to glide to a new value (HP / stamina / eitr; 0 = jump). The numbers always show the exact value.",
+                new AcceptableValueRange<float>(0f, 1f)));
         }
 
         // Live on/off and intensity of a pool's effects (Plain = always off).
