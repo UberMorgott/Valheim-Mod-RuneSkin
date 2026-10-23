@@ -81,6 +81,11 @@ namespace RuneSkin.InventoryScreen
         private static bool _opaqueClear;
         private readonly List<Light> _worldLights = new List<Light>();
         private readonly List<Light> _swapped = new List<Light>();
+        // The rig's key / fill / rim lights: enabled only inside Render. A light's culling mask does not keep it off the
+        // world under the main camera's deferred path (Unity supports only 4 excluded layers there; the rig excludes 31),
+        // so lights left enabled lit the whole world while the inventory was open (user 2026-10-23: "as if day comes";
+        // run 20261023-161531 hud2 vs hud2-inv: world strip luma 209 -> 224, blue +35, i.e. a warm-white light added).
+        private readonly List<Light> _rigLights = new List<Light>();
 
         public static CharacterPreview Create(RectTransform parent, string name)
         {
@@ -291,6 +296,8 @@ namespace RuneSkin.InventoryScreen
             l.shadows = LightShadows.None;
             l.cullingMask = 1 << _layer;
             l.renderMode = LightRenderMode.ForcePixel;
+            l.enabled = false; // only while the preview camera renders (Render)
+            _rigLights.Add(l);
         }
 
         private void MakeTexture(int w, int h)
@@ -342,6 +349,7 @@ namespace RuneSkin.InventoryScreen
             _camera = null;
             _player = null;
             _worldLights.Clear();
+            _rigLights.Clear();
             _applied = -1;
         }
 
@@ -454,7 +462,7 @@ namespace RuneSkin.InventoryScreen
             _camera.backgroundColor = clear;
         }
 
-        // Time of day / weather independent: world directional lights off, fog off, flat ambient for this render only.
+        // Time of day / weather independent: world directional lights off, rig lights on, fog off, flat ambient for this render only.
         private void Render()
         {
             var fog = RenderSettings.fog;
@@ -474,10 +482,14 @@ namespace RuneSkin.InventoryScreen
                 RenderSettings.ambientMode = AmbientMode.Flat;
                 RenderSettings.ambientLight = ThemeTokens.GetColor("color.inv.preview.ambient", new Color(0.36f, 0.34f, 0.32f));
                 RenderSettings.ambientIntensity = 1f;
+                foreach (var l in _rigLights)
+                    if (l) l.enabled = true;
                 _camera.Render();
             }
             finally
             {
+                foreach (var l in _rigLights)
+                    if (l) l.enabled = false;
                 foreach (var l in _swapped)
                     if (l) l.enabled = true;
                 _swapped.Clear();
