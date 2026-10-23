@@ -812,7 +812,7 @@
     { "token": "size.hud.strip.margin", "value": 4 },
     { "token": "size.hud.strip.status.gap", "value": 8 },
     { "token": "share.hud.strip.glow", "value": 1.3 },
-    { "token": "share.hud.strip.icon", "value": 0.72 },
+    { "token": "share.hud.strip.icon", "value": 0.8 },
     { "token": "share.hud.strip.ghost", "value": 0.62 },
     { "token": "share.hud.strip.seat", "value": 0 },
     { "token": "share.hud.strip.plate", "value": 0.7 },
