@@ -14,7 +14,7 @@ namespace RuneSkin.Screens
     // Pause menu (Esc), family "Menu". The vanilla Menu keeps its objects, fields and logic (Menu.cs:120-403); RuneSkin
     // restyles it in place after Menu.Start (scene object, Start hides it and builds navigation, Menu.cs:120-134) and
     // re-applies on every Menu.Show (Menu.cs:221-246), which catches entries other mods add later (idempotent: marks
-    // skip unchanged graphics). Runs after AugaSkin, whose Menu.Start postfix adds the Compendium entry.
+    // skip unchanged graphics).
     // Installed only when RuneSkin owns "Menu" (Plugin.PatchFamilies).
     [HarmonyPatch]
     public static class MenuAdapter
@@ -27,13 +27,11 @@ namespace RuneSkin.Screens
         [HarmonyPatch(typeof(Menu), nameof(Menu.Start))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]
-        [HarmonyAfter(ModCompat.AugaSkinGuid)]
         private static void Start_Postfix(Menu __instance) => Apply(__instance);
 
         [HarmonyPatch(typeof(Menu), nameof(Menu.Show))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]
-        [HarmonyAfter(ModCompat.AugaSkinGuid)]
         private static void Show_Postfix(Menu __instance)
         {
             Apply(__instance);

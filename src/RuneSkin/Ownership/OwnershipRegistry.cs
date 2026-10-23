@@ -4,10 +4,9 @@ using RuneSkin.Theme;
 namespace RuneSkin.Ownership
 {
     // Screen families are the ownership unit: each family is styled by exactly one skin. RuneSkin decides its set
-    // once in Awake, BEFORE AugaSkin's Awake (AugaSkin soft-depends on RuneSkin and asks Skin.IsOwned before its
-    // Harmony patching), and never changes it in the session: a change needs a restart, so no skin ever hands a
-    // half-mutated screen back. A requested family is owned only when its theme assets passed the preflight
-    // (otherwise the old skin keeps it), unless RequireAssets is off (dev runs before the art bundle exists).
+    // once in Awake (other mods may ask Skin.IsOwned from their own Awake) and never changes it in the session: a change
+    // needs a restart, so a screen is never handed back half-mutated. A requested family is owned only when its theme
+    // assets passed the preflight (otherwise the vanilla look stays), unless RequireAssets is off (dev runs before the art bundle exists).
     public static class OwnershipRegistry
     {
         public const string Menu = "Menu";

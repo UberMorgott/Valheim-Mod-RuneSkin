@@ -20,15 +20,15 @@ namespace RuneSkin.Tests
         [InlineData("RuneSkin", AssemblyKind.Own)]
         [InlineData("EpicLoot", AssemblyKind.Foreign)]
         [InlineData("Jotunn", AssemblyKind.Foreign)]
-        [InlineData("AugaSkin", AssemblyKind.Foreign)]
+        [InlineData("OtherSkin", AssemblyKind.Foreign)]
         public void AssembliesAreClassified(string asm, AssemblyKind want) => Assert.Equal(want, Classify(asm));
 
         [Fact]
         public void OptOutListIsCaseInsensitiveAndTrimmed()
         {
-            var set = ParseList(" AugaSkin, BA_WorldBossBar ,,");
+            var set = ParseList(" OtherSkin, BA_WorldBossBar ,,");
             Assert.Equal(2, set.Count);
-            Assert.Contains("augaskin", set);
+            Assert.Contains("otherskin", set);
             Assert.Contains("BA_WorldBossBar", set);
             Assert.Empty(ParseList(null));
         }
@@ -64,7 +64,7 @@ namespace RuneSkin.Tests
             Assert.Equal(SkinFamilies.EpicLootBoard, board.Family);
         }
 
-        // A precise family the other skin keeps blocks the subtree (no generic restyle on top of AugaSkin's).
+        // A precise family the other skin keeps blocks the subtree (no generic restyle on top of its look).
         [Fact]
         public void UnownedPreciseFamilyBlocks()
         {
@@ -141,7 +141,7 @@ namespace RuneSkin.Tests
         [InlineData("Buy", null)]
         public void BoardTabsMapToKitGlyphs(string tab, string want) => Assert.Equal(want, BoardGlyph(tab));
 
-        // Stable family names (AugaSkin asks for them by string) and the shipped theme declares each one with its roles.
+        // Stable family names (other mods ask for them by string) and the shipped theme declares each one with its roles.
         [Fact]
         public void M7FamiliesAreDeclaredInTheTheme()
         {

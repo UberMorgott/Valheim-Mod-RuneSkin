@@ -321,7 +321,7 @@ namespace RuneSkin.InventoryScreen
 
         // ---------------------------------------------------------------- per frame
 
-        // InventoryGui.Update postfix, after EAQS and AugaSkin.
+        // InventoryGui.Update postfix, after EAQS.
         public void Frame()
         {
             // Closing (animator "visible" already off, IsVisible still true for a frame): no relayout - Hide closed the

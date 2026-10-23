@@ -298,9 +298,26 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
       unknown = 0 in every family.
 - [ ] mod-updaters-vps: mods.json AugaSkin "disabled", drop `plugins\AugaSkin` + cfg from `$clientOnly`, add cfg to
       `$orphanCfgs`; `-Only` never deletes a whole mod -> full `valheim-pack.ps1 -SkipUpdate -Upload` (user OK) removes it.
-- [ ] Clean references: RuneSkin HarmonyAfter("morgott.valheim.augaskin") (harmless, remove), Ownership comments, Plugin.cs
-      "another skin (AugaSkin) yields" cfg texts; MorgottTweaks HarmonyBefore / comments; Vaettir RarityFrames / HudModes
-      AugaSkin template notes; harness Auga layer.
+- [x] Clean references (RuneSkin, 2026-10-23): ModCompat.AugaSkinGuid + every HarmonyAfter on it gone, Ownership / Plugin
+      bootstrap comments, 42 cfg descriptions without "another skin (AugaSkin) yields", ModUiOptOut default
+      "BossAwakening,BA_WorldBossBar", old AugaActiveEffects exclusion dropped; tests use a neutral foreign name.
+- [ ] Other repos (owners' tracks): MorgottTweaks AlchemistGem HarmonyBefore("morgott.valheim.augaskin") + contract comments
+      (ShieldShare / EnergyShield / TrashSlot / AuraIcons), BossAwakening RarityFrames HarmonyAfter + HudModes notes, Almanac
+      Helpers comment: all no-ops without AugaSkin.
+- [x] Standalone fixes (user 2026-10-23 "RuneSkin fully standalone"): AlmanacSkin refresh passes classify by the journal's
+      original sprite (a styled well read as content and was reverted to Almanac's item_background: Description /
+      requirement cells), BadgeDock moves a corner badge right until it clears its button's rendered labels (changelog "!"
+      over "Изменения"), stats hover logged. Harness (tools 2ef3804..9f6c844): 69-almanac counts drawn images + blames
+      RuneSkin, m5 text scope knows RuneSkinHud, m6-event removes leftover bosses, enemybars clears leftover creatures +
+      refreshes the engaged bar + waits for Vaettir's world-boss broadcast + polls the boss-bar restore, preview-leak one-time
+      allowance (batch A objects all gone again), FreeSlot counts vanilla grid cells (EAQS rows), hud2 / preview / m6 build
+      free a cell, p-compendium nav read with the menu up, m5 changelog Esc polled + one retry, ClearLeftoverCreatures
+      before m1 / m6 / m6c. Runs (AugaSkin parked): 20261023-093222 602/13, -095522 608/6 (both cut at the 600 s world
+      timeout during stats, not a crash: full sets need -WorldTimeoutSec 2400), -105831 637/26 (hud2 = strip-scale track's
+      0.19 expectations; rest = grid-full / shared-world pollution, fixed in the harness).
+      Targeted (user rule: only what changed) runs 20261023-132956 (m1 m2 info m5 m6 m6c m7 p preview enemybars 69-almanac)
+      421/4 and -160807 (m5 preview enemybars) 153/3: remaining = other tracks (eb-speech npctext not on main) + one
+      eb tier pick flake (harness: tier passes clear leftovers). 0.18.2.
 
 ## 0.9.3 minimap fix (2026-10-22, user priority)
 

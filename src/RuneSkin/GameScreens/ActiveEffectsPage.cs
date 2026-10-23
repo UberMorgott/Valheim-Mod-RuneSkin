@@ -11,10 +11,10 @@ using UnityEngine.UI;
 
 namespace RuneSkin.GameScreens
 {
-    // Compendium "Active effects" page (family Compendium; AugaSkin 2.2.21 yields its own page to RuneSkin >= 0.9.1).
+    // Compendium "Active effects" page (family Compendium).
     // Vanilla writes one text blob of names and tooltips (TextsDialog.AddActiveEffects, TextsDialog.cs:230-253); here it
     // is a list in the reading pane: one row per active effect (row_recipe_* plate, icon in a slot_cell_recess socket,
-    // name display serif, time left muted, effect text body sans). Sources, all live (same contract as AugaSkin's page):
+    // name display serif, time left muted, effect text body sans). Sources, all live:
     // - foods (Player.GetFoods): item icon and name, current health / stamina / eitr of the food (Food.m_health ...,
     //   decayed by Player.UpdateFood), regen per tick (SharedData.m_foodRegen), m_time left;
     // - status effects (SEMan.GetStatusEffects): an SE with a public `IEnumerable MtActiveEffectRowsV1()` (soft contract,

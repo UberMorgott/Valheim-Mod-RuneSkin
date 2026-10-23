@@ -188,10 +188,14 @@ namespace RuneSkin.ModScreens
         {
             var t = image.transform;
             reason = null;
+            // Refresh passes see RuneSkin's own sprite on an already styled image: classify by the original one (journal),
+            // else a well (frame_inset) reads as "content" and the journal reverts it to Almanac's item_background (run
+            // 20261023-093222: Description + requirement cells back on the vanilla art after the trophies refresh).
+            var src = image.GetComponent<SkinMark>() is SkinMark sm && sm.HasSprite ? sm.OrigSprite : image.sprite;
             if (t.parent == root && t.name == "bkg") { reason = "Almanac window background (replaced by the panel stack)"; return "skip"; }
             if (t.parent == root && t.name == "darken") { reason = "Almanac transparent-mode dim (kept)"; return "skip"; }
             // Grid / text viewports: clip graphic drawn with the vanilla dark field (InputFieldBackground) -> the well.
-            if ((image.GetComponent<Mask>() is Mask mask && mask.showMaskGraphic || image.GetComponent<RectMask2D>()) && image.sprite && image.sprite.name.StartsWith("InputFieldBackground", StringComparison.Ordinal))
+            if ((image.GetComponent<Mask>() is Mask mask && mask.showMaskGraphic || image.GetComponent<RectMask2D>()) && src && src.name.StartsWith("InputFieldBackground", StringComparison.Ordinal))
             {
                 reason = "grid / text viewport (drawn clip graphic: RectMask2D or shown Mask) as a well";
                 return "craft.well";
@@ -219,13 +223,13 @@ namespace RuneSkin.ModScreens
             if (target) { reason = "Almanac button"; return "button"; }
             // Content panes (GridView / TextView / lottery roots, the description's info list): sprite-less dark fills in
             // the bundle -> the well (Codex r3: a solid black block otherwise).
-            if (!image.sprite && (t.parent == root || t.parent && t.parent.name == "Description") && (t.name == "ListView" || t.name == "ButtonView" || t.name == "TextView" || t.name == "GamblePanel"))
+            if (!src && (t.parent == root || t.parent && t.parent.name == "Description") && (t.name == "ListView" || t.name == "ButtonView" || t.name == "TextView" || t.name == "GamblePanel"))
             {
                 reason = "Almanac content pane (sprite-less dark fill) as a well";
                 return "craft.well";
             }
-            if (!image.sprite) { reason = "sprite-less container / hit area (kept)"; return "skip"; }
-            var sprite = image.sprite.name;
+            if (!src) { reason = "sprite-less container / hit area (kept)"; return "skip"; }
+            var sprite = src.name;
             if (sprite.StartsWith("panel_separator", StringComparison.Ordinal) || sprite.StartsWith("BraidLine", StringComparison.Ordinal))
             {
                 reason = $"Almanac divider '{sprite}'";
@@ -253,7 +257,7 @@ namespace RuneSkin.ModScreens
         [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Awake))]
         [HarmonyPostfix]
         [HarmonyPriority(PatchOrder.Almanac)]
-        [HarmonyAfter(AlmanacSkin.PluginGuid, ModCompat.AugaSkinGuid)]
+        [HarmonyAfter(AlmanacSkin.PluginGuid)]
         private static void Awake_Postfix(InventoryGui __instance)
         {
             try { AlmanacSkin.Attach(__instance, Harmony); }

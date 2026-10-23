@@ -15,7 +15,6 @@ namespace RuneSkin.InfoScreens
         [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Awake))]
         [HarmonyPostfix]
         [HarmonyPriority(PatchOrder.Skills)]
-        [HarmonyAfter(ModCompat.AugaSkinGuid)]
         private static void Awake_Postfix(InventoryGui __instance)
         {
             try { SkillsSkin.Attach(__instance); }
@@ -41,7 +40,6 @@ namespace RuneSkin.InfoScreens
         [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Awake))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]
-        [HarmonyAfter(ModCompat.AugaSkinGuid)]
         private static void Awake_Postfix(InventoryGui __instance)
         {
             try { TrophiesSkin.Attach(__instance); }

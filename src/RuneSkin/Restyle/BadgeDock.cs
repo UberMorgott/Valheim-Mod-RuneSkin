@@ -1,4 +1,5 @@
 using RuneSkin.Theme;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,6 +14,7 @@ namespace RuneSkin.Restyle
     public sealed class BadgeDock : MonoBehaviour, IRevertible
     {
         private RectTransform _button;
+        private TMP_Text[] _labels;
         private Image _plate;
         private bool _saved;
         private Vector2 _aMin, _aMax, _pivot, _pos, _size;
@@ -50,6 +52,7 @@ namespace RuneSkin.Restyle
             }
             _button.GetWorldCorners(Corners);
             var corner = Corners[2]; // top-right
+            corner = ClearOfLabels(corner, rt);
             if ((rt.position - corner).sqrMagnitude > 0.01f) rt.position = corner;
             if (_plate)
             {
@@ -57,6 +60,30 @@ namespace RuneSkin.Restyle
                 if (pr.position != rt.position) pr.position = rt.position;
                 if (_plate.enabled != isActiveAndEnabled) _plate.enabled = isActiveAndEnabled;
             }
+        }
+
+        // A label running up to (or past) the button's right edge would sit under the corner badge (run 20261023-095522:
+        // the changelog toggle's "!" over "Изменения"): the badge moves right along the corner row until it clears every
+        // rendered label of its button.
+        private Vector3 ClearOfLabels(Vector3 corner, RectTransform rt)
+        {
+            if (_labels == null) _labels = _button.GetComponentsInChildren<TMP_Text>(true);
+            var half = rt.rect.width * 0.5f * rt.lossyScale.x;
+            var x = corner.x;
+            for (var i = 0; i < _labels.Length; i++)
+            {
+                var t = _labels[i];
+                if (!t || !t.isActiveAndEnabled || t.transform.IsChildOf(transform) || string.IsNullOrEmpty(t.text)) continue;
+                var b = t.textBounds;
+                if (b.size.x <= 0.01f || b.size.x > 1e6f) continue;
+                var min = t.transform.TransformPoint(b.min);
+                var max = t.transform.TransformPoint(b.max);
+                var overlapY = corner.y - half < Mathf.Max(min.y, max.y) && corner.y + half > Mathf.Min(min.y, max.y);
+                var right = Mathf.Max(min.x, max.x);
+                if (overlapY && x - half < right && x + half > Mathf.Min(min.x, max.x)) x = right + half + 2f * rt.lossyScale.x;
+            }
+            corner.x = x;
+            return corner;
         }
 
         private void PlateBehind(RectTransform rt, float size)
