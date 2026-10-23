@@ -324,7 +324,10 @@ namespace RuneSkin.InventoryScreen
         // InventoryGui.Update postfix, after EAQS and AugaSkin.
         public void Frame()
         {
-            if (!InventoryGui.IsVisible() || !_canvas || !Player.m_localPlayer)
+            // Closing (animator "visible" already off, IsVisible still true for a frame): no relayout - Hide closed the
+            // container / backpack, a recompute would move the centre column mid-fade (run 20261023-161531: 576 -> 304).
+            var closing = _gui && _gui.m_animator && !_gui.m_animator.GetBool(AnimVisible);
+            if (closing || !InventoryGui.IsVisible() || !_canvas || !Player.m_localPlayer)
             {
                 RestoreQuickBar();
                 ClearBand();
@@ -423,6 +426,24 @@ namespace RuneSkin.InventoryScreen
             foreach (var go in _parked)
                 if (go) go.SetActive(true);
             _parked.Clear();
+        }
+
+        // Drag visual on top of everything (user defect 2026-10-23: the icon slid under the strip): its own Canvas with
+        // override sorting one above the strip (and the GUI root), no GraphicRaycaster (the drop raycast still hits the
+        // cell under the pointer).
+        public static void DragOnTop(InventoryGui gui)
+        {
+            var go = gui ? gui.m_dragGo : null;
+            if (!go) return;
+            var root = gui.GetComponentInParent<Canvas>();
+            root = root ? root.rootCanvas : null;
+            var order = root ? root.sortingOrder : 0;
+            var strip = PlayerHud.HudCluster.Instance;
+            if (strip) order = Mathf.Max(order, strip.SortingOrder);
+            var c = go.GetComponent<Canvas>() ?? go.AddComponent<Canvas>();
+            c.overrideSorting = true;
+            c.sortingOrder = order + 2;
+            if (root) c.sortingLayerID = root.sortingLayerID;
         }
 
         public void OnHide()

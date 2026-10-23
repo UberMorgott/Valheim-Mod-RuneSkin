@@ -290,6 +290,9 @@ namespace RuneSkin.PlayerHud
         // While the inventory is open the strip sorts above the GUI canvas (its hotbar is the inventory's row 0 and a
         // drop target): otherwise InventoryGui's full-screen root/dropButton (drop to the ground) takes the press over
         // the strip (run 20261022-194551: raycast top = root/dropButton).
+        // Sorting order of the strip's canvas (the inventory drag visual sorts above it, InventorySkin.DragOnTop).
+        public int SortingOrder => _canvas && _canvas.overrideSorting ? _canvas.sortingOrder : 0;
+
         private void AboveInventory()
         {
             if (!_canvas) return;
@@ -687,7 +690,7 @@ namespace RuneSkin.PlayerHud
         private RectTransform _chatWindow;
         private Vector2 _chatHome;
         private float _chatTarget;
-        private bool _chatPending;
+        private bool _chatPending, _chatWasActive;
         private readonly List<Graphic> _chatGraphics = new List<Graphic>(16);
         private readonly Vector3[] _corners = new Vector3[4];
 
@@ -700,10 +703,17 @@ namespace RuneSkin.PlayerHud
 
         private void ChatTick()
         {
-            if (!_chatPending) return;
             var chat = Chat.instance;
             var w = chat ? chat.m_chatWindow : null;
-            if (!w || !w.gameObject.activeInHierarchy) return;
+            var active = w && w.gameObject.activeInHierarchy;
+            // every time the chat shows, measure again (run 20261023-161531: measured once on a stale canvas scale
+            // right after a resolution change, then never again)
+            if (active && !_chatWasActive) _chatPending = true;
+            _chatWasActive = active;
+            if (!_chatPending || !active) return;
+            var rootCanvas = w.GetComponentInParent<Canvas>();
+            rootCanvas = rootCanvas ? rootCanvas.rootCanvas : null;
+            if (rootCanvas && Mathf.Abs(rootCanvas.scaleFactor - ResponsiveContext.GuiFactor) > 0.001f) return; // CanvasScaler not caught up
             if (w != _chatWindow)
             {
                 _chatWindow = w;

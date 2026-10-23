@@ -56,6 +56,17 @@ namespace RuneSkin.InventoryScreen
         [HarmonyPostfix]
         private static void Hide_Postfix() => InventorySkin.Instance?.OnHide();
 
+        // The dragged item (InventoryGui.m_dragGo, InventoryGui.cs:2245, a child of the inventory under the GUI root
+        // canvas) drew UNDER the HUD strip, whose canvas sorts above the GUI while the inventory is open (drop target,
+        // HudCluster.AboveInventory): the drag visual gets its own override-sorted canvas above the strip.
+        [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.SetupDragItem))]
+        [HarmonyPostfix]
+        private static void SetupDragItem_Postfix(InventoryGui __instance)
+        {
+            try { InventorySkin.DragOnTop(__instance); }
+            catch (System.Exception e) { Fault(e); }
+        }
+
         // The panels parked after the close fade come back before vanilla Show touches them (InventorySkin.Fade).
         [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Show))]
         [HarmonyPrefix]
