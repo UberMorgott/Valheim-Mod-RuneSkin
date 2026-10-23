@@ -129,18 +129,24 @@ Shader "RuneSkin/UI Bar"
                 float inFill = 1.0 - smoothstep(_Fill - px, _Fill + px, x);
                 float inLag = (1.0 - smoothstep(_Lag - px, _Lag + px, x)) * (1.0 - inFill);
                 float3 body = cylinder(_FillColor.rgb, v, _HiAmount);
-                // straight-cut end with a thin lit rim (2 px inside the cut)
-                float rim = smoothstep(_Fill - 3.0 * px, _Fill - px, x) * inFill;
-                body = lerp(body, lerp(body, float3(1, 1, 1), 0.5), rim * _Rim);
+                // straight-cut end (hud-4M3): the last ~14 px of the fill glow a little lighter, a thin dark seam at the
+                // cut against the missing part
+                float pxW = px;                          // one px in x
+                float glowLen = 14.0 * pxW;
+                float endGlow = smoothstep(_Fill - glowLen, _Fill - pxW, x) * inFill;
+                body = lerp(body, saturate(body * 1.22 + 0.03), endGlow * _Rim);
                 // shield sheen over the fill, from the left, shield share long
                 float sh = (1.0 - smoothstep(_Shield - px, _Shield + px, x)) * step(0.0001, _Shield);
                 body += _SheenColor.rgb * _SheenColor.a * sh * (0.6 + 0.8 * exp(-pow((v - _HiPos) / max(0.01, _HiWidth * 1.4), 2.0)));
                 float3 lag = cylinder(_LagColor.rgb, v, _HiAmount * 0.5);
-                float3 miss = cylinder(_MissingColor.rgb, v, _HiAmount * 0.25);
+                // missing part: a flat grey with a little top light (hud-4M3 #747373 -> #656565), no cylinder
+                float3 miss = _MissingColor.rgb * lerp(0.86, 1.06, smoothstep(0.0, 1.0, v));
                 float3 c = body * inFill + lag * inLag + miss * (1.0 - inFill - inLag);
-                // well depth: inner shadow under the top rail and a little over the bottom one
-                c *= 1.0 - _Depth * smoothstep(0.78, 1.0, v);
-                c *= 1.0 - 0.5 * _Depth * (1.0 - smoothstep(0.0, 0.14, v));
+                float seam = smoothstep(_Fill + 2.0 * pxW, _Fill, x) * (1.0 - inFill) * step(0.0005, _Fill) * step(_Fill, 0.9995);
+                c *= 1.0 - 0.6 * seam;
+                // well depth: a narrow inner shadow under the top rail and over the bottom one
+                c *= 1.0 - _Depth * smoothstep(0.9, 1.0, v);
+                c *= 1.0 - 0.6 * _Depth * (1.0 - smoothstep(0.0, 0.08, v));
                 return fixed4(c, 1.0);
             }
 
