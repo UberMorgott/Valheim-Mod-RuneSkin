@@ -8738,7 +8738,7 @@
       "name": "strip7_wing_r",
       "file": "strip7_wing_r.png",
       "size": [
-        668,
+        714,
         190
       ],
       "border": {
@@ -8754,7 +8754,53 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.strip7.wing_r",
-      "notes": "Target panel (user screenshot 2026-10-23, strip-target/spec.md): 4x piece wing-right by the mockup agent, 0.72 = 2.88 sprite px per target px (85 strip units per 59 px cell, 2 px per unit)",
+      "notes": "Target panel (user screenshot 2026-10-23, strip-target/spec.md): 4x piece wing-right by the mockup agent (x 0..879) + the mirrored end of wing-left (its x 30..141: the carved curls and the ring joint), 16 px feathered seam - the target's right wing end under the right end medallion (the cut wing ended short of it); 0.72 = 2.88 sprite px per target px",
+      "atlas": "strip"
+    },
+    {
+      "name": "strip7_field",
+      "file": "strip7_field.png",
+      "size": [
+        691,
+        173
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "hud.strip7.field",
+      "notes": "Target panel bar block interior: Codex 4x repaint of the carved metal field the channels sit in (seamless along x, tiled under the outer bar-frame piece; channels / sockets drawn live on top)",
+      "atlas": "strip"
+    },
+    {
+      "name": "strip7_rim",
+      "file": "strip7_rim.png",
+      "size": [
+        230,
+        75
+      ],
+      "border": {
+        "left": 69,
+        "bottom": 0,
+        "right": 69,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": false,
+      "token": "hud.strip7.rim",
+      "notes": "Target panel channel rim: Codex 4x repaint of the HP channel pill outline (dark border + teal line), interior transparent; 9-slice ends 96 source px, drawn around every bar (HP, stamina, eitr, adrenaline)",
       "atlas": "strip"
     },
     {

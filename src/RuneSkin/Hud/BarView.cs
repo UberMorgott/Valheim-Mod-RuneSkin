@@ -290,6 +290,26 @@ namespace RuneSkin.PlayerHud
             _length = -1f;
         }
 
+        // Target panel channel rim (user screenshot 2026-10-23): the pill outline around the frameless window (9-slice,
+        // its ends fixed, the middle stretched), ox / oy units outside the bar on each side; over the fill, under the
+        // value text and the shield glow. Follows the bar's size through its anchors (no per-frame work).
+        private Image _rim;
+
+        public void Rim(string spriteToken, string colorToken, float ox, float oy, float artScale)
+        {
+            if (_rim || !ThemeTokens.GetSprite(spriteToken)) return;
+            _rim = _art.Image("Rim", Root, spriteToken, colorToken, Image.Type.Sliced);
+            _art.Track(_rim, artScale);
+            _rim.raycastTarget = false;
+            var rt = _rim.rectTransform;
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.offsetMin = new Vector2(-ox, -oy);
+            rt.offsetMax = new Vector2(ox, oy);
+            rt.SetSiblingIndex(_window.GetSiblingIndex() + 1);
+        }
+
         // Fixed outer width: window = outer - caps (readable floor size.hud.bar.min).
         public void SetOuterWidth(float outer)
         {

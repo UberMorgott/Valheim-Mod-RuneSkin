@@ -169,7 +169,7 @@ namespace RuneSkin
                 new AcceptableValueRange<float>(0.6f, 1.6f)));
             UltrawideBox = Config.Bind("Hud", "UltrawideBox", true,
                 "On 21:9 and wider screens the HUD corners are those of a centred 16:9 box (off = true screen corners).");
-            StripWidth = Config.Bind("HudStrip", "Span", 0.995f, new ConfigDescription(
+            StripWidth = Config.Bind("HudStrip", "Span", 1f, new ConfigDescription(
                 "Width of the bottom HUD strip (key Span: the old Width was only a cap) as a share of the screen (or of the centred 16:9 box on ultrawide); only the straight wing rails stretch. Its height follows the slot size: hotbar cells = inventory grid cells (theme size.slot x Layout.SkinScale x the game's UI scale).", new AcceptableValueRange<float>(0.5f, 1f)));
             StatusPerRow = Config.Bind("HudStrip", "StatusPerRow", 10, new ConfigDescription(
                 "Status effect icons per row above the HUD strip (buffs on one side, debuffs on the other); a full row wraps upward.", new AcceptableValueRange<int>(1, 30)));

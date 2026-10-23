@@ -167,6 +167,60 @@ namespace RuneSkin.PlayerHud
             o.PotionY = inner - pc / 2f;
             o.Fits = o.FoodShown == i.Food && o.PotionShown == i.Potions;
         }
+        public struct Box
+        {
+            public float X, Y, W, H;
+            public Box(float x, float y, float w, float h) { X = x; Y = y; W = Math.Max(0f, w); H = Math.Max(0f, h); }
+            public float Right => X + W;
+            public float CenterX => X + W / 2f;
+        }
+
+        // Target panel frame pieces (strip-target/spec.md) in strip units, from the layout and the size.hud.strip7.*
+        // tokens (t7(name, fallback)). The small diamonds sit ON a continuous rail (run + stub), no gap.
+        // Bottom = the lowest piece edge (end medallion tips hang below the wing): the strip is placed so it is on screen.
+        public struct Frame
+        {
+            public Box EndL, EndR, WingL, WingR, KnotL, KnotR, RailL, RailR, StubL, StubR, Knot2L, Knot2R;
+            public float Bottom;
+        }
+
+        public static Frame TargetFrame(in Layout l, float width, Func<string, float, float> t7)
+        {
+            var f = new Frame();
+            var w = width;
+            float endW = t7("end.w", 132.5f), endH = t7("end.h", 115.3f), endY = t7("end.y", -10f);
+            f.EndL = new Box(0f, endY, endW, endH);
+            float endRW = t7("end.r.w", endW), endRH = t7("end.r.h", endH), endRY = t7("end.r.y", endY);
+            f.EndR = new Box(w - endRW, endRY, endRW, endRH);
+            float wingH = t7("wing.h", 95f), wingX = t7("wing.x", 85f), wingW = t7("wing.w", 371.7f), wingRW = t7("wing.r.w", 334.2f), wingRR = t7("wing.r.right", 111f);
+            f.WingL = new Box(wingX, 0f, wingW, wingH);
+            f.WingR = new Box(w - wingRR - wingRW, 0f, wingRW, wingH);
+            float knotX = t7("knot.x", 448f), knotW = t7("knot.w", 40.3f), knotY = t7("knot.y", 26f), knotH = t7("knot.h", 43.2f), knotRR = t7("knot.r.right", 436.5f);
+            f.KnotL = new Box(knotX, knotY, knotW, knotH);
+            float knotRW = t7("knot.r.w", knotW), knotRH = t7("knot.r.h", knotH), knotRY = t7("knot.r.y", knotY);
+            f.KnotR = new Box(w - knotRR - knotRW, knotRY, knotRW, knotRH);
+            // Rail runs at the target's own scale (the piece stretched over the target's run: rail.x / rail.r.right), and
+            // a short stub of the same tileable rail under the whole wing-tip diamond up to the run's start: the
+            // diamond's art ends short of its box, so without it a gap showed between diamond and rail (run
+            // 20261023-175632; the run itself must not move or stretch: its wire pattern is pinned to the target).
+            float railX = t7("rail.x", 486f), railY = t7("rail.y", 15.8f), railH = t7("rail.h", 60.6f), railRR = t7("rail.r.right", 474f), tuck = t7("rail.tuck", 6f);
+            f.RailL = new Box(railX, railY, l.BarsX + t7("rail.tuck.l", tuck) - railX, railH);
+            var rx = l.BarsX + l.BarsW - tuck;
+            f.RailR = new Box(rx, t7("rail.r.y", railY), w - railRR - rx, t7("rail.r.h", railH));
+            var stubL = f.KnotL.X;
+            f.StubL = new Box(stubL, railY, railX + t7("rail.stub.lap", 4f) - stubL, railH);
+            var stubR = f.RailR.Right - t7("rail.stub.lap", 4f);
+            f.StubR = new Box(stubR, f.RailR.Y, f.KnotR.Right - stubR, f.RailR.H);
+            float k2dx = t7("knot2.dx", -21.6f), k2y = t7("knot2.y", 47.5f), k2w = t7("knot2.w", 30.5f), k2h = t7("knot2.h", 32.6f);
+            f.Knot2L = new Box(l.BarsX + k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h);
+            f.Knot2R = new Box(l.BarsX + l.BarsW - k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h);
+            f.Bottom = Math.Min(0f, Math.Min(Math.Min(endY, endRY), Math.Min(f.RailL.Y, f.RailR.Y)));
+            return f;
+        }
+
+        // A wing slot [x, x + w] covers a connector diamond when it spans the diamond's centre (the slot hides it).
+        public static bool Covers(float x, float w, in Box knot) => w > 0f && x <= knot.CenterX && x + w >= knot.CenterX;
+
         // n slots over span, space-evenly (n + 1 equal gaps: margins = gaps). Too narrow: gaps shrink to minGap, then the
         // slots scale down together, never below minCell (then they overflow, centred). n = 0: nothing.
         public static void WingSlots(int n, float wantCell, float span, float minGap, float minCell, out float cell, out float gap)

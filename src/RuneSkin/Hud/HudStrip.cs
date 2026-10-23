@@ -26,6 +26,7 @@ namespace RuneSkin.PlayerHud
         private readonly RectTransform _root, _back;
         private RectTransform _front;
         private readonly Image _wingL, _wingR, _bars, _block, _divider, _railL, _railR, _knotL, _knotR, _endL, _endR, _iconHp, _iconSt, _iconEi, _knot2L, _knot2R;
+        private readonly Image _field, _stubL, _stubR;
 
         // Target panel layout (mode.hud.strip.target, user screenshot 2026-10-23, strip-target/spec.md).
         public static bool Target => ThemeTokens.GetFloat("mode.hud.strip.target", 0f) > 0.5f;
@@ -76,18 +77,22 @@ namespace RuneSkin.PlayerHud
             // then the medallions and the cells (BuildFront).
             // Target panel extras (user screenshot 2026-10-23): rail runs and small diamond knots between the wings and the
             // bar block, the wings themselves (fixed pieces, the right one its own art), end medallions over the wing ends.
+            _stubL = Piece("RailStubLeft", _back, "sprite.hud.strip7.rail", Image.Type.Tiled);
+            _stubR = Piece("RailStubRight", _back, Own("sprite.hud.strip7.rail"), Image.Type.Tiled);
             _railL = Piece("RailLeft", _back, "sprite.hud.strip7.rail", Image.Type.Sliced);
             _railR = Piece("RailRight", _back, Own("sprite.hud.strip7.rail"), Image.Type.Sliced);
-            _knotL = Piece("KnotLeft", _back, "sprite.hud.strip7.knot", Image.Type.Simple);
-            _knotR = Piece("KnotRight", _back, Own("sprite.hud.strip7.knot"), Image.Type.Simple);
             _wingL = Piece("WingLeft", _back, "sprite.hud.strip4.wing", Image.Type.Sliced);
             _wingR = Piece("WingRight", _back, ThemeTokens.GetSprite("sprite.hud.strip4.wing.r") ? "sprite.hud.strip4.wing.r" : "sprite.hud.strip4.wing", Image.Type.Sliced);
             _endL = Piece("EndLeft", _back, "sprite.hud.strip7.end", Image.Type.Simple);
             _endR = Piece("EndRight", _back, Own("sprite.hud.strip7.end"), Image.Type.Simple);
+            // the wing-tip diamonds over the rail run and the wing's tip stub (target: the diamond sits on top)
+            _knotL = Piece("KnotLeft", _back, "sprite.hud.strip7.knot", Image.Type.Simple);
+            _knotR = Piece("KnotRight", _back, Own("sprite.hud.strip7.knot"), Image.Type.Simple);
             // small diamonds at the bar-block end of each rail run (target: diamonds at both rail ends)
             _knot2L = Piece("Knot2Left", _back, "sprite.hud.strip7.knot2", Image.Type.Simple);
             _knot2R = Piece("Knot2Right", _back, Own("sprite.hud.strip7.knot2"), Image.Type.Simple);
-            foreach (var img in new[] { _railL, _railR, _knotL, _knotR, _endL, _endR, _knot2L, _knot2R }) img.gameObject.SetActive(Target);
+            foreach (var img in new[] { _stubL, _stubR, _railL, _railR, _knotL, _knotR, _endL, _endR, _knot2L, _knot2R }) img.gameObject.SetActive(Target);
+            if (Target && ThemeTokens.GetSprite("sprite.hud.strip7.field")) _field = Piece("BarField", _back, "sprite.hud.strip7.field", Image.Type.Tiled);
             _bars = Piece("BarBlock", _back, "sprite.hud.strip4.bars", Image.Type.Sliced);
             _iconHp = Piece("IconHealth", _back, "sprite.hud.strip7.icon.hp", Image.Type.Simple);
             _iconSt = Piece("IconStamina", _back, "sprite.hud.strip7.icon.st", Image.Type.Simple);
@@ -311,30 +316,56 @@ namespace RuneSkin.PlayerHud
         // end medallions over them, a small diamond knot and a stretched rail run from each wing to the bar block.
         private static float T7(string name, float fallback) => ThemeTokens.GetFloat("size.hud.strip7." + name, fallback);
 
+        // Lowest frame edge in strip units (<= 0: the end medallion tips hang below the wings); HudCluster places the
+        // strip so this edge sits on the screen bottom.
+        public float FrameBottom { get; private set; }
+
+        private static readonly System.Func<string, float, float> T7Fn = T7;
+
         private void TargetFrame(in StripMath.Layout l)
         {
-            var w = l.RightX + l.RightW;
-            float endW = T7("end.w", 132.5f), endH = T7("end.h", 115.3f), endY = T7("end.y", -10f);
-            Box(_endL.rectTransform, 0f, endY, endW, endH, false);
-            float endRW = T7("end.r.w", endW), endRH = T7("end.r.h", endH), endRY = T7("end.r.y", endY);
-            float wingH = T7("wing.h", 95f), wingX = T7("wing.x", 85f), wingW = T7("wing.w", 371.7f), wingRW = T7("wing.r.w", 334.2f), wingRR = T7("wing.r.right", 111f);
-            Box(_wingL.rectTransform, wingX, 0f, wingW, wingH, false);
-            Box(_wingR.rectTransform, w - wingRR - wingRW, 0f, wingRW, wingH, false);
-            float knotX = T7("knot.x", 448f), knotW = T7("knot.w", 40.3f), knotY = T7("knot.y", 26f), knotH = T7("knot.h", 43.2f), knotRR = T7("knot.r.right", 436.5f);
-            Box(_knotL.rectTransform, knotX, knotY, knotW, knotH, false);
-            float knotRW = T7("knot.r.w", knotW), knotRH = T7("knot.r.h", knotH), knotRY = T7("knot.r.y", knotY);
-            float railX = T7("rail.x", 486f), railY = T7("rail.y", 15.8f), railH = T7("rail.h", 60.6f), railRR = T7("rail.r.right", 474f), tuck = T7("rail.tuck", 6f);
-            Box(_railL.rectTransform, railX, railY, Mathf.Max(0f, l.BarsX + T7("rail.tuck.l", tuck) - railX), railH, false);
-            var rx = l.BarsX + l.BarsW - tuck;
-            float railRY = T7("rail.r.y", railY), railRH = T7("rail.r.h", railH);
-            Box(_railR.rectTransform, rx, railRY, Mathf.Max(0f, w - railRR - rx), railRH, !HasOwn("sprite.hud.strip7.rail"));
+            var f = StripMath.TargetFrame(l, l.RightX + l.RightW, T7Fn);
+            FrameBottom = f.Bottom;
+            Place(_endL, f.EndL, false);
+            // the right end medallion (run 20261023-175632: never placed, it sat at the strip origin over the left one)
+            Place(_endR, f.EndR, !HasOwn("sprite.hud.strip7.end"));
+            Place(_wingL, f.WingL, false);
+            Place(_wingR, f.WingR, false);
+            Place(_knotL, f.KnotL, false);
+            Place(_knotR, f.KnotR, !HasOwn("sprite.hud.strip7.knot"));
+            Place(_railL, f.RailL, false);
+            Place(_railR, f.RailR, !HasOwn("sprite.hud.strip7.rail"));
+            Place(_stubL, f.StubL, false);
+            Place(_stubR, f.StubR, false);
+            Place(_knot2L, f.Knot2L, false);
+            Place(_knot2R, f.Knot2R, !HasOwn("sprite.hud.strip7.knot2"));
+            // a wing slot grown onto the rail run hides the wing-tip diamond under it (the round socket would leave its
+            // corners peeking out)
+            Show(_knotL, !(l.FoodShown > 0 && StripMath.Covers(l.FoodX + (l.FoodShown - 1) * l.FoodStep, l.FoodCell, f.KnotL)));
+            Show(_knotR, !(l.PotionShown > 0 && StripMath.Covers(l.PotionX, l.PotionCell, f.KnotR)));
+            Field(l);
             // pool icons in the bar block (heart / lightning / eitr socket), placed from its left edge
-            float k2dx = T7("knot2.dx", -21.6f), k2y = T7("knot2.y", 47.5f), k2w = T7("knot2.w", 30.5f), k2h = T7("knot2.h", 32.6f);
-            Box(_knot2L.rectTransform, l.BarsX + k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h, false);
-            Box(_knot2R.rectTransform, l.BarsX + l.BarsW - k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h, !HasOwn("sprite.hud.strip7.knot2"));
             Icon(_iconHp, "icon.hp", l.BarsX);
             Icon(_iconSt, "icon.st", l.BarsX);
             Icon(_iconEi, "icon.ei", l.BarsX);
+        }
+
+        private static void Place(Image img, in StripMath.Box b, bool mirrored) => Box(img.rectTransform, b.X, b.Y, b.W, b.H, mirrored);
+
+        private static void Show(Image img, bool on)
+        {
+            on = on && img.sprite;
+            if (img.gameObject.activeSelf != on) img.gameObject.SetActive(on);
+        }
+
+        // The bar block's metal field under the channels (the bar-frame piece is only the outer frame; its interior is
+        // open): stretched over the block between its end knots, under the frame piece.
+        private void Field(in StripMath.Layout l)
+        {
+            if (!_field) return;
+            // tiled along x (a seamless 4x repaint of the target's field), its height = the piece's own
+            float fl = T7("field.l", 112f), fr = T7("field.r", 112f), fb = T7("field.b", 2.9f), ft = T7("field.t", 2.9f);
+            Box(_field.rectTransform, l.BarsX + fl, l.BarsY + fb, l.BarsW - fl - fr, l.BarsH - fb - ft, false);
         }
 
 
