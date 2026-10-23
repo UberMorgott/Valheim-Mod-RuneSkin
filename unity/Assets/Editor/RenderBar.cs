@@ -48,9 +48,12 @@ public static class RenderBar
         m.SetFloat("_Shield", shield);
         m.SetFloat("_Aspect", (float)w / h);
         m.SetColor("_FillColor", fill);
-        m.SetFloat("_Depth", 0.3f); // theme share.hud.bar.fx.depth
+        m.SetFloat("_Depth", 0.45f); // theme share.hud.bar.fx.depth
+        m.SetFloat("_HiPos", 0.72f); // theme share.hud.bar.fx.hi.pos
+        m.SetFloat("_HiWidth", 0.2f); // theme share.hud.bar.fx.hi.width
+        m.SetFloat("_HiAmount", 0.3f); // theme share.hud.bar.fx.hi
         m.SetFloat("_Rim", 1f); // theme share.hud.bar.fx.rim
-        m.SetColor("_MissingColor", new Color(0.431f, 0.431f, 0.431f)); // theme color.hud.bar.fx.missing
+        m.SetColor("_MissingColor", new Color(0.353f, 0.353f, 0.353f)); // theme color.hud.bar.fx.missing
         var rt = new RenderTexture(w, h, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
         Graphics.Blit(Texture2D.whiteTexture, rt, m);
         var prev = RenderTexture.active;

@@ -701,7 +701,6 @@ namespace RuneSkin.PlayerHud
                 _chatWindow = w;
                 _chatHome = w.anchoredPosition;
             }
-            _chatPending = false;
             if (w.anchoredPosition != _chatHome) w.anchoredPosition = _chatHome;
             var canvas = w.GetComponentInParent<Canvas>();
             if (!canvas) return;
@@ -714,15 +713,21 @@ namespace RuneSkin.PlayerHud
                 g.rectTransform.GetWorldCorners(_corners);
                 bottom = Mathf.Min(bottom, RectTransformUtility.WorldToScreenPoint(cam, _corners[0]).y);
             }
-            if (bottom == float.MaxValue) return;
+            if (bottom == float.MaxValue) return; // laid out next frame: still pending
+            _chatPending = false;
             var lift = _chatTarget - bottom;
-            if (lift <= 0f) return;
+            if (lift <= 0f)
+            {
+                Plugin.Log.LogInfo($"[RuneSkin] chat box clear of the strip (bottom {bottom:0} px, strip top {_chatTarget:0} px)");
+                return;
+            }
             // screen px -> the window's anchored units (its parent's scale)
             w.GetWorldCorners(_corners);
             var p0 = RectTransformUtility.WorldToScreenPoint(cam, _corners[0]).y;
             var up = RectTransformUtility.WorldToScreenPoint(cam, _corners[0] + w.parent.TransformVector(Vector3.up)).y - p0;
             if (!(up > 0f)) return;
             w.anchoredPosition = _chatHome + new Vector2(0f, lift / up);
+            Plugin.Log.LogInfo($"[RuneSkin] chat box lifted {lift:0} px (bottom {bottom:0} px -> strip top {_chatTarget:0} px)");
         }
 
         // Status groups above the strip (user call 2026-10-22): buffs on one side, debuffs on the other (Hud.BuffSide),
