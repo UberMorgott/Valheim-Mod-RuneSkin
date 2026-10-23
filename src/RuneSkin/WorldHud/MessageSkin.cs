@@ -21,7 +21,8 @@ namespace RuneSkin.WorldHud
     //   UpdateBiomeFound :260): vanilla decor images off, band_message + banner_rule left / mirrored right around the
     //   serif caps title, following the title's position, scale and alpha;
     // - unlock messages (m_unlockMessages, UpdateUnlockMsg :319: UnlockMessage/icon_bkg/UnlockIcon, UnlockTitle,
-    //   UnlockDescription): plate + icon recess + fonts, restyled once per instance.
+    //   UnlockDescription): plate + icon recess + fonts, restyled once per instance; title laid out inside the plate's
+    //   content rect below the top rail (LayoutUnlock), slots re-spaced per frame (AlignUnlocks).
     public sealed class MessageSkin : MonoBehaviour
     {
         public const string ScreenId = "MessageHud";
@@ -333,45 +334,140 @@ namespace RuneSkin.WorldHud
             foreach (var go in list)
             {
                 if (!go || !_unlocks.Add(go.GetInstanceID())) continue;
-                // Below the top-left notification row (moved down by size.message.notify.drop; run 20261022-043546: the
-                // unlock plate covered it). Vanilla sets the slot position once at Instantiate (UpdateUnlockMsg :337-341).
-                if (go.transform is RectTransform urt) urt.anchoredPosition -= new Vector2(0f, ThemeTokens.GetFloat("size.message.unlock.drop", 72f));
+                Image plate = null;
                 foreach (var img in go.GetComponentsInChildren<Image>(true))
                 {
                     if (img.name == "UnlockIcon") continue;
                     if (img.name == "icon_bkg") _art.Reskin(img, "sprite.slot.recess", "color.frame", "unlock message icon socket");
-                    else if (img.sprite) { _art.Reskin(img, "sprite.hud.frame.small", "color.frame", "unlock message plate"); img.fillCenter = true; _unlockPlates[go] = img.rectTransform; }
+                    else if (img.sprite) { _art.Reskin(img, "sprite.hud.frame.small", "color.frame", "unlock message plate"); img.fillCenter = true; plate = img; _unlockPlates[go] = img.rectTransform; }
                 }
+                TMP_Text titleText = null, descText = null;
                 foreach (var t in go.GetComponentsInChildren<TMP_Text>(true))
                 {
                     var title = t.name == "UnlockTitle";
-                    _art.Note(t, title ? "unlock.title" : "unlock.text", TextLook.Apply(t, title ? "font.display" : "font.body", "notify"), "unlock message text");
-                    t.color = ThemeTokens.GetColor(title ? "color.text.item.title" : "color.text.body", t.color);
-                    // Clear of the plate's right rim (frame_small border; Codex r3: the body reached it), long texts shrink.
-                    var tr = t.rectTransform;
-                    tr.offsetMax -= new Vector2(ThemeTokens.GetFloat("size.message.unlock.inset", 14f), 0f);
+                    if (title)
+                    {
+                        // Bright gold Norsebold with the shared HUD outline + soft shadow (TextLook.ApplyDisplayTitle).
+                        _art.Note(t, "unlock.title", TextLook.ApplyDisplayTitle(t), "unlock message title (display gold, outline + underlay)");
+                        titleText = t;
+                    }
+                    else
+                    {
+                        _art.Note(t, "unlock.text", TextLook.Apply(t, "font.body", "notify"), "unlock message text");
+                        t.color = ThemeTokens.GetColor("color.text.body", t.color);
+                        // Clear of the plate's right rim (frame_small border; Codex r3: the body reached it).
+                        t.rectTransform.offsetMax -= new Vector2(ThemeTokens.GetFloat("size.message.unlock.inset", 14f), 0f);
+                        if (t.name == "UnlockDescription") descText = t;
+                    }
                     t.fontSize = HudReadable(t.fontSize);
-                    if (!title) { t.enableAutoSizing = true; t.fontSizeMax = t.fontSize; t.fontSizeMin = HudReadable(0f); t.overflowMode = TextOverflowModes.Ellipsis; }
+                    // Long texts shrink (down to the HUD floor) and end in an ellipsis instead of crossing the frame.
+                    t.enableAutoSizing = true; t.fontSizeMax = t.fontSize; t.fontSizeMin = HudReadable(0f); t.overflowMode = TextOverflowModes.Ellipsis;
                 }
+                LayoutUnlock(plate, titleText, descText, go.transform.Find("UnlockMessage/icon_bkg") as RectTransform);
             }
             if (_unlocks.Count > 256) { _unlocks.Clear(); _unlockPlates.Clear(); }
             AlignUnlocks(list);
         }
 
-        // Left edge of every unlock plate on the notification stack's (Codex M4 r3), per frame: the notification plate
-        // is placed once its text arrives (TopLeft), which can be after the unlock instance was restyled (run
-        // 20261022-065352: a one-time shift at restyle found the plate not yet placed). Only while the plate exists.
+        // Title fully inside the plate's content rect: below the top rail (the frame sprite's 9-slice top border, read
+        // from the sprite, + size.message.unlock.vpad), within the side borders; the icon + description row below it
+        // (size.message.unlock.gap); the plate grows down to fit (PlayHudMath.UnlockStack). Vanilla anchored the title on
+        // the plate's top edge (user screenshot 2026-10-23: "НОВЫЙ ПРЕДМЕТ" sat on the rail). All rects share the
+        // UnlockMessage parent (prefab: UnlockMessage/bkg, /UnlockTitle, /icon_bkg, /UnlockDescription).
+        private static void LayoutUnlock(Image plate, TMP_Text title, TMP_Text desc, RectTransform icon)
+        {
+            if (!plate || !title || !(plate.rectTransform.parent is RectTransform msg) || title.rectTransform.parent != msg)
+            {
+                Plugin.Log.LogWarning($"[RuneSkin] unlock message layout skipped: plate={(bool)plate} title={(bool)title} (unexpected prefab hierarchy)");
+                return;
+            }
+            var prt = plate.rectTransform;
+            var border = SliceBorder(plate);
+            var pad = ThemeTokens.GetFloat("size.message.unlock.vpad", 4f);
+            var pr = Edges(prt, msg);
+            var tr = title.rectTransform;
+            var t0 = Edges(tr, msg);
+            var innerL = pr.xMin + border.x + pad;
+            var innerR = pr.xMax - border.z - pad;
+            if (t0.xMin < innerL) tr.offsetMin += new Vector2(innerL - t0.xMin, 0f);
+            if (t0.xMax > innerR) tr.offsetMax -= new Vector2(t0.xMax - innerR, 0f);
+            var (tTop, tBottom) = LineBox(title, msg);
+            float rTop = float.NegativeInfinity, rBottom = float.PositiveInfinity;
+            if (icon && icon.parent == msg) { var ir = Edges(icon, msg); rTop = ir.yMax; rBottom = ir.yMin; }
+            if (desc && desc.rectTransform.parent == msg) { var (dt, db) = LineBox(desc, msg); rTop = Mathf.Max(rTop, dt); rBottom = Mathf.Min(rBottom, db); }
+            var gap = ThemeTokens.GetFloat("size.message.unlock.gap", 2f);
+            if (float.IsInfinity(rTop)) rTop = rBottom = tBottom - gap;
+            var (ts, rs, bottom) = PlayHudMath.UnlockStack(pr.yMax, tTop, tBottom, rTop, rBottom, border.w, border.y, pad, gap);
+            tr.anchoredPosition += new Vector2(0f, ts);
+            if (icon && icon.parent == msg) icon.anchoredPosition += new Vector2(0f, rs);
+            if (desc && desc.rectTransform.parent == msg) desc.rectTransform.anchoredPosition += new Vector2(0f, rs);
+            prt.offsetMin += new Vector2(0f, bottom - pr.yMin);
+        }
+
+        // 9-slice border of an Image in its rect units (x left, y bottom, z right, w top): sprite pixels over the
+        // image's pixels per unit (sprite ppu / canvas reference ppu) times its multiplier.
+        private static Vector4 SliceBorder(Image img)
+        {
+            var s = img ? img.sprite : null;
+            if (!s) return Vector4.zero;
+            return s.border / Mathf.Max(1e-4f, img.pixelsPerUnit * img.pixelsPerUnitMultiplier);
+        }
+
+        private static readonly Vector3[] _corners = new Vector3[4];
+
+        // A rect's corners in another transform's local space.
+        private static Rect Edges(RectTransform rt, Transform space)
+        {
+            rt.GetWorldCorners(_corners);
+            var a = (Vector2)space.InverseTransformPoint(_corners[0]);
+            var b = (Vector2)space.InverseTransformPoint(_corners[2]);
+            return Rect.MinMaxRect(Mathf.Min(a.x, b.x), Mathf.Min(a.y, b.y), Mathf.Max(a.x, b.x), Mathf.Max(a.y, b.y));
+        }
+
+        // A text's line box (first line ascender .. last line descender) in another transform's local space.
+        private static (float top, float bottom) LineBox(TMP_Text t, Transform space)
+        {
+            t.ForceMeshUpdate();
+            var b = t.textBounds;
+            float top = b.max.y, bottom = b.min.y;
+            var info = t.textInfo;
+            if (info != null && info.lineCount > 0) { top = info.lineInfo[0].ascender; bottom = info.lineInfo[info.lineCount - 1].descender; }
+            if (!(top > bottom)) { var r = t.rectTransform.rect; top = r.yMax; bottom = r.yMin; }
+            var tt = space.InverseTransformPoint(t.transform.TransformPoint(new Vector3(0f, top, 0f))).y;
+            var bb = space.InverseTransformPoint(t.transform.TransformPoint(new Vector3(0f, bottom, 0f))).y;
+            return (Mathf.Max(tt, bb), Mathf.Min(tt, bb));
+        }
+
+        // Per frame: every unlock slot's y (vanilla slot spacing m_maxUnlockMsgSpace, widened when the grown plates
+        // would overlap, below the top-left notification row by size.message.unlock.drop; run 20261022-043546: the
+        // unlock plate covered it), and the left edge of every unlock plate on the notification stack's (Codex M4 r3;
+        // the notification plate is placed once its text arrives, which can be after the unlock instance was restyled,
+        // run 20261022-065352).
         private readonly Vector3[] _ca = new Vector3[4], _cb = new Vector3[4];
 
         private readonly Dictionary<GameObject, RectTransform> _unlockPlates = new Dictionary<GameObject, RectTransform>();
 
         private void AlignUnlocks(List<GameObject> list)
         {
-            if (!_plate || string.IsNullOrEmpty(_topText)) return;
-            _plate.rectTransform.GetWorldCorners(_ca);
+            var prefab = _hud.m_unlockMsgPrefab ? _hud.m_unlockMsgPrefab.transform as RectTransform : null;
+            var baseY = (prefab ? prefab.anchoredPosition.y : 0f) - ThemeTokens.GetFloat("size.message.unlock.drop", 72f);
+            var plateH = 0f;
             foreach (var go in list)
+                if (go && go.transform.parent is RectTransform p0 && _unlockPlates.TryGetValue(go, out var pl) && pl)
+                    plateH = Mathf.Max(plateH, Edges(pl, p0).height);
+            var gap = ThemeTokens.GetFloat("size.message.unlock.stack.gap", 6f);
+            var align = _plate && !string.IsNullOrEmpty(_topText);
+            if (align) _plate.rectTransform.GetWorldCorners(_ca);
+            for (var i = 0; i < list.Count; i++)
             {
+                var go = list[i];
                 if (!go || !(go.transform is RectTransform urt) || !(urt.parent is RectTransform up)) continue;
+                if (prefab)
+                {
+                    var y = PlayHudMath.UnlockSlotY(baseY, i, _hud.m_maxUnlockMsgSpace, plateH, gap);
+                    if (Mathf.Abs(urt.anchoredPosition.y - y) > 0.25f) urt.anchoredPosition = new Vector2(urt.anchoredPosition.x, y);
+                }
+                if (!align) continue;
                 // The visible plate's left edge (the instance root can be a zero-size anchor point).
                 (_unlockPlates.TryGetValue(go, out var plate) && plate ? plate : urt).GetWorldCorners(_cb);
                 var dx = up.InverseTransformPoint(_ca[0]).x - up.InverseTransformPoint(_cb[0]).x;

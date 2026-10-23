@@ -35,6 +35,35 @@ namespace RuneSkin.Tests
         }
 
         [Fact]
+        public void UnlockTitleSitsBelowTheTopRailAndThePlateGrows()
+        {
+            // Run 20261023-072719 geometry: plate 108.7 high (top 0), frame_small border 9 top / bottom, vanilla title
+            // line box centred on the top edge (+14 .. -14), row = 64 icon socket at -28 .. -92.
+            var (ts, rs, bottom) = PlayHudMath.UnlockStack(0f, 14f, -14f, -28f, -92f, 9f, 9f, 4f, 2f);
+            Assert.Equal(-27f, ts, 3);              // title top lands at -13 = rail (9) + pad (4) below the plate top
+            Assert.True(14f + ts <= -9f);           // never on the rail
+            Assert.Equal(-15f, rs, 3);              // row top at title bottom (-41) - gap (2) = -43
+            Assert.Equal(-120f, bottom, 3);         // row bottom -107 - pad 4 - border 9
+            Assert.True(-bottom > 108.7f);          // plate grew to fit title + row
+            // Already inside: the title still lands exactly at the inset (deterministic, no drift).
+            var (ts2, _, _) = PlayHudMath.UnlockStack(0f, -30f, -50f, -60f, -100f, 9f, 9f, 4f, 2f);
+            Assert.Equal(17f, ts2, 3);
+            // Negative inputs clamp to zero.
+            var (ts3, rs3, b3) = PlayHudMath.UnlockStack(0f, 0f, -10f, -10f, -20f, -5f, -5f, -1f, -1f);
+            Assert.Equal(0f, ts3, 3);
+            Assert.Equal(0f, rs3, 3);
+            Assert.Equal(-20f, b3, 3);
+        }
+
+        [Theory]
+        [InlineData(0, 120f, 0f)]
+        [InlineData(1, 100f, -110f)]  // fits the vanilla 110 spacing
+        [InlineData(2, 120f, -252f)]  // grown plate: 120 + 6
+        [InlineData(-1, 120f, 0f)]
+        public void UnlockSlotsNeverOverlap(int slot, float plate, float y) =>
+            Assert.Equal(y, PlayHudMath.UnlockSlotY(0f, slot, 110f, plate, 6f), 3);
+
+        [Fact]
         public void LadderCellsStackInsideTheColumn()
         {
             const float cell = 44f, gap = 6f, pad = 10f;
