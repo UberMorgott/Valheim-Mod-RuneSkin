@@ -32,6 +32,24 @@ namespace RuneSkin.GameScreens
             return a > 0f ? a - 360f : a;
         }
 
+        // Sleep medallion slot: centre y of a side-high medallion gap above the text block [textBottom, textTop] (host
+        // space, y up); below the block when the top slot would leave the host (hostTop - margin) and the bottom slot
+        // fits (hostBottom + margin); otherwise the top slot (the text stays clear, the medallion may be cut).
+        public static float MedallionY(float textTop, float textBottom, float side, float gap, float hostTop, float hostBottom, float margin)
+        {
+            side = Math.Max(0f, side);
+            gap = Math.Max(0f, gap);
+            margin = Math.Max(0f, margin);
+            var above = textTop + gap + side * 0.5f;
+            if (above + side * 0.5f <= hostTop - margin) return above;
+            var below = textBottom - gap - side * 0.5f;
+            return below - side * 0.5f >= hostBottom + margin ? below : above;
+        }
+
+        // Max line width of a centred text: the inset per side that narrows a wrap width to maxWidth (0 = no cap).
+        public static float WrapInset(float width, float maxWidth) =>
+            maxWidth <= 0f || width <= maxWidth ? 0f : (width - maxWidth) * 0.5f;
+
         // A glyph centred in a round socket: glyph side from the socket side and its share (0..1).
         public static float GlyphSide(float socket, float share) => Math.Max(0f, socket) * Math.Max(0f, Math.Min(1f, share));
 
