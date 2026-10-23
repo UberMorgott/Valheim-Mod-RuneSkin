@@ -43,8 +43,8 @@ namespace RuneSkin.PlayerHud
         public int AbilityCount { get; private set; }
         public StripMath.Layout L;
 
-        // Art px -> strip units (the cuts are 2x the mockup's 1080p px).
-        private static float ArtScale => ThemeTokens.GetFloat("share.hud.strip4.art", 0.5f);
+        // Extra scale of the strip4 frame pieces (1: the cuts are 2x the mockup's px and ship at PPU 200 = 2 px per unit).
+        private static float ArtScale => ThemeTokens.GetFloat("share.hud.strip4.art", 1f);
 
         public HudStrip(HudArt art, RectTransform root)
         {

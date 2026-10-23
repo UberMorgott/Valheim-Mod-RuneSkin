@@ -266,7 +266,7 @@ func renderHud4(opt hud4Opts) (*image.NRGBA, image.Rectangle, float64) {
 	R := func(x, y, w, h float64) image.Rectangle {
 		return image.Rect(int(math.Round(X(x))), int(math.Round(Y(y+h))), int(math.Round(X(x+w))), int(math.Round(Y(y))))
 	}
-	art := tv("share.hud.strip4.art", 0.5) * k // canvas px per sprite px of the strip4 frame pieces
+	art := 0.5 * tv("share.hud.strip4.art", 1) * k // canvas px per sprite px (sprites are authored at 2x: PPU 200)
 	frame := tcol("color.hud.strip.frame", "#FFFFFFFF")
 
 	// wings, bar block, hotbar block, divider
@@ -360,7 +360,7 @@ func renderHud4(opt hud4Opts) (*image.NRGBA, image.Rectangle, float64) {
 	glyph(l.MedRX, true)
 
 	// cells: socket art + content copied from the mockup (icons only, inner area keyed)
-	cellArt := tv("share.hud.strip4.art", 0.5) * k
+	cellArt := 0.5 * tv("share.hud.strip4.art", 1) * k
 	mockIcon := func(sx, sy, sw, sh float64, x, y, w, h float64) {
 		p := crop(mock, image.Rect(int(sx), int(sy), int(sx+sw), int(sy+sh)))
 		for i := 0; i < len(p.Pix); i += 4 {

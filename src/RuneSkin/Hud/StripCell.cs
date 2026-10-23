@@ -56,8 +56,8 @@ namespace RuneSkin.PlayerHud
                 round ? Image.Type.Simple : Image.Type.Sliced, raycast: true);
             _rim = art.Image("Rim", Root, "sprite.hud.strip4.rim", "color.frame", Image.Type.Sliced);
             _rim.gameObject.SetActive(false);
-            // strip4 art is drawn at 2x the mockup's px: borders at half their sprite size.
-            var artScale = ThemeTokens.GetFloat("share.hud.strip4.art", 0.5f);
+            // strip4 art: borders at their authored size (PPU 200 maps the 2x cuts onto the mockup's px); theme scale on top.
+            var artScale = ThemeTokens.GetFloat("share.hud.strip4.art", 1f);
             art.Track(_shadow, artScale);
             art.Track(Bowl, artScale);
             art.Track(_rim, artScale);

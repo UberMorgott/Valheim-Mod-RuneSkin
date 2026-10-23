@@ -533,7 +533,7 @@
     { "token": "size.hud.strip.bars.pad.b", "value": 16 },
     { "token": "size.hud.strip.bars.pad.x", "value": 22 },
     { "token": "size.hud.strip4.shield.out", "value": 3 },
-    { "token": "share.hud.strip4.art", "value": 0.5 },
+    { "token": "share.hud.strip4.art", "value": 1 },
     { "token": "share.hud.strip4.med.glyph", "value": 0.48 },
     { "token": "share.hud.strip4.med.disc.x", "value": 0.556 },
     { "token": "share.hud.strip4.med.disc.y", "value": 0.5 },
