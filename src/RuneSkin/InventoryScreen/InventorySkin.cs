@@ -428,22 +428,11 @@ namespace RuneSkin.InventoryScreen
             _parked.Clear();
         }
 
-        // Drag visual on top of everything (user defect 2026-10-23: the icon slid under the strip): its own Canvas with
-        // override sorting one above the strip (and the GUI root), no GraphicRaycaster (the drop raycast still hits the
-        // cell under the pointer).
+        // Drag visual on top of everything (user defect 2026-10-23: the icon slid under the strip): lifted onto the shared
+        // top overlay sort (TopOverlay, above the strip and the GUI root; no raycaster, the drop still hits the cell).
         public static void DragOnTop(InventoryGui gui)
         {
-            var go = gui ? gui.m_dragGo : null;
-            if (!go) return;
-            var root = gui.GetComponentInParent<Canvas>();
-            root = root ? root.rootCanvas : null;
-            var order = root ? root.sortingOrder : 0;
-            var strip = PlayerHud.HudCluster.Instance;
-            if (strip) order = Mathf.Max(order, strip.SortingOrder);
-            var c = go.GetComponent<Canvas>() ?? go.AddComponent<Canvas>();
-            c.overrideSorting = true;
-            c.sortingOrder = order + 2;
-            if (root) c.sortingLayerID = root.sortingLayerID;
+            if (gui && gui.m_dragGo) Restyle.TopOverlay.Lift(gui.m_dragGo); // the one shared top layer (tooltips too)
         }
 
         public void OnHide()
