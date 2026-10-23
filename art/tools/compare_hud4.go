@@ -270,16 +270,16 @@ func renderHud4(opt hud4Opts) (*image.NRGBA, image.Rectangle, float64) {
 	frame := tcol("color.hud.strip.frame", "#FFFFFFFF")
 
 	// wings, bar block, hotbar block, divider
-	draw9s(img, "strip4_wing", R(0, 0, l.LeftW, in.WingH), art, frame, false)
-	draw9s(img, "strip4_wing", R(l.RightX, 0, l.RightW, in.WingH), art, frame, true)
+	draw9s(img, "strip5_wing", R(0, 0, l.LeftW, in.WingH), art, frame, false)
+	draw9s(img, "strip5_wing", R(l.RightX, 0, l.RightW, in.WingH), art, frame, true)
 	rowOn := opt.stamina || opt.eitr
 	barsFrameH := barsH
 	if !rowOn {
 		barsFrameH = padT + hp + padB
 	}
-	draw9s(img, "strip4_bars", R(l.BarsX, l.BarsH-barsFrameH, l.BarsW, barsFrameH), art, frame, false)
+	draw9s(img, "strip5_bars", R(l.BarsX, l.BarsH-barsFrameH, l.BarsW, barsFrameH), art, frame, false)
 	lap := tv("size.hud.strip.block.overlap", 6)
-	draw9s(img, "strip4_block", R(l.CX, l.BlockY-lap, l.CW, l.BlockH+lap), art, frame, false)
+	draw9s(img, "strip5_block", R(l.CX, l.BlockY-lap, l.CW, l.BlockH+lap), art, frame, false)
 	if opt.abilities > 0 {
 		ds := sprites["strip4_divider"].img.Bounds()
 		dh := in.CellH + in.DurH
@@ -288,10 +288,15 @@ func renderHud4(opt hud4Opts) (*image.NRGBA, image.Rectangle, float64) {
 	}
 
 	// bars: well (frame) over trough + fill; BarView scale = wanted height / sprite height (sprite px = ref units)
-	wellS := sprites["strip4_well"].img.Bounds()
+	wellS := sprites["strip5_well_hp"].img.Bounds()
 	bar := func(x, y, w, h float64, frac float64, fillName string, value string, big bool, shield float64) {
+		wellName := "strip5_well_hp"
+		if !big {
+			wellName = "strip5_well_row"
+		}
+		wellS = sprites[wellName].img.Bounds()
 		sc := h / float64(wellS.Dy())
-		insL, insR, insT, insB := tv("window.strip4_well.left", 10)*sc, tv("window.strip4_well.right", 10)*sc, tv("window.strip4_well.top", 9)*sc, tv("window.strip4_well.bottom", 9)*sc
+		insL, insR, insT, insB := tv("window."+wellName+".left", 10)*sc, tv("window."+wellName+".right", 10)*sc, tv("window."+wellName+".top", 9)*sc, tv("window."+wellName+".bottom", 9)*sc
 		wx, wy, ww, wh := x+insL, y+insB, w-insL-insR, h-insB-insT
 		draw9s(img, "strip4_fill", R(wx, wy, ww, wh), sc*k, tcol("color.hud.strip.trough", "#7C7B7BFF"), false)
 		if frac > 0 {
@@ -305,7 +310,7 @@ func renderHud4(opt hud4Opts) (*image.NRGBA, image.Rectangle, float64) {
 			sprites["_sheen"] = spr{t, sprites["strip4_fill"].b, "Sliced", true, [2]float64{}}
 			draw9s(img, "_sheen", R(wx, wy, ww*shield, wh), sc*k, color.NRGBA{}, false)
 		}
-		draw9s(img, "strip4_well", R(x, y, w, h), sc*k, frame, false)
+		draw9s(img, wellName, R(x, y, w, h), sc*k, frame, false)
 		if shield > 0 {
 			o := tv("size.hud.strip4.shield.out", 3)
 			hh := h + 2*o
@@ -328,6 +333,8 @@ func renderHud4(opt hud4Opts) (*image.NRGBA, image.Rectangle, float64) {
 		cv := &canvas{img: img, K: 1}
 		cv.textOutline(value, sans, size*k*1.15, "#F2F4F5", X(wx+ww/2), Y(wy+wh/2), 1.2, 1)
 	}
+	ef := sprites["strip4_fill"]
+	sprites["_eitrfill"] = spr{tinted(ef.img, tcol("color.hud.strip.fill.eitr", "#9A5CFFFF")), ef.b, ef.typ, ef.fill, ef.piv}
 	innerX, innerW := l.BarsX+padX, l.BarsW-2*padX
 	hpY := l.BarsH - padT - hp
 	bar(innerX, hpY, innerW, hp, 141.0/150.0, "strip4_fill_hp", "141", true, opt.shield)
@@ -337,7 +344,7 @@ func renderHud4(opt hud4Opts) (*image.NRGBA, image.Rectangle, float64) {
 	case opt.stamina && opt.eitr:
 		hw := (innerW - rg) / 2
 		bar(innerX, rowY, hw, row, 1, "strip4_fill_stamina", "112", false, 0)
-		bar(innerX+hw+rg, rowY, hw, row, 1, "strip4_fill_eitr", "85", false, 0)
+		bar(innerX+hw+rg, rowY, hw, row, 1, "_eitrfill", "85", false, 0)
 		rs := sprites["strip4_rowdiv"].img.Bounds()
 		dw := row * float64(rs.Dx()) / float64(rs.Dy())
 		draw9s(img, "strip4_rowdiv", R(innerX+hw+rg/2-dw/2, rowY, dw, row), art, frame, false)
@@ -347,7 +354,7 @@ func renderHud4(opt hud4Opts) (*image.NRGBA, image.Rectangle, float64) {
 
 	// medallions + glyph
 	glyph := func(mx float64, mirror bool) {
-		draw9s(img, "strip4_medallion", R(mx, l.MedY, in.MedW, in.MedH), art, frame, mirror)
+		draw9s(img, "strip5_medallion", R(mx, l.MedY, in.MedW, in.MedH), art, frame, mirror)
 		dx := tv("share.hud.strip4.med.disc.x", 0.556)
 		if mirror {
 			dx = 1 - dx
@@ -377,7 +384,7 @@ func renderHud4(opt hud4Opts) (*image.NRGBA, image.Rectangle, float64) {
 	rims := []string{"#E8C04A", "#E8A030", "#3FA9F5", "#B05CF0", "", "", "#E03A3A", ""}
 	for n := 0; n < 8; n++ {
 		x := l.HotX + float64(n)*(in.Cell+in.Gap)
-		draw9s(img, "strip4_cell", R(x, l.CellsY, in.Cell, in.CellH), cellArt, frame, false)
+		draw9s(img, "strip5_cell", R(x, l.CellsY, in.Cell, in.CellH), cellArt, frame, false)
 		if rims[n] != "" {
 			ins := in.Cell * tv("share.hud.strip.rim.inset", 0.035)
 			draw9s(img, "strip4_rim", R(x+ins, l.CellsY+ins, in.Cell-2*ins, in.CellH-2*ins), cellArt, hex(rims[n]), false)
@@ -393,13 +400,13 @@ func renderHud4(opt hud4Opts) (*image.NRGBA, image.Rectangle, float64) {
 	}
 	for n := 0; n < opt.abilities; n++ {
 		x := l.AbX + float64(n)*(in.Cell+in.Gap)
-		draw9s(img, "strip4_cell", R(x, l.CellsY, in.Cell, in.CellH), cellArt, frame, false)
+		draw9s(img, "strip5_cell", R(x, l.CellsY, in.Cell, in.CellH), cellArt, frame, false)
 		mx := 1267 + float64(n)*89
 		mockIcon(mx+6, 768, 66, 80, x+6, l.CellsY+(in.CellH-80)/2, 66, 80)
 	}
 	for n := 0; n < 4; n++ {
 		x := l.FoodX + float64(n)*l.FoodStep
-		draw9s(img, "strip4_socket_round", R(x, l.FoodY, l.FoodCell, l.FoodCell), cellArt, tcol("color.hud.strip.bowl", "#B4BABDFF"), false)
+		draw9s(img, "strip5_socket_round", R(x, l.FoodY, l.FoodCell, l.FoodCell), cellArt, tcol("color.hud.strip.bowl", "#B4BABDFF"), false)
 		if n < 3 {
 			cx := []float64{162, 255, 345}[n]
 			mockIcon(cx-40, 893, 80, 80, x+l.FoodCell/2-40*l.FoodCell/84, l.FoodY, 80*l.FoodCell/84, 80*l.FoodCell/84)
@@ -407,7 +414,7 @@ func renderHud4(opt hud4Opts) (*image.NRGBA, image.Rectangle, float64) {
 	}
 	for n := 0; n < 4; n++ {
 		x := l.PotX + float64(n)*l.PotStep
-		draw9s(img, "strip4_socket_square", R(x, l.PotY, l.PotCell, l.PotH), cellArt, frame, false)
+		draw9s(img, "strip5_socket_square", R(x, l.PotY, l.PotCell, l.PotH), cellArt, frame, false)
 		mx := []float64{1475, 1559, 1643, 1727}[n]
 		mockIcon(mx+4, 893, 68, 80, x+4*l.PotCell/76, l.PotY+4, 68*l.PotCell/76, l.PotH-8)
 	}
@@ -624,8 +631,8 @@ func renderGauges(r, s float64, staggered bool) *image.NRGBA {
 		}
 		over(img, t, image.Pt(int(math.Round(x)), int(math.Round(y))))
 	}
-	put("gauge_rage_frame", cx-d/2, cy-d/2, d, d, op, nil)
-	put("gauge_rage_fill", cx-d/2, cy-d/2, d, d, op, func(px, py int) bool {
+	put("gauge5_ring_track", cx-d/2, cy-d/2, d, d, op, nil)
+	put("gauge5_ring_fill", cx-d/2, cy-d/2, d, d, op, func(px, py int) bool {
 		a := math.Atan2(float64(px)+0.5-d/2, d/2-(float64(py)+0.5))
 		if a < 0 {
 			a += 2 * math.Pi
@@ -639,11 +646,11 @@ func renderGauges(r, s float64, staggered bool) *image.NRGBA {
 	ins := cw * tv("share.hud.gauge.stagger.inset", 0.2)
 	name := "gauge_stagger_fill"
 	if staggered {
-		name = "gauge_stagger_burst"
+		name = "gauge5_col_burst"
 		ins *= 0.6
 	}
 	fh := ch - 2*ch*0.06
-	put("gauge_stagger_frame", colX, cy-ch/2, cw, ch, op, nil)
+	put("gauge5_col_frame", colX, cy-ch/2, cw, ch, op, nil)
 	put(name, colX+ins, cy-ch/2+ch*0.06, cw-2*ins, fh, op, func(px, py int) bool { return float64(py) >= fh*(1-s) })
 	return img
 }

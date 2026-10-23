@@ -1,0 +1,1 @@
+STRICT EDIT of gen-T3.png: remove the slot cell wells from the hotbar block (continuous empty plate), everything else unchanged.
