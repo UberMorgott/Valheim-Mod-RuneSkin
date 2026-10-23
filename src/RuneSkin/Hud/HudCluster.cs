@@ -64,6 +64,9 @@ namespace RuneSkin.PlayerHud
         private void Build()
         {
             Instance = this;
+            // the chat lift runs right before the canvases render (after every Update / LateUpdate writer; run
+            // 20261023-202815: lifted per the log, yet the shot and the check showed the chat at home)
+            Canvas.willRenderCanvases += ChatBeforeRender;
             _art = new HudArt();
             _root = (RectTransform)transform;
             _root.anchorMin = _root.anchorMax = new Vector2(0.5f, 0.5f);
@@ -174,6 +177,7 @@ namespace RuneSkin.PlayerHud
         private void OnDestroy()
         {
             if (Instance == this) Instance = null;
+            Canvas.willRenderCanvases -= ChatBeforeRender;
         }
 
         // Vanilla Hud.UpdateStatusEffects input (prefix in HudAdapter; the vanilla body is not run while we own it).
@@ -622,7 +626,6 @@ namespace RuneSkin.PlayerHud
                 Relayout();
             }
             Status();
-            ChatTick();
             _clear.Tick(_hud, _root);
             var cells = _strip.CellCount + _buffs.CellCount + _summonParented;
             if (cells != _floorCells)
@@ -743,6 +746,13 @@ namespace RuneSkin.PlayerHud
         private readonly List<Graphic> _chatGraphics = new List<Graphic>(16);
         private readonly Vector3[] _corners = new Vector3[4];
 
+        private void ChatBeforeRender()
+        {
+            if (this && isActiveAndEnabled) ChatTick();
+        }
+
+        private float _chatLoggedLift = float.NaN;
+
         private void ChatTick()
         {
             var chat = Chat.instance;
@@ -808,6 +818,8 @@ namespace RuneSkin.PlayerHud
             _chatWritten = want;
             if ((w.anchoredPosition - want).sqrMagnitude < 0.01f) return;
             w.anchoredPosition = want;
+            if (Mathf.Abs(want.y - _chatHome.y - _chatLoggedLift) < 0.5f) return; // logged once per lift value
+            _chatLoggedLift = want.y - _chatHome.y;
             var low = float.MaxValue;
             w.GetComponentsInChildren(false, _chatGraphics);
             foreach (var g in _chatGraphics)
