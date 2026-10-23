@@ -798,3 +798,4 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
 - [x] Harness hud2 (tools a8be577, 1484b5a, 7e17626): strip-width via Span 0.8 live, captions, per resolution 1080 / 720 /
       1440: slot-equal, slots (square, = inventory cell, icon centred, food timer under the disc, no overlap, inside the
       frame; live counts + food 4 / potions 5), overlap (chat / minimap), text-min, dock, shader shield + PNG files.
+- [x] User: enemy overhead name barely readable (faint grey, vanished on sky / foliage, run 20261023-125858). 0.18.2: PT Sans Bold, color.enemy.name = color.hud.text, outline + size.enemy.name.dilate 0.25 (as the player bar values) + soft dark underlay, size.enemy.name.font 14 -> 16. Position / alert stacking unchanged.
