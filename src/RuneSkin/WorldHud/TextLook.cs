@@ -99,6 +99,26 @@ namespace RuneSkin.WorldHud
             return true;
         }
 
+        // Display title on a dark plate (unlock toast "НОВЫЙ ПРЕДМЕТ"): Norsebold with the shared HUD outline
+        // (Hud.NumberOutline, color.text.outline) plus the soft underlay. The face is dilated by the outline width: a
+        // TMP outline grows inward too, and the plain 0.22 "notify" outline ate Norsebold's thin strokes so the gold
+        // read dark brown (user screenshot 2026-10-23). Colour token color.text.display.gold.
+        public static bool ApplyDisplayTitle(TMP_Text text)
+        {
+            var font = ThemeTokens.GetFont("font.display");
+            if (!text || !font) return false;
+            text.font = font;
+            text.fontStyle &= ~FontStyles.Bold;
+            text.enableVertexGradient = false;
+            var width = Plugin.NumberOutline?.Value ?? 0.18f;
+            var m = Outlined(font, "displaytitle", width, width);
+            if (!m) return false;
+            Underlay(m);
+            text.fontSharedMaterial = m;
+            text.color = ThemeTokens.GetColor("color.text.display.gold", new Color(1f, 0.835f, 0.31f, 1f));
+            return true;
+        }
+
         // Font + outline material on a live text; false when the font token has no asset (text left as it is).
         public static bool Apply(TMP_Text text, string fontToken, string look, float dilate = 0f)
         {

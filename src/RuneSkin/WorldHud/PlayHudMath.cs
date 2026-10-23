@@ -59,5 +59,24 @@ namespace RuneSkin.WorldHud
             var hi = Math.Max(min, max) + inset;
             return ((lo + hi) * 0.5f, hi - lo);
         }
+
+        // Unlock toast (MessageHud m_unlockMsgPrefab: bkg plate, UnlockTitle, icon_bkg + UnlockDescription row), y up,
+        // plate parent space. Vanilla anchors the title on the plate's top edge, so the frame's top rail ran through
+        // the letters (user screenshot 2026-10-23). The plate top stays; the title's line box starts the rail's 9-slice
+        // border + pad below it; the row follows the title by gap; the plate bottom grows to the row plus pad and the
+        // bottom border. Returns the title and row shifts and the new plate bottom.
+        public static (float titleShift, float rowShift, float plateBottom) UnlockStack(float plateTop, float titleTop, float titleBottom,
+            float rowTop, float rowBottom, float borderTop, float borderBottom, float pad, float gap)
+        {
+            pad = Math.Max(0f, pad);
+            var titleShift = plateTop - Math.Max(0f, borderTop) - pad - titleTop;
+            var rowShift = titleBottom + titleShift - Math.Max(0f, gap) - rowTop;
+            return (titleShift, rowShift, rowBottom + rowShift - pad - Math.Max(0f, borderBottom));
+        }
+
+        // Slot y of an unlock toast: vanilla stacks slot i at m_maxUnlockMsgSpace * i below the first (UpdateUnlockMsg);
+        // a plate grown past that spacing gets plate height + gap so neighbours never overlap.
+        public static float UnlockSlotY(float baseY, int slot, float vanillaSpace, float plateHeight, float gap) =>
+            baseY - Math.Max(0, slot) * Math.Max(vanillaSpace, plateHeight + Math.Max(0f, gap));
     }
 }
