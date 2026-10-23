@@ -263,8 +263,10 @@ Shader "RuneSkin/UI Bar"
                 float3 crimson = lerp(_FillColor.rgb, lumC.xxx, 0.22) * float3(0.70, 0.52, 0.56);
                 float3 black = float3(0.075, 0.008, 0.013);
                 float2 q = P * float2(0.30, 1.0);
-                float w = fbm(q * 1.1 + float2(-tf * 0.05, tf * 0.02));
-                float n = fbm(q * 1.7 + float2(-tf * 0.07 + w * 1.3, w * 0.7));
+                // two-axis domain warp + a finer, differently stretched layer: irregular, non-repeating flow
+                float2 wv = float2(fbm(q * 0.9 + float2(-tf * 0.05, 1.7)), fbm(q * 1.3 + float2(4.1, tf * 0.03))) - 0.5;
+                float n = fbm(q * 1.7 + wv * 2.2 + float2(-tf * 0.07, 0.0));
+                n = lerp(n, vnoise(P * float2(0.9, 2.2) + wv * 1.5 + float2(-tf * 0.11, 0.0)), 0.35);
                 float depth = (0.12 + 0.88 * smoothstep(0.0, 0.78, vs)) * (0.72 + 0.5 * n);
                 float3 c = lerp(black, crimson, saturate(depth));
                 float st = fbm(P * float2(0.6, 3.4) + float2(-tf * 0.04, 5.0));
@@ -440,12 +442,13 @@ Shader "RuneSkin/UI Bar"
                 float2 p = float2((uv.x - 0.5) * _Aspect, uv.y - 0.5);
                 float w = max(0.01, _GlowWidth);
                 float d = pill(p, 0.5 * _Aspect - w, 0.5 - w);
-                float g = exp(-abs(d) / (0.45 * w));
+                // outline: soft halo outwards, a sharp falloff inwards (the fill under the shield keeps its own tone)
+                float g = exp(-abs(d) / ((d > 0.0 ? 0.45 : 0.12) * w));
                 float px = max(fwidth(uv.x), 1e-5);
                 float lit = 1.0 - smoothstep(_Shield - 2.0 * px, _Shield + 2.0 * px, uv.x);
                 lit = max(lit, step(0.995, _Shield));
                 float a = g * lit * _GlowColor.a;
-                return fixed4(_GlowColor.rgb * a, a * 0.85);
+                return fixed4(_GlowColor.rgb * a, d > 0.0 ? a * 0.85 : 0.0);   // inside: additive only, never darkens
             }
 
             fixed4 frag(v2f IN) : SV_Target
