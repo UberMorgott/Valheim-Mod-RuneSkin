@@ -6,7 +6,7 @@ namespace RuneSkin.CraftingScreen
     // Pure geometry of the crafting column (M3, mockup-1 / layout A right column; no Unity types: unit-tested on
     // net8). Logical canvas units of the InventoryGui canvas, origin top-left, y down, inside the crafting box that
     // InventoryMath gives (same top / bottom / gutters as dock and centre). Top-down: header (station icon | name
-    // plaque | level badge), mode tab row (craft / upgrade / mod tabs), category row (CraftingFilter), then two
+    // plaque | level badge), mode tab row (craft / upgrade / mod tabs), category row (CraftingFilter), its sub-group row (when shown), then two
     // columns: search + recipe list well left, detail well right (title, item icon, description, quality row,
     // requirement grid) with the button row (repair | craft) under it. Every count is an input (tabs, categories,
     // requirements); tokens give only sizes and gaps.
@@ -14,7 +14,7 @@ namespace RuneSkin.CraftingScreen
     {
         public float Pad = 18f, Gap = 8f;
         public float HeaderH = 80f, TabH = 36f, TabW = 150f, TabMinW = 96f, ArrowW = 28f;
-        public float CategoryH = 44f, SearchH = 38f;
+        public float CategoryH = 44f, SubCategoryH = 44f, SearchH = 38f;
         public float ListShare = 0.4f, RowH = 46f, ScrollbarW = 10f;
         public float TitleH = 32f, CraftTypeH = 24f, IconH = 112f, QualityH = 44f, DescriptionMinH = 48f;
         public float ReqW = 68f, ReqH = 88f, ReqMinW = 52f, ReqMaxRows = 2f;
@@ -29,9 +29,11 @@ namespace RuneSkin.CraftingScreen
         public float CapInset;
         public float Scale = 1f;
         public int Tabs, Categories, Requirements;
+        // CraftingFilter sub-group tabs (second row under the categories, MT_CraftFilter/Subs); 0 = no row.
+        public int SubCategories;
         public bool Search, Repair, CraftType, Quality;
         // First visible tab / category of a scrolled row (row arrows).
-        public int TabOffset, CategoryOffset;
+        public int TabOffset, CategoryOffset, SubCategoryOffset;
     }
 
     // A row of equal cells that scrolls when the count does not fit: Cells[i] empty = scrolled out.
@@ -46,15 +48,15 @@ namespace RuneSkin.CraftingScreen
     public sealed class CraftingLayout
     {
         public Box Content, Header, StationIcon, Title, Level;
-        public Box TabRow, CategoryRow, Search, List, ListView, ListScrollbar;
+        public Box TabRow, CategoryRow, SubCategoryRow, Search, List, ListView, ListScrollbar;
         public Box Detail, DetailTitle, CraftType, Icon, Description, Quality, Requirements, ButtonRow, Repair, Craft;
-        public RowFit Tabs = new RowFit(), Categories = new RowFit();
+        public RowFit Tabs = new RowFit(), Categories = new RowFit(), SubCategories = new RowFit();
         public Box[] RequirementCells = Array.Empty<Box>();
         public int RequirementColumns, RequirementRows;
         public float RowPitch;
 
         public override string ToString() =>
-            $"header {Header} tabs {TabRow}({Tabs.Visible}/{Tabs.Cells.Length}{(Tabs.Scroll ? " scroll" : "")}) cats {CategoryRow}({Categories.Visible}/{Categories.Cells.Length}) " +
+            $"header {Header} tabs {TabRow}({Tabs.Visible}/{Tabs.Cells.Length}{(Tabs.Scroll ? " scroll" : "")}) cats {CategoryRow}({Categories.Visible}/{Categories.Cells.Length}) subs {SubCategoryRow}({SubCategories.Visible}/{SubCategories.Cells.Length}) " +
             $"list {List} detail {Detail} req {Requirements} {RequirementColumns}x{RequirementRows} buttons {ButtonRow}";
     }
 
@@ -98,6 +100,15 @@ namespace RuneSkin.CraftingScreen
                 o.CategoryRow = new Box(c.X, y, c.W, ch);
                 o.Categories = Row(o.CategoryRow, i.Categories, ch, ch, gap * 0.5f, S(t.ArrowW), i.CategoryOffset, false);
                 y += ch + gap;
+            }
+            // Sub-group row (weapon kinds, armor slots, ...): same square tabs and size as the categories, only while the filter
+            // shows it (two or more groups); the body gives way.
+            if (i.Categories > 0 && i.SubCategories > 0)
+            {
+                var sh = S(t.SubCategoryH);
+                o.SubCategoryRow = new Box(c.X, y, c.W, sh);
+                o.SubCategories = Row(o.SubCategoryRow, i.SubCategories, sh, sh, gap * 0.5f, S(t.ArrowW), i.SubCategoryOffset, false);
+                y += sh + gap;
             }
 
             // Body: list column (search + list well) | detail column (detail well + button row).
