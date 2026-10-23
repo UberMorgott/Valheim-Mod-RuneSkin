@@ -162,5 +162,71 @@ namespace RuneSkin.Tests
                 Assert.Contains(f.roles, x => x.role == role);
             Assert.Equal("font.display", Array.Find(f.roles, x => x.role == "legacy.title").font);
         }
+
+        // Epic Loot enchanting tab children (EnchantingUI prefab Panel/Tabs/<feature>): the padlock "LockIcon" is never
+        // the tab icon (its name holds "Icon": it was repainted as the tab glyph, so only the kit-less Rune tab showed
+        // a lock).
+        [Theory]
+        [InlineData("Image", "Sacrifice", ElTabPart.Icon)]
+        [InlineData("Text", "Sacrifice", ElTabPart.Caption)]
+        [InlineData("Locked", "Image", ElTabPart.LockBadge)]
+        [InlineData("LockIcon", "Locked", ElTabPart.LockGlyph)]
+        [InlineData("Glow", "Locked", ElTabPart.LockGlyph)]
+        [InlineData("convert_tabicon", "Convert", ElTabPart.Icon)]
+        [InlineData("Focused", "Sacrifice", ElTabPart.None)]
+        public void EnchantTabPartsAreNamedApart(string name, string parent, ElTabPart want) => Assert.Equal(want, ElTabPartOf(name, parent));
+
+        // Every tab gets the same boxes: icon centred horizontally, caption box under it inside the cell, lock badge on
+        // the icon's top-right corner and inside the cell.
+        [Theory]
+        [InlineData(136f, 80f)]
+        [InlineData(137f, 80f)]
+        [InlineData(120f, 64f)]
+        public void EnchantTabCellIsUniform(float w, float h)
+        {
+            ElTabLayout(w, h, 28f, 3f, 40f, 4f, 18f, out var icon, out var caption, out var badge);
+            Assert.True(Math.Abs(icon.CentreX - w / 2f) <= 1f);
+            Assert.Equal(icon.W, icon.H);
+            Assert.True(icon.Y >= 0f && caption.Y >= icon.Y + icon.H);
+            Assert.True(caption.Y + caption.H <= h + 0.01f);
+            Assert.True(caption.X >= 0f && caption.X + caption.W <= w);
+            Assert.True(Math.Abs(caption.CentreX - w / 2f) <= 1f);
+            Assert.True(badge.X >= 0f && badge.Y >= 0f && badge.X + badge.W <= w && badge.Y + badge.H <= h);
+            Assert.True(badge.X + badge.W > icon.X + icon.W - badge.W && badge.Y < icon.Y + badge.H); // on the top-right corner
+            // Same input, same boxes (no per-tab state).
+            ElTabLayout(w, h, 28f, 3f, 40f, 4f, 18f, out var icon2, out _, out _);
+            Assert.Equal(icon.X, icon2.X);
+            Assert.Equal(icon.Y, icon2.Y);
+        }
+
+        [Fact]
+        public void EnchantTabShrinksIconInAShortCell()
+        {
+            ElTabLayout(136f, 60f, 28f, 3f, 40f, 4f, 18f, out var icon, out var caption, out _);
+            Assert.True(icon.H < 28f && icon.H >= 20f && icon.Y >= 0f);
+            Assert.True(caption.Y + caption.H <= 60f);
+        }
+
+        // Plates fit inside the column's mask (Epic Loot: 137 px plates, 160 px mask, right padding -10).
+        [Theory]
+        [InlineData(137f, 160f, 4f, 137f)]
+        [InlineData(160f, 160f, 4f, 152f)]
+        [InlineData(137f, 100f, 4f, 92f)]
+        public void EnchantTabPlatesFitTheMask(float plate, float mask, float margin, float want) =>
+            Assert.Equal(want, ElTabWidth(plate, mask, margin));
+
+        [Fact]
+        public void EnchantTabLockRolesAreInTheTheme()
+        {
+            using var s = typeof(ThemeSchema).Assembly.GetManifestResourceStream("RuneSkin.default-theme.json");
+            using var r = new System.IO.StreamReader(s!);
+            var f = ThemeJson.Parse(r.ReadToEnd());
+            foreach (var role in new[] { "badge.ench.lock", "glyph.ench.lock" })
+                Assert.Contains(f.roles, x => x.role == role);
+            foreach (var token in new[] { "size.el.tab.w", "size.el.tab.h", "size.el.tab.icon", "size.el.tab.caption", "size.el.tab.badge" })
+                Assert.Contains(f.floats, x => x.token == token);
+            foreach (var token in new[] { "sprite.ench.lock.badge", "sprite.ench.lock.glyph" })
+                Assert.Contains(f.sprites, x => x.token == token);
+        }
     }
 }

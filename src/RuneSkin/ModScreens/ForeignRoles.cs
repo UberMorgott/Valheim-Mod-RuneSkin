@@ -16,8 +16,9 @@ namespace RuneSkin.ModScreens
     // Roles of the fallback units (ForeignUi). Generic rules for any mod window, plus the precise adapters of the M7
     // mod panels (art\README.md "M7 sprites"), which add roles from the mods' own component wiring on top:
     // - EpicLootEnchanting (EpicLoot_UnityLib.EnchantingTableUI, Epic Loot's EnchantingUI prefab and its dialogs):
-    //   TabHandler tabs = tab plates (craft.tab) with the M7 tab glyph left of the label (glyph_ench_*), labels in the
-    //   display face.
+    //   TabHandler tabs = tab plates (craft.tab), one uniform cell each (ElTabCell: M7 glyph glyph_ench_* centred, caption
+    //   under it on every tab, lock badge on the icon while Epic Loot shows the feature locked), column fit in its mask
+    //   (ElTabColumn).
     // - EpicLootBoard (EpicLoot.Adventure.MerchantPanel under the StoreGui at Haldor) / EpicLootTemper (EpicLoot.TemperPanel
     //   at Hildir): list rows = recipe rows, board tabs with glyph_board_*.
     // - ModHud: other plugins' parts under the HUD root (Epic Loot AbilityBar / DebugText, level texts): texts in the
@@ -98,7 +99,12 @@ namespace RuneSkin.ModScreens
                         {
                             ctx.Role(tg, "craft.tab", "mod panel tab (TabHandler)");
                             // The tab's own icon (Epic Loot *_tabicon) takes the M7 kit glyph of that tab.
-                            var glyph = family == OwnershipRegistry.EpicLootEnchanting ? ForeignMath.EnchantGlyph(tab.m_button.name) : ForeignMath.BoardGlyph(tab.m_button.name);
+                            if (family == OwnershipRegistry.EpicLootEnchanting)
+                            {
+                                EnchantTab(ctx, tab.m_button, tg);
+                                continue;
+                            }
+                            var glyph = ForeignMath.BoardGlyph(tab.m_button.name);
                             foreach (var icon in tab.m_button.GetComponentsInChildren<Image>(true))
                                 if (icon != tg && icon.name.IndexOf("icon", StringComparison.OrdinalIgnoreCase) >= 0)
                                     ctx.Role(icon, glyph != null && ThemeTokens.HasRole(glyph) ? glyph : "content", glyph != null ? "tab icon -> M7 kit glyph" : "tab icon (mod art kept)");
@@ -116,6 +122,33 @@ namespace RuneSkin.ModScreens
                     ctx.Role(img, "content", "mod HUD art (kept)");
                 }
             }
+        }
+
+        // One Epic Loot enchanting tab (ForeignMath.ElTabPartOf): icon -> the M7 kit glyph of the tab (Epic Loot's art
+        // where the kit has none), Epic Loot's lock container -> the lock badge socket, its padlock -> the lock glyph,
+        // caption -> tab label (ElTabCell draws the caption every tab shows and places all of them).
+        private static void EnchantTab(ScreenContext ctx, Button button, Image plate)
+        {
+            var glyph = ForeignMath.EnchantGlyph(button.name);
+            foreach (var img in button.GetComponentsInChildren<Image>(true))
+            {
+                if (img == plate || ctx.AdapterRoles.ContainsKey(img) || img.GetComponent<SkinMark>() is SkinMark m && m.Internal) continue;
+                switch (ForeignMath.ElTabPartOf(img.name, img.transform.parent ? img.transform.parent.name : null))
+                {
+                    case ForeignMath.ElTabPart.Icon:
+                        ctx.Role(img, glyph != null && ThemeTokens.HasRole(glyph) ? glyph : "content", glyph != null ? "tab icon -> M7 kit glyph" : "tab icon (mod art kept)");
+                        break;
+                    case ForeignMath.ElTabPart.LockBadge:
+                        ctx.Role(img, "badge.ench.lock", "tab lock container (FeatureStatus.LockedContainer) -> lock badge");
+                        break;
+                    case ForeignMath.ElTabPart.LockGlyph:
+                        ctx.Role(img, "glyph.ench.lock", "tab padlock -> lock badge glyph");
+                        break;
+                }
+            }
+            foreach (var t in button.GetComponentsInChildren<TMP_Text>(true))
+                if (!ctx.AdapterRoles.ContainsKey(t)) ctx.Role(t, "craft.tab.label", "tab label");
+            foreach (var t in button.GetComponentsInChildren<Text>(true)) ctx.Role(t, "legacy.label", "tab label (legacy text)");
         }
 
         // Rules every foreign window gets (after the precise ones, before PreWorldKit.Common): icon buttons keep their
@@ -211,11 +244,22 @@ namespace RuneSkin.ModScreens
         // Tab glyphs of the M7 kit left of the label, only where the plate leaves room beside the centred label.
         public static void After(Transform unit, string family)
         {
-            if (family != OwnershipRegistry.EpicLootEnchanting && family != OwnershipRegistry.EpicLootBoard) return;
+            if (family == OwnershipRegistry.EpicLootEnchanting)
+            {
+                // Uniform tab grid: column inside its mask, every tab the same cell (icon, caption, lock badge).
+                foreach (var tabs in unit.GetComponentsInChildren<TabHandler>(true))
+                {
+                    ElTabColumn.Ensure(tabs);
+                    foreach (var tab in tabs.m_tabs)
+                        if (tab != null && tab.m_button) ElTabCell.Ensure(tab.m_button);
+                }
+                return;
+            }
+            if (family != OwnershipRegistry.EpicLootBoard) return;
             foreach (var tabs in unit.GetComponentsInChildren<TabHandler>(true))
                 foreach (var tab in tabs.m_tabs)
                     if (tab != null && tab.m_button)
-                        Glyph(tab.m_button, family == OwnershipRegistry.EpicLootEnchanting ? ForeignMath.EnchantGlyph(tab.m_button.name) : ForeignMath.BoardGlyph(tab.m_button.name));
+                        Glyph(tab.m_button, ForeignMath.BoardGlyph(tab.m_button.name));
             if (family == OwnershipRegistry.EpicLootBoard)
                 foreach (var b in unit.GetComponentsInChildren<Button>(true))
                     if (!b.transform.Find(GlyphName)) Glyph(b, ForeignMath.BoardGlyph(b.name));
