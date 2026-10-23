@@ -101,7 +101,10 @@ namespace RuneSkin.PlayerHud
             foreach (var img in new[] { _capL, _capR, _stubL, _stubR, _railL, _railR, _knotL, _knotR, _endL, _endR, _knot2L, _knot2R }) img.gameObject.SetActive(Target);
             // always built like the other target pieces (run 20261023-191817: created only when the sprite resolved at
             // construction -> never built in game, the scene showed between the HP and stamina channels)
-            _field = Piece("BarField", _back, "sprite.hud.strip7.field", Image.Type.Simple);
+            // own tint: the field art reads ~27 % lighter than the target's metal (in-game mean grey 31.2 vs 24.5 over the
+            // field mask, run 20261023-204838; offline composite 30.6 vs 22.7) -> color.hud.strip7.field darkens it to match
+            _field = _art.Image("BarField", _back, "sprite.hud.strip7.field", Target ? "color.hud.strip7.field" : FrameTint, Image.Type.Simple);
+            _art.Track(_field, ArtScale);
             _field.gameObject.SetActive(Target);
             _bars = Piece("BarBlock", _back, "sprite.hud.strip4.bars", Image.Type.Sliced);
             _iconHp = Piece("IconHealth", _back, "sprite.hud.strip7.icon.hp", Image.Type.Simple);
