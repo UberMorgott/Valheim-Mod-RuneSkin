@@ -49,6 +49,9 @@ namespace RuneSkin.Compat
         public const string MtCraftSearch = "MT_CraftSearch";
         public const string MtCraftTabPrefix = "MT_CraftTab_";
         public const string MtCategoryIcon = "MT_Icon";
+        // CraftingFilter sub-group row (MorgottTweaks 1.128.0): MT_CraftFilter/Subs/MT_CraftSub_<group>, first = All.
+        public const string MtCraftSubRow = "Subs";
+        public const string MtCraftSubPrefix = "MT_CraftSub_";
         public const string MtChainTree = "MT_ChainTree";
         public const string MtChainCraftButton = "MT_ChainCraftButton";
         public const string MtGuid = "morgott.valheim.tweaks";
