@@ -103,7 +103,9 @@ namespace RuneSkin.PlayerHud
             if (font) t.font = font;
             if (glow && font && GlowMaterial(font) is Material gm) t.fontSharedMaterial = gm;
             t.color = ThemeTokens.GetColor(colorToken, Color.white);
-            rt.gameObject.AddComponent<TextFloor>().Px = size >= ThemeTokens.GetFloat("size.hud.font.number", 16f)
+            var floor = rt.gameObject.AddComponent<TextFloor>();
+            floor.Base = size;
+            floor.Px = size >= ThemeTokens.GetFloat("size.hud.font.number", 16f)
                 ? ThemeTokens.GetFloat("floor.text.number.px", 14f)
                 : ThemeTokens.GetFloat("floor.text.timer.px", 12f);
             Set(t, font
@@ -223,6 +225,8 @@ namespace RuneSkin.PlayerHud
     // Readable-floor override for diagnostics (HUD numbers 14 px, timers 12 px instead of body 16 px).
     public sealed class TextFloor : MonoBehaviour
     {
+        // Readable minimum in screen px; Base = the theme font size (strip units) before any floor raise.
         public float Px;
+        public float Base;
     }
 }

@@ -37,6 +37,9 @@ namespace RuneSkin.PlayerHud
         public readonly RectTransform Root;
         private readonly List<Entry> _entries = new List<Entry>(16);
         private readonly List<Cell> _cells = new List<Cell>(16);
+
+        // Pooled effect cells so far (HudCluster re-applies the text floors when new ones appear).
+        public int CellCount => _cells.Count;
         private Cell _more;
         private TMP_Text _moreText;
         private int _moreShown = -1;

@@ -552,8 +552,9 @@ namespace RuneSkin.PlayerHud
                 h = h * 31 + (_root.parent ? _root.parent.lossyScale.x : 0f).GetHashCode();
                 h = h * 31 + (_canvas && _canvas.rootCanvas ? _canvas.rootCanvas.scaleFactor : 0f).GetHashCode();
                 h = h * 31 + (Plugin.HudScale?.Value ?? 1f).GetHashCode();
-                h = h * 31 + (Plugin.StripWidth?.Value ?? 0.99f).GetHashCode();
-                h = h * 31 + (Plugin.StripHeight?.Value ?? 130f).GetHashCode();
+                h = h * 31 + (Plugin.StripWidth?.Value ?? 0.96f).GetHashCode();
+                h = h * 31 + ResponsiveContext.SkinScale.GetHashCode();
+                h = h * 31 + SlotCanvasScale().GetHashCode();
                 h = h * 31 + (Plugin.UltrawideBox?.Value ?? true ? 1 : 0);
                 h = h * 31 + ThemeTokens.Revision;
                 return h;
@@ -572,7 +573,15 @@ namespace RuneSkin.PlayerHud
                 Relayout();
             }
             Status();
+            var cells = _strip.CellCount + _buffs.CellCount;
+            if (cells != _floorCells)
+            {
+                _floorCells = cells;
+                TextFloors(); // new pooled status cells get the readable floor too
+            }
         }
+
+        private int _floorCells = -1;
 
         // Geometry pass (inputs changed): strip layout, bars, scale and screen placement.
         private void Relayout()
@@ -588,13 +597,12 @@ namespace RuneSkin.PlayerHud
             var s = HudMath.ClusterScale(ResponsiveContext.GuiFactor, Plugin.HudScale?.Value ?? 1f, 0f, 0f, 0f, 0f, 0f, 0f,
                 ThemeTokens.GetFloat("size.hud.font.number", 16f), ThemeTokens.GetFloat("floor.text.number.px", 14f),
                 ThemeTokens.GetFloat("size.hud.font.timer", 13f), ThemeTokens.GetFloat("floor.text.timer.px", 12f));
-            // Mockup hud-3 proportions scaled uniformly: height = Hud.Height (12 % of 1080 by default), width = the
-            // design width (size.hud.strip.width, the mockup's panel) at that scale, capped by Hud.Width of the box.
-            var probe = _hudStrip.Input(ThemeTokens.GetFloat("size.hud.strip.width", 1900f), barsH);
-            var natural = StripMath.Compute(probe).Height;
-            var k = StripMath.HeightScale((Plugin.StripHeight?.Value ?? 130f) * (Plugin.HudScale?.Value ?? 1f), natural);
-            _pxPerUnit = s * k;
-            var widthPx = Mathf.Min(ThemeTokens.GetFloat("size.hud.strip.width", 1900f) * _pxPerUnit, StripMath.WidthPx(boxW, Plugin.StripWidth?.Value ?? 0.99f));
+            // User call 2026-10-23: the hotbar cell IS an inventory grid cell (one token size.slot, the inventory's skin
+            // scale and the GUI canvas scale), every other piece keeps its hud-4M3 proportion to that cell (uniform scale);
+            // the width is HudStrip.Width of the box and only the wings' straight rails stretch to fill it.
+            var slotPx = StripMath.SlotPx(ThemeTokens.GetFloat("size.slot", 70f), ResponsiveContext.SkinScale, SlotCanvasScale());
+            _pxPerUnit = StripMath.UnitPx(slotPx, ThemeTokens.GetFloat("size.hud.strip.cell", 85f));
+            var widthPx = StripMath.WidthPx(boxW, Plugin.StripWidth?.Value ?? 0.96f);
             var input = _hudStrip.Input(widthPx / _pxPerUnit, barsH);
             var l = StripMath.Compute(input);
             _hudStrip.Apply(l, input);
@@ -623,11 +631,79 @@ namespace RuneSkin.PlayerHud
             // The column panels' stacks reach size.panel.glass.inset beyond their box: counted, so the visible gap is
             // InventoryMath's standard gap (size.inv.gap) from the strip top.
             _reservedTop = bottom + l.Height * _pxPerUnit + ThemeTokens.GetFloat("size.panel.glass.inset", 0f) * s;
-            Plugin.Log.LogInfo($"[RuneSkin] HUD strip layout: width {widthPx:0}px scale {_pxPerUnit:0.###} (k {k:0.###}) height {l.Height:0} units = {l.Height * _pxPerUnit:0} px " +
+            TextFloors();
+            ChatClear(bottom + l.Height * _pxPerUnit + ThemeTokens.GetFloat("size.hud.strip.chat.gap", 12f) * s);
+            Plugin.Log.LogInfo($"[RuneSkin] HUD strip layout: width {widthPx:0}px slot {slotPx:0.#}px scale {_pxPerUnit:0.###} height {l.Height:0} units = {l.Height * _pxPerUnit:0} px " +
                                $"({100f * l.Height * _pxPerUnit / Mathf.Max(1f, Screen.height):0.0} % of {Screen.height}), food {_hudStrip.FoodCount} potions {_hudStrip.PotionCount} abilities {_hudStrip.AbilityCount}{(l.Fits ? "" : " (tight)")}");
         }
 
         private float _stripWidth, _statusBase;
+
+        // GUI canvas scale the inventory grid is drawn with (InventorySkin: its root canvas scaleFactor); the HUD's own
+        // root canvas before the inventory exists (both live under the same GuiScaler).
+        private float SlotCanvasScale()
+        {
+            var gui = InventoryGui.instance;
+            var c = gui && gui.m_playerGrid ? gui.m_playerGrid.GetComponentInParent<Canvas>(true) : null;
+            if (c && c.rootCanvas && c.rootCanvas.scaleFactor > 0f) return c.rootCanvas.scaleFactor;
+            return _canvas && _canvas.rootCanvas && _canvas.rootCanvas.scaleFactor > 0f ? _canvas.rootCanvas.scaleFactor : ResponsiveContext.GuiFactor;
+        }
+
+        // Readable minimum (floor.text.*.px, carried by each HUD text's TextFloor): the strip scales with the slot, so a
+        // small screen could push its numbers under the floor; those texts grow in strip units instead (relayout only).
+        private readonly List<TextFloor> _floors = new List<TextFloor>(64);
+
+        private void TextFloors()
+        {
+            _root.GetComponentsInChildren(true, _floors);
+            var rootScale = Mathf.Abs(_root.lossyScale.y);
+            if (!(rootScale > 0f)) return;
+            foreach (var f in _floors)
+            {
+                if (!f || !f.TryGetComponent<TMPro.TMP_Text>(out var t)) continue;
+                if (f.Base <= 0f) f.Base = t.fontSize;
+                // screen px per text unit: the root's px per unit times the text's own scale under the root
+                var unit = _pxPerUnit * Mathf.Abs(t.rectTransform.lossyScale.y) / rootScale;
+                var size = StripMath.FontFloor(f.Base, f.Px, unit);
+                if (!Mathf.Approximately(t.fontSize, size)) t.fontSize = size;
+                if (t.enableAutoSizing)
+                {
+                    var min = StripMath.FontFloor(0f, f.Px, unit);
+                    if (t.fontSizeMin < min) t.fontSizeMin = min;
+                    if (t.fontSizeMax < size) t.fontSizeMax = size;
+                }
+            }
+        }
+
+        // The vanilla chat window (bottom left, Terminal.m_chatWindow; vanilla never moves it, Chat.cs) sits on the strip
+        // when the strip spans the screen: lifted so its bottom clears the strip top (screen px), its own offset kept.
+        private RectTransform _chatWindow;
+        private Vector2 _chatHome;
+
+        private void ChatClear(float stripTopPx)
+        {
+            var chat = Chat.instance;
+            var w = chat ? chat.m_chatWindow : null;
+            if (!w) return;
+            if (w != _chatWindow)
+            {
+                _chatWindow = w;
+                _chatHome = w.anchoredPosition;
+            }
+            if (w.anchoredPosition != _chatHome) w.anchoredPosition = _chatHome;
+            var canvas = w.GetComponentInParent<Canvas>(true);
+            if (!canvas) return;
+            var cam = canvas.rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.rootCanvas.worldCamera;
+            var corners = new Vector3[4];
+            w.GetWorldCorners(corners);
+            var bottom = RectTransformUtility.WorldToScreenPoint(cam, corners[0]).y;
+            var lift = stripTopPx - bottom;
+            if (lift <= 0f) return;
+            // screen px -> the window's anchored units (its parent's scale)
+            var up = RectTransformUtility.WorldToScreenPoint(cam, corners[0] + w.parent.TransformVector(Vector3.up)).y - bottom;
+            if (!(up > 0f)) return;
+            w.anchoredPosition = _chatHome + new Vector2(0f, lift / up);
+        }
 
         // Status groups above the strip (user call 2026-10-22): buffs on one side, debuffs on the other (Hud.BuffSide),
         // Hud.StatusPerRow cells a row, rows growing upward (Hud.StatusRows, then "+N"); hidden while the inventory is open
@@ -641,7 +717,9 @@ namespace RuneSkin.PlayerHud
             if (_buffs.Root.gameObject.activeSelf != show) _buffs.Root.gameObject.SetActive(show);
             if (_strip.Root.gameObject.activeSelf != show) _strip.Root.gameObject.SetActive(show);
             if (!show) return;
-            var perRow = Mathf.Clamp(Plugin.StatusPerRow?.Value ?? 10, 1, 30);
+            var inset = ThemeTokens.GetFloat("size.hud.strip.knot", 70f) + pad;
+            // A row ends before the medallion (it rises over the wing next to the hotbar block): fewer cells a row, more rows.
+            var perRow = StripMath.StatusPerRow(Mathf.Clamp(Plugin.StatusPerRow?.Value ?? 10, 1, 30), cell, gap, _hudStrip.L.MedLX - inset - gap);
             var rows = Mathf.Clamp(Plugin.StatusRows?.Value ?? 2, 1, 6);
             var rowW = StripMath.RowWidth(perRow, cell, gap);
             var buffsLeft = (Plugin.BuffSide?.Value ?? "Left") != "Right";
@@ -653,7 +731,6 @@ namespace RuneSkin.PlayerHud
             var budget = rows * (cell + gap);
             leftGroup.Arrange(rowW, budget);
             rightGroup.Arrange(rowW, budget);
-            var inset = ThemeTokens.GetFloat("size.hud.strip.knot", 70f) + pad;
             var lp = new Vector2(inset, _statusBase);
             if (leftGroup.Root.anchoredPosition != lp) leftGroup.Root.anchoredPosition = lp;
             var rp = new Vector2(_stripWidth - inset - rightGroup.Root.sizeDelta.x, _statusBase);

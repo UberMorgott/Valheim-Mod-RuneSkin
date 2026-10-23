@@ -150,7 +150,7 @@ namespace RuneSkin.InventoryScreen
             t.InnerGap = F("size.inv.inner.gap", t.InnerGap); t.PanelActionsH = F("size.inv.panel.actions", t.PanelActionsH);
             t.HudBand = F("size.inv.hud.band", t.HudBand); t.HeaderH = F("size.inv.header", t.HeaderH); t.FooterH = F("size.inv.footer", t.FooterH);
             t.PanelHeaderH = F("size.inv.panel.header", t.PanelHeaderH); t.PanelPad = F("size.inv.panel.pad", t.PanelPad);
-            t.GridCell = F("size.inv.cell", t.GridCell); t.GridGap = F("size.inv.cell.gap", t.GridGap); t.HotbarHeaderH = StripHotbar ? 0f : F("size.inv.hotbar.header", t.HotbarHeaderH);
+            t.GridCell = F("size.slot", t.GridCell); t.GridGap = F("size.inv.cell.gap", t.GridGap); t.HotbarHeaderH = StripHotbar ? 0f : F("size.inv.hotbar.header", t.HotbarHeaderH);
             t.ContainerCell = F("size.inv.container.cell", t.ContainerCell); t.ContainerGap = F("size.inv.container.gap", t.ContainerGap);
             t.DollCell = F("size.inv.doll.cell", t.DollCell); t.DollGap = F("size.inv.doll.gap", t.DollGap);
             t.DollColumns = F("size.inv.doll.columns", t.DollColumns); t.DollPad = F("size.inv.doll.pad", t.DollPad); t.DollFigureGap = F("size.inv.doll.figure.gap", t.DollFigureGap);

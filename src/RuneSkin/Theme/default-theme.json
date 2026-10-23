@@ -741,7 +741,7 @@
     { "token": "size.inv.plate.trash", "value": 150 },
     { "token": "size.inv.panel.header", "value": 56 },
     { "token": "size.inv.panel.pad", "value": 12 },
-    { "token": "size.inv.cell", "value": 70 },
+    { "token": "size.slot", "value": 70 },
     { "token": "size.inv.cell.gap", "value": 8 },
     { "token": "size.inv.hotbar.header", "value": 32 },
     { "token": "size.inv.container.cell", "value": 56 },
