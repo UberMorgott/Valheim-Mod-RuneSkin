@@ -290,9 +290,6 @@ namespace RuneSkin.PlayerHud
         // While the inventory is open the strip sorts above the GUI canvas (its hotbar is the inventory's row 0 and a
         // drop target): otherwise InventoryGui's full-screen root/dropButton (drop to the ground) takes the press over
         // the strip (run 20261022-194551: raycast top = root/dropButton).
-        // Sorting order of the strip's canvas (the inventory drag visual sorts above it, InventorySkin.DragOnTop).
-        public int SortingOrder => _canvas && _canvas.overrideSorting ? _canvas.sortingOrder : 0;
-
         private void AboveInventory()
         {
             if (!_canvas) return;
