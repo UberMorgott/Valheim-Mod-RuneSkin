@@ -315,6 +315,9 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
       before m1 / m6 / m6c. Runs (AugaSkin parked): 20261023-093222 602/13, -095522 608/6 (both cut at the 600 s world
       timeout during stats, not a crash: full sets need -WorldTimeoutSec 2400), -105831 637/26 (hud2 = strip-scale track's
       0.19 expectations; rest = grid-full / shared-world pollution, fixed in the harness).
+      Targeted (user rule: only what changed) runs 20261023-132956 (m1 m2 info m5 m6 m6c m7 p preview enemybars 69-almanac)
+      421/4 and -160807 (m5 preview enemybars) 153/3: remaining = other tracks (eb-speech npctext not on main) + one
+      eb tier pick flake (harness: tier passes clear leftovers). 0.18.2.
 
 ## 0.9.3 minimap fix (2026-10-22, user priority)
 
