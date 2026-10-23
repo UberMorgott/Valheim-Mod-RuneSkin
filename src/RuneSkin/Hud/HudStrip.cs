@@ -230,6 +230,7 @@ namespace RuneSkin.PlayerHud
                 MedRTuck = ThemeTokens.GetFloat("size.hud.strip.med.r.tuck", 0f),
                 FoodSize = ThemeTokens.GetFloat("size.hud.strip.food.size", 0f),
                 CellsDX = ThemeTokens.GetFloat("size.hud.strip.cells.dx", 0f),
+                AbilityCell = ThemeTokens.GetFloat("size.hud.strip.ability.cell", 0f),
                 PotionSize = ThemeTokens.GetFloat("size.hud.strip.potion.size", 0f),
                 GrowFromEnds = ThemeTokens.GetFloat("mode.hud.strip.wing.grow", 0f) > 0.5f,
                 FoodCell = cell,
@@ -284,8 +285,9 @@ namespace RuneSkin.PlayerHud
             for (var n = 0; n < AbilityCount; n++)
             {
                 var c = _abilities[n];
-                c.Size(i.Cell, i.CellH, 0f, false);
-                c.Place(StripMath.CellX(l.AbilityX, n, i.Cell, i.Gap), l.CellsY);
+                var ac = i.AbilityCell > 0f ? i.AbilityCell : i.Cell;
+                c.Size(ac, ac, 0f, false);
+                c.Place(StripMath.CellX(l.AbilityX, n, ac, i.Gap), l.CellsY - (ac - i.CellH) / 2f); // centred on the hotbar row
                 c.Root.GetComponent<StripInput>().Ability = _abilityIndex[n];
             }
             Pool(_food, l.FoodShown, "Food", CellKind.Food);
