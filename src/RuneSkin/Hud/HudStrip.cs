@@ -184,6 +184,10 @@ namespace RuneSkin.PlayerHud
                 WingInnerY = WingInner(ThemeTokens.GetFloat("size.hud.strip.wing.h", 130f)),
                 // the food disc sits above the timer band (StripCell.Size): half the band above the cell centre
                 FoodLift = cell * Mathf.Clamp(ThemeTokens.GetFloat("share.hud.strip.timer.band", 0.27f), 0f, 0.5f) / 2f,
+                BarsExtra = ThemeTokens.GetFloat("size.hud.strip.bars.extra", 0f),
+                ConnW = ThemeTokens.GetFloat("size.hud.strip.conn", 0f),
+                WingGap = ThemeTokens.GetFloat("size.hud.strip.wing.gap", 0f),
+                GrowFromEnds = ThemeTokens.GetFloat("mode.hud.strip.wing.grow", 0f) > 0.5f,
                 FoodCell = cell,
                 PotionCell = cell,
                 PotionH = cell,
@@ -235,14 +239,14 @@ namespace RuneSkin.PlayerHud
                 c.Place(StripMath.CellX(l.AbilityX, n, i.Cell, i.Gap), l.CellsY);
                 c.Root.GetComponent<StripInput>().Ability = _abilityIndex[n];
             }
-            Pool(_food, FoodCount, "Food", CellKind.Food);
-            for (var n = 0; n < FoodCount; n++)
+            Pool(_food, l.FoodShown, "Food", CellKind.Food);
+            for (var n = 0; n < l.FoodShown; n++)
             {
                 _food[n].Size(l.FoodCell, 0f, true);
                 _food[n].Place(l.FoodX + n * l.FoodStep, l.FoodY);
             }
-            Pool(_potions, PotionCount, "Potion", CellKind.Potion);
-            for (var n = 0; n < PotionCount; n++)
+            Pool(_potions, l.PotionShown, "Potion", CellKind.Potion);
+            for (var n = 0; n < l.PotionShown; n++)
             {
                 _potions[n].Size(l.PotionCell, l.PotionH, 0f, false);
                 _potions[n].Place(l.PotionX + n * l.PotionStep, l.PotionY);
@@ -255,7 +259,7 @@ namespace RuneSkin.PlayerHud
         public void BarFrame(float height)
         {
             var top = L.BarsY + L.BarsH;
-            Box(_bars.rectTransform, L.CenterX, top - height, L.CenterW, height, false);
+            Box(_bars.rectTransform, L.BarsX, top - height, L.BarsW, height, false);
         }
 
         // Knot divider i between split resource bars: centred at x (strip units), over the row [y, y + h]; hidden when
@@ -321,7 +325,7 @@ namespace RuneSkin.PlayerHud
                 ItemCell(c, p, item, i == selected);
             }
             var quickSel = pad && quickBar ? quickBar.m_selected : -1;
-            for (var i = 0; i < PotionCount; i++)
+            for (var i = 0; i < L.PotionShown && i < _potions.Count; i++)
             {
                 var item = i < _quick.Count ? inv.GetItemAt(_quick[i].Pos.x, _quick[i].Pos.y) : null;
                 ItemCell(_potions[i], p, item, i == quickSel);
@@ -367,7 +371,7 @@ namespace RuneSkin.PlayerHud
         {
             var foods = p.GetFoods();
             var ring = ThemeTokens.GetColor("color.hud.strip.food.ring", Color.white);
-            for (var i = 0; i < FoodCount; i++)
+            for (var i = 0; i < L.FoodShown && i < _food.Count; i++)
             {
                 var c = _food[i];
                 var food = i < foods.Count ? foods[i] : null;
@@ -411,7 +415,7 @@ namespace RuneSkin.PlayerHud
         {
             bottomLeft = default;
             side = 0f;
-            if (i < 0 || i >= PotionCount) return false;
+            if (i < 0 || i >= L.PotionShown) return false;
             bottomLeft = new Vector2(L.PotionX + i * L.PotionStep, L.PotionY);
             side = Mathf.Min(L.PotionCell, L.PotionH);
             return true;

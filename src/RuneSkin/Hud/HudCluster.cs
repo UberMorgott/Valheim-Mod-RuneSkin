@@ -656,7 +656,7 @@ namespace RuneSkin.PlayerHud
             TextFloors();
             ChatClear(bottom + l.Height * _pxPerUnit + ThemeTokens.GetFloat("size.hud.strip.chat.gap", 12f) * s);
             Plugin.Log.LogInfo($"[RuneSkin] HUD strip layout: width {widthPx:0}px slot {slotPx:0.#}px scale {_pxPerUnit:0.###} height {l.Height:0} units = {l.Height * _pxPerUnit:0} px " +
-                               $"({100f * l.Height * _pxPerUnit / Mathf.Max(1f, Screen.height):0.0} % of {Screen.height}), food {_hudStrip.FoodCount} potions {_hudStrip.PotionCount} abilities {_hudStrip.AbilityCount}{(l.Fits ? "" : " (tight)")}");
+                               $"({100f * l.Height * _pxPerUnit / Mathf.Max(1f, Screen.height):0.0} % of {Screen.height}), food {l.FoodShown}/{_hudStrip.FoodCount} potions {l.PotionShown}/{_hudStrip.PotionCount} (wing fits {l.FoodMax}) abilities {_hudStrip.AbilityCount}{(l.Fits ? "" : " (tight)")}");
         }
 
         private float _stripWidth, _statusBase;
