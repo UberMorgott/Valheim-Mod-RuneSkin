@@ -16,8 +16,7 @@ using RuneSkin.Theme;
 namespace RuneSkin
 {
     // RuneSkin: clean-room UI skin that restyles live vanilla uGUI from theme tokens (no prefab swaps, no transpilers).
-    // Bootstrap order in Awake: config -> theme + asset bundle -> ownership frozen (before AugaSkin's Awake, which
-    // soft-depends on this plugin) -> API host attached (replays early registrations) -> Harmony patches of owned
+    // Bootstrap order in Awake: config -> theme + asset bundle -> ownership frozen -> API host attached (replays early registrations) -> Harmony patches of owned
     // families only.
     [BepInPlugin(Skin.PluginGuid, "RuneSkin", Version)]
     [BepInProcess("valheim.exe")]
@@ -75,92 +74,92 @@ namespace RuneSkin
             _initStart = Stopwatch.GetTimestamp();
             Log = Logger;
             _ownMenu = Own("Menu",
-                "RuneSkin styles the pause menu. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin styles the pause menu. Read once at startup (restart to change).");
             _ownTooltips = Own("Tooltips",
-                "RuneSkin styles tooltips. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+                "RuneSkin styles tooltips. Read once at startup (restart to change).");
             _ownHud = Own("Hud",
-                "RuneSkin draws the player HUD (bars, food, status effects, hotbar placement). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin draws the player HUD (bars, food, status effects, hotbar placement). Read once at startup (restart to change).");
             _ownInventory = Own("Inventory",
-                "RuneSkin lays out the inventory screen (layout A: doll, grid, chest / backpack dock, crafting placement). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin lays out the inventory screen (layout A: doll, grid, chest / backpack dock, crafting placement). Read once at startup (restart to change).");
             _ownCrafting = Own("Crafting",
-                "RuneSkin styles and lays out the crafting column (station header, tabs, recipe list, detail, requirements). Needs Inventory. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin styles and lays out the crafting column (station header, tabs, recipe list, detail, requirements). Needs Inventory. Read once at startup (restart to change).");
             _ownSkills = Own("Skills",
-                "RuneSkin styles and lays out the skills dialog (needs Inventory). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin styles and lays out the skills dialog (needs Inventory). Read once at startup (restart to change).");
             _ownTrophies = Own("Trophies",
-                "RuneSkin styles and lays out the trophies panel (needs Inventory). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin styles and lays out the trophies panel (needs Inventory). Read once at startup (restart to change).");
             _ownAlmanac = Own("Almanac",
-                "RuneSkin restyles the Almanac mod's window (its layout and content stay Almanac's). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin restyles the Almanac mod's window (its layout and content stay Almanac's). Read once at startup (restart to change).");
             _ownMinimap = Own("Minimap",
-                "RuneSkin draws the small minimap as a round rune ring (compass runes, wind, day phase, biome plaque) and restyles the large map screen. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin draws the small minimap as a round rune ring (compass runes, wind, day phase, biome plaque) and restyles the large map screen. Read once at startup (restart to change).");
             _ownEnemyHud = Own("EnemyHud",
-                "RuneSkin restyles enemy health bars, star levels and the boss bar (Vaettir rarity frames keep their tiers). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin restyles enemy health bars, star levels and the boss bar (Vaettir rarity frames keep their tiers). Read once at startup (restart to change).");
             _ownMessageHud = Own("MessageHud",
-                "RuneSkin restyles centre messages, top-left notifications, unlock messages and the biome-discovered banner. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin restyles centre messages, top-left notifications, unlock messages and the biome-discovered banner. Read once at startup (restart to change).");
             _ownDamageText = Own("DamageText",
-                "RuneSkin restyles floating damage numbers (font, outline, colour per hit type). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin restyles floating damage numbers (font, outline, colour per hit type). Read once at startup (restart to change).");
             _ownMainMenu = Own("MainMenu",
-                "RuneSkin styles the pre-world screens (main menu, character select / create, world and server select, dialogs, loading). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+                "RuneSkin styles the pre-world screens (main menu, character select / create, world and server select, dialogs, loading). Read once at startup (restart to change).");
             _ownSettings = Own("Settings",
-                "RuneSkin styles the Settings window (category list, sliders, checkboxes, dropdowns, key bindings). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin styles the Settings window (category list, sliders, checkboxes, dropdowns, key bindings). Read once at startup (restart to change).");
             _ownConnection = Own("Connection",
-                "RuneSkin styles the server password and connecting dialogs. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+                "RuneSkin styles the server password and connecting dialogs. Read once at startup (restart to change).");
             _ownBuildHud = Own("BuildHud",
-                "RuneSkin styles the build menu, the selected-piece strip and the hovered-piece author window. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+                "RuneSkin styles the build menu, the selected-piece strip and the hovered-piece author window. Read once at startup (restart to change).");
             _ownCrosshair = Own("Crosshair",
-                "RuneSkin styles the crosshair, hover text, piece health bar and the stealth eye. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+                "RuneSkin styles the crosshair, hover text, piece health bar and the stealth eye. Read once at startup (restart to change).");
             _ownActionHud = Own("ActionHud",
-                "RuneSkin styles the action progress and stagger bars, the event / raid line and the mount panel. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+                "RuneSkin styles the action progress and stagger bars, the event / raid line and the mount panel. Read once at startup (restart to change).");
             _ownShipHud = Own("ShipHud",
-                "RuneSkin draws the ship HUD as a speed ladder with a rudder socket (wind stays on the minimap ring). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin draws the ship HUD as a speed ladder with a rudder socket (wind stays on the minimap ring). Read once at startup (restart to change).");
             _ownKeyHints = Own("KeyHints",
-                "RuneSkin styles the key hints (key plates and labels; gamepad glyphs stay). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+                "RuneSkin styles the key hints (key plates and labels; gamepad glyphs stay). Read once at startup (restart to change).");
             _ownLoadScreen = Own("LoadScreen",
-                "RuneSkin styles the black screens over the world (respawn tip banner + rune spinner, sleep, teleport ring). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+                "RuneSkin styles the black screens over the world (respawn tip banner + rune spinner, sleep, teleport ring). Read once at startup (restart to change).");
             _ownChat = Own("Chat",
-                "RuneSkin styles the chat window, in-world chat texts and NPC / raven speech bubbles. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+                "RuneSkin styles the chat window, in-world chat texts and NPC / raven speech bubbles. Read once at startup (restart to change).");
             _ownPopups = Own("Popups",
-                "RuneSkin styles the small popups (achievement unlock, join code, session player list, closed captions). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+                "RuneSkin styles the small popups (achievement unlock, join code, session player list, closed captions). Read once at startup (restart to change).");
             _ownTextDialogs = Own("TextDialogs",
-                "RuneSkin styles the text input (signs, portals, pins, names) and the text viewer (runestones, intro saga, raven). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+                "RuneSkin styles the text input (signs, portals, pins, names) and the text viewer (runestones, intro saga, raven). Read once at startup (restart to change).");
             _ownCompendium = Own("Compendium",
-                "RuneSkin styles the compendium / lore dialog. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin styles the compendium / lore dialog. Read once at startup (restart to change).");
             _ownSplitDialog = Own("SplitDialog",
-                "RuneSkin styles the split stack dialog. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin styles the split stack dialog. Read once at startup (restart to change).");
             _ownStore = Own("Store",
-                "RuneSkin styles the trader store (Haldor, Hildir, Bog Witch; Epic Loot's own trader panels excluded). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin styles the trader store (Haldor, Hildir, Bog Witch; Epic Loot's own trader panels excluded). Read once at startup (restart to change).");
             _ownBarber = Own("Barber",
-                "RuneSkin styles the barber / mirror. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin styles the barber / mirror. Read once at startup (restart to change).");
             _ownDevPanels = Own("DevPanels",
-                "RuneSkin styles the F5 console and the F2 connect panel. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+                "RuneSkin styles the F5 console and the F2 connect panel. Read once at startup (restart to change).");
             _ownFeedback = Own("Feedback",
-                "RuneSkin styles the feedback dialog. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin styles the feedback dialog. Read once at startup (restart to change).");
             _ownModUi = Own("ModUi",
-                "RuneSkin restyles every window no other family owns (other mods' canvases and panels, Jotunn windows, IMGUI fonts, other mods' main menu lines): theme panels, controls and fonts, the mod's own layout kept. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
-            _modUiOptOut = Config.Bind("Ownership", "ModUiOptOut", "AugaSkin,BossAwakening,BA_WorldBossBar", new ConfigDescription(
-                "Comma-separated object or plugin assembly names the fallback restyler (ModUi) never touches, with everything below them (default: AugaSkin's own UI; BossAwakening's boss / raid / target bars keep their own design, styled by the EnemyHud track). Read once at startup.",
+                "RuneSkin restyles every window no other family owns (other mods' canvases and panels, Jotunn windows, IMGUI fonts, other mods' main menu lines): theme panels, controls and fonts, the mod's own layout kept. Read once at startup (restart to change).");
+            _modUiOptOut = Config.Bind("Ownership", "ModUiOptOut", "BossAwakening,BA_WorldBossBar", new ConfigDescription(
+                "Comma-separated object or plugin assembly names the fallback restyler (ModUi) never touches, with everything below them (default: BossAwakening's boss / raid / target bars keep their own design, styled by the EnemyHud track). Read once at startup.",
                 null, new ConfigurationManagerAttributes { IsAdvanced = true, Order = 1000 - _ownOrder++ }));
             _ownElEnchanting = Own("EpicLootEnchanting",
-                "RuneSkin styles Epic Loot's enchanting table window and its dialogs. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin styles Epic Loot's enchanting table window and its dialogs. Read once at startup (restart to change).");
             _ownElBoard = Own("EpicLootBoard",
-                "RuneSkin styles Epic Loot's adventure board at Haldor (secret stash, gamble, treasure maps, bounties). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin styles Epic Loot's adventure board at Haldor (secret stash, gamble, treasure maps, bounties). Read once at startup (restart to change).");
             _ownElTemper = Own("EpicLootTemper",
-                "RuneSkin styles Epic Loot's tempering panel at Hildir. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin styles Epic Loot's tempering panel at Hildir. Read once at startup (restart to change).");
             _ownModHud = Own("ModHud",
-                "RuneSkin styles HUD parts other mods add (Epic Loot ability bar and debug text, level texts). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+                "RuneSkin styles HUD parts other mods add (Epic Loot ability bar and debug text, level texts). Read once at startup (restart to change).");
             _ownInventoryExtras = Own("InventoryExtras",
-                "RuneSkin styles the achievements panel, the variant dialog and the dragged item. Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+                "RuneSkin styles the achievements panel, the variant dialog and the dragged item. Read once at startup (restart to change).");
             _ownRadial = Own("Radial",
-                "RuneSkin styles the radial menus (texts; wheel art and icons stay). Read once at startup (restart to change); another skin (AugaSkin) yields them.");
+                "RuneSkin styles the radial menus (texts; wheel art and icons stay). Read once at startup (restart to change).");
             _ownMenuCompendium = Own("MenuCompendium",
-                "RuneSkin adds a Compendium entry under Settings in the pause menu (needs Menu). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin adds a Compendium entry under Settings in the pause menu (needs Menu). Read once at startup (restart to change).");
             _ownSummonFrames = Own("SummonFrames",
-                "RuneSkin shows a frame per summon next to the hotbar (icon, health with the summon's energy shield, respawn / stay / off state). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin shows a frame per summon next to the hotbar (icon, health with the summon's energy shield, respawn / stay / off state). Read once at startup (restart to change).");
             _ownPlayerShields = Own("PlayerShields",
-                "RuneSkin shows other players' energy shield and absorb shield as rails under their overhead health bar (MorgottTweaks publishes them). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin shows other players' energy shield and absorb shield as rails under their overhead health bar (MorgottTweaks publishes them). Read once at startup (restart to change).");
             _ownCursor = Own("Cursor",
-                "RuneSkin sets its rune mouse cursor. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin sets its rune mouse cursor. Read once at startup (restart to change).");
             _ownCharacterStats = Config.Bind("Ownership", "CharacterStats", true,
-                "RuneSkin adds the character stats window (5th button of the inventory info row, or Hud.StatsKey): pools and regeneration per second, resistances, movement and weight, defense, food, rest, combat modifiers, MorgottTweaks shield and slots (needs Inventory). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+                "RuneSkin adds the character stats window (5th button of the inventory info row, or Hud.StatsKey): pools and regeneration per second, resistances, movement and weight, defense, food, rest, combat modifiers, MorgottTweaks shield and slots (needs Inventory). Read once at startup (restart to change).");
             HudScale = Config.Bind("Hud", "Scale", 1f, new ConfigDescription(
                 "Scale of the minimap ring and the HUD margins on top of the game's UI scale (the bottom strip follows the inventory slot size instead; fonts never go below the readable floor).",
                 new AcceptableValueRange<float>(0.75f, 1.5f)));
