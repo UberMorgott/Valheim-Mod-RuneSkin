@@ -84,8 +84,8 @@ namespace RuneSkin.PlayerHud
             _endL = Piece("EndLeft", _back, "sprite.hud.strip7.end", Image.Type.Simple);
             _endR = Piece("EndRight", _back, Own("sprite.hud.strip7.end"), Image.Type.Simple);
             // small diamonds at the bar-block end of each rail run (target: diamonds at both rail ends)
-            _knot2L = Piece("Knot2Left", _back, "sprite.hud.strip7.knot", Image.Type.Simple);
-            _knot2R = Piece("Knot2Right", _back, Own("sprite.hud.strip7.knot"), Image.Type.Simple);
+            _knot2L = Piece("Knot2Left", _back, "sprite.hud.strip7.knot2", Image.Type.Simple);
+            _knot2R = Piece("Knot2Right", _back, Own("sprite.hud.strip7.knot2"), Image.Type.Simple);
             foreach (var img in new[] { _railL, _railR, _knotL, _knotR, _endL, _endR, _knot2L, _knot2R }) img.gameObject.SetActive(Target);
             _bars = Piece("BarBlock", _back, "sprite.hud.strip4.bars", Image.Type.Sliced);
             _iconHp = Piece("IconHealth", _back, "sprite.hud.strip7.icon.hp", Image.Type.Simple);
@@ -329,7 +329,7 @@ namespace RuneSkin.PlayerHud
             // pool icons in the bar block (heart / lightning / eitr socket), placed from its left edge
             float k2dx = T7("knot2.dx", -21.6f), k2y = T7("knot2.y", 47.5f), k2w = T7("knot2.w", 30.5f), k2h = T7("knot2.h", 32.6f);
             Box(_knot2L.rectTransform, l.BarsX + k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h, false);
-            Box(_knot2R.rectTransform, l.BarsX + l.BarsW - k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h, !HasOwn("sprite.hud.strip7.knot"));
+            Box(_knot2R.rectTransform, l.BarsX + l.BarsW - k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h, !HasOwn("sprite.hud.strip7.knot2"));
             Icon(_iconHp, "icon.hp", l.BarsX);
             Icon(_iconSt, "icon.st", l.BarsX);
             Icon(_iconEi, "icon.ei", l.BarsX);
