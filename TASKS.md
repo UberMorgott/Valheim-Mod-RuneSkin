@@ -745,3 +745,24 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
 - [ ] Epic Loot belt with PotionSlots 1 equipped did not raise PotionSlotCount.Max (3 -> 3, belt equipped=True): MorgottTweaks
       side (45r count-live), the strip follows the API in every state.
 - [ ] Harness m2 no-mirrors reads RuneSkinDollFigure, inactive since the 0.13.0 live preview (figure rect 0): pre-existing.
+
+## 0.17.0 Track H - HUD strip hud-4M3 + centre gauges (2026-10-23, mockups hud-4M3, rs-C1 / rs-C2)
+
+- [x] Layout (StripMath, StripLayoutTests): centre column = bar block (HP row + resource row; the frame closes under HP when
+      no resource row) + hotbar block (8 cells, braided divider, 1-2 ability cells, width closes around the count);
+      medallions (knot frame + sprite.ornament.triquetra) against the block sides; wings = one bottom slot row each (food /
+      potions spread evenly, knot end-caps), buffs left / debuffs right floating above the wings; no captions.
+- [x] Resource row = registry of stamina | eitr | adrenaline (opt-in HudCenter.RageInBottomRow), split evenly among the
+      present ones with sliding weights (StripMath.RowSplit, time.hud.row.slide): no eitr food = stamina full width.
+- [x] Shield = perimeter glow (left cap -> top + bottom edges together, right cap at full, StripMath.ShieldRun) + faint
+      cyan sheen over the HP fill; per-pool glossy fills, missing HP grey.
+- [x] Abilities: guardian power first (key from the "GP" binding), then Epic Loot ability slots; count.hud.ability.max 2.
+- [x] Centre gauges (CenterGauges + GaugeState tests): rage ring = vanilla adrenaline (clockwise from 12, pulse when full,
+      runic ticks), stagger column = Character.GetStaggerPercentage (bottom-up; staggered = bright burst fill draining);
+      fade in on change, out after HudCenter.IdleDelay (opacity HudCenter.Opacity); vanilla adrenaline + stagger bars hidden.
+- [x] Art (ART PIPELINE): Codex 4x redraws of every hud-4M3 piece (strip4_*, gauge_*, per-pool fills, slot ghosts),
+      9-slice only for wings / blocks / wells, fixed knots / medallion / dividers; mockup cuts (strip3_*, ornament_medallion,
+      strip_ghost_*) and unused strip_* removed; offline renders `compare-hud4` / `compare-gauges` (SSIM / dE heatmaps).
+- [x] Harness ui-runeskin-hud2 (tools d254072): strip proportions, compact, wing status sides, ghosts, cells, rims,
+      durability, resource-row (no-eitr / eitr split / slide), shield, rage-ring, stagger-column, counts-live, icons-clear,
+      dock, drop; m1 / m4 bar-caps / p rules for the 0.16+ strip.
