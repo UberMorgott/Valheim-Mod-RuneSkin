@@ -40,6 +40,7 @@ namespace RuneSkin.Screens
             ScreenRegistry.Register(root, () => Context(root, screenId));
             ScreenRegistry.Restyle(root);
             ResponsiveContext.ApplyScale(root);
+            TooltipNoRaycast.Attach(tip);
         }
 
         private static ScreenContext Context(Transform root, string screenId)
