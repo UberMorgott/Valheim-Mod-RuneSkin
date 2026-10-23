@@ -77,8 +77,12 @@ namespace RuneSkin.Screens
                 var decor = PanelDecor.Ensure(box.rectTransform, "size.tooltip.panel.pad", glass: true, plaque: false);
                 // The frame lies on the box edge: content laid out inside the box needs the rail inset (Epic Loot's
                 // InventoryTooltip content has padding 0), raised to the corner caps' keep-out so no line runs under
-                // a leather strap. Boxes without a LayoutGroup keep their own text margins.
-                ContentInset.Ensure(box.rectTransform, "size.tooltip.content.inset", decor ? decor.ContentInset() : 0f);
+                // a leather strap (art contract: every opaque cap pixel has min(dx, dy) < clear.<asset>). Boxes without a
+                // LayoutGroup: their texts' margins, left / right past the whole cap when the box is shorter than its
+                // caps (FrameTextInset; user 2026-10-23, the map filter hint ran under the caps), the box grows to the
+                // wrapped text. Layout-grouped item tooltips keep the keep-out only (their text width stays usable).
+                if (!ContentInset.Ensure(box.rectTransform, "size.tooltip.content.inset", decor ? decor.ContentInset() : 0f))
+                    FrameTextInset.Ensure(box.rectTransform);
             }
             else if (text && text.TryGetComponent<TMP_Text>(out var bare)) TooltipFrame.Ensure(bare);
             return ctx;
