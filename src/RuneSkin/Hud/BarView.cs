@@ -183,7 +183,7 @@ namespace RuneSkin.PlayerHud
             // slight dilate, readable on any fill (user call 2026-10-22, as the damage numbers).
             _number = art.Text("Value", Root, "font.body", "color.hud.text", numberSize,
                 TextAlignmentOptions.Center); // every bar: value centred in the window, both axes (user call 2026-10-22)
-            WorldHud.TextLook.Apply(_number, "font.body", "hudvalue", ThemeTokens.GetFloat("size.hud.value.dilate", 0.2f));
+            WorldHud.TextLook.ApplyHudNumber(_number);
             _number.richText = mainValue;
             _textColor = _number.color;
             _aux = art.Text("Aux", Root, "font.body", "color.hud.timer", ThemeTokens.GetFloat("size.hud.font.timer", 13f), TextAlignmentOptions.MidlineLeft);

@@ -358,6 +358,7 @@ namespace RuneSkin.InventoryScreen
         // UpdateGui (Update phase). Change-only writes.
         private void LateUpdate()
         {
+            Fade();
             if (!_frameReady || _layout == null) return;
             _frameReady = false;
             if (!InventoryGui.IsVisible()) return;
@@ -371,6 +372,57 @@ namespace RuneSkin.InventoryScreen
             }
             if (_gui.m_playerGrid && _grids.TryGetValue(_gui.m_playerGrid, out var ps)) PlaceEaqsCells(_gui.m_playerGrid, ps.Scale);
             if (_logPlacement > 0 && --_logPlacement == 0) StartCoroutine(LogAtEndOfFrame());
+        }
+
+        // ---- open / close fade (user call 2026-10-23) --------------------------------------------------------------
+        // Root cause of the "glitchy redraw" on Tab close: InventoryGui.Hide clears the animator's "visible" bool, the
+        // vanilla close clip then writes the panels' anchored positions (its own layout, not ours) and slides them off
+        // while IsVisible() already turned false, so LateUpdate stopped re-placing them: the panels jumped to the
+        // vanilla spots and slid out. Now the screen fades in place (CanvasGroup on the InventoryGui object, Layout.PanelFade
+        // seconds, 0 = instant), the RuneSkin layout is re-applied over the clip during the fade-out, and once fully
+        // transparent the panels are deactivated (nothing hidden keeps drawing) until InventoryGui.Show (Unpark prefix).
+        private CanvasGroup _fade;
+        private float _alpha;
+        private readonly List<GameObject> _parked = new List<GameObject>(4);
+        private static readonly int AnimVisible = Animator.StringToHash("visible");
+
+        private void Fade()
+        {
+            if (!_gui || !_gui.m_animator) return;
+            if (!_fade) _fade = _gui.GetComponent<CanvasGroup>() ?? _gui.gameObject.AddComponent<CanvasGroup>();
+            var want = _gui.m_animator.GetBool(AnimVisible);
+            if (want && _parked.Count > 0) Unpark();
+            var dur = Mathf.Max(0f, Plugin.PanelFade?.Value ?? 0.15f);
+            var target = want ? 1f : 0f;
+            _alpha = dur <= 0f ? target : Mathf.MoveTowards(_alpha, target, Time.unscaledDeltaTime / dur);
+            if (!Mathf.Approximately(_fade.alpha, _alpha)) _fade.alpha = _alpha;
+            if (_fade.blocksRaycasts != want) _fade.blocksRaycasts = want;
+            if (_fade.interactable != want) _fade.interactable = want;
+            if (want) return;
+            if (_alpha > 0f)
+            {
+                if (_layout != null) ApplyPanels(); // pin over the vanilla close clip while fading out
+            }
+            else if (_parked.Count == 0) Park();
+        }
+
+        private void Park()
+        {
+            foreach (var t in new Transform[] { _gui.m_player, _gui.m_crafting, _gui.m_container, _gui.m_info })
+                if (t && t.gameObject.activeSelf)
+                {
+                    t.gameObject.SetActive(false);
+                    _parked.Add(t.gameObject);
+                }
+        }
+
+        // InventoryGui.Show prefix (and any frame the animator wants the screen): the parked panels come back before
+        // vanilla touches them.
+        public void Unpark()
+        {
+            foreach (var go in _parked)
+                if (go) go.SetActive(true);
+            _parked.Clear();
         }
 
         public void OnHide()

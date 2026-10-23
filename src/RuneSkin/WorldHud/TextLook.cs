@@ -82,6 +82,23 @@ namespace RuneSkin.WorldHud
             Underlay(text.fontSharedMaterial);
             return true;
         }
+        // THE HUD number style (user call 2026-10-23: every white number readable on a white backdrop): body sans, dark
+        // outline Hud.NumberOutline (SDF width, ConfigurationManager; theme color.text.outline), dilate
+        // size.hud.value.dilate, soft dark underlay (Underlay). Bar values, slot keys / counts / timers, status timers,
+        // summon states, cooldowns.
+        public static bool ApplyHudNumber(TMP_Text text)
+        {
+            var font = ThemeTokens.GetFont("font.body");
+            if (!text || !font) return false;
+            text.font = font;
+            text.fontStyle &= ~FontStyles.Bold;
+            var m = Outlined(font, "hudnumber", Plugin.NumberOutline?.Value ?? 0.18f, ThemeTokens.GetFloat("size.hud.value.dilate", 0.2f));
+            if (!m) return false;
+            Underlay(m);
+            text.fontSharedMaterial = m;
+            return true;
+        }
+
         // Font + outline material on a live text; false when the font token has no asset (text left as it is).
         public static bool Apply(TMP_Text text, string fontToken, string look, float dilate = 0f)
         {

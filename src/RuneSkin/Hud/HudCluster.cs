@@ -735,8 +735,8 @@ namespace RuneSkin.PlayerHud
         // (it docks on the strip top).
         private void Status()
         {
-            var cell = StatusStrip.CellSize;
-            var gap = ThemeTokens.GetFloat("size.hud.status.gap", 4f);
+            var cell = StatusStrip.StripCell;
+            var gap = StatusStrip.StripGap;
             var pad = ThemeTokens.GetFloat("size.hud.status.pad", 6f);
             var show = !InventoryGui.IsVisible();
             if (_buffs.Root.gameObject.activeSelf != show) _buffs.Root.gameObject.SetActive(show);

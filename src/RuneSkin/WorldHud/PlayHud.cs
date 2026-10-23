@@ -100,7 +100,7 @@ namespace RuneSkin.WorldHud
         internal static void Text(HudArt art, TMP_Text t, string font, string look, string color, string role, string reason, float size = 0f)
         {
             if (!t) return;
-            art.Note(t, role, TextLook.Apply(t, font, look), reason);
+            art.Note(t, role, TextLook.ApplyNameplate(t, font, look, 0f), reason); // outline + soft shadow (user: readable on white)
             if (color != null) t.color = ThemeTokens.GetColor(color, t.color);
             // Every themed HUD text reads at >= size.text.hud.min (px at 1080p, the HUD canvas scales with the screen).
             if (size > 0f)
