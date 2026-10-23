@@ -169,7 +169,12 @@ namespace RuneSkin.WorldHud
             var name = t.Find("Name");
             if (name && name.TryGetComponent<TMP_Text>(out var text))
             {
-                var ok = TextLook.Apply(text, boss ? "font.display" : "font.body", boss ? "boss" : "enemy");
+                // Regular enemies: PT Sans Bold, outline + dilate like the player bar values, plus the soft dark
+                // underlay. Run 20261023-125858: the plain outlined regular face (no dilate) read thin grey and
+                // vanished on sky / bright foliage.
+                var ok = boss
+                    ? TextLook.Apply(text, "font.display", "boss")
+                    : TextLook.ApplyNameplate(text, "font.body.bold", "enemyname", ThemeTokens.GetFloat("size.enemy.name.dilate", 0.25f));
                 text.color = ThemeTokens.GetColor(boss ? "color.boss.name" : "color.enemy.name", text.color);
                 text.fontSize = ThemeTokens.GetFloat(boss ? "size.boss.name.font" : "size.enemy.name.font", text.fontSize) / scale;
                 Art.Note(text, boss ? "boss.name" : "enemy.name", ok, "enemy name (outlined)");

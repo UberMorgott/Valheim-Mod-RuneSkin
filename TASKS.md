@@ -298,26 +298,9 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
       unknown = 0 in every family.
 - [ ] mod-updaters-vps: mods.json AugaSkin "disabled", drop `plugins\AugaSkin` + cfg from `$clientOnly`, add cfg to
       `$orphanCfgs`; `-Only` never deletes a whole mod -> full `valheim-pack.ps1 -SkipUpdate -Upload` (user OK) removes it.
-- [x] Clean references (RuneSkin, 2026-10-23): ModCompat.AugaSkinGuid + every HarmonyAfter on it gone, Ownership / Plugin
-      bootstrap comments, 42 cfg descriptions without "another skin (AugaSkin) yields", ModUiOptOut default
-      "BossAwakening,BA_WorldBossBar", old AugaActiveEffects exclusion dropped; tests use a neutral foreign name.
-- [ ] Other repos (owners' tracks): MorgottTweaks AlchemistGem HarmonyBefore("morgott.valheim.augaskin") + contract comments
-      (ShieldShare / EnergyShield / TrashSlot / AuraIcons), BossAwakening RarityFrames HarmonyAfter + HudModes notes, Almanac
-      Helpers comment: all no-ops without AugaSkin.
-- [x] Standalone fixes (user 2026-10-23 "RuneSkin fully standalone"): AlmanacSkin refresh passes classify by the journal's
-      original sprite (a styled well read as content and was reverted to Almanac's item_background: Description /
-      requirement cells), BadgeDock moves a corner badge right until it clears its button's rendered labels (changelog "!"
-      over "Изменения"), stats hover logged. Harness (tools 2ef3804..9f6c844): 69-almanac counts drawn images + blames
-      RuneSkin, m5 text scope knows RuneSkinHud, m6-event removes leftover bosses, enemybars clears leftover creatures +
-      refreshes the engaged bar + waits for Vaettir's world-boss broadcast + polls the boss-bar restore, preview-leak one-time
-      allowance (batch A objects all gone again), FreeSlot counts vanilla grid cells (EAQS rows), hud2 / preview / m6 build
-      free a cell, p-compendium nav read with the menu up, m5 changelog Esc polled + one retry, ClearLeftoverCreatures
-      before m1 / m6 / m6c. Runs (AugaSkin parked): 20261023-093222 602/13, -095522 608/6 (both cut at the 600 s world
-      timeout during stats, not a crash: full sets need -WorldTimeoutSec 2400), -105831 637/26 (hud2 = strip-scale track's
-      0.19 expectations; rest = grid-full / shared-world pollution, fixed in the harness).
-      Targeted (user rule: only what changed) runs 20261023-132956 (m1 m2 info m5 m6 m6c m7 p preview enemybars 69-almanac)
-      421/4 and -160807 (m5 preview enemybars) 153/3: remaining = other tracks (eb-speech npctext not on main) + one
-      eb tier pick flake (harness: tier passes clear leftovers). 0.18.2.
+- [ ] Clean references: RuneSkin HarmonyAfter("morgott.valheim.augaskin") (harmless, remove), Ownership comments, Plugin.cs
+      "another skin (AugaSkin) yields" cfg texts; MorgottTweaks HarmonyBefore / comments; Vaettir RarityFrames / HudModes
+      AugaSkin template notes; harness Auga layer.
 
 ## 0.9.3 minimap fix (2026-10-22, user priority)
 
@@ -793,25 +776,4 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
 - [x] Alert / aware indicator stacked above the name, centred (replaces the 0.16.3 slot left of the name): EnemyHudMath.AlertAboveY + unit test.
 - [x] Vaettir 0.10.1 drops the duplicate top-center target panel (Hud.Mode OverheadOnly); RuneSkin overhead bars unchanged otherwise.
 - Harness ui-runeskin-enemybars `eb-name` (every shown bar: name visible, centred, 0..12 px over the frame) + `eb-alert-slot` (stacked above, centred, no overlap).
-
-## 0.19.0 HUD strip full width + shared slot size (2026-10-23, user: the strip was far too small)
-
-- [x] One slot token `size.slot` (70 canvas units, was size.inv.cell) drives the inventory grid cell AND the strip hotbar
-      cell: strip px per unit = size.slot x Layout.SkinScale x GUI canvas scale / size.hud.strip.cell (StripMath.SlotPx /
-      UnitPx); every other strip piece keeps its hud-4M3 proportion to that cell, height follows (238 px at 1080p, 22 %).
-- [x] Width = HudStrip.Span (default 0.96; new key, the old HudStrip.Width was a cap and users kept 0.99) of the safe /
-      16:9 box; only the wings' tiled rails stretch. HudStrip.Height
-      (the 12 % compact default) removed; Hud.Scale no longer scales the strip (minimap + margins only).
-- [x] Readable minimum in strip units (StripMath.FontFloor, TextFloor.Apply: relayout, new status cells, summon frames); status rows
-      end before the medallion (StripMath.StatusPerRow); vanilla chat box (bottom right) lifted above the strip top, measured from its drawn graphics while shown (ChatTick).
-- [x] Square slot cells (user screenshot: wide food plates): hotbar / ability / food / potion = the same square slot, wings
-      spread gaps, never cells; food timer in a band under the socket disc (share.hud.strip.timer.band, auto-sized).
-- [x] Wing 9-slice: left border 335 holds the knot incl. its tail (the tiled centre repeated the tail = plate segments),
-      straight run stretched (Sliced).
-- [x] Bars on the RuneSkin/UI Bar shader (art/shaders, bundle): glossy cylinder, capsule window, straight-cut end with
-      end glow + seam, dark hollow missing part, lag ghost, well shadow, shield sheen + perimeter glow (second quad); colours
-      color.hud.bar.fx.*, shape share.hud.bar.fx.*; offline preview unity/Assets/Editor/RenderBar.cs (needs a GPU: run Unity
-      outside the agent sandbox).
-- [x] Harness hud2 (tools a8be577, 1484b5a, 7e17626): strip-width via Span 0.8 live, captions, per resolution 1080 / 720 /
-      1440: slot-equal, slots (square, = inventory cell, icon centred, food timer under the disc, no overlap, inside the
-      frame; live counts + food 4 / potions 5), overlap (chat / minimap), text-min, dock, shader shield + PNG files.
+- [x] User: enemy overhead name barely readable (faint grey, vanished on sky / foliage, run 20261023-125858). 0.18.2: PT Sans Bold, color.enemy.name = color.hud.text, outline + size.enemy.name.dilate 0.25 (as the player bar values) + soft dark underlay, size.enemy.name.font 14 -> 16. Position / alert stacking unchanged.
