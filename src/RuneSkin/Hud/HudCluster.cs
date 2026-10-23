@@ -477,7 +477,8 @@ namespace RuneSkin.PlayerHud
             var gap = ThemeTokens.GetFloat("size.hud.strip.row.gap", 18f);
             // target panel: stamina | eitr channels of unequal length (share.hud.strip.row.<k> scales the weights)
             for (var k = 0; k < RowEntries; k++) _rowShare[k] = _rowWeight[k] * ThemeTokens.GetFloat("share.hud.strip.row." + k, 1f);
-            var total = StripMath.RowSplit(_barsInnerW, gap, _rowShare, RowEntries, _rowX, _rowW);
+            // the resource row ends size.hud.strip.row.pad.r short of the HP row (target: eitr channel ends 4.5 px before HP's)
+            var total = StripMath.RowSplit(Mathf.Max(0f, _barsInnerW - ThemeTokens.GetFloat("size.hud.strip.row.pad.r", 0f)), gap, _rowShare, RowEntries, _rowX, _rowW);
             var pxPerUnitY = _root.lossyScale.y;
             var y = HudMath.Snap(_rowY, pxPerUnitY);
             var div = 0;
