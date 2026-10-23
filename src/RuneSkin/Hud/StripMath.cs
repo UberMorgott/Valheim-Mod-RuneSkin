@@ -43,6 +43,7 @@ namespace RuneSkin.PlayerHud
             public float FoodSize, PotionSize; // wing slot sides in that mode (target: round 52 px / square 53 px; 0 = Cell)
             public float CellsDX;        // cell row offset inside the hotbar block (target: the left pad is narrower)
             public float AbilityCell;    // ability cell side (target: 63 px vs the 59 px hotbar cell; 0 = Cell)
+            public int WingMax;          // slots per wing at most (user 2026-10-23: 0..4; 0 = no cap)
             public int Hotbar, Abilities, Food, Potions;
         }
 
@@ -145,6 +146,7 @@ namespace RuneSkin.PlayerHud
             var stop = o.BarsX - i.ConnW / 2f;
             var pitch = fc + g;
             var max = pitch > 0f ? Math.Max(0, (int)Math.Floor((stop - start + g) / pitch)) : 0;
+            if (i.WingMax > 0) max = Math.Min(max, i.WingMax);
             o.FoodMax = max;
             o.FoodShown = Math.Min(i.Food, max);
             o.FoodCell = fc;
@@ -154,6 +156,7 @@ namespace RuneSkin.PlayerHud
             var ps = i.PotionStart > 0f ? i.PotionStart : start;
             var pg = i.PotionGap > 0f ? i.PotionGap : g;
             var pmax = pc + pg > 0f ? Math.Max(0, (int)Math.Floor((i.Width - ps - (o.BarsX + o.BarsW + i.ConnW / 2f) + pg) / (pc + pg))) : 0;
+            if (i.WingMax > 0) pmax = Math.Min(pmax, i.WingMax);
             o.PotionMax = pmax;
             o.PotionShown = Math.Min(i.Potions, pmax);
             o.PotionCell = o.PotionH = pc;

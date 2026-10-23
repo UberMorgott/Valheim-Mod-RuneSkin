@@ -231,6 +231,7 @@ namespace RuneSkin.PlayerHud
                 FoodSize = ThemeTokens.GetFloat("size.hud.strip.food.size", 0f),
                 CellsDX = ThemeTokens.GetFloat("size.hud.strip.cells.dx", 0f),
                 AbilityCell = ThemeTokens.GetFloat("size.hud.strip.ability.cell", 0f),
+                WingMax = (int)ThemeTokens.GetFloat("count.hud.strip.wing.max", 0f),
                 PotionSize = ThemeTokens.GetFloat("size.hud.strip.potion.size", 0f),
                 GrowFromEnds = ThemeTokens.GetFloat("mode.hud.strip.wing.grow", 0f) > 0.5f,
                 FoodCell = cell,

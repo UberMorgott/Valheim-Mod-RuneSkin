@@ -162,8 +162,8 @@ namespace RuneSkin.PlayerHud
             Box(_count.rectTransform, inset, inset * 0.8f, w - 2f * inset, h * 0.5f);
             if (timerBelow) // food: in the band under the disc (never over the ring)
                 Box(_timer.rectTransform, 0f, 0f, w, band > 0f ? band : ThemeTokens.GetFloat("size.hud.strip.timer", 18f));
-            else
-                Box(_timer.rectTransform, 0f, 0f, w, h);
+            else // cooldowns: the lower 70 % of the cell, clear of the key label (top-left)
+                Box(_timer.rectTransform, 0f, 0f, w, h * 0.7f);
             var line = ThemeTokens.GetFloat("size.hud.strip.dur.line", 5f);
             var dr = _durTrack.rectTransform;
             dr.anchorMin = dr.anchorMax = dr.pivot = Vector2.zero;

@@ -901,6 +901,7 @@
     { "token": "share.hud.strip.timer.band", "value": 0 },
     { "token": "size.hud.status.strip.gap", "value": 5 },
     { "token": "mode.hud.strip.target", "value": 1 },
+    { "token": "count.hud.strip.wing.max", "value": 4 },
     { "token": "size.hud.strip7.knot2.dx", "value": -21.8 },
     { "token": "size.hud.strip7.knot2.y", "value": 47.5 },
     { "token": "size.hud.strip7.knot2.w", "value": 43.2 },
