@@ -37,7 +37,7 @@ Shader "RuneSkin/UI Bar"
         _FxOn ("Fx on", Float) = 1
         _FxIntensity ("Fx intensity", Float) = 1
         _FxSpeed ("Fx speed", Float) = 1
-        _FxClock ("Clock override (<0 = global _RuneSkinFxClock)", Float) = -1
+        _FxClock ("Clock override (<0 = _Time.y)", Float) = -1
         _HitAt ("Damage event clock", Float) = -100
         _HitSize ("Damage event size share", Float) = 0.2
         _HealAt ("Heal event clock", Float) = -100
@@ -109,7 +109,6 @@ Shader "RuneSkin/UI Bar"
             float4 _ClipRect;
             float _Mode, _Fill, _Lag, _Shield, _Aspect, _HiPos, _HiWidth, _HiAmount, _Bottom, _Depth, _Rim, _GlowWidth;
             fixed4 _FillColor, _LagColor, _MissingColor, _SheenColor, _GlowColor, _ClotColor;
-            float _RuneSkinFxClock;   // global shader clock, written once per frame by BarFxConfig.TickClock
             float _Pool, _FxOn, _FxIntensity, _FxSpeed, _FxClock, _HitAt, _HitSize, _HealAt, _PulseAt, _Regen, _Exhaust;
 
             v2f vert(appdata_t v)
@@ -219,80 +218,42 @@ Shader "RuneSkin/UI Bar"
 
             float3 arcGlow() { return lerp(_FillColor.rgb, float3(0.92, 0.84, 1.0), 0.2); }
 
-            // Slow drips running down from the top lip (one candidate per 1.7 bar heights, ~35 % used, 10-20 s each):
-            // a tapering trail above a rounded head. Returns 0..1 coverage.
-            float drip(float2 P, float v, float tf)
-            {
-                const float cell = 1.7;
-                float id = floor(P.x / cell);
-                float h = hash21(float2(id, 4.2));
-                float cx = (id + 0.25 + 0.5 * h) * cell;
-                float life = frac(tf * (0.05 + 0.05 * h) + h * 7.0);
-                float head = 1.02 - life * 1.25;
-                float wdt = 0.05 + 0.03 * h;
-                float dx = abs(P.x - cx);
-                float above = saturate((v - head) * 3.0);
-                float trail = exp(-dx / (wdt * (0.5 + 0.5 * saturate(1.0 - (v - head))))) * step(head, v) * (0.35 + 0.65 * above) * exp(-(v - head) / 0.3);
-                float bulb = exp(-pow(length(float2(dx, (v - head) * 0.8)) / (wdt * 1.6), 2.0));
-                return saturate(max(trail * 0.8, bulb)) * step(h, 0.35) * (1.0 - smoothstep(0.85, 1.0, life));
-            }
-
-            // Tiny darker particles suspended in the blood (sparse jittered grid, ~1 px at 1080p).
-            float motes(float2 P)
-            {
-                const float cell = 0.22;
-                float2 g = P / cell;
-                float2 id = floor(g);
-                float h = hash21(id + 2.3);
-                float2 c = float2(hash21(id + 8.1), hash21(id + 6.6)) * 0.6 + 0.2;
-                float d = length((frac(g) - c) * cell);
-                return exp(-pow(d / (0.03 + 0.02 * hash21(id + 4.7)), 2.0)) * step(h, 0.065);
-            }
-
-            // HP = blood: deep desaturated crimson over a near-black base (no glossy cylinder), slow domain-warped flow,
-            // dark coagulated streaks, slow drips, suspended particles, translucent red under the top lip, a soft wet
-            // sheen, a coagulated band at the fill end with a thin translucent meniscus rim, a flash + slosh on damage,
-            // a warm wave on heal. Intensity blends from the plain cylinder (0) to the full look (1).
+            // HP = blood: thick dark-red liquid, slow domain-warped flow, wet sheen with drifting glints, a darker
+            // clotted band at the fill end with a wet meniscus rim, a flash + slosh on damage, a bright wave on heal.
             float3 bloodBody(float2 P, float v, float x, float dF, float tf, float hitAge, float healAge, float I)
             {
-                float Is = saturate(I);
                 float slosh = exp(-max(hitAge, 0.0) * 2.2) * step(0.0, hitAge);
-                float wave = (0.03 * sin(P.x * 0.9 - tf * 0.6) + 0.02 * sin(P.x * 2.1 + tf * 0.4))
+                // large, low-contrast, horizontally stretched blobs drifting slowly towards the end (viscous)
+                float2 q = P * float2(0.32, 1.1);
+                float w = fbm(q * 1.1 + float2(-tf * 0.06, tf * 0.02));
+                float n = fbm(q * 1.6 + float2(-tf * 0.08 + w * 1.3, w * 0.7));
+                float3 deep = _FillColor.rgb * float3(0.52, 0.30, 0.32);
+                float3 lit = _FillColor.rgb * float3(0.98, 0.92, 0.94);
+                float3 base = lerp(_FillColor.rgb, lerp(deep, lit, smoothstep(0.10, 0.90, n)) * 0.86, 0.85 * saturate(I));
+                float wave = (0.035 * sin(P.x * 0.9 - tf * 0.7) + 0.02 * sin(P.x * 2.3 + tf * 0.45)) * I
                     + slosh * 0.10 * sin(P.x * 2.6 - hitAge * 9.0) * exp(-max(dF, 0.0) * 0.15);
-                float vs = saturate(v - wave * Is);
-                float lumC = dot(_FillColor.rgb, float3(0.3, 0.59, 0.11));
-                float3 crimson = lerp(_FillColor.rgb, lumC.xxx, 0.22) * float3(0.70, 0.52, 0.56);
-                float3 black = float3(0.075, 0.008, 0.013);
-                float2 q = P * float2(0.30, 1.0);
-                // two-axis domain warp + a finer, differently stretched layer: irregular, non-repeating flow
-                float2 wv = float2(fbm(q * 0.9 + float2(-tf * 0.05, 1.7)), fbm(q * 1.3 + float2(4.1, tf * 0.03))) - 0.5;
-                float n = fbm(q * 1.7 + wv * 2.2 + float2(-tf * 0.07, 0.0));
-                n = lerp(n, vnoise(P * float2(0.9, 2.2) + wv * 1.5 + float2(-tf * 0.11, 0.0)), 0.35);
-                float depth = (0.12 + 0.88 * smoothstep(0.0, 0.78, vs)) * (0.72 + 0.5 * n);
-                float3 c = lerp(black, crimson, saturate(depth));
-                float st = fbm(P * float2(0.6, 3.4) + float2(-tf * 0.04, 5.0));
-                c *= 1.0 - 0.27 * smoothstep(0.58, 0.78, st) * smoothstep(0.45, 0.7, vnoise(P * float2(0.8, 1.2) + float2(-tf * 0.03, 9.0)));
-                c *= 1.0 - 0.35 * drip(P, v, tf);
-                c *= 1.0 - 0.15 * motes(P + float2(-tf * 0.06, sin(tf * 0.3) * 0.05));
-                c += _FillColor.rgb * 0.30 * exp(-pow((vs - 0.88) / 0.08, 2.0)) * (0.7 + 0.6 * n);
-                float gl = vnoise(float2(P.x * 0.5 - tf * 0.2, 1.7));
-                c += float3(1.0, 0.45, 0.40) * exp(-pow((vs - _HiPos - 0.06) / 0.12, 2.0)) * (0.06 + 0.10 * gl);
+                float3 c = cylinder(base, saturate(v - wave), _HiAmount * lerp(1.0, 0.45, saturate(I)));
+                // wet specular: a thin crisp line riding the surface wave, brighter where glints drift past
+                float spec = exp(-pow((v - _HiPos - 0.08 - wave) / 0.025, 2.0));
+                float gl = smoothstep(0.55, 0.95, vnoise(float2(P.x * 0.6 - tf * 0.25, 1.7)));
+                c += float3(1.0, 0.38, 0.30) * spec * (0.025 + 0.24 * gl) * I;
+                // clotted end: darker maroon, grainy, about 1.8 bar heights long
                 float clot = 1.0 - smoothstep(0.0, 1.8, dF);
                 float grain = fbm(P * float2(3.0, 4.0) + 11.0);
-                c = lerp(c, _ClotColor.rgb * (0.55 + 0.5 * grain) * (0.35 + 0.65 * smoothstep(0.0, 0.8, vs)), clot * clot * 0.9);
-                c += _FillColor.rgb * 0.7 * exp(-max(dF, 0.0) / 0.05) * (0.7 + 0.8 * slosh) * (0.4 + 0.6 * smoothstep(0.0, 0.6, vs));
-                c += float3(0.32, 0.06, 0.04) * exp(-max(hitAge, 0.0) * 7.0) * step(0.0, hitAge) * exp(-max(dF, 0.0) / 0.5);
+                c = lerp(c, _ClotColor.rgb * (0.85 + 0.6 * grain) + c * 0.15, saturate(clot * clot * 0.95 * I));
+                c += float3(0.55, 0.12, 0.10) * exp(-max(dF, 0.0) / 0.06) * I * (0.15 + 0.45 * slosh);
+                c += float3(0.32, 0.09, 0.05) * exp(-max(hitAge, 0.0) * 7.0) * step(0.0, hitAge) * exp(-max(dF, 0.0) / 0.5) * I;
                 float heal = exp(-pow((x - healAge * 0.9) * _Aspect / 1.6, 2.0)) * step(0.0, healAge) * (1.0 - smoothstep(1.1, 1.5, healAge));
-                c += float3(0.95, 0.30, 0.22) * heal * 0.5;
-                c *= 1.0 + 0.25 * step(0.0, healAge) * exp(-max(healAge, 0.0) * 2.0);
-                return lerp(cylinder(_FillColor.rgb, v, _HiAmount), c, Is);
+                c += float3(1.0, 0.55, 0.42) * heal * 0.55 * I;
+                c *= 1.0 + 0.25 * step(0.0, healAge) * exp(-max(healAge, 0.0) * 2.0) * I;
+                return c;
             }
 
             // The lost-HP (lag) segment of the blood bar: dark clotted blood that drains as _Lag eases down.
             float3 clotBody(float2 P, float v, float tf)
             {
                 float g = fbm(P * float2(2.2, 3.0) + float2(-tf * 0.05, 0.0));
-                return _ClotColor.rgb * float3(0.62, 0.55, 0.5) * (0.6 + 0.7 * g) * (0.3 + 0.7 * smoothstep(0.0, 0.8, v)) + _ClotColor.rgb * 0.5 * exp(-pow((v - _HiPos - 0.06) / 0.10, 2.0));
+                return cylinder(_ClotColor.rgb * (0.65 + 0.7 * g), v, _HiAmount * 0.35);
             }
 
             // Damage splash: four droplets thrown from the new fill end into the missing part, gone within ~0.55 s.
@@ -371,10 +332,8 @@ Shader "RuneSkin/UI Bar"
                 float x = uv.x;
                 float v = uv.y;
                 float px = max(fwidth(x), 1e-5);
-                // shared clock (BarFxConfig.TickClock: seconds since the HUD started, unwrapped, events use the same
-                // clock); _FxClock >= 0 overrides it for offline renders
-                float tr = _FxClock >= 0.0 ? _FxClock : _RuneSkinFxClock;
-                float tf = tr * _FxSpeed;
+                float tr = _FxClock >= 0.0 ? _FxClock : _Time.y;     // event ages from the raw clock
+                float tf = fmod(tr, 1024.0) * _FxSpeed;              // flow time, wrapped for noise precision
                 float I = _FxOn * _FxIntensity * step(-0.5, _Pool);
                 float hitAge = tr - _HitAt, healAge = tr - _HealAt, pulseAge = tr - _PulseAt;
                 float2 P = float2(x * _Aspect, v);
@@ -390,10 +349,8 @@ Shader "RuneSkin/UI Bar"
                 float inFill = 1.0 - smoothstep(fillE - px, fillE + px, x);
                 float inLag = (1.0 - smoothstep(_Lag - px, _Lag + px, x)) * (1.0 - inFill);
                 float dF = (fillE - x) * _Aspect;
-                // the noisy bodies run only where they are seen (the fill / lag share); the grey part stays cheap
-                float3 body = _FillColor.rgb;
-                [branch] if (inFill <= 0.0) { }
-                else if (I <= 0.0)
+                float3 body;
+                [branch] if (I <= 0.0)
                 {
                     // plain glossy cylinder (adrenaline, fx off): straight-cut end, the last ~14 px a little lighter
                     body = cylinder(_FillColor.rgb, v, _HiAmount);
@@ -405,17 +362,9 @@ Shader "RuneSkin/UI Bar"
                 else body = arcaneBody(P, v, dF, tf, pulseAge, I);
                 // shield sheen over the fill, from the left, shield share long
                 float sh = (1.0 - smoothstep(_Shield - px, _Shield + px, x)) * step(0.0001, _Shield);
-                // blood: the sheen narrows to a thin line under the top lip (a broad cyan wash greys dark blood)
-                float bloodSheen = step(_Pool, 0.5) * step(0.0001, I);
-                float sheenProfile = lerp(0.6 + 0.8 * exp(-pow((v - _HiPos) / max(0.01, _HiWidth * 1.4), 2.0)),
-                    0.5 * exp(-pow((v - 0.88) / 0.035, 2.0)), bloodSheen);
-                body += _SheenColor.rgb * _SheenColor.a * sh * sheenProfile;
-                float3 lag = _LagColor.rgb;
-                [branch] if (inLag > 0.0)
-                {
-                    lag = cylinder(_LagColor.rgb, v, _HiAmount * 0.5);
-                    if (I > 0.0 && _Pool < 0.5) lag = lerp(lag, clotBody(P, v, tf), saturate(I));
-                }
+                body += _SheenColor.rgb * _SheenColor.a * sh * (0.6 + 0.8 * exp(-pow((v - _HiPos) / max(0.01, _HiWidth * 1.4), 2.0)));
+                float3 lag = cylinder(_LagColor.rgb, v, _HiAmount * 0.5);
+                if (I > 0.0 && _Pool < 0.5) lag = lerp(lag, clotBody(P, v, tf), saturate(I));
                 // missing part: a dark hollow (Codex review: shadow under the top lip, faint bottom reflex), no cylinder
                 float3 miss = _MissingColor.rgb * (1.0 - 0.45 * smoothstep(0.6, 1.0, v)) * (1.0 + 0.18 * (1.0 - smoothstep(0.0, 0.25, v)));
                 float3 c = body * inFill + lag * inLag + miss * (1.0 - inFill - inLag);
@@ -427,7 +376,7 @@ Shader "RuneSkin/UI Bar"
                         float drop = saturate(splash(P, fillE * _Aspect, hitAge) * saturate(I));
                         c = lerp(c, cylinder(_FillColor.rgb * 1.1, v, _HiAmount * 1.5), drop * outside);
                     }
-                    else if (_Pool > 1.5 && dF > -1.5)
+                    else if (_Pool > 1.5)
                     {
                         float o = max(-dF, 0.0);
                         c += arcGlow() * (0.35 * exp(-o / 0.25) + 0.9 * arcFilament(P, v, tf) * exp(-o / 0.3)) * I * outside;
@@ -451,13 +400,12 @@ Shader "RuneSkin/UI Bar"
                 float2 p = float2((uv.x - 0.5) * _Aspect, uv.y - 0.5);
                 float w = max(0.01, _GlowWidth);
                 float d = pill(p, 0.5 * _Aspect - w, 0.5 - w);
-                // outline: soft halo outwards, a sharp falloff inwards (the fill under the shield keeps its own tone)
-                float g = exp(-abs(d) / ((d > 0.0 ? 0.45 : 0.12) * w));
+                float g = exp(-abs(d) / (0.45 * w));
                 float px = max(fwidth(uv.x), 1e-5);
                 float lit = 1.0 - smoothstep(_Shield - 2.0 * px, _Shield + 2.0 * px, uv.x);
                 lit = max(lit, step(0.995, _Shield));
                 float a = g * lit * _GlowColor.a;
-                return fixed4(_GlowColor.rgb * a, d > 0.0 ? a * 0.85 : 0.0);   // inside: additive only, never darkens
+                return fixed4(_GlowColor.rgb * a, a * 0.85);
             }
 
             fixed4 frag(v2f IN) : SV_Target
