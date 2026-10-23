@@ -95,6 +95,13 @@ namespace RuneSkin.PlayerHud
             _key = Text(art, "Key", "size.hud.strip.key.font", "color.hud.strip.key", TextAlignmentOptions.TopLeft);
             _count = Text(art, "Count", "size.hud.strip.count.font", "color.hud.text", TextAlignmentOptions.BottomRight);
             _timer = Text(art, "Timer", "size.hud.strip.timer.font", "color.hud.timer", TextAlignmentOptions.Center);
+            if (round)
+            {
+                // food timer fits its band under the disc (auto-size down to the readable floor, TextFloor.Apply)
+                _timer.enableAutoSizing = true;
+                _timer.fontSizeMax = _timer.fontSize;
+                _timer.fontSizeMin = _timer.fontSize * 0.5f;
+            }
             _key.gameObject.SetActive(false);
             _count.gameObject.SetActive(false);
             _timer.gameObject.SetActive(false);

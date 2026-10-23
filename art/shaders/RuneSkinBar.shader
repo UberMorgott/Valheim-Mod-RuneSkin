@@ -117,8 +117,16 @@ Shader "RuneSkin/UI Bar"
                 float3 c = base * body;
                 float hi = exp(-pow((v - _HiPos) / max(0.01, _HiWidth), 2.0));
                 c = lerp(c, lerp(base, float3(1, 1, 1), 0.55), hi * hiAmount);
-                c *= lerp(1.0, 0.82, smoothstep(0.9, 1.0, v));
+                c *= lerp(1.0, 0.9, smoothstep(0.92, 1.0, v));
                 return c;
+            }
+
+            // Signed distance to a pill (rounded rect, radius = half height) in height units.
+            float pill(float2 p, float halfW, float halfH)
+            {
+                float r = halfH;
+                float2 q = abs(p) - float2(halfW - r, halfH - r);
+                return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
             }
 
             fixed4 fill(float2 uv)
@@ -139,23 +147,20 @@ Shader "RuneSkin/UI Bar"
                 float sh = (1.0 - smoothstep(_Shield - px, _Shield + px, x)) * step(0.0001, _Shield);
                 body += _SheenColor.rgb * _SheenColor.a * sh * (0.6 + 0.8 * exp(-pow((v - _HiPos) / max(0.01, _HiWidth * 1.4), 2.0)));
                 float3 lag = cylinder(_LagColor.rgb, v, _HiAmount * 0.5);
-                // missing part: a flat grey with a little top light (hud-4M3 #747373 -> #656565), no cylinder
-                float3 miss = _MissingColor.rgb * lerp(0.86, 1.06, smoothstep(0.0, 1.0, v));
+                // missing part: a dark hollow (Codex review: shadow under the top lip, faint bottom reflex), no cylinder
+                float3 miss = _MissingColor.rgb * (1.0 - 0.45 * smoothstep(0.6, 1.0, v)) * (1.0 + 0.18 * (1.0 - smoothstep(0.0, 0.25, v)));
                 float3 c = body * inFill + lag * inLag + miss * (1.0 - inFill - inLag);
                 float seam = smoothstep(_Fill + 2.0 * pxW, _Fill, x) * (1.0 - inFill) * step(0.0005, _Fill) * step(_Fill, 0.9995);
                 c *= 1.0 - 0.6 * seam;
                 // well depth: a narrow inner shadow under the top rail and over the bottom one
                 c *= 1.0 - _Depth * smoothstep(0.9, 1.0, v);
                 c *= 1.0 - 0.6 * _Depth * (1.0 - smoothstep(0.0, 0.08, v));
-                return fixed4(c, 1.0);
-            }
-
-            // Signed distance to a pill (rounded rect, radius = half height) in height units.
-            float pill(float2 p, float halfW, float halfH)
-            {
-                float r = halfH;
-                float2 q = abs(p) - float2(halfW - r, halfH - r);
-                return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+                // capsule window (radius = half height): the fill ends round under the well's rounded ends, never as
+                // rectangle corners poking past them (Codex review)
+                float pxV = max(fwidth(v), 1e-5);
+                float d = pill(float2((x - 0.5) * _Aspect, v - 0.5), 0.5 * _Aspect, 0.5);
+                float mask = 1.0 - smoothstep(-pxV, pxV, d);
+                return fixed4(c * mask, mask);
             }
 
             fixed4 glow(float2 uv)
