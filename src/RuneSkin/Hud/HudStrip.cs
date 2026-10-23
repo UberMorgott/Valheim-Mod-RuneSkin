@@ -25,10 +25,27 @@ namespace RuneSkin.PlayerHud
         private readonly HudArt _art;
         private readonly RectTransform _root, _back;
         private RectTransform _front;
-        private readonly Image _wingL, _wingR, _bars, _block, _divider, _railL, _railR, _knotL, _knotR, _endL, _endR;
+        private readonly Image _wingL, _wingR, _bars, _block, _divider, _railL, _railR, _knotL, _knotR, _endL, _endR, _iconHp, _iconSt, _iconEi, _knot2L, _knot2R;
 
         // Target panel layout (mode.hud.strip.target, user screenshot 2026-10-23, strip-target/spec.md).
         public static bool Target => ThemeTokens.GetFloat("mode.hud.strip.target", 0f) > 0.5f;
+
+        // Right-side art of its own ("<token>.r"); without it the left piece is mirrored.
+        private static bool HasOwn(string token) => ThemeTokens.GetSprite(token + ".r");
+        private static string Own(string token) => HasOwn(token) ? token + ".r" : token;
+
+        private void Icon(Image img, string name, float barsX)
+        {
+            if (!img || !img.sprite) return;
+            Box(img.rectTransform, barsX + T7(name + ".x", 0f), T7(name + ".y", 0f), T7(name + ".w", 0f), T7(name + ".h", 0f), false);
+        }
+
+        // The eitr socket between stamina and eitr shows with the eitr channel (HudCluster.RowPlace).
+        public void EitrIcon(bool on)
+        {
+            on = on && Target && _iconEi.sprite;
+            if (_iconEi.gameObject.activeSelf != on) _iconEi.gameObject.SetActive(on);
+        }
         private Image _medL, _medR, _glyphL, _glyphR;
         private readonly Image[] _rowDiv = new Image[MaxRowDividers];
         private readonly StripCell[] _hotbar = new StripCell[HotbarCells];
@@ -59,15 +76,22 @@ namespace RuneSkin.PlayerHud
             // Target panel extras (user screenshot 2026-10-23): rail runs and small diamond knots between the wings and the
             // bar block, the wings themselves (fixed pieces, the right one its own art), end medallions over the wing ends.
             _railL = Piece("RailLeft", _back, "sprite.hud.strip7.rail", Image.Type.Sliced);
-            _railR = Piece("RailRight", _back, "sprite.hud.strip7.rail", Image.Type.Sliced);
+            _railR = Piece("RailRight", _back, Own("sprite.hud.strip7.rail"), Image.Type.Sliced);
             _knotL = Piece("KnotLeft", _back, "sprite.hud.strip7.knot", Image.Type.Simple);
-            _knotR = Piece("KnotRight", _back, "sprite.hud.strip7.knot", Image.Type.Simple);
+            _knotR = Piece("KnotRight", _back, Own("sprite.hud.strip7.knot"), Image.Type.Simple);
             _wingL = Piece("WingLeft", _back, "sprite.hud.strip4.wing", Image.Type.Sliced);
             _wingR = Piece("WingRight", _back, ThemeTokens.GetSprite("sprite.hud.strip4.wing.r") ? "sprite.hud.strip4.wing.r" : "sprite.hud.strip4.wing", Image.Type.Sliced);
             _endL = Piece("EndLeft", _back, "sprite.hud.strip7.end", Image.Type.Simple);
-            _endR = Piece("EndRight", _back, "sprite.hud.strip7.end", Image.Type.Simple);
-            foreach (var img in new[] { _railL, _railR, _knotL, _knotR, _endL, _endR }) img.gameObject.SetActive(Target);
+            _endR = Piece("EndRight", _back, Own("sprite.hud.strip7.end"), Image.Type.Simple);
+            // small diamonds at the bar-block end of each rail run (target: diamonds at both rail ends)
+            _knot2L = Piece("Knot2Left", _back, "sprite.hud.strip7.knot", Image.Type.Simple);
+            _knot2R = Piece("Knot2Right", _back, Own("sprite.hud.strip7.knot"), Image.Type.Simple);
+            foreach (var img in new[] { _railL, _railR, _knotL, _knotR, _endL, _endR, _knot2L, _knot2R }) img.gameObject.SetActive(Target);
             _bars = Piece("BarBlock", _back, "sprite.hud.strip4.bars", Image.Type.Sliced);
+            _iconHp = Piece("IconHealth", _back, "sprite.hud.strip7.icon.hp", Image.Type.Simple);
+            _iconSt = Piece("IconStamina", _back, "sprite.hud.strip7.icon.st", Image.Type.Simple);
+            _iconEi = Piece("IconEitr", _back, "sprite.hud.strip7.icon.ei", Image.Type.Simple);
+            foreach (var img in new[] { _iconHp, _iconSt, _iconEi }) img.gameObject.SetActive(Target && img.sprite);
             _block = Piece("HotbarBlock", _back, "sprite.hud.strip4.block", Image.Type.Sliced);
             _divider = Piece("Divider", _back, "sprite.hud.strip4.divider", Image.Type.Simple);
         }
@@ -94,7 +118,7 @@ namespace RuneSkin.PlayerHud
         {
             _front = HudArt.Rect("StripCells", _root);
             _medL = Piece("MedallionLeft", _front, "sprite.hud.strip4.medallion", Image.Type.Simple);
-            _medR = Piece("MedallionRight", _front, "sprite.hud.strip4.medallion", Image.Type.Simple);
+            _medR = Piece("MedallionRight", _front, Own("sprite.hud.strip4.medallion"), Image.Type.Simple);
             _glyphL = _art.Image("GlyphLeft", _medL.rectTransform, "sprite.ornament.triquetra", "color.ornament.glow", Image.Type.Simple);
             _glyphR = _art.Image("GlyphRight", _medR.rectTransform, "sprite.ornament.triquetra", "color.ornament.glow", Image.Type.Simple);
             _glyphL.preserveAspect = _glyphR.preserveAspect = true;
@@ -202,6 +226,11 @@ namespace RuneSkin.PlayerHud
                 PotionStart = ThemeTokens.GetFloat("size.hud.strip.potion.start", 0f),
                 PotionGap = ThemeTokens.GetFloat("size.hud.strip.potion.gap", 0f),
                 CenterDX = ThemeTokens.GetFloat("size.hud.strip.center.dx", 0f),
+                MedRW = ThemeTokens.GetFloat("size.hud.strip.med.r.w", 0f),
+                MedRTuck = ThemeTokens.GetFloat("size.hud.strip.med.r.tuck", 0f),
+                FoodSize = ThemeTokens.GetFloat("size.hud.strip.food.size", 0f),
+                CellsDX = ThemeTokens.GetFloat("size.hud.strip.cells.dx", 0f),
+                PotionSize = ThemeTokens.GetFloat("size.hud.strip.potion.size", 0f),
                 GrowFromEnds = ThemeTokens.GetFloat("mode.hud.strip.wing.grow", 0f) > 0.5f,
                 FoodCell = cell,
                 PotionCell = cell,
@@ -241,7 +270,7 @@ namespace RuneSkin.PlayerHud
             if (_divider.gameObject.activeSelf != divOn) _divider.gameObject.SetActive(divOn);
             if (divOn) Native(_divider, l.DividerX, l.CellsY - i.DurH, i.CellH + i.DurH, 0.5f);
             Box(_medL.rectTransform, l.MedLX, l.MedY, i.MedW, i.MedH, false);
-            Box(_medR.rectTransform, l.MedRX, l.MedY, i.MedW, i.MedH, true);
+            Box(_medR.rectTransform, l.MedRX, l.MedY, i.MedRW > 0f ? i.MedRW : i.MedW, i.MedH, !HasOwn("sprite.hud.strip4.medallion"));
             Glyph(_glyphL, i.MedW, i.MedH);
             Glyph(_glyphR, i.MedW, i.MedH);
             if (_glyphL.gameObject.activeSelf == Target) { _glyphL.gameObject.SetActive(!Target); _glyphR.gameObject.SetActive(!Target); } // target medallion piece carries its glyph
@@ -283,18 +312,28 @@ namespace RuneSkin.PlayerHud
             var w = l.RightX + l.RightW;
             float endW = T7("end.w", 132.5f), endH = T7("end.h", 115.3f), endY = T7("end.y", -10f);
             Box(_endL.rectTransform, 0f, endY, endW, endH, false);
-            Box(_endR.rectTransform, w - endW, endY, endW, endH, true);
+            float endRW = T7("end.r.w", endW), endRH = T7("end.r.h", endH), endRY = T7("end.r.y", endY);
             float wingH = T7("wing.h", 95f), wingX = T7("wing.x", 85f), wingW = T7("wing.w", 371.7f), wingRW = T7("wing.r.w", 334.2f), wingRR = T7("wing.r.right", 111f);
             Box(_wingL.rectTransform, wingX, 0f, wingW, wingH, false);
             Box(_wingR.rectTransform, w - wingRR - wingRW, 0f, wingRW, wingH, false);
             float knotX = T7("knot.x", 448f), knotW = T7("knot.w", 40.3f), knotY = T7("knot.y", 26f), knotH = T7("knot.h", 43.2f), knotRR = T7("knot.r.right", 436.5f);
             Box(_knotL.rectTransform, knotX, knotY, knotW, knotH, false);
-            Box(_knotR.rectTransform, w - knotRR - knotW, knotY, knotW, knotH, true);
+            float knotRW = T7("knot.r.w", knotW), knotRH = T7("knot.r.h", knotH), knotRY = T7("knot.r.y", knotY);
             float railX = T7("rail.x", 486f), railY = T7("rail.y", 15.8f), railH = T7("rail.h", 60.6f), railRR = T7("rail.r.right", 474f), tuck = T7("rail.tuck", 6f);
-            Box(_railL.rectTransform, railX, railY, Mathf.Max(0f, l.BarsX + tuck - railX), railH, false);
+            Box(_railL.rectTransform, railX, railY, Mathf.Max(0f, l.BarsX + T7("rail.tuck.l", tuck) - railX), railH, false);
             var rx = l.BarsX + l.BarsW - tuck;
-            Box(_railR.rectTransform, rx, railY, Mathf.Max(0f, w - railRR - rx), railH, true);
+            float railRY = T7("rail.r.y", railY), railRH = T7("rail.r.h", railH);
+            Box(_railR.rectTransform, rx, railRY, Mathf.Max(0f, w - railRR - rx), railRH, !HasOwn("sprite.hud.strip7.rail"));
+            // pool icons in the bar block (heart / lightning / eitr socket), placed from its left edge
+            float k2dx = T7("knot2.dx", -21.6f), k2y = T7("knot2.y", 47.5f), k2w = T7("knot2.w", 30.5f), k2h = T7("knot2.h", 32.6f);
+            Box(_knot2L.rectTransform, l.BarsX + k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h, false);
+            Box(_knot2R.rectTransform, l.BarsX + l.BarsW - k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h, !HasOwn("sprite.hud.strip7.knot"));
+            Icon(_iconHp, "icon.hp", l.BarsX);
+            Icon(_iconSt, "icon.st", l.BarsX);
+            Icon(_iconEi, "icon.ei", l.BarsX);
         }
+
+
         // The bar block frame: its top is fixed under the hotbar block, its height follows the bar rows (no resource
         // row: the frame closes right under the HP row and the space below shows the scene, mockup hud-4M3-nostam).
         public void BarFrame(float height)

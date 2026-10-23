@@ -60,13 +60,13 @@ public static class BuildBundles
             var man = JsonUtility.FromJson<Manifest>(File.ReadAllText(Path.Combine(Art, "sprites", "sprites.json")));
             var sprites = ImportSprites(man);
             var hi = new HashSet<string>(man.sprites.Where(s => s.atlas == "hires").Select(s => s.name));
-            BuildAtlas(sprites.Where(s => !hi.Contains(s.name)).ToList(), AtlasPath, 4096, true); // main atlas: 4x redraws, mipmapped (padding 8 keeps the mips from bleeding)
+            BuildAtlas(sprites.Where(s => !hi.Contains(s.name) && !st.Contains(s.name)).ToList(), AtlasPath, 4096, true); // main atlas: 4x redraws, mipmapped (padding 8 keeps the mips from bleeding)
             if (hi.Count > 0) BuildAtlas(sprites.Where(s => hi.Contains(s.name)).ToList(), HiAtlasPath, 4096, true);
             var fonts = BakeFonts();
             fonts.AddRange(ImportLegacyFonts());
             fonts.AddRange(ImportTextures());
             fonts.AddRange(ImportShaders());
-            foreach (var p in sprites.Select(AssetDatabase.GetAssetPath).Distinct().Append(AtlasPath).Concat(hi.Count > 0 ? new[] { HiAtlasPath } : new string[0]).Concat(fonts))
+            foreach (var p in sprites.Select(AssetDatabase.GetAssetPath).Distinct().Append(AtlasPath).Concat(hi.Count > 0 ? new[] { HiAtlasPath } : new string[0]).Concat(st.Count > 0 ? new[] { StripAtlasPath } : new string[0]).Concat(fonts))
                 AssetImporter.GetAtPath(p).SetAssetBundleNameAndVariant(BundleName, "");
             AssetDatabase.SaveAssets();
             AssetDatabase.RemoveUnusedAssetBundleNames();

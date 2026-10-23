@@ -141,7 +141,10 @@ namespace RuneSkin.PlayerHud
             Center(_shadow.rectTransform, bw + seat, bh + seat, oy);
             var sel = side * (ThemeTokens.GetFloat("share.hud.strip.select", 1.08f) - 1f);
             Center(_select.rectTransform, bw + sel, bh + sel, oy);
-            Center(Bowl.rectTransform, bw, bh, oy);
+            // socket art may reach past the slot (target panel: the 59 px cell's frame is 61 x 63, the 52 px socket 58)
+            var artW = _round ? ThemeTokens.GetFloat("share.hud.strip.socket.art", 1f) : ThemeTokens.GetFloat("share.hud.strip.cell.art.w", 1f);
+            var artH = _round ? artW : ThemeTokens.GetFloat("share.hud.strip.cell.art.h", 1f);
+            Center(Bowl.rectTransform, bw * artW, bh * artH, oy);
             var rimIn = 2f * side * ThemeTokens.GetFloat("share.hud.strip.rim.inset", 0.035f); // inside the metal rim
             Center(_rim.rectTransform, bw - rimIn, bh - rimIn, oy);
             Center(_icon.rectTransform, side * ThemeTokens.GetFloat("share.hud.strip.icon", 0.72f), side * ThemeTokens.GetFloat("share.hud.strip.icon", 0.72f), oy);

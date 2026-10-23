@@ -38,7 +38,10 @@ namespace RuneSkin.PlayerHud
             public bool GrowFromEnds;    // target panel: fixed cells + fixed gap from the outer medallion inwards
             public float WingGap;        // gap between wing slots in that mode (0 = Gap)
             public float PotionStart, PotionGap; // right wing in that mode: margin from the right end / gap (0 = as food)
-            public float CenterDX;       // centre column offset from the strip middle (target panel: +7.2 units)
+            public float CenterDX;       // centre column offset from the strip middle (0; offline comparisons only)
+            public float MedRW, MedRTuck; // right medallion width / tuck when its art differs from the left (0 = as left)
+            public float FoodSize, PotionSize; // wing slot sides in that mode (target: round 52 px / square 53 px; 0 = Cell)
+            public float CellsDX;        // cell row offset inside the hotbar block (target: the left pad is narrower)
             public int Hotbar, Abilities, Food, Potions;
         }
 
@@ -90,13 +93,13 @@ namespace RuneSkin.PlayerHud
             o.BlockH = i.BlockPadB + i.DurH + i.CellH + i.BlockPadT;
             o.Height = o.BlockY + o.BlockH;
             o.CellsY = o.BlockY + i.BlockPadB + i.DurH;
-            o.HotbarX = o.CenterX + (o.CenterW - topW) / 2f;
+            o.HotbarX = o.CenterX + (o.CenterW - topW) / 2f + i.CellsDX;
             o.AbilityX = o.HotbarX + o.HotbarW + (i.Abilities > 0 ? i.ZoneGap : 0f);
             o.DividerX = o.HotbarX + o.HotbarW + i.ZoneGap / 2f;
             // Medallions against the block sides, their joins tucked under the block frame.
             o.MedY = i.MedY - i.MedH / 2f;
             o.MedLX = o.CenterX - i.MedW + i.MedTuck;
-            o.MedRX = o.CenterX + o.CenterW - i.MedTuck;
+            o.MedRX = o.CenterX + o.CenterW - (i.MedRW > 0f ? i.MedRTuck : i.MedTuck);
 
             // Wings: one slot row each at the bottom, end-cap at the outer edge, tucked under the bar block.
             o.WingH = i.WingH;
@@ -134,30 +137,32 @@ namespace RuneSkin.PlayerHud
         // never reaches the connector knot over the wing | bar block joint (the count is clipped to what fits).
         private static void GrowLayout(in Input i, ref Layout o)
         {
+            var fc = i.FoodSize > 0f ? i.FoodSize : i.Cell;
+            var pc = i.PotionSize > 0f ? i.PotionSize : i.Cell;
             var g = i.WingGap > 0f ? i.WingGap : Math.Max(0f, i.Gap);
-            var pitch = i.Cell + g;
             var start = i.KnotW + i.SlotPad;
             var stop = o.BarsX - i.ConnW / 2f;
+            var pitch = fc + g;
             var max = pitch > 0f ? Math.Max(0, (int)Math.Floor((stop - start + g) / pitch)) : 0;
             o.FoodMax = max;
             o.FoodShown = Math.Min(i.Food, max);
-            o.FoodCell = o.PotionCell = o.PotionH = i.Cell;
+            o.FoodCell = fc;
             o.FoodStep = pitch;
             o.FoodX = start;
             // right wing mirrored: the last potion sits against the right medallion, earlier ones to its left
             var ps = i.PotionStart > 0f ? i.PotionStart : start;
             var pg = i.PotionGap > 0f ? i.PotionGap : g;
-            var pmax = i.Cell + pg > 0f ? Math.Max(0, (int)Math.Floor((i.Width - ps - (o.BarsX + o.BarsW + i.ConnW / 2f) + pg) / (i.Cell + pg))) : 0;
+            var pmax = pc + pg > 0f ? Math.Max(0, (int)Math.Floor((i.Width - ps - (o.BarsX + o.BarsW + i.ConnW / 2f) + pg) / (pc + pg))) : 0;
             o.PotionMax = pmax;
             o.PotionShown = Math.Min(i.Potions, pmax);
-            o.PotionStep = i.Cell + pg;
-            o.PotionX = i.Width - ps - o.PotionShown * i.Cell - Math.Max(0, o.PotionShown - 1) * pg;
+            o.PotionCell = o.PotionH = pc;
+            o.PotionStep = pc + pg;
+            o.PotionX = i.Width - ps - o.PotionShown * pc - Math.Max(0, o.PotionShown - 1) * pg;
             var inner = i.WingInnerY > 0f ? i.WingInnerY : i.WingH / 2f;
-            o.FoodY = inner - i.Cell / 2f - i.FoodLift;
-            o.PotionY = inner - i.Cell / 2f;
+            o.FoodY = inner - fc / 2f - i.FoodLift;
+            o.PotionY = inner - pc / 2f;
             o.Fits = o.FoodShown == i.Food && o.PotionShown == i.Potions;
         }
-
         // n slots over span, space-evenly (n + 1 equal gaps: margins = gaps). Too narrow: gaps shrink to minGap, then the
         // slots scale down together, never below minCell (then they overflow, centred). n = 0: nothing.
         public static void WingSlots(int n, float wantCell, float span, float minGap, float minCell, out float cell, out float gap)
