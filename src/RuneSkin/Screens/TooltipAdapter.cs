@@ -40,7 +40,21 @@ namespace RuneSkin.Screens
             ScreenRegistry.Register(root, () => Context(root, screenId));
             ScreenRegistry.Restyle(root);
             ResponsiveContext.ApplyScale(root);
+            // Top overlay sort, no raycasts, height cap + wheel scroll, placement above the strip (TooltipPlacer).
+            // Root cause of tooltips under the strip: the instance lives under the hovered element's canvas
+            // (UITooltip.cs:150, the GUI root), and the strip canvas sorts above that canvas while the inventory is
+            // open (HudCluster.AboveInventory, order root + 1).
+            TopOverlay.Lift(tip);
+            TooltipPlacer.Attach(tip);
         }
+
+        // The wheel over a hovered item whose shown tooltip overflows scrolls the tooltip, not the list behind it:
+        // every other ScrollRect skips the event (the item's raycast bubbles OnScroll up to the inventory /
+        // container ScrollRect, ExecuteEvents.ExecuteHierarchy). Without an overflowing tooltip nothing changes.
+        [HarmonyPatch(typeof(ScrollRect), nameof(ScrollRect.OnScroll))]
+        [HarmonyPrefix]
+        private static bool OnScroll_Prefix(ScrollRect __instance) =>
+            !TooltipPlacer.CapturesWheel || TooltipPlacer.Owns(__instance.transform);
 
         private static ScreenContext Context(Transform root, string screenId)
         {
@@ -72,8 +86,8 @@ namespace RuneSkin.Screens
     }
 
     // RuneSkin's frame behind a box-less tooltip text: sized to the text's rendered bounds plus the padding token after
-    // all LateUpdates (UITooltip moves and clamps the tooltip there), right before canvases render; then clamped
-    // into the safe area by moving the parent it shares with the text, so both stay together.
+    // all LateUpdates (UITooltip moves and clamps the tooltip there), right before canvases render, by the tooltip's
+    // TooltipPlacer (Fit), which then places the tooltip (frame included) above the strip.
     public sealed class TooltipFrame : MonoBehaviour
     {
         private TMP_Text _text;
@@ -82,7 +96,6 @@ namespace RuneSkin.Screens
         private SkinMark _mark;
         private string _shown;
         private Vector3 _lossy;
-        private readonly Vector3[] _corners = new Vector3[4];
 
         public static void Ensure(TMP_Text text)
         {
@@ -112,17 +125,9 @@ namespace RuneSkin.Screens
             frame._mark = mark;
         }
 
-        private void OnEnable()
-        {
-            _shown = null;
-            Canvas.willRenderCanvases += Fit;
-        }
+        private void OnEnable() => _shown = null;
 
-        private void OnDisable() => Canvas.willRenderCanvases -= Fit;
-
-        private void OnDestroy() => Canvas.willRenderCanvases -= Fit;
-
-        private void Fit()
+        public void Fit()
         {
             if (!_text || !_rect) return;
             // Text, font, wrapping width or scale changes while shown (UITooltip.Set -> UpdateTextElements :202-215).
@@ -141,22 +146,6 @@ namespace RuneSkin.Screens
             var t = _text.rectTransform;
             _rect.position = t.TransformPoint(bounds.center);
             _rect.sizeDelta = Vector2.Scale(bounds.size, t.localScale) + new Vector2(pad * 2f, pad * 2f);
-            ClampToSafeArea();
-        }
-
-        private void ClampToSafeArea()
-        {
-            var parent = _rect.parent;
-            if (!parent) return;
-            var safe = ResponsiveContext.SafeArea;
-            _rect.GetWorldCorners(_corners);
-            var dx = 0f;
-            var dy = 0f;
-            if (_corners[2].x > safe.xMax) dx -= _corners[2].x - safe.xMax;
-            if (_corners[0].x < safe.xMin) dx += safe.xMin - _corners[0].x;
-            if (_corners[2].y > safe.yMax) dy -= _corners[2].y - safe.yMax;
-            if (_corners[0].y < safe.yMin) dy += safe.yMin - _corners[0].y;
-            if (dx != 0f || dy != 0f) parent.position += new Vector3(dx, dy, 0f);
         }
     }
 }

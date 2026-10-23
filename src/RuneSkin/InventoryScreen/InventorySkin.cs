@@ -1413,6 +1413,7 @@ namespace RuneSkin.InventoryScreen
         private void DollScrollInput()
         {
             if (_layout == null || !_layout.DollCells.Scroll) return;
+            if (Screens.TooltipPlacer.CapturesWheel) return; // the hovered cell's long tooltip scrolls instead
             var wheel = ZInput.GetMouseScrollWheel();
             if (Mathf.Approximately(wheel, 0f)) return;
             var mouse = ZInput.pointerPosition;
