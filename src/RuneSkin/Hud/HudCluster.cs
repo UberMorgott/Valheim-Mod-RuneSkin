@@ -141,7 +141,7 @@ namespace RuneSkin.PlayerHud
             {
                 float rx = ThemeTokens.GetFloat("size.hud.strip7.rim.x", 4.3f), ry = ThemeTokens.GetFloat("size.hud.strip7.rim.y", 4.3f);
                 foreach (var b in new[] { _health, _stamina, _eitr, _adrenaline })
-                    b.Rim("sprite.hud.strip7.rim", "color.hud.strip.frame", rx, ry, ThemeTokens.GetFloat("share.hud.strip4.art", 1f));
+                    b.Rim("sprite.hud.strip7.rim", HudStrip.FrameTint, rx, ry, ThemeTokens.GetFloat("share.hud.strip4.art", 1f));
             }
             _row[0] = _stamina;
             _row[1] = _eitr;
@@ -678,6 +678,9 @@ namespace RuneSkin.PlayerHud
             var bottom = safe.y + margin - (HudStrip.Target ? _hudStrip.FrameBottom * _pxPerUnit : 0f);
             var left = boxX + (boxW - widthPx) / 2f;
             PlaceAtScreen(_root, new Vector2(left, bottom), _pxPerUnit);
+            // readable floors at this scale (run 20261023-191817: applied only when the status cell count changed, so a
+            // resolution change kept the previous scale's floors - 720 timers 9.3 px < 14)
+            TextFloors();
             _stripWidth = input.Width;
             _statusBase = l.WingH + ThemeTokens.GetFloat("size.hud.strip.status.gap", 8f) + ThemeTokens.GetFloat("size.hud.status.pad", 6f);
             // The inventory docks on the strip top (InventoryMath keeps its standard gap above the HUD top).
@@ -754,17 +757,11 @@ namespace RuneSkin.PlayerHud
             _chatWasActive = active;
             if (float.IsNaN(_chatBottomW))
             {
-                if (!active) return;
-                w.GetComponentsInChildren(false, _chatGraphics);
-                var min = float.MaxValue;
-                foreach (var g in _chatGraphics)
-                {
-                    if (!g.enabled || g.rectTransform.rect.width < 1f || g.rectTransform.rect.height < 1f) continue;
-                    g.rectTransform.GetWorldCorners(_corners);
-                    min = Mathf.Min(min, w.InverseTransformPoint(_corners[0]).y);
-                }
-                if (min == float.MaxValue) return; // laid out next frame
-                _chatBottomW = min;
+                // The window's own rect bottom (run 20261023-191817: measured from the graphics enabled at show time,
+                // the chat background enabled later reached 70 px above the screen bottom, over the right wing / end
+                // medallion at every resolution). The rect holds every chat graphic, so clearing it clears them all.
+                if (w.rect.height < 1f) return; // laid out next frame
+                _chatBottomW = w.rect.yMin;
             }
             var hudCanvas = _canvas ? _canvas.rootCanvas : null;
             var chatCanvas = w.GetComponentInParent<Canvas>();

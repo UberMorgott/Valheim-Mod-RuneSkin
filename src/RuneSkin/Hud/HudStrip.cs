@@ -31,6 +31,10 @@ namespace RuneSkin.PlayerHud
         // Target panel layout (mode.hud.strip.target, user screenshot 2026-10-23, strip-target/spec.md).
         public static bool Target => ThemeTokens.GetFloat("mode.hud.strip.target", 0f) > 0.5f;
 
+        // Frame tint: the target pieces are exact 4x crops of the reference, so no tint (run 20261023-191817: the shared
+        // #C9CBD0 frame tint darkened every piece to ~0.79, medallion / block / bars dE 16-19 vs ~3 offline).
+        public static string FrameTint => Target ? "color.hud.strip7.frame" : "color.hud.strip.frame";
+
         // Right-side art of its own ("<token>.r"); without it the left piece is mirrored.
         private static bool HasOwn(string token) => ThemeTokens.GetSprite(token + ".r");
         private static string Own(string token) => HasOwn(token) ? token + ".r" : token;
@@ -110,7 +114,7 @@ namespace RuneSkin.PlayerHud
 
         private Image Piece(string name, Transform parent, string token, Image.Type type)
         {
-            var img = _art.Image(name, parent, token, "color.hud.strip.frame", type);
+            var img = _art.Image(name, parent, token, FrameTint, type);
             _art.Track(img, ArtScale);
             return img;
         }

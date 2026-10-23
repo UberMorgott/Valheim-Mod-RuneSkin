@@ -158,7 +158,9 @@ namespace RuneSkin.PlayerHud
             mr.sizeDelta = new Vector2(m, m);
             mr.anchoredPosition = new Vector2(-side * 0.06f, -side * 0.06f);
             var inset = side * 0.09f;
-            Box(_key.rectTransform, inset, h * 0.5f, w - 2f * inset, h * 0.5f - inset);
+            // key label in the upper half: top inset 0.4 x (run 20261023-191817: the 27-unit glyph box, ~38 units with its
+            // outline, ran 1.5 px below the cell centre from the full inset)
+            Box(_key.rectTransform, inset, h * 0.5f, w - 2f * inset, h * 0.5f - inset * 0.4f);
             Box(_count.rectTransform, inset, inset * 0.8f, w - 2f * inset, h * 0.5f);
             if (timerBelow) // food: in the band under the disc (never over the ring)
                 Box(_timer.rectTransform, 0f, 0f, w, band > 0f ? band : ThemeTokens.GetFloat("size.hud.strip.timer", 18f));

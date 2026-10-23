@@ -85,6 +85,7 @@
     { "token": "color.hud.food.ring", "value": "#4FE0E68C" },
     { "token": "color.hud.strip.panel", "value": "#C9CBD0FF" },
     { "token": "color.hud.strip.frame", "value": "#C9CBD0FF" },
+    { "token": "color.hud.strip7.frame", "value": "#FFFFFFFF" },
     { "token": "color.hud.strip.plate", "value": "#A3A9ACFF" },
     { "token": "color.hud.strip.glow", "value": "#4FE0E6FF" },
     { "token": "color.hud.strip.halo", "value": "#4FE0E699" },
