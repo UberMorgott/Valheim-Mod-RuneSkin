@@ -81,7 +81,7 @@ Style targets and palette: `STYLE.md`.
 ## M3 sprites (crafting, skills, trophies)
 
 - Crafting: station title = serif text (no plaque) + `badge_level_star` (digit text_active at (76,75)); mode tabs `tab_*`;
-  category filter row = `tab_square_*` + `glyph_cat_*` (scroll with `glyph_arrow_left/right`); `field_search` + `glyph_search`;
+  category filter row = `tab_square_*` + `glyph_cat_*` (sub-group row under it = `tab_square_*` + `glyph_sub_*`, sheet `subglyphs.png`, hires atlas: the main 4096 atlas is full) (scroll with `glyph_arrow_left/right`); `field_search` + `glyph_search`;
   list well + detail well `frame_inset`; rows `row_recipe_normal/hover/selected/unavailable` (unavailable text text_disabled);
   detail: title text_item_title, `pip_quality_*`, `row_stat` (value text_stat_value); requirements `socket_req` (count text_ok) /
   `socket_req_missing` (count text_missing), upgrade preview `socket_req_upgrade` + `plaque_arrow`; craft button `button_*` +
