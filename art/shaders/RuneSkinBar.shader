@@ -37,7 +37,7 @@ Shader "RuneSkin/UI Bar"
         _FxOn ("Fx on", Float) = 1
         _FxIntensity ("Fx intensity", Float) = 1
         _FxSpeed ("Fx speed", Float) = 1
-        _FxClock ("Clock override (<0 = _Time.y)", Float) = -1
+        _FxClock ("Clock override (<0 = global _RuneSkinFxClock)", Float) = -1
         _HitAt ("Damage event clock", Float) = -100
         _HitSize ("Damage event size share", Float) = 0.2
         _HealAt ("Heal event clock", Float) = -100
@@ -109,6 +109,7 @@ Shader "RuneSkin/UI Bar"
             float4 _ClipRect;
             float _Mode, _Fill, _Lag, _Shield, _Aspect, _HiPos, _HiWidth, _HiAmount, _Bottom, _Depth, _Rim, _GlowWidth;
             fixed4 _FillColor, _LagColor, _MissingColor, _SheenColor, _GlowColor, _ClotColor;
+            float _RuneSkinFxClock;   // global shader clock, written once per frame by BarFxConfig.TickClock
             float _Pool, _FxOn, _FxIntensity, _FxSpeed, _FxClock, _HitAt, _HitSize, _HealAt, _PulseAt, _Regen, _Exhaust;
 
             v2f vert(appdata_t v)
@@ -370,8 +371,10 @@ Shader "RuneSkin/UI Bar"
                 float x = uv.x;
                 float v = uv.y;
                 float px = max(fwidth(x), 1e-5);
-                float tr = _FxClock >= 0.0 ? _FxClock : _Time.y;     // event ages from the raw clock
-                float tf = fmod(tr, 1024.0) * _FxSpeed;              // flow time, wrapped for noise precision
+                // shared clock (BarFxConfig.TickClock: seconds since the HUD started, unwrapped, events use the same
+                // clock); _FxClock >= 0 overrides it for offline renders
+                float tr = _FxClock >= 0.0 ? _FxClock : _RuneSkinFxClock;
+                float tf = tr * _FxSpeed;
                 float I = _FxOn * _FxIntensity * step(-0.5, _Pool);
                 float hitAge = tr - _HitAt, healAge = tr - _HealAt, pulseAge = tr - _PulseAt;
                 float2 P = float2(x * _Aspect, v);
@@ -387,8 +390,10 @@ Shader "RuneSkin/UI Bar"
                 float inFill = 1.0 - smoothstep(fillE - px, fillE + px, x);
                 float inLag = (1.0 - smoothstep(_Lag - px, _Lag + px, x)) * (1.0 - inFill);
                 float dF = (fillE - x) * _Aspect;
-                float3 body;
-                [branch] if (I <= 0.0)
+                // the noisy bodies run only where they are seen (the fill / lag share); the grey part stays cheap
+                float3 body = _FillColor.rgb;
+                [branch] if (inFill <= 0.0) { }
+                else if (I <= 0.0)
                 {
                     // plain glossy cylinder (adrenaline, fx off): straight-cut end, the last ~14 px a little lighter
                     body = cylinder(_FillColor.rgb, v, _HiAmount);
@@ -405,8 +410,12 @@ Shader "RuneSkin/UI Bar"
                 float sheenProfile = lerp(0.6 + 0.8 * exp(-pow((v - _HiPos) / max(0.01, _HiWidth * 1.4), 2.0)),
                     0.5 * exp(-pow((v - 0.88) / 0.035, 2.0)), bloodSheen);
                 body += _SheenColor.rgb * _SheenColor.a * sh * sheenProfile;
-                float3 lag = cylinder(_LagColor.rgb, v, _HiAmount * 0.5);
-                if (I > 0.0 && _Pool < 0.5) lag = lerp(lag, clotBody(P, v, tf), saturate(I));
+                float3 lag = _LagColor.rgb;
+                [branch] if (inLag > 0.0)
+                {
+                    lag = cylinder(_LagColor.rgb, v, _HiAmount * 0.5);
+                    if (I > 0.0 && _Pool < 0.5) lag = lerp(lag, clotBody(P, v, tf), saturate(I));
+                }
                 // missing part: a dark hollow (Codex review: shadow under the top lip, faint bottom reflex), no cylinder
                 float3 miss = _MissingColor.rgb * (1.0 - 0.45 * smoothstep(0.6, 1.0, v)) * (1.0 + 0.18 * (1.0 - smoothstep(0.0, 0.25, v)));
                 float3 c = body * inFill + lag * inLag + miss * (1.0 - inFill - inLag);
@@ -418,7 +427,7 @@ Shader "RuneSkin/UI Bar"
                         float drop = saturate(splash(P, fillE * _Aspect, hitAge) * saturate(I));
                         c = lerp(c, cylinder(_FillColor.rgb * 1.1, v, _HiAmount * 1.5), drop * outside);
                     }
-                    else if (_Pool > 1.5)
+                    else if (_Pool > 1.5 && dF > -1.5)
                     {
                         float o = max(-dF, 0.0);
                         c += arcGlow() * (0.35 * exp(-o / 0.25) + 0.9 * arcFilament(P, v, tf) * exp(-o / 0.3)) * I * outside;
