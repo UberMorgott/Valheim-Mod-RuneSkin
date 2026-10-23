@@ -434,6 +434,7 @@
     { "token": "fx.gasend.h", "value": 4.5 },
     { "token": "fx.gasend.w", "value": 1 },
     { "token": "size.enemy.name.gap", "value": 1 },
+    { "token": "size.enemy.alert.gap", "value": 3 },
     { "token": "size.map.legend.header", "value": 28 },
     { "token": "size.map.legend.font", "value": 24 },
     { "token": "size.map.legend.row", "value": 52 },

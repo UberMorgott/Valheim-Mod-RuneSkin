@@ -39,6 +39,18 @@ namespace RuneSkin.Tests
             Assert.Equal(want, RuneSkin.WorldHud.EnemyHudMath.BossBar(isBoss, gui, "HudBaseBoss"));
 
         [Fact]
+        public void AlertIconHasItsOwnSlotLeftOfTheName()
+        {
+            var shift = RuneSkin.WorldHud.EnemyHudMath.AlertShift(80f, 10f, 3f, out var iconX);
+            // group = icon 10 + gap 3 + text 80 = 93 wide, centred on the old name centre (0)
+            Assert.Equal(6.5f, shift, 3);                 // text centre
+            Assert.Equal(-41.5f, iconX, 3);               // icon centre
+            Assert.Equal(3f, (shift - 40f) - (iconX + 5f), 3); // exactly the gap between icon and text: no overlap
+            Assert.Equal(-46.5f, iconX - 5f, 3);          // group left
+            Assert.Equal(46.5f, shift + 40f, 3);          // group right: symmetric
+        }
+
+        [Fact]
         public void BossBarSpanAndScreenFit()
         {
             Assert.Equal(800f, RuneSkin.WorldHud.EnemyHudMath.BossSpan(600f, 110f, 10f), 3);

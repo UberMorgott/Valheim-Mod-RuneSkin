@@ -194,6 +194,15 @@ namespace RuneSkin.WorldHud
             isBoss && !string.IsNullOrEmpty(guiName) && !string.IsNullOrEmpty(bossTemplateName) &&
             guiName.StartsWith(bossTemplateName, StringComparison.Ordinal);
 
+        // Alert icon slot left of the name text, name + icon centred as a group: returns the name's x shift and gives the icon
+        // centre x relative to the (unshifted) name centre.
+        public static float AlertShift(float textWidth, float iconWidth, float gap, out float iconX)
+        {
+            var shift = (iconWidth + gap) * 0.5f;
+            iconX = shift - textWidth * 0.5f - gap - iconWidth * 0.5f;
+            return shift;
+        }
+
         // boss-c bar span (spear tip to spear tip): the body plus each cap's part outside it (cap pivot 1 at the bar end,
         // pulled inwards by capOffset).
         public static float BossSpan(float bodyWidth, float capWidth, float capOffset) =>

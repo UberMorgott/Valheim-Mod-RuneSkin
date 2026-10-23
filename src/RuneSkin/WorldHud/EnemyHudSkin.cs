@@ -71,6 +71,9 @@ namespace RuneSkin.WorldHud
             public float ShownFlash = -1f;
             public Image Weld, Sparks, SparksB, Flare, FlareB;
             public bool WeldLooked, SparksLooked, FlareLooked, BossC, BossCTried;
+            public string AlertLaidFor; // name text the alert slot was laid out for
+            public bool NameBaseSet;
+            public Vector2 NameBase;
             public int SparkFrame = -1;
             public float BossFit = 1f, LastHp = -1f, Flash;
             public int Tier;
@@ -492,6 +495,7 @@ namespace RuneSkin.WorldHud
                     continue;
                 }
                 if (alpha <= 0f || !data.m_gui.activeSelf) continue;
+                AlertSlot(s, data);
                 ShieldBand(s, data.m_character);
                 StaggerLine(s, data.m_character, dt);
             }
