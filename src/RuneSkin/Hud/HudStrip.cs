@@ -26,7 +26,7 @@ namespace RuneSkin.PlayerHud
         private readonly RectTransform _root, _back;
         private RectTransform _front;
         private readonly Image _wingL, _wingR, _bars, _block, _divider, _railL, _railR, _knotL, _knotR, _endL, _endR, _iconHp, _iconSt, _iconEi, _knot2L, _knot2R;
-        private readonly Image _field, _stubL, _stubR;
+        private readonly Image _field, _stubL, _stubR, _capL, _capR;
 
         // Target panel layout (mode.hud.strip.target, user screenshot 2026-10-23, strip-target/spec.md).
         public static bool Target => ThemeTokens.GetFloat("mode.hud.strip.target", 0f) > 0.5f;
@@ -77,6 +77,8 @@ namespace RuneSkin.PlayerHud
             // then the medallions and the cells (BuildFront).
             // Target panel extras (user screenshot 2026-10-23): rail runs and small diamond knots between the wings and the
             // bar block, the wings themselves (fixed pieces, the right one its own art), end medallions over the wing ends.
+            _capL = Piece("RailCapLeft", _back, "sprite.hud.strip7.rail", Image.Type.Tiled);
+            _capR = Piece("RailCapRight", _back, Own("sprite.hud.strip7.rail"), Image.Type.Tiled);
             _stubL = Piece("RailStubLeft", _back, "sprite.hud.strip7.rail", Image.Type.Tiled);
             _stubR = Piece("RailStubRight", _back, Own("sprite.hud.strip7.rail"), Image.Type.Tiled);
             _railL = Piece("RailLeft", _back, "sprite.hud.strip7.rail", Image.Type.Sliced);
@@ -91,8 +93,8 @@ namespace RuneSkin.PlayerHud
             // small diamonds at the bar-block end of each rail run (target: diamonds at both rail ends)
             _knot2L = Piece("Knot2Left", _back, "sprite.hud.strip7.knot2", Image.Type.Simple);
             _knot2R = Piece("Knot2Right", _back, Own("sprite.hud.strip7.knot2"), Image.Type.Simple);
-            foreach (var img in new[] { _stubL, _stubR, _railL, _railR, _knotL, _knotR, _endL, _endR, _knot2L, _knot2R }) img.gameObject.SetActive(Target);
-            if (Target && ThemeTokens.GetSprite("sprite.hud.strip7.field")) _field = Piece("BarField", _back, "sprite.hud.strip7.field", Image.Type.Tiled);
+            foreach (var img in new[] { _capL, _capR, _stubL, _stubR, _railL, _railR, _knotL, _knotR, _endL, _endR, _knot2L, _knot2R }) img.gameObject.SetActive(Target);
+            if (Target && ThemeTokens.GetSprite("sprite.hud.strip7.field")) _field = Piece("BarField", _back, "sprite.hud.strip7.field", Image.Type.Simple);
             _bars = Piece("BarBlock", _back, "sprite.hud.strip4.bars", Image.Type.Sliced);
             _iconHp = Piece("IconHealth", _back, "sprite.hud.strip7.icon.hp", Image.Type.Simple);
             _iconSt = Piece("IconStamina", _back, "sprite.hud.strip7.icon.st", Image.Type.Simple);
@@ -337,6 +339,8 @@ namespace RuneSkin.PlayerHud
             Place(_railR, f.RailR, !HasOwn("sprite.hud.strip7.rail"));
             Place(_stubL, f.StubL, false);
             Place(_stubR, f.StubR, false);
+            Place(_capL, f.CapL, false);
+            Place(_capR, f.CapR, false);
             Place(_knot2L, f.Knot2L, false);
             Place(_knot2R, f.Knot2R, !HasOwn("sprite.hud.strip7.knot2"));
             // a wing slot grown onto the rail run hides the wing-tip diamond under it (the round socket would leave its
@@ -363,8 +367,8 @@ namespace RuneSkin.PlayerHud
         private void Field(in StripMath.Layout l)
         {
             if (!_field) return;
-            // tiled along x (a seamless 4x repaint of the target's field), its height = the piece's own
-            float fl = T7("field.l", 112f), fr = T7("field.r", 112f), fb = T7("field.b", 2.9f), ft = T7("field.t", 2.9f);
+            // the target's field band (x 522..1100, y 142..199 of the target) on its own rect inside the block
+            float fl = T7("field.l", 121f), fr = T7("field.r", 129.7f), fb = T7("field.b", 5.76f), ft = T7("field.t", 4.34f);
             Box(_field.rectTransform, l.BarsX + fl, l.BarsY + fb, l.BarsW - fl - fr, l.BarsH - fb - ft, false);
         }
 

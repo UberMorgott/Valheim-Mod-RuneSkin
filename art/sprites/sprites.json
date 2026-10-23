@@ -8738,7 +8738,7 @@
       "name": "strip7_wing_r",
       "file": "strip7_wing_r.png",
       "size": [
-        714,
+        789,
         190
       ],
       "border": {
@@ -8754,15 +8754,15 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.strip7.wing_r",
-      "notes": "Target panel (user screenshot 2026-10-23, strip-target/spec.md): 4x piece wing-right by the mockup agent (x 0..879) + the mirrored end of wing-left (its x 30..141: the carved curls and the ring joint), 16 px feathered seam - the target's right wing end under the right end medallion (the cut wing ended short of it); 0.72 = 2.88 sprite px per target px",
+      "notes": "Target panel: wing-right-v2 by the mockup agent (target x 1306..1580, the true right end under the end medallion; SSIM .933), 0.72 = 2.88 sprite px per target px",
       "atlas": "strip"
     },
     {
       "name": "strip7_field",
       "file": "strip7_field.png",
       "size": [
-        691,
-        173
+        1665,
+        164
       ],
       "border": {
         "left": 0,
@@ -8774,10 +8774,10 @@
         0.5,
         0.5
       ],
-      "imageType": "Tiled",
+      "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.strip7.field",
-      "notes": "Target panel bar block interior: Codex 4x repaint of the carved metal field the channels sit in (seamless along x, tiled under the outer bar-frame piece; channels / sockets drawn live on top)",
+      "notes": "Target panel bar block field band by the mockup agent (target x 522..1100, y 142..199; dE 2.11 on the visible strips), drawn on its own rect under the outer bar-frame piece",
       "atlas": "strip"
     },
     {
