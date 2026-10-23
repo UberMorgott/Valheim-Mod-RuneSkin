@@ -105,7 +105,7 @@ namespace RuneSkin.Tests
             Assert.Equal(320f, b.X, 3);
             Assert.Equal(0f, b.Y, 3);
             var card = StatsMath.Card(3, 1, 68f, 134f, 439f, 420f, 448.3f, 434.5f);
-            Assert.Equal(11, Skin.ApiVersion);
+            Assert.Equal(12, Skin.ApiVersion);
             Assert.True(card.Right <= 1852f + 1f && card.Bottom <= 990f, card.ToString());
         }
 

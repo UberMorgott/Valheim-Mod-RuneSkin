@@ -23,7 +23,7 @@ namespace RuneSkin.API
         /// Version of the installed API surface (a property, not a const, so you read the installed value at runtime).
         /// Bumped on every public change; check it before using newer members.
         /// </summary>
-        public static int ApiVersion => 11;
+        public static int ApiVersion => 12;
 
         private static IHost _host;
         private static int _mainThread = -1;
@@ -39,7 +39,7 @@ namespace RuneSkin.API
         /// Whether the running RuneSkin renders a capability. Known names: "root.restyle", "bind", "invalidate",
         /// "theme.read", "ownership" (M0); "effect.render", "resource.render", "capacity.render" (M1, true while
         /// RuneSkin owns the HUD); "panel.dock", "slot.render", "panel.action", "slot.overlay" (M2, true while RuneSkin owns the inventory); "hold.render" (ApiVersion 10, true while
-        /// RuneSkin owns the ActionHud family); "ability.render" (ApiVersion 11, true while RuneSkin owns the HUD).
+        /// RuneSkin owns the ActionHud family); "ability.render" (ApiVersion 12, true while RuneSkin owns the HUD).
         /// </summary>
         public static bool Supports(string capability) => _host != null && capability != null && _host.Supports(capability);
 
@@ -139,7 +139,7 @@ namespace RuneSkin.API
         }
 
         /// <summary>
-        /// Adds a slot to the HUD strip's ability zone (ApiVersion 11, rendered while <c>Supports("ability.render")</c>).
+        /// Adds a slot to the HUD strip's ability zone (ApiVersion 12, rendered while <c>Supports("ability.render")</c>).
         /// One registration = one slot; the zone lays out its valid slots (0..4) live and hides empty ones.
         /// Same call and fault rules as <see cref="RegisterResourceProvider"/>.
         /// </summary>

@@ -746,7 +746,7 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
       side (45r count-live), the strip follows the API in every state.
 - [ ] Harness m2 no-mirrors reads RuneSkinDollFigure, inactive since the 0.13.0 live preview (figure rect 0): pre-existing.
 
-## 0.17.0 Track H - HUD strip hud-4M3 + centre gauges (2026-10-23, mockups hud-4M3, rs-C1 / rs-C2)
+## 0.18.0 Track H - HUD strip hud-4M3 + centre gauges (2026-10-23, mockups hud-4M3, rs-C1 / rs-C2; API 12)
 
 - [x] Layout (StripMath, StripLayoutTests): centre column = bar block (HP row + resource row; the frame closes under HP when
       no resource row) + hotbar block (8 cells, braided divider, 1-2 ability cells, width closes around the count);
@@ -766,3 +766,6 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
 - [x] Harness ui-runeskin-hud2 (tools d254072): strip proportions, compact, wing status sides, ghosts, cells, rims,
       durability, resource-row (no-eitr / eitr split / slide), shield, rage-ring, stagger-column, counts-live, icons-clear,
       dock, drop; m1 / m4 bar-caps / p rules for the 0.16+ strip.
+- [x] r3 art pass (lead review): frame repainted EMPTY by Codex as strict 2x-crop tiles (art/src/kit/strip5_tiles), composed by `paint4` into strip5_* (fixed knot / curl ends, sampled runs, mirrored right ends, wells open), gauges from rs-C1 / rs-C2 crops (gauge5_*); all HUD art in the hires atlas. Eitr = neutral fill tinted (the violet fill was keyed as magenta). Summon frames 0.7 above the buffs.
+- [x] In-game Codex fidelity (runs 20261023-055133 / -062811 / -070615): strip 7.5 -> 8, gauges 7 -> 8. Perf (99r, run 20261023-052657 vs main 3efc5bf run -050706): RuneSkin B/frame hud-idle 376 vs 997, inventory 20.8 K vs 22.1 K, crafting 13.9 K vs 31.8 K (CharacterPreview dominates on main too).
+- [ ] Remaining art diffs (Codex): metal a bit darker / bluer than the mockup, hotbar cells slightly smaller, rage arc slightly redder, column frame detail softer.

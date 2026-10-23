@@ -189,7 +189,7 @@ namespace RuneSkin.API
     }
 
     /// <summary>
-    /// One frame of an ability slot in the HUD strip's ability zone (ApiVersion 11). Returned by value from
+    /// One frame of an ability slot in the HUD strip's ability zone (ApiVersion 12). Returned by value from
     /// <see cref="AbilitySlotDescriptor.GetState"/> every frame the HUD is shown: keep it allocation-free.
     /// </summary>
     public struct AbilitySlotState
@@ -211,7 +211,7 @@ namespace RuneSkin.API
     }
 
     /// <summary>
-    /// An ability slot in the HUD strip's ability zone (ApiVersion 11): Epic Loot abilities, the guardian power, any
+    /// An ability slot in the HUD strip's ability zone (ApiVersion 12): Epic Loot abilities, the guardian power, any
     /// mod's active skill. Slots are drawn in ascending <see cref="Order"/>; at most theme <c>count.hud.ability.max</c>
     /// (4) valid slots show, empty ones collapse. Copied when registered.
     /// </summary>

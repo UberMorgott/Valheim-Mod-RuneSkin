@@ -5961,8 +5961,7 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "stats.plate",
-      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : faint row plate (chamfered), 9-slice",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : faint row plate (chamfered), 9-slice"
     },
     {
       "name": "stats_bar_trough",
@@ -5984,8 +5983,7 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "stats.bar.trough",
-      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : bar trough capsule (metal rim, dark groove), fills inset 4 design px",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : bar trough capsule (metal rim, dark groove), fills inset 4 design px"
     },
     {
       "name": "stats_divider",
@@ -6007,8 +6005,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.divider",
-      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : thin gold header divider, stretched",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : thin gold header divider, stretched"
     },
     {
       "name": "stats_bar_hp",
@@ -6030,8 +6027,7 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "stats.bar.hp",
-      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : glossy cylinder hp bar fill (rounded left end), stretched",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : glossy cylinder hp bar fill (rounded left end), stretched"
     },
     {
       "name": "stats_bar_stamina",
@@ -6053,8 +6049,7 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "stats.bar.stamina",
-      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : glossy cylinder stamina bar fill (rounded left end), stretched",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : glossy cylinder stamina bar fill (rounded left end), stretched"
     },
     {
       "name": "stats_bar_eitr",
@@ -6076,8 +6071,7 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "stats.bar.eitr",
-      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : glossy cylinder eitr bar fill (rounded left end), stretched",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : glossy cylinder eitr bar fill (rounded left end), stretched"
     },
     {
       "name": "stats_bar_es",
@@ -6099,8 +6093,7 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "stats.bar.es",
-      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : glossy cylinder es bar fill (rounded left end), stretched",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b mockup crop (sheet + prompt in art/src/kit) : glossy cylinder es bar fill (rounded left end), stretched"
     },
     {
       "name": "stats_icon_heart",
@@ -6122,8 +6115,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.heart",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (heart), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (heart), 4x design size"
     },
     {
       "name": "stats_icon_pulse",
@@ -6145,8 +6137,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.pulse",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (pulse), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (pulse), 4x design size"
     },
     {
       "name": "stats_icon_bolt",
@@ -6168,8 +6159,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.bolt",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (bolt), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (bolt), 4x design size"
     },
     {
       "name": "stats_icon_bolt2",
@@ -6191,8 +6181,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.bolt2",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (bolt2), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (bolt2), 4x design size"
     },
     {
       "name": "stats_icon_drop",
@@ -6214,8 +6203,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.drop",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (drop), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (drop), 4x design size"
     },
     {
       "name": "stats_icon_pulse2",
@@ -6237,8 +6225,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.pulse2",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (pulse2), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (pulse2), 4x design size"
     },
     {
       "name": "stats_icon_blunt",
@@ -6260,8 +6247,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.blunt",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (blunt), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (blunt), 4x design size"
     },
     {
       "name": "stats_icon_pierce",
@@ -6283,8 +6269,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.pierce",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (pierce), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (pierce), 4x design size"
     },
     {
       "name": "stats_icon_frost",
@@ -6306,8 +6291,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.frost",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (frost), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (frost), 4x design size"
     },
     {
       "name": "stats_icon_poison",
@@ -6329,8 +6313,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.poison",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (poison), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (poison), 4x design size"
     },
     {
       "name": "stats_icon_chop",
@@ -6352,8 +6335,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.chop",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (chop), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (chop), 4x design size"
     },
     {
       "name": "stats_icon_slash",
@@ -6375,8 +6357,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.slash",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (slash), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (slash), 4x design size"
     },
     {
       "name": "stats_icon_fire",
@@ -6398,8 +6379,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.fire",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (fire), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (fire), 4x design size"
     },
     {
       "name": "stats_icon_lightning",
@@ -6421,8 +6401,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.lightning",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (lightning), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (lightning), 4x design size"
     },
     {
       "name": "stats_icon_spirit",
@@ -6444,8 +6423,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.spirit",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (spirit), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (spirit), 4x design size"
     },
     {
       "name": "stats_icon_pickaxe",
@@ -6467,8 +6445,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.pickaxe",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (pickaxe), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (pickaxe), 4x design size"
     },
     {
       "name": "stats_icon_walk",
@@ -6490,8 +6467,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.walk",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (walk), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (walk), 4x design size"
     },
     {
       "name": "stats_icon_run",
@@ -6513,8 +6489,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.run",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (run), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (run), 4x design size"
     },
     {
       "name": "stats_icon_swim",
@@ -6536,8 +6511,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.swim",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (swim), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (swim), 4x design size"
     },
     {
       "name": "stats_icon_weight",
@@ -6559,8 +6533,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.weight",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (weight), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (weight), 4x design size"
     },
     {
       "name": "stats_icon_rundrain",
@@ -6582,8 +6555,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.rundrain",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (rundrain), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (rundrain), 4x design size"
     },
     {
       "name": "stats_icon_dodge",
@@ -6605,8 +6577,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.dodge",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (dodge), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (dodge), 4x design size"
     },
     {
       "name": "stats_icon_jump",
@@ -6628,8 +6599,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.jump",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (jump), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (jump), 4x design size"
     },
     {
       "name": "stats_icon_armor",
@@ -6651,8 +6621,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.armor",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (armor), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (armor), 4x design size"
     },
     {
       "name": "stats_icon_block",
@@ -6674,8 +6643,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.block",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (block), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (block), 4x design size"
     },
     {
       "name": "stats_icon_parry",
@@ -6697,8 +6665,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.parry",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (parry), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (parry), 4x design size"
     },
     {
       "name": "stats_icon_fork",
@@ -6720,8 +6687,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.fork",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (fork), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (fork), 4x design size"
     },
     {
       "name": "stats_icon_flask",
@@ -6743,8 +6709,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.flask",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (flask), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (flask), 4x design size"
     },
     {
       "name": "stats_icon_hourglass",
@@ -6766,8 +6731,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.hourglass",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (hourglass), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (hourglass), 4x design size"
     },
     {
       "name": "stats_icon_bed",
@@ -6789,8 +6753,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.bed",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (bed), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (bed), 4x design size"
     },
     {
       "name": "stats_icon_clock",
@@ -6812,8 +6775,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.clock",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (clock), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (clock), 4x design size"
     },
     {
       "name": "stats_icon_sword",
@@ -6835,8 +6797,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.sword",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (sword), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (sword), 4x design size"
     },
     {
       "name": "stats_icon_flame",
@@ -6858,8 +6819,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.flame",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (flame), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (flame), 4x design size"
     },
     {
       "name": "stats_icon_attackspeed",
@@ -6881,8 +6841,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.attackspeed",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (attackspeed), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (attackspeed), 4x design size"
     },
     {
       "name": "stats_icon_backstab",
@@ -6904,8 +6863,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.backstab",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (backstab), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (backstab), 4x design size"
     },
     {
       "name": "stats_icon_double",
@@ -6927,8 +6885,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.double",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (double), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (double), 4x design size"
     },
     {
       "name": "stats_icon_lifesteal",
@@ -6950,8 +6907,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.lifesteal",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (lifesteal), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (lifesteal), 4x design size"
     },
     {
       "name": "stats_icon_stagger",
@@ -6973,8 +6929,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.stagger",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (stagger), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (stagger), 4x design size"
     },
     {
       "name": "stats_icon_boots",
@@ -6996,8 +6951,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.boots",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (boots), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (boots), 4x design size"
     },
     {
       "name": "stats_icon_ring",
@@ -7019,8 +6973,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.ring",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (ring), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (ring), 4x design size"
     },
     {
       "name": "stats_icon_es",
@@ -7042,8 +6995,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.es",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (es), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (es), 4x design size"
     },
     {
       "name": "stats_icon_recharge",
@@ -7065,8 +7017,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.recharge",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (recharge), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (recharge), 4x design size"
     },
     {
       "name": "stats_icon_breakdelay",
@@ -7088,8 +7039,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.breakdelay",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (breakdelay), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (breakdelay), 4x design size"
     },
     {
       "name": "stats_icon_potion",
@@ -7111,8 +7061,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.potion",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (potion), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (potion), 4x design size"
     },
     {
       "name": "stats_icon_food",
@@ -7134,8 +7083,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.food",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (food), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (food), 4x design size"
     },
     {
       "name": "stats_icon_potency",
@@ -7157,8 +7105,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.icon.potency",
-      "notes": "Codex 4x redraw of the stats-full-b row icon (potency), 4x design size",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b row icon (potency), 4x design size"
     },
     {
       "name": "stats_head_res",
@@ -7180,8 +7127,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.head.res",
-      "notes": "Codex 4x redraw of the stats-full-b card header icon (res), free-standing on magenta",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b card header icon (res), free-standing on magenta"
     },
     {
       "name": "stats_head_resist",
@@ -7203,8 +7149,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.head.resist",
-      "notes": "Codex 4x redraw of the stats-full-b card header icon (resist), free-standing on magenta",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b card header icon (resist), free-standing on magenta"
     },
     {
       "name": "stats_head_move",
@@ -7226,8 +7171,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.head.move",
-      "notes": "Codex 4x redraw of the stats-full-b card header icon (move), free-standing on magenta",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b card header icon (move), free-standing on magenta"
     },
     {
       "name": "stats_head_defense",
@@ -7249,8 +7193,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.head.defense",
-      "notes": "Codex 4x redraw of the stats-full-b card header icon (defense), free-standing on magenta",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b card header icon (defense), free-standing on magenta"
     },
     {
       "name": "stats_head_food",
@@ -7272,8 +7215,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.head.food",
-      "notes": "Codex 4x redraw of the stats-full-b card header icon (food), free-standing on magenta",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b card header icon (food), free-standing on magenta"
     },
     {
       "name": "stats_head_rest",
@@ -7295,8 +7237,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.head.rest",
-      "notes": "Codex 4x redraw of the stats-full-b card header icon (rest), free-standing on magenta",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b card header icon (rest), free-standing on magenta"
     },
     {
       "name": "stats_head_combat",
@@ -7318,8 +7259,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.head.combat",
-      "notes": "Codex 4x redraw of the stats-full-b card header icon (combat), free-standing on magenta",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b card header icon (combat), free-standing on magenta"
     },
     {
       "name": "stats_head_mt",
@@ -7341,8 +7281,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.head.mt",
-      "notes": "Codex 4x redraw of the stats-full-b card header icon (mt), free-standing on magenta",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b card header icon (mt), free-standing on magenta"
     },
     {
       "name": "stats_button",
@@ -7364,8 +7303,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.button",
-      "notes": "Codex 4x redraw of the stats-full-b card header icon (button), free-standing on magenta",
-      "atlas": "hires"
+      "notes": "Codex 4x redraw of the stats-full-b card header icon (button), free-standing on magenta"
     },
     {
       "name": "stats_chrome_tl",
@@ -7387,8 +7325,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.chrome.tl",
-      "notes": "quarter of the user-approved painted stats window chrome (Codex 3x3 tile edit of stats-full-b at 2x, stitched; card interiors wiped to clean glass), drawn at its design quarter (960x540 design px), sprite px = 2 design px",
-      "atlas": "hires"
+      "notes": "quarter of the user-approved painted stats window chrome (Codex 3x3 tile edit of stats-full-b at 2x, stitched; card interiors wiped to clean glass), drawn at its design quarter (960x540 design px), sprite px = 2 design px"
     },
     {
       "name": "stats_chrome_tr",
@@ -7410,8 +7347,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.chrome.tr",
-      "notes": "quarter of the user-approved painted stats window chrome (Codex 3x3 tile edit of stats-full-b at 2x, stitched; card interiors wiped to clean glass), drawn at its design quarter (960x540 design px), sprite px = 2 design px",
-      "atlas": "hires"
+      "notes": "quarter of the user-approved painted stats window chrome (Codex 3x3 tile edit of stats-full-b at 2x, stitched; card interiors wiped to clean glass), drawn at its design quarter (960x540 design px), sprite px = 2 design px"
     },
     {
       "name": "stats_chrome_bl",
@@ -7433,8 +7369,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.chrome.bl",
-      "notes": "quarter of the user-approved painted stats window chrome (Codex 3x3 tile edit of stats-full-b at 2x, stitched; card interiors wiped to clean glass), drawn at its design quarter (960x540 design px), sprite px = 2 design px",
-      "atlas": "hires"
+      "notes": "quarter of the user-approved painted stats window chrome (Codex 3x3 tile edit of stats-full-b at 2x, stitched; card interiors wiped to clean glass), drawn at its design quarter (960x540 design px), sprite px = 2 design px"
     },
     {
       "name": "stats_chrome_br",
@@ -7456,8 +7391,931 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.chrome.br",
-      "notes": "quarter of the user-approved painted stats window chrome (Codex 3x3 tile edit of stats-full-b at 2x, stitched; card interiors wiped to clean glass), drawn at its design quarter (960x540 design px), sprite px = 2 design px",
-      "atlas": "hires"
+      "notes": "quarter of the user-approved painted stats window chrome (Codex 3x3 tile edit of stats-full-b at 2x, stitched; card interiors wiped to clean glass), drawn at its design quarter (960x540 design px), sprite px = 2 design px"
+    },
+    {
+      "name": "strip_panel",
+      "file": "strip_panel.png",
+      "size": [
+        246,
+        214
+      ],
+      "border": {
+        "left": 75,
+        "bottom": 75,
+        "right": 75,
+        "top": 75
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "hud.strip.panel",
+      "notes": "Track H HUD strip body (hud-2-final, heavy rim r2 after Codex fidelity 5.5): carved slate rim + knot bosses on the chamfered corners in the 75 px borders (r3: scale 0.75, rim ~16 ref px), even slate glass centre; centre block and both wings"
+    },
+    {
+      "name": "strip_shoulder",
+      "file": "strip_shoulder.png",
+      "size": [
+        107,
+        165
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        1,
+        0
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip.shoulder",
+      "notes": "Track H knotwork shoulder joining the LEFT wing top to the taller centre block (flat right / bottom edges)"
+    },
+    {
+      "name": "strip_shoulder_r",
+      "file": "strip_shoulder_r.png",
+      "size": [
+        107,
+        165
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0,
+        0
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip.shoulder.r",
+      "notes": "Track H shoulder of the RIGHT wing (mirror)"
+    },
+    {
+      "name": "strip_shoulder_lo",
+      "file": "strip_shoulder_lo.png",
+      "size": [
+        107,
+        165
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        1,
+        1
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip.shoulder.lo",
+      "notes": "Track H lower shoulder: slanted brace from the LEFT wing bottom down to the strip bottom (mockup flare under the wings)"
+    },
+    {
+      "name": "strip_shoulder_lo_r",
+      "file": "strip_shoulder_lo_r.png",
+      "size": [
+        107,
+        165
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0,
+        1
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip.shoulder.lo.r",
+      "notes": "Track H lower shoulder of the RIGHT wing (mirror)"
+    },
+    {
+      "name": "strip_knot",
+      "file": "strip_knot.png",
+      "size": [
+        66,
+        164
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        1,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip.knot",
+      "notes": "Track H knotwork end of the LEFT wing (flat right edge butts into the wing rim), height = wing height"
+    },
+    {
+      "name": "strip_knot_r",
+      "file": "strip_knot_r.png",
+      "size": [
+        66,
+        164
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip.knot.r",
+      "notes": "Track H knotwork end of the RIGHT wing (mirror of strip_knot)"
+    },
+    {
+      "name": "strip_cell",
+      "file": "strip_cell.png",
+      "size": [
+        128,
+        128
+      ],
+      "border": {
+        "left": 22,
+        "bottom": 22,
+        "right": 22,
+        "top": 22
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "hud.strip.cell",
+      "notes": "Track H sunken bowl cell (hotbar / potions / abilities): thin steel rim + inner shade in the 22 px borders"
+    },
+    {
+      "name": "strip_bowl",
+      "file": "strip_bowl.png",
+      "size": [
+        128,
+        128
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip.bowl",
+      "notes": "Track H round food bowl; timer ring = gp_ring (Filled radial) over it"
+    },
+    {
+      "name": "bar_frame_strip",
+      "file": "bar_frame_strip.png",
+      "size": [
+        182,
+        42
+      ],
+      "border": {
+        "left": 22,
+        "bottom": 6,
+        "right": 0,
+        "top": 6
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": false,
+      "token": "hud.strip.bar.frame",
+      "notes": "Track H thin bar well inside the strip (r2): rounded left end in the 22 px border, rails 6 px, open right end (bar_cap closes it); window = the transparent interior"
+    },
+    {
+      "name": "strip_rim",
+      "file": "strip_rim.png",
+      "size": [
+        128,
+        128
+      ],
+      "border": {
+        "left": 20,
+        "bottom": 20,
+        "right": 20,
+        "top": 20
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": false,
+      "token": "hud.strip.rim",
+      "notes": "Track H rarity rim mask (white), same shape as strip_cell's rim; tinted by the Epic Loot rarity colour"
+    },
+    {
+      "name": "strip_glow",
+      "file": "strip_glow.png",
+      "size": [
+        176,
+        172
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip.glow",
+      "notes": "Track H selection glow mask: halo around a cell (cell = 0.72 of the sprite), tinted rune_glow, drawn outside the cell"
+    },
+    {
+      "name": "strip_dur",
+      "file": "strip_dur.png",
+      "size": [
+        68,
+        8
+      ],
+      "border": {
+        "left": 6,
+        "bottom": 0,
+        "right": 6,
+        "top": 0
+      },
+      "pivot": [
+        0,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "hud.strip.dur",
+      "notes": "Track H durability pill (track + fill, tinted)"
+    },
+    {
+      "name": "strip4_fill",
+      "file": "strip4_fill.png",
+      "size": [
+        650,
+        74
+      ],
+      "border": {
+        "left": 37,
+        "bottom": 0,
+        "right": 37,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "hud.strip4.fill",
+      "notes": "Track H hud-4M3: neutral glossy capsule fill, tinted per pool (HP / stamina / eitr / adrenaline / shield sheen), Codex 4x redraw"
+    },
+    {
+      "name": "strip4_shield_l",
+      "file": "strip4_shield_l.png",
+      "size": [
+        46,
+        92
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip4.shield.l",
+      "notes": "Track H hud-4M3: shield perimeter glow, left end cap"
+    },
+    {
+      "name": "strip4_shield_mid",
+      "file": "strip4_shield_mid.png",
+      "size": [
+        4,
+        92
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "hud.strip4.shield.mid",
+      "notes": "Track H hud-4M3: shield perimeter glow, top + bottom edge run (tiled)"
+    },
+    {
+      "name": "strip4_shield_r",
+      "file": "strip4_shield_r.png",
+      "size": [
+        46,
+        92
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip4.shield.r",
+      "notes": "Track H hud-4M3: shield perimeter glow, right end cap (full shield)"
+    },
+    {
+      "name": "strip4_rim",
+      "file": "strip4_rim.png",
+      "size": [
+        259,
+        327
+      ],
+      "border": {
+        "left": 18,
+        "bottom": 18,
+        "right": 18,
+        "top": 18
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "hud.strip4.rim",
+      "notes": "Track H hud-4M3: white cell rim mask (rarity / selection tint), Codex 4x redraw"
+    },
+    {
+      "name": "strip4_divider",
+      "file": "strip4_divider.png",
+      "size": [
+        50,
+        214
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip4.divider",
+      "notes": "Track H hud-4M3: hotbar | ability divider column, Codex 4x redraw"
+    },
+    {
+      "name": "strip4_rowdiv",
+      "file": "strip4_rowdiv.png",
+      "size": [
+        49,
+        81
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip4.rowdiv",
+      "notes": "Track H hud-4M3: knot between split resource bars, Codex 4x redraw"
+    },
+    {
+      "name": "gauge_rage_tick",
+      "file": "gauge_rage_tick.png",
+      "size": [
+        50,
+        86
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.gauge.rage.tick",
+      "notes": "Track H centre gauges: runic tick at the arc ends"
+    },
+    {
+      "name": "gauge_stagger_fill",
+      "file": "gauge_stagger_fill.png",
+      "size": [
+        41,
+        356
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.gauge.stagger.fill",
+      "notes": "Track H centre gauges (rs-C1): stagger fill, vertical fill bottom-up"
+    },
+    {
+      "name": "strip4_fill_hp",
+      "file": "strip4_fill_hp.png",
+      "size": [
+        644,
+        74
+      ],
+      "border": {
+        "left": 37,
+        "bottom": 0,
+        "right": 37,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "hud.strip4.fill.hp",
+      "notes": "Track H hud-4M3: HP glossy capsule fill (own colour, untinted)"
+    },
+    {
+      "name": "strip4_fill_stamina",
+      "file": "strip4_fill_stamina.png",
+      "size": [
+        643,
+        74
+      ],
+      "border": {
+        "left": 37,
+        "bottom": 0,
+        "right": 37,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "hud.strip4.fill.stamina",
+      "notes": "Track H hud-4M3: stamina glossy capsule fill"
+    },
+    {
+      "name": "strip4_fill_eitr",
+      "file": "strip4_fill_eitr.png",
+      "size": [
+        682,
+        74
+      ],
+      "border": {
+        "left": 37,
+        "bottom": 0,
+        "right": 37,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "hud.strip4.fill.eitr",
+      "notes": "Track H hud-4M3: eitr glossy capsule fill"
+    },
+    {
+      "name": "strip4_fill_rage",
+      "file": "strip4_fill_rage.png",
+      "size": [
+        614,
+        74
+      ],
+      "border": {
+        "left": 37,
+        "bottom": 0,
+        "right": 37,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "hud.strip4.fill.rage",
+      "notes": "Track H: rage (adrenaline) glossy capsule fill (optional row bar)"
+    },
+    {
+      "name": "strip4_ghost_food",
+      "file": "strip4_ghost_food.png",
+      "size": [
+        160,
+        144
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip4.ghost.food",
+      "notes": "Track H: empty food slot silhouette (white, tinted), Codex redraw"
+    },
+    {
+      "name": "strip4_ghost_potion",
+      "file": "strip4_ghost_potion.png",
+      "size": [
+        106,
+        163
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip4.ghost.potion",
+      "notes": "Track H: empty potion slot silhouette, Codex redraw"
+    },
+    {
+      "name": "strip4_ghost_ability",
+      "file": "strip4_ghost_ability.png",
+      "size": [
+        157,
+        156
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip4.ghost.ability",
+      "notes": "Track H: empty ability slot rune silhouette, Codex redraw"
+    },
+    {
+      "name": "strip5_block",
+      "file": "strip5_block.png",
+      "size": [
+        400,
+        325
+      ],
+      "border": {
+        "left": 106,
+        "bottom": 28,
+        "right": 106,
+        "top": 72
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "hud.strip5.block",
+      "notes": "Track H r3 (lead art pass): piece of the Codex repaint of the EMPTY hud-4M3 frame (strict edits of 2x mockup crops, art/src/kit/strip5_tiles, composed by paint4); hotbar block plate, knot column + curl ends fixed, run tiled"
+    },
+    {
+      "name": "strip5_bars",
+      "file": "strip5_bars.png",
+      "size": [
+        338,
+        94
+      ],
+      "border": {
+        "left": 75,
+        "bottom": 28,
+        "right": 75,
+        "top": 28
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "hud.strip5.bars",
+      "notes": "Track H r3 (lead art pass): piece of the Codex repaint of the EMPTY hud-4M3 frame (strict edits of 2x mockup crops, art/src/kit/strip5_tiles, composed by paint4); bar block plate, rails"
+    },
+    {
+      "name": "strip5_well_hp",
+      "file": "strip5_well_hp.png",
+      "size": [
+        250,
+        94
+      ],
+      "border": {
+        "left": 62,
+        "bottom": 0,
+        "right": 62,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "hud.strip5.well.hp",
+      "notes": "Track H r3 (lead art pass): piece of the Codex repaint of the EMPTY hud-4M3 frame (strict edits of 2x mockup crops, art/src/kit/strip5_tiles, composed by paint4); HP well, rounded ends fixed, window open"
+    },
+    {
+      "name": "strip5_well_row",
+      "file": "strip5_well_row.png",
+      "size": [
+        250,
+        78
+      ],
+      "border": {
+        "left": 62,
+        "bottom": 0,
+        "right": 62,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "hud.strip5.well.row",
+      "notes": "Track H r3 (lead art pass): piece of the Codex repaint of the EMPTY hud-4M3 frame (strict edits of 2x mockup crops, art/src/kit/strip5_tiles, composed by paint4); resource row well"
+    },
+    {
+      "name": "strip5_wing",
+      "file": "strip5_wing.png",
+      "size": [
+        569,
+        284
+      ],
+      "border": {
+        "left": 125,
+        "bottom": 47,
+        "right": 12,
+        "top": 44
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "hud.strip5.wing",
+      "notes": "Track H r3 (lead art pass): piece of the Codex repaint of the EMPTY hud-4M3 frame (strict edits of 2x mockup crops, art/src/kit/strip5_tiles, composed by paint4); wing plate, knot end-cap fixed, run tiled; right wing mirrored"
+    },
+    {
+      "name": "strip5_medallion",
+      "file": "strip5_medallion.png",
+      "size": [
+        372,
+        256
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip5.medallion",
+      "notes": "Track H r3 (lead art pass): piece of the Codex repaint of the EMPTY hud-4M3 frame (strict edits of 2x mockup crops, art/src/kit/strip5_tiles, composed by paint4); medallion knot frame, empty disc (glyph = sprite.ornament.triquetra)"
+    },
+    {
+      "name": "strip5_cell",
+      "file": "strip5_cell.png",
+      "size": [
+        171,
+        199
+      ],
+      "border": {
+        "left": 19,
+        "bottom": 19,
+        "right": 19,
+        "top": 19
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "hud.strip5.cell",
+      "notes": "Track H r3 (lead art pass): piece of the Codex repaint of the EMPTY hud-4M3 frame (strict edits of 2x mockup crops, art/src/kit/strip5_tiles, composed by paint4); hotbar / ability cell well"
+    },
+    {
+      "name": "strip5_socket_round",
+      "file": "strip5_socket_round.png",
+      "size": [
+        176,
+        176
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip5.socket.round",
+      "notes": "Track H r3 (lead art pass): piece of the Codex repaint of the EMPTY hud-4M3 frame (strict edits of 2x mockup crops, art/src/kit/strip5_tiles, composed by paint4); food socket"
+    },
+    {
+      "name": "strip5_socket_square",
+      "file": "strip5_socket_square.png",
+      "size": [
+        161,
+        181
+      ],
+      "border": {
+        "left": 19,
+        "bottom": 19,
+        "right": 19,
+        "top": 19
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "hud.strip5.socket.square",
+      "notes": "Track H r3 (lead art pass): piece of the Codex repaint of the EMPTY hud-4M3 frame (strict edits of 2x mockup crops, art/src/kit/strip5_tiles, composed by paint4); potion socket"
+    },
+    {
+      "name": "gauge5_ring_track",
+      "file": "gauge5_ring_track.png",
+      "size": [
+        151,
+        151
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.gauge5.ring.track",
+      "notes": "Track H r3: Codex repaint of the rs-C1 / rs-C2 gauge crops (strip5_tiles/prompt-G*.txt); empty ring track"
+    },
+    {
+      "name": "gauge5_ring_fill",
+      "file": "gauge5_ring_fill.png",
+      "size": [
+        151,
+        151
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.gauge5.ring.fill",
+      "notes": "Track H r3: Codex repaint of the rs-C1 / rs-C2 gauge crops (strip5_tiles/prompt-G*.txt); full rage ring glow (radial fill)"
+    },
+    {
+      "name": "gauge5_col_frame",
+      "file": "gauge5_col_frame.png",
+      "size": [
+        33,
+        178
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.gauge5.col.frame",
+      "notes": "Track H r3: Codex repaint of the rs-C1 / rs-C2 gauge crops (strip5_tiles/prompt-G*.txt); stagger column frame"
+    },
+    {
+      "name": "gauge5_col_burst",
+      "file": "gauge5_col_burst.png",
+      "size": [
+        34,
+        140
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.gauge5.col.burst",
+      "notes": "Track H r3: Codex repaint of the rs-C1 / rs-C2 gauge crops (strip5_tiles/prompt-G*.txt); staggered fill with sparks"
     }
   ]
 }
