@@ -46,7 +46,7 @@ namespace RuneSkin.Restyle
         private readonly List<Scaled> _scaled = new List<Scaled>(1);
         private readonly List<Sized> _sized = new List<Sized>(2);
         private Image _cell;
-        private bool _zones;
+        private bool _zones, _owned;
 
         public static void Ensure(Image cell, bool zones = false)
         {
@@ -71,6 +71,10 @@ namespace RuneSkin.Restyle
             var scope = transform.childCount > 0 || !transform.parent ? transform : transform.parent;
             if (_zones)
             {
+                // Inventory / container grid cells are laid out by their owner (GridCellLook, user defect 2026-10-23: the
+                // zone bands shrank "50/50" to the ~9 px band height, cut the icon to 64 % and could not fit the vanilla
+                // durability bar, wider than the cell). The band rule stays for the other item cells.
+                if (_owned || (_owned = TryGetComponent<InventoryScreen.GridCellLook>(out _))) return;
                 var band = LayoutMath.ZoneBand(Mathf.Min(cr.width, cr.height), ThemeTokens.GetFloat("share.cell.zone", 0.17f), ThemeTokens.GetFloat("size.cell.zone.min", 9f));
                 ZoneIcon(scope, space, cr, band);
                 ZoneTexts(scope, space, cr, band);

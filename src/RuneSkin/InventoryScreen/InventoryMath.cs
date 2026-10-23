@@ -568,6 +568,69 @@ namespace RuneSkin.InventoryScreen
             return g;
         }
 
+        // Offset of a grid's cell block inside its view along one axis (user defect 2026-10-23, RuneSkin 0.20.0: uneven
+        // side margins, empty band under the rows). The block is the cells only: count x pitch minus the one trailing gap
+        // (pitch = cell + gap, so count x pitch overshoots by a gap and centring that put the whole gap on the right /
+        // bottom). Centred when it fits; a taller block (scrolling view) starts at the view edge.
+        public static float BlockOffset(float view, int count, float pitch, float gap)
+        {
+            if (count <= 0 || !(pitch > 0f)) return 0f;
+            var block = count * pitch - Math.Max(0f, gap);
+            return block >= view ? 0f : (view - block) / 2f;
+        }
+
+        // Inside of one inventory / container cell (user defect 2026-10-23: counts tiny and cramped, icons off, the
+        // durability bar past the cell). Shares of the cell side, the HUD strip cell's language (StripCell): icon centred,
+        // stack count bottom-right in the outlined HUD number style, quality top-right, durability pill inset above the
+        // bottom edge, all inside the cell. Cell-local, origin top-left, y down; w x h = the cell rect.
+        public static CellParts Cell(float w, float h, CellTokens t)
+        {
+            var side = Math.Min(w, h);
+            var p = new CellParts();
+            if (!(side > 0f)) return p;
+            var icon = side * Clamp(t.Icon, 0.1f, 1f);
+            p.Icon = new Box((w - icon) / 2f, (h - icon) / 2f, icon, icon);
+            var inset = side * Clamp(t.Inset, 0f, 0.25f);
+            var countH = side * 0.5f;
+            p.Count = new Box(inset, h - inset - countH, Math.Max(0f, w - 2f * inset), countH);
+            p.CountFont = side * t.CountFont;
+            var qh = side * 0.4f;
+            p.Quality = new Box(w / 2f, inset, Math.Max(0f, w / 2f - inset), qh);
+            p.QualityFont = side * t.QualityFont;
+            var dx = side * Clamp(t.DurInsetX, 0f, 0.4f);
+            var dh = Math.Max(t.DurMinH, side * t.DurH);
+            var dy = side * Clamp(t.DurInsetY, 0f, 0.4f);
+            p.Durability = new Box(dx, h - dy - dh, Math.Max(0f, w - 2f * dx), dh);
+            return p;
+        }
+
+        // Auto-size range of a cell number: from the readable floor (screen px over px per unit) up to the theme size,
+        // the theme size raised to the floor where the cell is drawn that small (720p).
+        public static void FontRange(float size, float floorPx, float pxPerUnit, out float min, out float max)
+        {
+            max = Math.Max(1f, size);
+            if (!(pxPerUnit > 0f))
+            {
+                min = max;
+                return;
+            }
+            min = Math.Max(0f, floorPx) / pxPerUnit;
+            if (max < min) max = min;
+        }
+
         private static float Clamp(float v, float min, float max) => v < min ? min : (v > max ? max : v);
+    }
+
+    // Theme shares of the cell side (InventorySkin.CellTokens from the theme; defaults = default-theme.json).
+    public sealed class CellTokens
+    {
+        public float Icon = 0.78f, Inset = 0.07f, CountFont = 0.3f, QualityFont = 0.26f;
+        public float DurInsetX = 0.12f, DurInsetY = 0.08f, DurH = 0.06f, DurMinH = 3f;
+    }
+
+    public struct CellParts
+    {
+        public Box Icon, Count, Quality, Durability;
+        public float CountFont, QualityFont;
     }
 }

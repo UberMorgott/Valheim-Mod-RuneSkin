@@ -81,7 +81,7 @@ namespace RuneSkin.InventoryScreen
             public float Pitch = -1f, Width = -1f, Scale = -1f;
             public int Elements = -1, OverlayRevision = -1, ThemeRevision = -1, First;
             public Inventory Inventory;
-            public float WantPitch, WantScale;
+            public float WantPitch, WantScale, WantCell;
             public int Visible = int.MaxValue;
             public bool NeedsReposition;
         }
@@ -316,8 +316,9 @@ namespace RuneSkin.InventoryScreen
             if (e.m_durability)
                 foreach (var g in e.m_durability.GetComponentsInChildren<Graphic>(true))
                     ctx.Role(g, "content", "InventoryElement.m_durability bar");
-            ctx.Role(e.m_amount, "text.body", "InventoryElement.m_amount");
-            ctx.Role(e.m_quality, "text.body", "InventoryElement.m_quality");
+            // Cell numbers: THE HUD number style, sized per cell by GridCellLook (theme restyle would reset them).
+            ctx.Role(e.m_amount, "content", "InventoryElement.m_amount (GridCellLook: HUD number, bottom-right)");
+            ctx.Role(e.m_quality, "content", "InventoryElement.m_quality (GridCellLook: HUD number, top-right)");
             var binding = e.transform.Find("binding");
             if (binding && binding.TryGetComponent<TMP_Text>(out var key)) ctx.Role(key, "text.display", "hotbar binding number (InventoryGrid.cs:286-294)");
         }
@@ -374,7 +375,7 @@ namespace RuneSkin.InventoryScreen
                 var s = pair.Value;
                 if (!pair.Key || !s.NeedsReposition) continue;
                 s.NeedsReposition = false;
-                Reposition(pair.Key, s.Visible, s.Scale);
+                Reposition(pair.Key, s.Visible, s.Scale, s.WantPitch > 0f ? Mathf.Clamp01((s.WantPitch - s.WantCell) / s.WantPitch) : 0f);
             }
             if (_gui.m_playerGrid && _grids.TryGetValue(_gui.m_playerGrid, out var ps)) PlaceEaqsCells(_gui.m_playerGrid, ps.Scale);
             if (_logPlacement > 0 && --_logPlacement == 0) StartCoroutine(LogAtEndOfFrame());
@@ -661,7 +662,10 @@ namespace RuneSkin.InventoryScreen
             // Grid box = carved hotbar header strip (digits 1-8 on it) + the grid below it.
             var headerH = _tokens.HotbarHeaderH * _input.SkinScale;
             var inner = Inset(o.Grid, pad, pad);
-            var gridBox = new Box(inner.X, inner.Y + headerH, inner.W, Mathf.Max(0f, inner.H - headerH));
+            // Grid view down to the footer plates (Footer: o.Footer inset 4 at the top) minus the same pad as at the top:
+            // the rows centre in it, so the margin over the first row equals the one under the last (no empty band).
+            var gridBottom = Mathf.Max(inner.Bottom, o.Footer.Y + FooterInsetY - pad);
+            var gridBox = new Box(inner.X, inner.Y + headerH, inner.W, Mathf.Max(0f, gridBottom - inner.Y - headerH));
             if (_gui.m_playerGrid) Geo.Place(_canvas, (RectTransform)_gui.m_playerGrid.transform, gridBox);
             if (_hotbarHeader && _hotbarHeader.gameObject.activeSelf != !StripHotbar) _hotbarHeader.gameObject.SetActive(!StripHotbar);
             if (_hotbarHeader && !StripHotbar)
@@ -670,7 +674,7 @@ namespace RuneSkin.InventoryScreen
                 var x = gridBox.X + (gridBox.W - o.Player.Columns * o.Player.Pitch) / 2f;
                 Geo.Place(_canvas, _hotbarHeader, new Box(x - 10f, inner.Y, w + 20f, headerH));
             }
-            Footer(Inset(o.Footer, pad, 4f));
+            Footer(Inset(o.Footer, pad, FooterInsetY));
 
             // Dock.
             if (containerShown)
@@ -1020,6 +1024,7 @@ namespace RuneSkin.InventoryScreen
             if (!grid) return;
             if (!_grids.TryGetValue(grid, out var s)) _grids[grid] = s = new GridState();
             s.WantPitch = pitch;
+            s.WantCell = cell;
             var template = grid.m_elementPrefab ? grid.m_elementPrefab.transform as RectTransform : null;
             var native = template ? template.rect.width : cell;
             s.WantScale = native > 1f ? cell / native : 1f;
@@ -1081,6 +1086,7 @@ namespace RuneSkin.InventoryScreen
             var cell = (RectTransform)e.transform;
             var side = Mathf.Min(cell.rect.width, cell.rect.height);
             if (!(side > 1f)) return;
+            GridCellLook.Apply(e);
             var mark = side * ThemeTokens.GetFloat("share.inv.cell.mark", 0.24f);
             if (e.m_equiped && e.m_equiped.TryGetComponent<Image>(out var eq))
                 Corner(eq, "sprite.marker.equipped", "color.marker.equipped", new Vector2(0f, 0f), mark);
@@ -1115,10 +1121,15 @@ namespace RuneSkin.InventoryScreen
             if (rt.sizeDelta != sz) rt.sizeDelta = sz;
         }
 
+        // Footer plates start this far under the footer box top (canvas units).
+        private const float FooterInsetY = 4f;
+
         // RuneSkin owns the HUD strip: the inventory's hotbar row is the strip's hotbar.
         private static bool StripHotbar => PlayerHud.HudCluster.Instance;
 
-        private void Reposition(InventoryGrid grid, int visibleCount, float scale)
+        // Cell block centred in the grid view on both axes (InventoryMath.BlockOffset: cells only, no trailing gap; a
+        // scrolling block starts at the root top). gapShare = gap / pitch.
+        private void Reposition(InventoryGrid grid, int visibleCount, float scale, float gapShare)
         {
             if (!grid.m_gridRoot) return;
             var w = grid.GetInventory().GetWidth();
@@ -1126,9 +1137,15 @@ namespace RuneSkin.InventoryScreen
             var view = Geo.BoxOf(_canvas, (RectTransform)grid.transform);
             var unit = Geo.WorldPerUnit(_canvas);
             var pitch = grid.m_elementSpace * grid.m_gridRoot.lossyScale.x / Mathf.Max(unit, 1e-6f); // canvas units
-            var x0 = view.X + (view.W - w * pitch) / 2f;
+            var gap = pitch * gapShare;
             // Player grid under the HUD strip: row 0 lives in the strip (its hotbar), the grid starts at row 1.
             var skipRow = StripHotbar && grid == _gui.m_playerGrid ? 1 : 0;
+            var count = Mathf.Min(grid.m_elements.Count, visibleCount);
+            var rows = w > 0 ? Mathf.Max(0, (count + w - 1) / w - skipRow) : 0;
+            var x0 = view.X + InventoryMath.BlockOffset(view.W, w, pitch, gap);
+            // fits: centred in the view (whatever the root's anchors); taller: from the (scrolled) root top
+            var fits = rows * pitch - gap <= view.H + 0.01f;
+            var y0 = fits ? view.Y + InventoryMath.BlockOffset(view.H, rows, pitch, gap) : root.Y;
             for (var i = 0; i < grid.m_elements.Count && i < visibleCount; i++)
             {
                 var e = grid.m_elements[i];
@@ -1140,7 +1157,7 @@ namespace RuneSkin.InventoryScreen
                     continue;
                 }
                 Geo.SetScale(e.transform, scale);
-                Geo.SetTopLeft((RectTransform)e.transform, Geo.World(_canvas, x0 + pos.x * pitch, root.Y + (pos.y - skipRow) * pitch));
+                Geo.SetTopLeft((RectTransform)e.transform, Geo.World(_canvas, x0 + pos.x * pitch, y0 + (pos.y - skipRow) * pitch));
             }
         }
 
