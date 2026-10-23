@@ -4,8 +4,9 @@ namespace RuneSkin.Restyle
 {
     // The one "top overlay" sort for transient pointer visuals (tooltips, the inventory drag icon): an override-sorted
     // Canvas Band orders above the highest sorted UI it can be shown over - its own root canvas, the GUI root
-    // (InventoryGui) and the HUD strip, whose canvas sorts above the GUI while the inventory is open
-    // (HudCluster.AboveInventory). No GraphicRaycaster: a lifted visual never takes the pointer.
+    // (InventoryGui) and the HUD strip when its canvas override-sorts (it no longer does: only its draw-less raycast layer,
+    // StripHits, sorts above the GUI while the inventory is open). No GraphicRaycaster: a lifted visual never takes the
+    // pointer.
     public static class TopOverlay
     {
         public const int Band = 10;
