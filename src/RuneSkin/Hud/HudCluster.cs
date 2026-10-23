@@ -760,8 +760,19 @@ namespace RuneSkin.PlayerHud
                 // The window's own rect bottom (run 20261023-191817: measured from the graphics enabled at show time,
                 // the chat background enabled later reached 70 px above the screen bottom, over the right wing / end
                 // medallion at every resolution). The rect holds every chat graphic, so clearing it clears them all.
+                // Run 20261023-194139: the rect alone was not enough either (lifted to the strip top, the drawn chat still
+                // reached 66 px): the lowest of the rect and EVERY graphic under it, inactive ones included (the input
+                // line / background shown later sit below the window rect).
                 if (w.rect.height < 1f) return; // laid out next frame
-                _chatBottomW = w.rect.yMin;
+                var min = w.rect.yMin;
+                w.GetComponentsInChildren(true, _chatGraphics);
+                foreach (var g in _chatGraphics)
+                {
+                    if (!g || g.rectTransform.rect.width < 1f || g.rectTransform.rect.height < 1f) continue;
+                    g.rectTransform.GetWorldCorners(_corners);
+                    min = Mathf.Min(min, w.InverseTransformPoint(_corners[0]).y);
+                }
+                _chatBottomW = min;
             }
             var hudCanvas = _canvas ? _canvas.rootCanvas : null;
             var chatCanvas = w.GetComponentInParent<Canvas>();
@@ -777,7 +788,18 @@ namespace RuneSkin.PlayerHud
             var want = _chatHome + new Vector2(0f, Mathf.Max(0f, topLocal.y - homeBottom));
             if ((w.anchoredPosition - want).sqrMagnitude < 0.01f) return;
             w.anchoredPosition = want;
-            Plugin.Log.LogInfo($"[RuneSkin] chat box at {want.y - _chatHome.y:0.#} units above home (strip top {top.y:0} px)");
+            // diagnostic (runs 191817 / 194139: lifted per this log, the drawn chat still at 66 px): the window's anchors,
+            // parent scale and its lowest graphic on screen right after the move
+            var low = float.MaxValue;
+            w.GetComponentsInChildren(false, _chatGraphics);
+            foreach (var g in _chatGraphics)
+            {
+                if (!g.enabled || g.rectTransform.rect.width < 1f) continue;
+                g.rectTransform.GetWorldCorners(_corners);
+                low = Mathf.Min(low, RectTransformUtility.WorldToScreenPoint(chatCam, _corners[0]).y);
+            }
+            Plugin.Log.LogInfo($"[RuneSkin] chat box at {want.y - _chatHome.y:0.#} units above home (strip top {top.y:0} px) " +
+                               $"anchors {w.anchorMin}-{w.anchorMax} rect {w.rect} parent {parent.name} scale {parent.lossyScale.y:0.####} lowest graphic {low:0} px");
         }
 
         // Status groups above the strip (user call 2026-10-22): buffs on one side, debuffs on the other (Hud.BuffSide),
@@ -839,7 +861,7 @@ namespace RuneSkin.PlayerHud
         }
 
         // Visible strip potion cell i (null when not shown / no strip).
-        public RectTransform PotionCellRect(int i) => _hudStrip != null && _childrenOn && isActiveAndEnabled ? _hudStrip.PotionRect(i) : null;
+        public RectTransform PotionCellRect(int i) => _hudStrip != null ? _hudStrip.PotionRect(i) : null; // shown cells only (activeInHierarchy)
 
         // Bottom-left world point of the potion zone (the inventory puts its quick cells there when it has no box).
         public Vector3 QuickAnchor => _root.TransformPoint(new Vector3(_hudStrip.L.PotionX, _hudStrip.L.PotionY, 0f));

@@ -67,6 +67,19 @@ namespace RuneSkin.Tests
             Assert.Equal(valid, !ThemeSchema.Validate(f).Exists(e => e.Contains("source")));
         }
 
+        // Every token sits in its own section (run 20261023-191817: sprite.hud.strip7.field / .rim were listed under
+        // "floats", never registered as sprites - the bar field and channel rims were not drawn in game).
+        [Fact]
+        public void DefaultThemeTokensInTheirSection()
+        {
+            using var s = typeof(ThemeSchema).Assembly.GetManifestResourceStream("RuneSkin.default-theme.json");
+            using var r = new System.IO.StreamReader(s!);
+            var f = ThemeJson.Parse(r.ReadToEnd());
+            Assert.Empty(System.Array.FindAll(f.floats, x => x.token.StartsWith("sprite.", System.StringComparison.Ordinal)));
+            Assert.Empty(System.Array.FindAll(f.sprites, x => !x.token.StartsWith("sprite.", System.StringComparison.Ordinal)));
+            Assert.Contains(f.sprites, x => x.token == "sprite.hud.strip7.field");
+        }
+
         // The shipped minimap (0.9.3, user ask): ring 320 ref (was 220) capped at 26 % of the safe height (was 18 %).
         [Fact]
         public void DefaultThemeMinimapIsLarge()

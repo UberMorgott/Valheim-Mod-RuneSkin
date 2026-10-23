@@ -1357,6 +1357,21 @@ namespace RuneSkin.InventoryScreen
         // targets the place the slot has on the HUD; the HUD bar itself is hidden while the inventory is open.
         private void PlaceQuickCells(InventoryGrid grid)
         {
+            // The strip's own visible potion cells first, independent of the vanilla quick bar (run 20261023-194139:
+            // the bar lookup returned before the strip path, the cells stayed where EAQS put them)
+            var cluster0 = PlayerHud.HudCluster.Instance;
+            if (cluster0 && cluster0.PotionCellRect(0))
+            {
+                var k = 0;
+                foreach (var s in _eaqs)
+                {
+                    if (s.Kind != EaqsBridge.Kind.Quick || s.Element >= grid.m_elements.Count) continue;
+                    var e = grid.m_elements[s.Element];
+                    var cell = cluster0.PotionCellRect(k++);
+                    if (e && cell) PlaceOnCell(e, cell);
+                }
+                return;
+            }
             var bar = QuickBar();
             if (!bar || !bar.TryGetComponent<HotkeyBar>(out var hb)) return;
             var prefab = hb.m_elementPrefab ? hb.m_elementPrefab.transform as RectTransform : null;
@@ -1376,7 +1391,7 @@ namespace RuneSkin.InventoryScreen
                 var stripCell = band ? band.PotionCellRect(i) : null;
                 if (stripCell)
                 {
-                    PlaceQuickCell(e, Geo.ForeignBox(_canvas, stripCell));
+                    PlaceOnCell(e, stripCell);
                     continue;
                 }
                 if (band && band.BandQuickCell(i, out var space, out var bl, out var bandSize))
@@ -1406,6 +1421,31 @@ namespace RuneSkin.InventoryScreen
                 else continue;
                 PlaceQuickCell(e, b);
             }
+        }
+
+        // Element exactly over a cell of another canvas (the HUD strip): through screen px, each side with its own
+        // canvas camera, so the GUI scale / canvas modes never shift it (run 20261023-194139: quick cells 356 px off).
+        private readonly Vector3[] _cellCorners = new Vector3[4];
+        private void PlaceOnCell(InventoryElement e, RectTransform cell)
+        {
+            var rt = (RectTransform)e.transform;
+            if (!(rt.parent is RectTransform parent)) return;
+            var cellCanvas = cell.GetComponentInParent<Canvas>();
+            var myCanvas = parent.GetComponentInParent<Canvas>();
+            if (!cellCanvas || !myCanvas) return;
+            Camera Cam(Canvas c) => c.rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : c.rootCanvas.worldCamera;
+            cell.GetWorldCorners(_cellCorners);
+            var s0 = RectTransformUtility.WorldToScreenPoint(Cam(cellCanvas), _cellCorners[0]);
+            var s2 = RectTransformUtility.WorldToScreenPoint(Cam(cellCanvas), _cellCorners[2]);
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, s0, Cam(myCanvas), out var bl)) return;
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, s2, Cam(myCanvas), out var tr)) return;
+            var native = rt.rect;
+            if (native.width < 1f) return;
+            var scale = (tr.x - bl.x) / native.width;
+            if (Mathf.Abs(rt.localScale.x - scale) > 1e-4f) rt.localScale = new Vector3(scale, scale, 1f);
+            var p = bl - native.min * scale;
+            var lp = rt.localPosition;
+            if (Mathf.Abs(lp.x - p.x) > 0.01f || Mathf.Abs(lp.y - p.y) > 0.01f) rt.localPosition = new Vector3(p.x, p.y, lp.z);
         }
 
         private void PlaceQuickCell(InventoryElement e, Box b)

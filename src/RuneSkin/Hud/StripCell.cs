@@ -95,6 +95,9 @@ namespace RuneSkin.PlayerHud
             _key = Text(art, "Key", "size.hud.strip.key.font", "color.hud.strip.key", TextAlignmentOptions.TopLeft);
             _count = Text(art, "Count", "size.hud.strip.count.font", "color.hud.text", TextAlignmentOptions.BottomRight);
             _timer = Text(art, "Timer", "size.hud.strip.timer.font", "color.hud.timer", TextAlignmentOptions.Center);
+            // a timer: the timer floor (12 px), not the number floor its 24-unit size picked (run 20261023-194139: at 720
+            // the 14 px number floor pushed "20m" out of the food band)
+            if (_timer.TryGetComponent<TextFloor>(out var tf)) tf.Px = ThemeTokens.GetFloat("floor.text.timer.px", 12f);
             if (round)
             {
                 // food timer fits its band under the disc (auto-size down to the readable floor, TextFloor.Apply)
