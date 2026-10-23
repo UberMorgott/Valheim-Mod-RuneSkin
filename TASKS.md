@@ -776,3 +776,25 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
 - [x] Alert / aware indicator stacked above the name, centred (replaces the 0.16.3 slot left of the name): EnemyHudMath.AlertAboveY + unit test.
 - [x] Vaettir 0.10.1 drops the duplicate top-center target panel (Hud.Mode OverheadOnly); RuneSkin overhead bars unchanged otherwise.
 - Harness ui-runeskin-enemybars `eb-name` (every shown bar: name visible, centred, 0..12 px over the frame) + `eb-alert-slot` (stacked above, centred, no overlap).
+
+## 0.19.0 HUD strip full width + shared slot size (2026-10-23, user: the strip was far too small)
+
+- [x] One slot token `size.slot` (70 canvas units, was size.inv.cell) drives the inventory grid cell AND the strip hotbar
+      cell: strip px per unit = size.slot x Layout.SkinScale x GUI canvas scale / size.hud.strip.cell (StripMath.SlotPx /
+      UnitPx); every other strip piece keeps its hud-4M3 proportion to that cell, height follows (238 px at 1080p, 22 %).
+- [x] Width = HudStrip.Span (default 0.96; new key, the old HudStrip.Width was a cap and users kept 0.99) of the safe /
+      16:9 box; only the wings' tiled rails stretch. HudStrip.Height
+      (the 12 % compact default) removed; Hud.Scale no longer scales the strip (minimap + margins only).
+- [x] Readable minimum in strip units (StripMath.FontFloor, TextFloor.Apply: relayout, new status cells, summon frames); status rows
+      end before the medallion (StripMath.StatusPerRow); vanilla chat box (bottom right) lifted above the strip top, measured from its drawn graphics while shown (ChatTick).
+- [x] Square slot cells (user screenshot: wide food plates): hotbar / ability / food / potion = the same square slot, wings
+      spread gaps, never cells; food timer in a band under the socket disc (share.hud.strip.timer.band, auto-sized).
+- [x] Wing 9-slice: left border 335 holds the knot incl. its tail (the tiled centre repeated the tail = plate segments),
+      straight run stretched (Sliced).
+- [x] Bars on the RuneSkin/UI Bar shader (art/shaders, bundle): glossy cylinder, capsule window, straight-cut end with
+      end glow + seam, dark hollow missing part, lag ghost, well shadow, shield sheen + perimeter glow (second quad); colours
+      color.hud.bar.fx.*, shape share.hud.bar.fx.*; offline preview unity/Assets/Editor/RenderBar.cs (needs a GPU: run Unity
+      outside the agent sandbox).
+- [x] Harness hud2 (tools a8be577, 1484b5a, 7e17626): strip-width via Span 0.8 live, captions, per resolution 1080 / 720 /
+      1440: slot-equal, slots (square, = inventory cell, icon centred, food timer under the disc, no overlap, inside the
+      frame; live counts + food 4 / potions 5), overlap (chat / minimap), text-min, dock, shader shield + PNG files.
