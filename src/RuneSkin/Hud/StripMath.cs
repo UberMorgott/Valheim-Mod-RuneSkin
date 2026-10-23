@@ -172,15 +172,30 @@ namespace RuneSkin.PlayerHud
             return f;
         }
 
-        // Strip scale (strip units -> reference px): the configured height over the natural one, clamped.
-        public static float HeightScale(float wantH, float naturalH) =>
-            naturalH > 0f && wantH > 0f ? Math.Max(0.2f, Math.Min(2.5f, wantH / naturalH)) : 1f;
+        // Shared slot size (user call 2026-10-23): the strip hotbar cell IS an inventory grid cell. Both come from the
+        // theme token size.slot (canvas units) x the skin scale (InventoryMath clamps it to 0.5..2) x the GUI canvas scale.
+        public static float SlotPx(float slotUnits, float skinScale, float canvasScale) =>
+            Math.Max(0f, slotUnits) * Math.Max(0.5f, Math.Min(2f, skinScale)) * Math.Max(0f, canvasScale);
+
+        // Strip scale (screen px per strip unit): the hotbar cell's design width (size.hud.strip.cell) maps onto the
+        // slot; every other strip piece keeps its mockup proportion to that cell.
+        public static float UnitPx(float slotPx, float cellUnits) => cellUnits > 0f && slotPx > 0f ? slotPx / cellUnits : 1f;
 
         // Strip outer width in screen px: share of the (safe / 16:9 box) width.
         public static float WidthPx(float boxW, float share) => Math.Max(0f, boxW) * Math.Max(0.3f, Math.Min(1f, share));
 
+        // Font size (strip units) that renders at least floorPx screen px at unitPx px per unit.
+        public static float FontFloor(float size, float floorPx, float unitPx) => unitPx > 0f ? Math.Max(size, floorPx / unitPx) : size;
+
         // Status groups above the wings: buffs on one side, debuffs on the other, `perRow` cells a row, rows growing
         // upward. Width of a full row (the group's Arrange width).
         public static float RowWidth(int perRow, float cell, float gap) => Zone(Math.Max(1, perRow), cell, gap);
+
+        // Cells per status row that fit into avail (the row must end before the medallion), at least 1, at most want.
+        public static int StatusPerRow(int want, float cell, float gap, float avail)
+        {
+            var fit = cell > 0f ? (int)Math.Floor((avail + Math.Max(0f, gap)) / (cell + Math.Max(0f, gap))) : want;
+            return Math.Max(1, Math.Min(want, fit));
+        }
     }
 }

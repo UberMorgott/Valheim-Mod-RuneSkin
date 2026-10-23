@@ -23,7 +23,7 @@ namespace RuneSkin
     [BepInProcess("valheim.exe")]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Version = "0.18.0";
+        public const string Version = "0.19.0";
 
         public static ManualLogSource Log { get; private set; }
         public static ConfigEntry<float> SkinScale { get; private set; }
@@ -33,7 +33,6 @@ namespace RuneSkin
         public static ConfigEntry<float> MinimapScale { get; private set; }
         public static ConfigEntry<bool> UltrawideBox { get; private set; }
         public static ConfigEntry<float> StripWidth { get; private set; }
-        public static ConfigEntry<float> StripHeight { get; private set; }
         public static ConfigEntry<int> StatusPerRow { get; private set; }
         public static ConfigEntry<int> StatusRows { get; private set; }
         public static ConfigEntry<string> BuffSide { get; private set; }
@@ -158,17 +157,15 @@ namespace RuneSkin
             _ownCharacterStats = Config.Bind("Ownership", "CharacterStats", true,
                 "RuneSkin adds the character stats window (5th button of the inventory info row, or Hud.StatsKey): pools and regeneration per second, resistances, movement and weight, defense, food, rest, combat modifiers, MorgottTweaks shield and slots (needs Inventory). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
             HudScale = Config.Bind("Hud", "Scale", 1f, new ConfigDescription(
-                "HUD cluster scale on top of the game's UI scale (fonts never go below the readable floor).",
+                "Scale of the minimap ring and the HUD margins on top of the game's UI scale (the bottom strip follows the inventory slot size instead; fonts never go below the readable floor).",
                 new AcceptableValueRange<float>(0.75f, 1.5f)));
             MinimapScale = Config.Bind("Hud", "MinimapScale", 1f, new ConfigDescription(
                 "Minimap ring size on top of the theme size (size.minimap.ring) and Hud.Scale; its height cap (share.minimap.ring.h) scales with it. Applied live.",
                 new AcceptableValueRange<float>(0.6f, 1.6f)));
             UltrawideBox = Config.Bind("Hud", "UltrawideBox", true,
                 "On 21:9 and wider screens the HUD corners are those of a centred 16:9 box (off = true screen corners).");
-            StripWidth = Config.Bind("HudStrip", "Width", 0.99f, new ConfigDescription(
-                "Widest the bottom HUD strip may get, as a share of the screen (or of the centred 16:9 box on ultrawide); its width follows its height in the mockup's proportions.", new AcceptableValueRange<float>(0.5f, 1f)));
-            StripHeight = Config.Bind("HudStrip", "Height", 130f, new ConfigDescription(
-                "Height of the bottom HUD strip in reference pixels at 1080p (130 = 12 % of the screen height; scaled with the screen and Hud.Scale).", new AcceptableValueRange<float>(80f, 320f)));
+            StripWidth = Config.Bind("HudStrip", "Width", 0.96f, new ConfigDescription(
+                "Width of the bottom HUD strip as a share of the screen (or of the centred 16:9 box on ultrawide); only the straight wing rails stretch. Its height follows the slot size: hotbar cells = inventory grid cells (theme size.slot x Layout.SkinScale x the game's UI scale).", new AcceptableValueRange<float>(0.5f, 1f)));
             StatusPerRow = Config.Bind("HudStrip", "StatusPerRow", 10, new ConfigDescription(
                 "Status effect icons per row above the HUD strip (buffs on one side, debuffs on the other); a full row wraps upward.", new AcceptableValueRange<int>(1, 30)));
             StatusRows = Config.Bind("HudStrip", "StatusRows", 2, new ConfigDescription(

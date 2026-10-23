@@ -119,12 +119,54 @@ namespace RuneSkin.Tests
             Assert.Equal(0f, gap);
         }
 
-        [Fact]
-        public void CompactStripIsAtMostTwelvePercent()
+        // User call 2026-10-23: the strip spans ~96 % of the screen, its hotbar cells are the inventory grid cells (one
+        // slot token), everything else scales with that cell. 16:9 screens: GUI canvas scale = height / 1080.
+        [Theory]
+        [InlineData(1280, 720)]
+        [InlineData(1366, 768)]
+        [InlineData(1920, 1080)]
+        [InlineData(2560, 1440)]
+        public void HotbarCellIsTheInventorySlotAtEveryResolution(int w, int h)
         {
-            var natural = StripMath.Compute(In()).Height;
-            var k = StripMath.HeightScale(130f, natural);
-            Assert.True(natural * k <= 0.12f * 1080f + 0.5f);
+            var canvas = System.Math.Min(w / 1920f, h / 1080f);
+            var slot = StripMath.SlotPx(70f, 1f, canvas);
+            var unit = StripMath.UnitPx(slot, 78f);
+            var widthPx = StripMath.WidthPx(w, 0.96f);
+            var l = StripMath.Compute(In(width: widthPx / unit));
+            Assert.Equal(70f * canvas, 78f * unit, 3); // hotbar cell px = inventory grid cell px (InventoryMath: GridCell x k)
+            Assert.Equal(0.96f * w, (l.RightX + l.RightW) * unit, 1);
+            Assert.True(l.Fits);
+            Assert.Equal(84f, l.FoodCell); // wide wings: nothing shrinks
+            // height follows the slot: same share of the screen at every 16:9 size, well under the old 30 % band
+            var share = l.Height * unit / h;
+            Assert.InRange(share, 0.15f, 0.3f);
+        }
+
+        [Fact]
+        public void SkinScaleMovesBothTogether()
+        {
+            Assert.Equal(70f * 1.25f, StripMath.SlotPx(70f, 1.25f, 1f), 3);
+            Assert.Equal(35f, StripMath.SlotPx(70f, 0.1f, 1f), 3); // InventoryMath's 0.5..2 clamp
+            Assert.Equal(1f, StripMath.UnitPx(0f, 78f));
+        }
+
+        [Fact]
+        public void FontFloorRaisesSmallTextOnly()
+        {
+            Assert.Equal(26f, StripMath.FontFloor(26f, 14f, 0.8f), 3);
+            Assert.Equal(14f / 0.5f, StripMath.FontFloor(24f, 14f, 0.5f), 3);
+        }
+
+        [Fact]
+        public void StatusRowsEndBeforeTheMedallion()
+        {
+            Assert.Equal(10, StripMath.StatusPerRow(10, 42f, 16f, 1000f));
+            Assert.Equal(6, StripMath.StatusPerRow(10, 42f, 16f, 6 * 42f + 5 * 16f + 1f));
+            Assert.Equal(1, StripMath.StatusPerRow(10, 42f, 16f, 10f));
+            var l = StripMath.Compute(In(width: 2200f));
+            var inset = 72f + 4f;
+            var n = StripMath.StatusPerRow(10, 42f, 16f, l.MedLX - inset - 16f);
+            Assert.True(inset + StripMath.RowWidth(n, 42f, 16f) <= l.MedLX - 16f + 0.01f);
         }
 
         [Fact]
