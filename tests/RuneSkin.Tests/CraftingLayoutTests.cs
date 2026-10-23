@@ -65,6 +65,55 @@ namespace RuneSkin.Tests
         }
 
         [Fact]
+        public void SubCategoryRowSitsUnderTheCategoriesAndTheBodyGivesWay()
+        {
+            var without = CraftingMath.Compute(Input(4), new CraftingTokens());
+            Assert.True(without.SubCategoryRow.IsEmpty);
+            Assert.Empty(without.SubCategories.Cells);
+
+            var i = Input(4);
+            i.SubCategories = 8; // All + swords, axes, clubs, spears, knives, polearms, shields
+            var o = CraftingMath.Compute(i, new CraftingTokens());
+            AllInside(o, i.Panel);
+            Assert.False(o.SubCategoryRow.IsEmpty);
+            Assert.True(o.SubCategoryRow.Inside(i.Panel));
+            Assert.True(o.SubCategoryRow.Y >= o.CategoryRow.Bottom);
+            Assert.True(o.Search.Y >= o.SubCategoryRow.Bottom);
+            Assert.Equal(36f, o.SubCategoryRow.H);
+            Assert.Equal(8, o.SubCategories.Visible);
+            Assert.False(o.SubCategories.Scroll);
+            // Left-aligned like the categories, square, smaller than a category tab.
+            Assert.Equal(o.CategoryRow.X, o.SubCategories.Cells[0].X);
+            Assert.True(o.SubCategories.Cells[0].W < o.Categories.Cells[0].W);
+            for (var a = 0; a < 8; a++)
+                for (var b = a + 1; b < 8; b++)
+                    Assert.False(o.SubCategories.Cells[a].Overlaps(o.SubCategories.Cells[b]));
+            // The row's height comes off the body only.
+            Assert.Equal(without.List.H - (36f + 8f), o.List.H, 2);
+            Assert.Equal(without.Header, o.Header);
+        }
+
+        [Fact]
+        public void SubCategoryRowNeedsTheCategoryRow()
+        {
+            var i = Input(4, cats: 0);
+            i.SubCategories = 3;
+            var o = CraftingMath.Compute(i, new CraftingTokens());
+            Assert.True(o.SubCategoryRow.IsEmpty);
+        }
+
+        [Fact]
+        public void SubCategoryRowScrollsWhenItDoesNotFit()
+        {
+            var i = Input(4);
+            i.SubCategories = 30;
+            var o = CraftingMath.Compute(i, new CraftingTokens());
+            Assert.True(o.SubCategories.Scroll);
+            foreach (var c in o.SubCategories.Cells)
+                if (!c.IsEmpty) Assert.True(c.Inside(o.SubCategoryRow));
+        }
+
+        [Fact]
         public void TabsScrollWhenTheyDoNotFit()
         {
             var o = CraftingMath.Compute(Input(4, tabs: 9), new CraftingTokens());

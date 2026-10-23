@@ -32,18 +32,19 @@ namespace RuneSkin.CraftingScreen
         private RectTransform _crafting, _canvas, _host;
         private Canvas _rootCanvas;
         private Image _listWell, _detailWell, _craftGlyph;
-        private RowArrows _tabArrows, _catArrows;
+        private RowArrows _tabArrows, _catArrows, _subArrows;
         private readonly CraftingTokens _t = new CraftingTokens();
         private readonly CraftingInput _in = new CraftingInput();
         private CraftingLayout _layout;
         private int _hash;
-        private int _tabOffset, _catOffset;
+        private int _tabOffset, _catOffset, _subOffset;
         private bool _frameReady;
         private int _rowCount = -1, _rowFirst, _rowsTheme = -1;
         private float _rowPitch = -1f;
         private int _reqCells = -1;
         private readonly List<RectTransform> _tabs = new List<RectTransform>(8);
         private readonly List<RectTransform> _cats = new List<RectTransform>(16);
+        private readonly List<RectTransform> _subs = new List<RectTransform>(16);
         private readonly List<int> _reqActive = new List<int>(8);
         private readonly Dictionary<GameObject, float> _redAt = new Dictionary<GameObject, float>();
         private readonly Dictionary<GameObject, bool> _missingShown = new Dictionary<GameObject, bool>();
@@ -129,6 +130,7 @@ namespace RuneSkin.CraftingScreen
             }
             _tabArrows = new RowArrows(_crafting, Prefix + "Tab", () => _tabOffset--, () => _tabOffset++);
             _catArrows = new RowArrows(_crafting, Prefix + "Category", () => _catOffset--, () => _catOffset++);
+            _subArrows = new RowArrows(_crafting, Prefix + "SubCategory", () => _subOffset--, () => _subOffset++);
         }
 
         private Image OwnImage(string name, string role, string reason, int sibling)
@@ -300,7 +302,7 @@ namespace RuneSkin.CraftingScreen
             var tabs = TabsRoot();
             for (var p = t; p && p != _crafting; p = p.parent)
             {
-                if (p.parent && (p.parent == tabs || p.parent.name == "Tabs" && p.parent.parent && p.parent.parent.name == ModCompat.MtCraftFilter) && p.GetComponent<Button>())
+                if (p.parent && (p.parent == tabs || IsFilterRow(p.parent)) && p.GetComponent<Button>())
                 {
                     target = p == t && p.GetComponent<Button>().targetGraphic && p.GetComponent<Button>().targetGraphic.transform == t;
                     return true;
@@ -309,7 +311,11 @@ namespace RuneSkin.CraftingScreen
             return false;
         }
 
-        private static bool IsCategory(Transform t) => t.parent && t.parent.name == "Tabs" && t.parent.parent && t.parent.parent.name == ModCompat.MtCraftFilter;
+        private static bool IsCategory(Transform t) => t.parent && IsFilterRow(t.parent);
+
+        // CraftingFilter's category row (Tabs) or its sub-group row (Subs).
+        private static bool IsFilterRow(Transform row) =>
+            (row.name == "Tabs" || row.name == ModCompat.MtCraftSubRow) && row.parent && row.parent.name == ModCompat.MtCraftFilter;
 
         private bool Row(Transform t, out Transform row)
         {
@@ -403,6 +409,7 @@ namespace RuneSkin.CraftingScreen
                 _layout = CraftingMath.Compute(i, _t);
                 _tabOffset = _layout.Tabs.First;
                 _catOffset = _layout.Categories.First;
+                _subOffset = _layout.SubCategories.First;
             }
             Apply(_layout, box);
         }
@@ -427,6 +434,14 @@ namespace RuneSkin.CraftingScreen
                     var c = catRoot.GetChild(n);
                     if (c.gameObject.activeSelf && c.TryGetComponent<Button>(out _)) _cats.Add((RectTransform)c);
                 }
+            _subs.Clear();
+            var subRoot = filter ? filter.Find(ModCompat.MtCraftSubRow) : null;
+            if (subRoot && subRoot.gameObject.activeSelf)
+                for (var n = 0; n < subRoot.childCount; n++)
+                {
+                    var c = subRoot.GetChild(n);
+                    if (c.gameObject.activeSelf && c.TryGetComponent<Button>(out _)) _subs.Add((RectTransform)c);
+                }
             _reqActive.Clear();
             var list = _gui.m_recipeRequirementList;
             if (list != null)
@@ -438,6 +453,7 @@ namespace RuneSkin.CraftingScreen
             var i = _in;
             i.Tabs = _tabs.Count;
             i.Categories = _cats.Count;
+            i.SubCategories = _subs.Count;
             i.Search = filter && filter.Find("Search/MT_CraftSearch");
             i.Requirements = _reqActive.Count + (_gui.m_minStationLevelIcon && _gui.m_minStationLevelIcon.gameObject.activeSelf ? 1 : 0);
             // Round repair button only while something can be repaired (vanilla UpdateRepair: interactable); otherwise
@@ -447,6 +463,7 @@ namespace RuneSkin.CraftingScreen
             i.Quality = _gui.m_qualityPanel && _gui.m_qualityPanel.gameObject.activeSelf;
             i.TabOffset = _tabOffset;
             i.CategoryOffset = _catOffset;
+            i.SubCategoryOffset = _subOffset;
         }
 
         private static int Hash(CraftingInput i)
@@ -462,6 +479,7 @@ namespace RuneSkin.CraftingScreen
                 h = h * 31 + i.Categories * 7 + i.Requirements * 101;
                 h = h * 31 + (i.Search ? 1 : 0) + (i.Repair ? 2 : 0) + (i.CraftType ? 4 : 0) + (i.Quality ? 8 : 0);
                 h = h * 31 + i.TabOffset * 13 + i.CategoryOffset;
+                h = h * 31 + i.SubCategories * 17 + i.SubCategoryOffset;
                 h = h * 31 + ThemeTokens.Revision;
                 return h;
             }
@@ -485,7 +503,7 @@ namespace RuneSkin.CraftingScreen
             var t = _t;
             t.Pad = F("size.craft.pad", t.Pad); t.Gap = F("size.craft.gap", t.Gap); t.HeaderH = F("size.craft.header", t.HeaderH);
             t.TabH = F("size.craft.tab.h", t.TabH); t.TabW = F("size.craft.tab.w", t.TabW); t.TabMinW = F("size.craft.tab.min", t.TabMinW);
-            t.ArrowW = F("size.craft.arrow", t.ArrowW); t.CategoryH = F("size.craft.category", t.CategoryH); t.SearchH = F("size.craft.search", t.SearchH);
+            t.ArrowW = F("size.craft.arrow", t.ArrowW); t.CategoryH = F("size.craft.category", t.CategoryH); t.SubCategoryH = F("size.craft.subcategory", t.SubCategoryH); t.SearchH = F("size.craft.search", t.SearchH);
             t.ListShare = F("share.craft.list", t.ListShare); t.RowH = F("size.craft.row", t.RowH); t.ScrollbarW = F("size.craft.scrollbar", t.ScrollbarW);
             t.TitleH = F("size.craft.title", t.TitleH); t.CraftTypeH = F("size.craft.crafttype", t.CraftTypeH); t.IconH = F("size.craft.icon", t.IconH);
             t.QualityH = F("size.craft.quality", t.QualityH); t.DescriptionMinH = F("size.craft.description.min", t.DescriptionMinH);
@@ -629,13 +647,29 @@ namespace RuneSkin.CraftingScreen
         private void Categories(CraftingLayout o)
         {
             var filter = Filter();
-            if (!filter) { _catArrows.Show(_canvas, new RowFit()); return; }
+            if (!filter)
+            {
+                _catArrows.Show(_canvas, new RowFit());
+                _subArrows.Show(_canvas, new RowFit());
+                return;
+            }
             var tabsRoot = filter.Find("Tabs") as RectTransform;
             if (tabsRoot && !o.CategoryRow.IsEmpty) Geo.Place(_canvas, tabsRoot, o.CategoryRow);
-            for (var n = 0; n < _cats.Count; n++)
+            FilterTabs(_cats, o.Categories, _catArrows);
+            // Sub-group row (MT_CraftSub_<group>: skill / slot / ammo icon from CraftingFilter, "All" gets the kit glyph).
+            var subRoot = filter.Find(ModCompat.MtCraftSubRow) as RectTransform;
+            if (subRoot && !o.SubCategoryRow.IsEmpty) Geo.Place(_canvas, subRoot, o.SubCategoryRow);
+            FilterTabs(_subs, o.SubCategories, _subArrows);
+            SearchField(o, filter.Find("Search") as RectTransform);
+        }
+
+        // One CraftingFilter tab row: square cells, kit glyph or the filter's own icon / label, scroll arrows.
+        private void FilterTabs(List<RectTransform> tabs, RowFit fit, RowArrows arrows)
+        {
+            for (var n = 0; n < tabs.Count; n++)
             {
-                var tab = _cats[n];
-                var cell = n < o.Categories.Cells.Length ? o.Categories.Cells[n] : default;
+                var tab = tabs[n];
+                var cell = n < fit.Cells.Length ? fit.Cells[n] : default;
                 if (!Visible(tab, cell)) continue;
                 Geo.Place(_canvas, tab, cell);
                 var inner = CraftingMath.Inset(cell, cell.W * 0.19f, cell.H * 0.19f);
@@ -659,8 +693,11 @@ namespace RuneSkin.CraftingScreen
                     else if (NameCache.Of(c) == "Selected" && c.TryGetComponent<Image>(out var sel) && sel.enabled) sel.enabled = false;
                 }
             }
-            _catArrows.Show(_canvas, o.Categories);
-            var search = filter.Find("Search") as RectTransform;
+            arrows.Show(_canvas, fit);
+        }
+
+        private void SearchField(CraftingLayout o, RectTransform search)
+        {
             var field = search ? search.Find(ModCompat.MtCraftSearch) as RectTransform : null;
             if (search && !o.Search.IsEmpty) Geo.Place(_canvas, search, o.Search);
             if (field && !o.Search.IsEmpty)
@@ -711,12 +748,15 @@ namespace RuneSkin.CraftingScreen
 
         private Image CategoryGlyph(RectTransform tab, Box inner)
         {
-            const string prefix = ModCompat.MtCraftTabPrefix;
-            // Category key per tab object, cached (name + Substring allocated two strings per tab per frame).
+            // Category key per tab object, cached (name + Substring allocated two strings per tab per frame). Sub-group tabs
+            // (pooled, renamed by CraftingFilter) get a kit glyph only for their "All" tab, which is always the first one.
             if (!_catKeys.TryGetValue(tab, out var key))
             {
                 var tabName = NameCache.Of(tab);
-                _catKeys[tab] = key = tabName.StartsWith(prefix, StringComparison.Ordinal) && CategoryGlyphs.TryGetValue(tabName.Substring(prefix.Length), out var k) ? k : null;
+                if (tabName.StartsWith(ModCompat.MtCraftTabPrefix, StringComparison.Ordinal))
+                    key = CategoryGlyphs.TryGetValue(tabName.Substring(ModCompat.MtCraftTabPrefix.Length), out var k) ? k : null;
+                else key = tabName == ModCompat.MtCraftSubPrefix + "All" ? "all" : null;
+                _catKeys[tab] = key;
             }
             if (key == null) return null;
             var t = tab.Find(Prefix + "Glyph");

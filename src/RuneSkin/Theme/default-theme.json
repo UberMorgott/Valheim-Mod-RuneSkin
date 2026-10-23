@@ -960,6 +960,7 @@
     { "token": "size.craft.tab.min", "value": 96 },
     { "token": "size.craft.arrow", "value": 28 },
     { "token": "size.craft.category", "value": 44 },
+    { "token": "size.craft.subcategory", "value": 36 },
     { "token": "size.craft.search", "value": 38 },
     { "token": "share.craft.list", "value": 0.4 },
     { "token": "size.craft.row", "value": 40 },
