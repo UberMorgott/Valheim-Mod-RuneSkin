@@ -74,6 +74,14 @@ namespace RuneSkin.WorldHud
             m.SetFloat(ShaderUtilities.ID_UnderlayDilate, ThemeTokens.GetFloat("size.text.underlay.dilate", 0.35f));
             m.SetFloat(ShaderUtilities.ID_UnderlaySoftness, ThemeTokens.GetFloat("size.text.underlay.softness", 0.55f));
         }
+        // Outlined + dilated face with the soft dark underlay on top: small texts over the world that must read on
+        // bright sky and foliage (enemy overhead names).
+        public static bool ApplyNameplate(TMP_Text text, string fontToken, string look, float dilate)
+        {
+            if (!Apply(text, fontToken, look, dilate)) return false;
+            Underlay(text.fontSharedMaterial);
+            return true;
+        }
         // Font + outline material on a live text; false when the font token has no asset (text left as it is).
         public static bool Apply(TMP_Text text, string fontToken, string look, float dilate = 0f)
         {

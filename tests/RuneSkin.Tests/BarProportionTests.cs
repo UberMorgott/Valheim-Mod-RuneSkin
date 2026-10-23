@@ -29,6 +29,19 @@ namespace RuneSkin.Tests
             Assert.InRange(Float(t, "size.enemy.bar.h") / 1080f, 13f / 941f - 0.001f, 13f / 941f + 0.001f);
         }
 
+        // 0.18.2: the overhead enemy name reads on bright sky / foliage: near-white like the player bar values, the same
+        // dilate as size.hud.value.dilate (outline 0.22 alone ate the regular face), at least 16 canvas px.
+        [Fact]
+        public void EnemyNameIsLegible()
+        {
+            var t = Default();
+            var hex = t.colors.Single(c => c.token == "color.enemy.name").value;
+            Assert.Equal(t.colors.Single(c => c.token == "color.hud.text").value, hex);
+            Assert.Equal(Float(t, "size.hud.value.dilate"), Float(t, "size.enemy.name.dilate"));
+            Assert.True(Float(t, "size.enemy.name.font") >= 16f);
+            Assert.Contains(t.fonts, f => f.token == "font.body.bold");
+        }
+
         [Theory]
         [InlineData(true, "HudBaseBoss(Clone)", true)]
         [InlineData(false, "HudBase(Clone)", false)]   // a normal mob

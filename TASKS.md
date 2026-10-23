@@ -776,3 +776,4 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
 - [x] Alert / aware indicator stacked above the name, centred (replaces the 0.16.3 slot left of the name): EnemyHudMath.AlertAboveY + unit test.
 - [x] Vaettir 0.10.1 drops the duplicate top-center target panel (Hud.Mode OverheadOnly); RuneSkin overhead bars unchanged otherwise.
 - Harness ui-runeskin-enemybars `eb-name` (every shown bar: name visible, centred, 0..12 px over the frame) + `eb-alert-slot` (stacked above, centred, no overlap).
+- [x] User: enemy overhead name barely readable (faint grey, vanished on sky / foliage, run 20261023-125858). 0.18.2: PT Sans Bold, color.enemy.name = color.hud.text, outline + size.enemy.name.dilate 0.25 (as the player bar values) + soft dark underlay, size.enemy.name.font 14 -> 16. Position / alert stacking unchanged.
