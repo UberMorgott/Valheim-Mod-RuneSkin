@@ -37,7 +37,7 @@ Shader "RuneSkin/UI Bar"
         _FxOn ("Fx on", Float) = 1
         _FxIntensity ("Fx intensity", Float) = 1
         _FxSpeed ("Fx speed", Float) = 1
-        _FxClock ("Clock override (<0 = _Time.y)", Float) = -1
+        _FxClock ("Clock override (<0 = global _RuneSkinFxClock)", Float) = -1
         _HitAt ("Damage event clock", Float) = -100
         _HitSize ("Damage event size share", Float) = 0.2
         _HealAt ("Heal event clock", Float) = -100
@@ -109,7 +109,16 @@ Shader "RuneSkin/UI Bar"
             float4 _ClipRect;
             float _Mode, _Fill, _Lag, _Shield, _Aspect, _HiPos, _HiWidth, _HiAmount, _Bottom, _Depth, _Rim, _GlowWidth;
             fixed4 _FillColor, _LagColor, _MissingColor, _SheenColor, _GlowColor, _ClotColor;
+            float _RuneSkinFxClock;   // global shader clock, written once per frame by BarFxConfig.TickClock
             float _Pool, _FxOn, _FxIntensity, _FxSpeed, _FxClock, _HitAt, _HitSize, _HealAt, _PulseAt, _Regen, _Exhaust;
+            float _RuneSkinLinear;    // global, 1 when the game renders in linear colour space (BarFxConfig.TickClock)
+
+            // The living fills were designed and approved (v3) in gamma space. In a linear-space game (Valheim) their
+            // colour math runs on gamma-encoded inputs and frag linearises the result, so in-game matches the renders
+            // (in-game run 20261023-161531: without this every darkening factor read lighter -> washed, flat flow).
+            // The plain fill (effects off, adrenaline) and the shield glow keep their tuned behaviour.
+            bool GammaMath() { return _RuneSkinLinear > 0.5 && _FxOn * _FxIntensity > 0.0 && _Pool > -0.5 && _Mode < 0.5; }
+            float3 G(float3 c) { return GammaMath() ? LinearToGammaSpace(c) : c; }
 
             v2f vert(appdata_t v)
             {
@@ -216,7 +225,7 @@ Shader "RuneSkin/UI Bar"
                 return (stroke + 0.8 * exp(-length(d) / 0.03)) * tw * step(h, 0.22);
             }
 
-            float3 arcGlow() { return lerp(_FillColor.rgb, float3(0.92, 0.84, 1.0), 0.2); }
+            float3 arcGlow() { return lerp(G(_FillColor.rgb), float3(0.92, 0.84, 1.0), 0.2); }
 
             // Slow drips running down from the top lip (one candidate per 1.7 bar heights, ~35 % used, 10-20 s each):
             // a tapering trail above a rounded head. Returns 0..1 coverage.
@@ -259,8 +268,8 @@ Shader "RuneSkin/UI Bar"
                 float wave = (0.03 * sin(P.x * 0.9 - tf * 0.6) + 0.02 * sin(P.x * 2.1 + tf * 0.4))
                     + slosh * 0.10 * sin(P.x * 2.6 - hitAge * 9.0) * exp(-max(dF, 0.0) * 0.15);
                 float vs = saturate(v - wave * Is);
-                float lumC = dot(_FillColor.rgb, float3(0.3, 0.59, 0.11));
-                float3 crimson = lerp(_FillColor.rgb, lumC.xxx, 0.22) * float3(0.70, 0.52, 0.56);
+                float lumC = dot(G(_FillColor.rgb), float3(0.3, 0.59, 0.11));
+                float3 crimson = lerp(G(_FillColor.rgb), lumC.xxx, 0.22) * float3(0.70, 0.52, 0.56);
                 float3 black = float3(0.075, 0.008, 0.013);
                 float2 q = P * float2(0.30, 1.0);
                 // two-axis domain warp + a finer, differently stretched layer: irregular, non-repeating flow
@@ -273,25 +282,25 @@ Shader "RuneSkin/UI Bar"
                 c *= 1.0 - 0.27 * smoothstep(0.58, 0.78, st) * smoothstep(0.45, 0.7, vnoise(P * float2(0.8, 1.2) + float2(-tf * 0.03, 9.0)));
                 c *= 1.0 - 0.35 * drip(P, v, tf);
                 c *= 1.0 - 0.15 * motes(P + float2(-tf * 0.06, sin(tf * 0.3) * 0.05));
-                c += _FillColor.rgb * 0.30 * exp(-pow((vs - 0.88) / 0.08, 2.0)) * (0.7 + 0.6 * n);
+                c += G(_FillColor.rgb) * 0.30 * exp(-pow((vs - 0.88) / 0.08, 2.0)) * (0.7 + 0.6 * n);
                 float gl = vnoise(float2(P.x * 0.5 - tf * 0.2, 1.7));
                 c += float3(1.0, 0.45, 0.40) * exp(-pow((vs - _HiPos - 0.06) / 0.12, 2.0)) * (0.06 + 0.10 * gl);
                 float clot = 1.0 - smoothstep(0.0, 1.8, dF);
                 float grain = fbm(P * float2(3.0, 4.0) + 11.0);
-                c = lerp(c, _ClotColor.rgb * (0.55 + 0.5 * grain) * (0.35 + 0.65 * smoothstep(0.0, 0.8, vs)), clot * clot * 0.9);
-                c += _FillColor.rgb * 0.7 * exp(-max(dF, 0.0) / 0.05) * (0.7 + 0.8 * slosh) * (0.4 + 0.6 * smoothstep(0.0, 0.6, vs));
+                c = lerp(c, G(_ClotColor.rgb) * (0.55 + 0.5 * grain) * (0.35 + 0.65 * smoothstep(0.0, 0.8, vs)), clot * clot * 0.9);
+                c += G(_FillColor.rgb) * 0.7 * exp(-max(dF, 0.0) / 0.05) * (0.7 + 0.8 * slosh) * (0.4 + 0.6 * smoothstep(0.0, 0.6, vs));
                 c += float3(0.32, 0.06, 0.04) * exp(-max(hitAge, 0.0) * 7.0) * step(0.0, hitAge) * exp(-max(dF, 0.0) / 0.5);
                 float heal = exp(-pow((x - healAge * 0.9) * _Aspect / 1.6, 2.0)) * step(0.0, healAge) * (1.0 - smoothstep(1.1, 1.5, healAge));
                 c += float3(0.95, 0.30, 0.22) * heal * 0.5;
                 c *= 1.0 + 0.25 * step(0.0, healAge) * exp(-max(healAge, 0.0) * 2.0);
-                return lerp(cylinder(_FillColor.rgb, v, _HiAmount), c, Is);
+                return lerp(cylinder(G(_FillColor.rgb), v, _HiAmount), c, Is);
             }
 
             // The lost-HP (lag) segment of the blood bar: dark clotted blood that drains as _Lag eases down.
             float3 clotBody(float2 P, float v, float tf)
             {
                 float g = fbm(P * float2(2.2, 3.0) + float2(-tf * 0.05, 0.0));
-                return _ClotColor.rgb * float3(0.62, 0.55, 0.5) * (0.6 + 0.7 * g) * (0.3 + 0.7 * smoothstep(0.0, 0.8, v)) + _ClotColor.rgb * 0.5 * exp(-pow((v - _HiPos - 0.06) / 0.10, 2.0));
+                return G(_ClotColor.rgb) * float3(0.62, 0.55, 0.5) * (0.6 + 0.7 * g) * (0.3 + 0.7 * smoothstep(0.0, 0.8, v)) + G(_ClotColor.rgb) * 0.5 * exp(-pow((v - _HiPos - 0.06) / 0.10, 2.0));
             }
 
             // Damage splash: four droplets thrown from the new fill end into the missing part, gone within ~0.55 s.
@@ -321,9 +330,9 @@ Shader "RuneSkin/UI Bar"
                 float n = fbm(q * 1.4 + float2(-tf * 1.2, sin(tf * 0.7) * 0.3));
                 float n2 = fbm(q * 2.2 + float2(-tf * 2.0 + n * 0.9, tf * 0.3));
                 float rip = 0.5 + 0.5 * sin(P.x * 2.4 - tf * 6.0 + n * 3.0);
-                float3 amber = _FillColor.rgb * float3(0.95, 0.70, 0.30);
-                float3 gold = lerp(_FillColor.rgb, float3(1.0, 0.95, 0.70), 0.22);
-                float3 base = lerp(_FillColor.rgb, lerp(amber, gold, saturate(n * 1.2 + rip * 0.25 - 0.3)), 0.7 * saturate(I));
+                float3 amber = G(_FillColor.rgb) * float3(0.95, 0.70, 0.30);
+                float3 gold = lerp(G(_FillColor.rgb), float3(1.0, 0.95, 0.70), 0.22);
+                float3 base = lerp(G(_FillColor.rgb), lerp(amber, gold, saturate(n * 1.2 + rip * 0.25 - 0.3)), 0.7 * saturate(I));
                 float wave = 0.04 * sin(P.x * 2.2 - tf * 4.0) * I;
                 float3 c = cylinder(base, saturate(v - wave), _HiAmount);
                 c += gold * smoothstep(0.58, 0.85, n2) * 0.18 * I;
@@ -347,13 +356,13 @@ Shader "RuneSkin/UI Bar"
                 // veins only in slowly wandering patches, so the bar reads as dense glow, not a lightning net
                 float patch = smoothstep(0.5, 0.72, vnoise(P * float2(0.35, 0.8) + float2(tf * 0.05, 3.0)));
                 float veins = pow(saturate(1.0 - abs(vn * 2.0 - 1.0)), 14.0) * patch;
-                float3 deep = _FillColor.rgb * float3(0.30, 0.22, 0.48);
-                float3 base = lerp(_FillColor.rgb, lerp(deep, _FillColor.rgb, 0.35 + 0.45 * n), 0.8 * saturate(I));
+                float3 deep = G(_FillColor.rgb) * float3(0.30, 0.22, 0.48);
+                float3 base = lerp(G(_FillColor.rgb), lerp(deep, G(_FillColor.rgb), 0.35 + 0.45 * n), 0.8 * saturate(I));
                 float3 c = cylinder(base, v, _HiAmount * lerp(1.0, 0.45, saturate(I)));
                 float3 glowC = arcGlow();
                 float core = exp(-pow((v - 0.5) / 0.12, 2.0));
                 float halo = exp(-pow((v - 0.5) / 0.38, 2.0));
-                c += _FillColor.rgb * halo * (0.22 + 0.12 * breathe) * I;
+                c += G(_FillColor.rgb) * halo * (0.22 + 0.12 * breathe) * I;
                 c += glowC * core * (0.22 + 0.12 * breathe) * (0.8 + 0.4 * n) * I;
                 c += glowC * veins * (0.35 + 0.65 * breathe) * 0.45 * I;
                 c += float3(0.9, 0.8, 1.0) * runeGlint(P, tf) * 0.9 * I;
@@ -370,8 +379,10 @@ Shader "RuneSkin/UI Bar"
                 float x = uv.x;
                 float v = uv.y;
                 float px = max(fwidth(x), 1e-5);
-                float tr = _FxClock >= 0.0 ? _FxClock : _Time.y;     // event ages from the raw clock
-                float tf = fmod(tr, 1024.0) * _FxSpeed;              // flow time, wrapped for noise precision
+                // shared clock (BarFxConfig.TickClock: seconds since the HUD started, unwrapped, events use the same
+                // clock); _FxClock >= 0 overrides it for offline renders
+                float tr = _FxClock >= 0.0 ? _FxClock : _RuneSkinFxClock;
+                float tf = tr * _FxSpeed;
                 float I = _FxOn * _FxIntensity * step(-0.5, _Pool);
                 float hitAge = tr - _HitAt, healAge = tr - _HealAt, pulseAge = tr - _PulseAt;
                 float2 P = float2(x * _Aspect, v);
@@ -387,11 +398,13 @@ Shader "RuneSkin/UI Bar"
                 float inFill = 1.0 - smoothstep(fillE - px, fillE + px, x);
                 float inLag = (1.0 - smoothstep(_Lag - px, _Lag + px, x)) * (1.0 - inFill);
                 float dF = (fillE - x) * _Aspect;
-                float3 body;
-                [branch] if (I <= 0.0)
+                // the noisy bodies run only where they are seen (the fill / lag share); the grey part stays cheap
+                float3 body = G(_FillColor.rgb);
+                [branch] if (inFill <= 0.0) { }
+                else if (I <= 0.0)
                 {
                     // plain glossy cylinder (adrenaline, fx off): straight-cut end, the last ~14 px a little lighter
-                    body = cylinder(_FillColor.rgb, v, _HiAmount);
+                    body = cylinder(G(_FillColor.rgb), v, _HiAmount);
                     float endGlow = smoothstep(_Fill - 14.0 * px, _Fill - px, x) * inFill;
                     body = lerp(body, saturate(body * 1.22 + 0.03), endGlow * _Rim);
                 }
@@ -404,11 +417,15 @@ Shader "RuneSkin/UI Bar"
                 float bloodSheen = step(_Pool, 0.5) * step(0.0001, I);
                 float sheenProfile = lerp(0.6 + 0.8 * exp(-pow((v - _HiPos) / max(0.01, _HiWidth * 1.4), 2.0)),
                     0.5 * exp(-pow((v - 0.88) / 0.035, 2.0)), bloodSheen);
-                body += _SheenColor.rgb * _SheenColor.a * sh * sheenProfile;
-                float3 lag = cylinder(_LagColor.rgb, v, _HiAmount * 0.5);
-                if (I > 0.0 && _Pool < 0.5) lag = lerp(lag, clotBody(P, v, tf), saturate(I));
+                body += G(_SheenColor.rgb) * _SheenColor.a * sh * sheenProfile;
+                float3 lag = G(_LagColor.rgb);
+                [branch] if (inLag > 0.0)
+                {
+                    lag = cylinder(G(_LagColor.rgb), v, _HiAmount * 0.5);
+                    if (I > 0.0 && _Pool < 0.5) lag = lerp(lag, clotBody(P, v, tf), saturate(I));
+                }
                 // missing part: a dark hollow (Codex review: shadow under the top lip, faint bottom reflex), no cylinder
-                float3 miss = _MissingColor.rgb * (1.0 - 0.45 * smoothstep(0.6, 1.0, v)) * (1.0 + 0.18 * (1.0 - smoothstep(0.0, 0.25, v)));
+                float3 miss = G(_MissingColor.rgb) * (1.0 - 0.45 * smoothstep(0.6, 1.0, v)) * (1.0 + 0.18 * (1.0 - smoothstep(0.0, 0.25, v)));
                 float3 c = body * inFill + lag * inLag + miss * (1.0 - inFill - inLag);
                 [branch] if (I > 0.0 && live > 0.0)
                 {
@@ -416,9 +433,9 @@ Shader "RuneSkin/UI Bar"
                     if (_Pool < 0.5)
                     {
                         float drop = saturate(splash(P, fillE * _Aspect, hitAge) * saturate(I));
-                        c = lerp(c, cylinder(_FillColor.rgb * 1.1, v, _HiAmount * 1.5), drop * outside);
+                        c = lerp(c, cylinder(G(_FillColor.rgb) * 1.1, v, _HiAmount * 1.5), drop * outside);
                     }
-                    else if (_Pool > 1.5)
+                    else if (_Pool > 1.5 && dF > -1.5)
                     {
                         float o = max(-dF, 0.0);
                         c += arcGlow() * (0.35 * exp(-o / 0.25) + 0.9 * arcFilament(P, v, tf) * exp(-o / 0.3)) * I * outside;
@@ -454,6 +471,7 @@ Shader "RuneSkin/UI Bar"
             fixed4 frag(v2f IN) : SV_Target
             {
                 fixed4 c = _Mode < 0.5 ? fill(IN.uv) : glow(IN.uv);
+                if (GammaMath()) { float pa = max(c.a, 1e-4); c.rgb = GammaToLinearSpace(saturate(c.rgb / pa)) * pa; }
                 c *= IN.color.a;
                 c.rgb *= IN.color.rgb;
                 #ifdef UNITY_UI_CLIP_RECT

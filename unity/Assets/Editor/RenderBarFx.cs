@@ -6,7 +6,8 @@
 // explicit _FxClock, so the result is deterministic.
 // Unity.exe -batchmode -quit -projectPath unity -executeMethod RenderBarFx.Render -logFile <log>
 // env: RSBARFX_OUT (dir), RSBARFX_BG (hud-4M3.png, 1920 x 1080), RSBARFX_SCALE (1 = 1080p, 1.3333 = 1440p),
-//      RSBARFX_FRAMES (optional, 0 = stills only), RSBARFX_NOSHIELD (1 = shield forced off, A/B tone check)
+//      RSBARFX_FRAMES (optional, 0 = stills only), RSBARFX_NOSHIELD (1 = shield forced off, A/B tone check),
+//      RSBARFX_LINEAR (1 = linear colour space like the game with the gamma-math fix, 2 = linear without it)
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -40,6 +41,7 @@ public static class RenderBarFx
     public static void Render()
     {
         var mats = new List<Material>();
+        var prevSpace = PlayerSettings.colorSpace;
         GameObject canvasGo = null, camGo = null;
         RenderTexture rt = null;
         try
@@ -50,6 +52,12 @@ public static class RenderBarFx
             var framesEnv = Environment.GetEnvironmentVariable("RSBARFX_FRAMES");
             var animate = framesEnv != "0";
             Directory.CreateDirectory(outDir);
+            // RSBARFX_LINEAR=1 / 2: render as Valheim does (linear colour space); 1 = the gamma-math fix on, 2 = off
+            // (reproduces the washed in-game look of run 20261023-161531). The project setting is restored after.
+            var linearMode = Environment.GetEnvironmentVariable("RSBARFX_LINEAR") ?? "0";
+            prevSpace = PlayerSettings.colorSpace;
+            if (linearMode != "0") PlayerSettings.colorSpace = ColorSpace.Linear;
+            Shader.SetGlobalFloat("_RuneSkinLinear", linearMode == "1" ? 1f : 0f);
             var shader = ImportShader();
             var font = ImportFont();
 
@@ -114,6 +122,7 @@ public static class RenderBarFx
         }
         finally
         {
+            if (PlayerSettings.colorSpace != prevSpace) { PlayerSettings.colorSpace = prevSpace; AssetDatabase.SaveAssets(); }
             foreach (var m in mats) UnityEngine.Object.DestroyImmediate(m);
             if (camGo != null) camGo.GetComponent<Camera>().targetTexture = null;
             if (rt != null) { rt.Release(); UnityEngine.Object.DestroyImmediate(rt); }
