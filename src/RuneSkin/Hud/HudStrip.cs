@@ -51,6 +51,7 @@ namespace RuneSkin.PlayerHud
         private readonly StripCell[] _hotbar = new StripCell[HotbarCells];
         private readonly List<StripCell> _food = new List<StripCell>(5), _potions = new List<StripCell>(6), _abilities = new List<StripCell>(2);
         private readonly List<EaqsBridge.QuickInfo> _quick = new List<EaqsBridge.QuickInfo>(6);
+        private StripInput[] _potionInput = new StripInput[6];
         private float _quickReadAt;
         private int _quickRevision;
 
@@ -388,7 +389,12 @@ namespace RuneSkin.PlayerHud
             {
                 var c = name == "Ability" ? MakeAbility(list.Count) : new StripCell(_art, _front, name + list.Count, kind);
                 if (name == "Food") c.SetGhost(_art, "sprite.hud.strip.ghost.food");
-                else if (name == "Potion") c.SetGhost(_art, "sprite.hud.strip.ghost.potion");
+                else if (name == "Potion")
+                {
+                    c.SetGhost(_art, "sprite.hud.strip.ghost.potion");
+                    // Press / drop on a potion cell = on its EAQS quick cell (StripInput; cell set by Fill).
+                    c.Root.gameObject.AddComponent<StripInput>().Potion = list.Count;
+                }
                 list.Add(c);
             }
             for (var i = 0; i < list.Count; i++) list[i].SetActive(i < n);
@@ -412,6 +418,13 @@ namespace RuneSkin.PlayerHud
             for (var i = 0; i < L.PotionShown && i < _potions.Count; i++)
             {
                 var item = i < _quick.Count ? inv.GetItemAt(_quick[i].Pos.x, _quick[i].Pos.y) : null;
+                if (_potionInput.Length < _potions.Count) System.Array.Resize(ref _potionInput, _potions.Count);
+                var input = _potionInput[i] ? _potionInput[i] : _potionInput[i] = _potions[i].Root.GetComponent<StripInput>();
+                if (input)
+                {
+                    input.HasCell = i < _quick.Count;
+                    if (input.HasCell) input.Cell = _quick[i].Pos;
+                }
                 ItemCell(_potions[i], p, item, i == quickSel);
                 _potions[i].Durability(-1f, false);
             }
