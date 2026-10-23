@@ -104,7 +104,6 @@ func statsSample() [][]stRow {
 			{kind: "cell", icon: "pierce", label: "Колющий", value: "39%", icon2: "fire", label2: "Огонь", value2: "69%", v2col: colGood},
 			{kind: "cell", icon: "frost", label: "Мороз", value: "39%", icon2: "lightning", label2: "Молния", value2: "39%"},
 			{kind: "cell", icon: "poison", label: "Яд", value: "50%", vcol: colGood, icon2: "spirit", label2: "Дух", value2: "39%"},
-			{kind: "cell", icon: "chop", label: "Рубящий", value: "39%", icon2: "pickaxe", label2: "Кирка", value2: "39%"},
 		},
 		{ // movement
 			{kind: "pair", icon: "walk", label: "Скорость ходьбы", value: "−5%", vcol: colBad},
@@ -126,14 +125,21 @@ func statsSample() [][]stRow {
 			{kind: "dish", label: "Хлеб", sub: "+23 ОЗ +70 ВН, реген 3", value: "44:55", dish: image.Rect(92, 826, 168, 885)},
 			{kind: "pair", icon: "fork", label: "Слоты еды", value: "3 / 4"},
 			{kind: "pair", icon: "flask", label: "Слоты зелий", value: "4 / 5"},
+			{kind: "pair", icon: "potency", label: "Эффект зелий", value: "+10%", vcol: colGood},
 		},
 		{ // rest
-			{kind: "tall", icon: "bed", label: "Комфорт", value: "12"},
-			{kind: "tall", icon: "clock", label: "Отдохнувший", value: "16:15 осталось"},
+			{kind: "tallsub", icon: "clock", label: "Отдохнувший", value: "16:15 осталось", sub: "+50% реген. выносливости", scol: colGood},
+			{kind: "pairsub", icon: "bed", label: "Комфорт", value: "12", sub: "здесь: 12"},
+			{kind: "note", icon: "bed", label: "+1 Укрытие"},
+			{kind: "note", icon: "bed", label: "+1 Костёр"},
+			{kind: "note", icon: "bed", label: "+2 Кровать из дерева"},
+			{kind: "note", icon: "bed", label: "+1 Стол"},
+			{kind: "note", icon: "bed", label: "+1 Стул"},
 		},
 		{ // combat
 			{kind: "name", icon: "sword", label: "Черный клинок"},
 			{kind: "wide", icon: "flame", label: "Урон", value: "82 режущий + 12 огонь"},
+			{kind: "pair", icon: "flame", label: "Урон в секунду", value: "≈ 46,1"},
 			{kind: "pair", icon: "attackspeed", label: "Скорость атаки", value: "+8%", vcol: colGood},
 			{kind: "pair", icon: "backstab", label: "Удар в спину", value: "×3"},
 			{kind: "pair", icon: "double", label: "Шанс двойного урона", value: "6%", vcol: colGood},
@@ -144,13 +150,10 @@ func statsSample() [][]stRow {
 			{kind: "note", icon: "ring", label: "+150 вес (Мегингьорд)"},
 		},
 		{ // MorgottTweaks
-			{kind: "pair", icon: "es", label: "Оберег", value: "40 / 60"},
+			{kind: "pair", icon: "es", label: "Сила оберега", value: "40 / 60"},
 			{kind: "bar", bar: "es", fill: 40.0 / 60},
 			{kind: "pair", icon: "recharge", label: "Перезарядка", value: "+15,0/с через 3,0 с", vcol: colGood},
 			{kind: "pair", icon: "breakdelay", label: "Задержка после пробоя", value: "10 с"},
-			{kind: "pair", icon: "potion", label: "Слоты зелий", value: "4 / 5"},
-			{kind: "pair", icon: "food", label: "Слоты еды", value: "3 / 4"},
-			{kind: "pair", icon: "potency", label: "Эффект зелий", value: "+10%", vcol: colGood},
 		},
 	}
 }
@@ -193,7 +196,7 @@ var statsPieces = []struct {
 	{"ChromeBR", "stats_chrome_br", 960, 540, 960, 540},
 }
 
-var statsTitles = []string{"Ресурсы", "Сопротивления", "Передвижение и вес", "Защита", "Еда", "Отдых", "Боевые чары", "Оберег и запасы"}
+var statsTitles = []string{"Ресурсы", "Сопротивления", "Передвижение и вес", "Защита", "Еда", "Отдых", "Боевые чары", "Оберег"}
 var statsHeads = []string{"res", "resist", "move", "defense", "food", "rest", "combat", "mt"}
 
 func rowHeight(card int, kind string) float64 {
@@ -205,7 +208,7 @@ func rowHeight(card int, kind string) float64 {
 	case "note":
 		return st("size.stats.row.note", 27)
 	case "cell":
-		return st("size.stats.row.cell", 58)
+		return st("size.stats.row.cell", 72)
 	case "dish":
 		return st("size.stats.row.dish", 76)
 	case "tall":
@@ -360,14 +363,7 @@ func (c *canvas) sprFit(name string, x, y, w, h float64) {
 	c.spr(name, x+(w-dw)/2, y+(h-dh)/2, dw, dh)
 }
 
-type stEffect struct {
-	text string
-	bad  bool
-}
-
-func itoa(n int) string { return strconv.Itoa(n) }
-
-// cmdCompareStats [variant]: "" = the mockup data; "full" = 4 dishes + 25 active effects; "empty" = no food, no effects.
+// cmdCompareStats [variant]: "" = the mockup data; "full" = 4 dishes; "empty" = no food.
 func cmdCompareStats() {
 	variant := ""
 	if len(os.Args) > 2 {
@@ -390,15 +386,9 @@ func cmdCompareStats() {
 	c := &canvas{img: bg, K: 1}
 	// window glass, cards, frame halves, plaque, title, close
 	sample := statsSample()
-	effects := []stEffect{{"Медовуха сопротивления огню", false}, {"Мокрый: −25% реген. выносливости", true}}
 	switch variant {
 	case "full":
 		sample[4] = append([]stRow{{kind: "dish", label: "Кровяная колбаса", sub: "+25 ОЗ +12 ВН +30 ЭЙ, реген 3", value: "12:05", dish: image.Rect(94, 680, 168, 733)}}, sample[4]...)
-		names := []string{"Отдохнувший 12:30", "Укрытие", "Медовуха здоровья 4:10", "Медовуха выносливости 3:55", "Сила Эйктюра 4:41", "Тёплый", "Мокрый: −25% реген. выносливости", "Медовуха сопротивления огню 9:12", "Сытость", "Медовуха сопротивления яду 7:01", "Холод: −50% реген. здоровья", "Бодрость 2:15", "Защита от мороза", "Дар Модера 3:40", "Эйтр-настой 5:20", "Отравлен: −3/с", "Лёгкость", "Шёпот предков", "Сила троля 6:33", "Ловкость рыси 2:02", "Ярость берсерка 0:45", "Тихая поступь", "Опьянение 1:12", "Каменная кожа 8:18", "Свет Мунина"}
-		effects = effects[:0]
-		for _, n := range names {
-			effects = append(effects, stEffect{n, strings.Contains(n, ":") && strings.Contains(n, "−")})
-		}
 	case "empty":
 		var rows []stRow
 		for _, r := range sample[4] {
@@ -408,7 +398,6 @@ func cmdCompareStats() {
 		}
 		sample[4] = rows
 		sample[4][0].value = "0 / 3"
-		effects = nil
 	}
 	for _, p := range statsPieces {
 		k := "size.stats.piece." + p.name
@@ -418,60 +407,6 @@ func cmdCompareStats() {
 		statsCard(c, i, sample[i], mock)
 	}
 	c.textBox("Характеристики", serif, st("size.stats.font.title", 52), 30, colHead, st("size.stats.title.x", 760), st("size.stats.title.y", 34), st("size.stats.title.w", 522), st("size.stats.title.h", 62), 1, st("size.stats.title.spacing", 6), true)
-	// active effects band: entries flow centred, the rest counted in "+N" (StatsWindow.LayoutStrip)
-	y, h := st("size.stats.strip.y", 1000), st("size.stats.strip.h", 44)
-	capt := "Активные эффекты:"
-	capSp := st("size.stats.caption.spacing", 3)
-	capF := st("size.stats.font.caption", 21)
-	capW := measure(strings.ToUpper(capt), serif, capF, capSp)
-	fs := st("size.stats.font.strip", 20)
-	ic, gap := st("size.stats.strip.icon", 28), st("size.stats.strip.gap", 16)
-	maxW := st("size.stats.strip.w", 1500)
-	widths, shown := 0.0, 0
-	for i, e := range effects {
-		ew := gap + 10 + gap + ic + 8 + measure(e.text, sans, fs, 0)
-		hint := 0.0
-		if i+1 < len(effects) {
-			hint = st("size.stats.strip.more", 90)
-		}
-		if capW+widths+ew+hint > maxW {
-			break
-		}
-		widths += ew
-		shown++
-	}
-	more := ""
-	switch {
-	case len(effects) == 0:
-		more = "нет"
-	case shown < len(effects):
-		more = "+" + itoa(len(effects)-shown) + " ещё"
-	}
-	moreW := 0.0
-	if more != "" {
-		moreW = measure(more, sans, fs, 0) + gap
-	}
-	x := (1920 - (capW + widths + moreW)) / 2
-	c.textBox(capt, serif, capF, 14, colHead, x, y, capW+4, h, 0, capSp, true)
-	x += capW
-	icons := []image.Rectangle{image.Rect(674, 1004, 702, 1040), image.Rect(1084, 1004, 1108, 1039)}
-	for i := 0; i < shown; i++ {
-		e := effects[i]
-		c.textBox("|", sans, fs, fs, colGold, x+gap, y, 10, h, 1, 0, false)
-		x += gap + 10 + gap
-		over(c.img, resize(keyDark(crop(mock, icons[i%2])), int(ic*gK), int(ic*gK)), image.Pt(int(x*gK), int((y+(h-ic)/2)*gK)))
-		x += ic + 8
-		col := colGood
-		if e.bad {
-			col = colBad
-		}
-		w := measure(e.text, sans, fs, 0)
-		c.textBox(e.text, sans, fs, fs, col, x, y, w+4, h, 0, 0, false)
-		x += w
-	}
-	if more != "" {
-		c.textBox(more, sans, fs, fs, colSub, x+gap, y, moreW+4, h, 0, 0, false)
-	}
 	out := "art/review/compose-stats" + suffix + ".png"
 	must(os.MkdirAll("art/review", 0o755))
 	savePNG(out, c.img)
@@ -598,9 +533,9 @@ func statsRow(c *canvas, r stRow, x, y, w, h float64, mock *image.NRGBA) {
 			}
 			cy, ch := y+2, h-6
 			c.spr("stats_plate", cx, cy, half, ch)
-			iw := st("size.stats.icon.cell", 32)
+			iw := st("size.stats.icon.cell", 28)
 			c.sprFitTint("stats_icon_"+icon, cx+6, cy+(ch-iw)/2, iw, iw, elemTint(icon))
-			lx := cx + iw + 14
+			lx := cx + 6 + iw + st("size.stats.cell.label.gap", 6)
 			vw := st("size.stats.cell.value.w", 52)
 			c.textBox(l, sans, label, st("size.stats.font.min", 14), colBody, lx, cy, cx+half-vw-6-lx, ch, 0, 0, false)
 			c.textBox(v, sans, value, value, vc, cx+half-vw-6, cy, vw, ch, 2, 0, false)

@@ -29,3 +29,5 @@ PlayerCustomizaton = "PlayerCustomizaton"
 BA_WorldBossBar = "BA_WorldBossBar"
 # Vanilla method StatusEffect.GetRemaningTime (assembly_valheim StatusEffect.cs:204), active effects page.
 GetRemaningTime = "GetRemaningTime"
+# Vanilla field Player.m_eiterRegen (assembly_valheim Player.cs:252), character stats eitr regen.
+m_eiterRegen = "m_eiterRegen"

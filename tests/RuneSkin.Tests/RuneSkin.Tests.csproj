@@ -51,6 +51,8 @@
     <Compile Include="..\..\src\RuneSkin\Theme\LegacyFaces.cs" Link="Linked\LegacyFaces.cs" />
     <Compile Include="..\..\src\RuneSkin\Theme\ThemeMerge.cs" Link="Linked\ThemeMerge.cs" />
     <Compile Include="..\..\src\RuneSkin\Diagnostics\Bounded.cs" Link="Linked\Bounded.cs" />
+    <Compile Include="..\..\src\RuneSkin\InfoScreens\StatsMath.cs" Link="Linked\StatsMath.cs" />
+    <Compile Include="..\..\src\RuneSkin\InfoScreens\StatBreakdown.cs" Link="Linked\StatBreakdown.cs" />
     <EmbeddedResource Include="..\..\src\RuneSkin\Theme\default-theme.json" LogicalName="RuneSkin.default-theme.json" />
   </ItemGroup>
 

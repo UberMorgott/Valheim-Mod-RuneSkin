@@ -23,7 +23,7 @@ namespace RuneSkin.API
         /// Version of the installed API surface (a property, not a const, so you read the installed value at runtime).
         /// Bumped on every public change; check it before using newer members.
         /// </summary>
-        public static int ApiVersion => 10;
+        public static int ApiVersion => 11;
 
         private static IHost _host;
         private static int _mainThread = -1;

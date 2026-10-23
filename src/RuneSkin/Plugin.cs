@@ -23,7 +23,7 @@ namespace RuneSkin
     [BepInProcess("valheim.exe")]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Version = "0.16.3";
+        public const string Version = "0.17.0";
 
         public static ManualLogSource Log { get; private set; }
         public static ConfigEntry<float> SkinScale { get; private set; }
@@ -34,6 +34,9 @@ namespace RuneSkin
         public static ConfigEntry<bool> UltrawideBox { get; private set; }
         public static ConfigEntry<KeyboardShortcut> StatusListKey { get; private set; }
         public static ConfigEntry<string> StatusListButton { get; private set; }
+        public static ConfigEntry<KeyboardShortcut> StatsKey { get; private set; }
+        public static ConfigEntry<float> StatsRefresh { get; private set; }
+        public static ConfigEntry<float> StatsReferenceHit { get; private set; }
 
         private static ConfigEntry<bool> _ownMenu, _ownTooltips, _ownHud, _ownInventory, _ownCrafting, _ownSkills, _ownTrophies, _ownAlmanac, _requireAssets;
         private static ConfigEntry<bool> _ownMinimap, _ownEnemyHud, _ownMessageHud, _ownDamageText, _ownMainMenu, _ownSettings, _ownConnection;
@@ -41,7 +44,7 @@ namespace RuneSkin
         private static ConfigEntry<bool> _ownLoadScreen, _ownChat, _ownPopups, _ownTextDialogs, _ownCompendium, _ownSplitDialog;
         private static ConfigEntry<bool> _ownStore, _ownBarber, _ownDevPanels, _ownFeedback;
         private static ConfigEntry<bool> _ownModUi, _ownElEnchanting, _ownElBoard, _ownElTemper, _ownModHud, _ownInventoryExtras, _ownRadial;
-        private static ConfigEntry<bool> _ownMenuCompendium, _ownSummonFrames, _ownPlayerShields, _ownCursor;
+        private static ConfigEntry<bool> _ownMenuCompendium, _ownSummonFrames, _ownPlayerShields, _ownCursor, _ownCharacterStats;
         private static ConfigEntry<string> _modUiOptOut;
         public static ConfigEntry<bool> WatchTheme { get; private set; }
         private int _ownOrder;
@@ -143,6 +146,8 @@ namespace RuneSkin
                 "RuneSkin shows other players' energy shield and absorb shield as rails under their overhead health bar (MorgottTweaks publishes them). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
             _ownCursor = Own("Cursor",
                 "RuneSkin sets its rune mouse cursor. Read once at startup (restart to change); another skin (AugaSkin) yields it.");
+            _ownCharacterStats = Config.Bind("Ownership", "CharacterStats", true,
+                "RuneSkin adds the character stats window (5th button of the inventory info row, or Hud.StatsKey): pools and regeneration per second, resistances, movement and weight, defense, food, rest, combat modifiers, MorgottTweaks shield and slots (needs Inventory). Read once at startup (restart to change); another skin (AugaSkin) yields it.");
             HudScale = Config.Bind("Hud", "Scale", 1f, new ConfigDescription(
                 "HUD cluster scale on top of the game's UI scale (fonts never go below the readable floor).",
                 new AcceptableValueRange<float>(0.75f, 1.5f)));
@@ -155,6 +160,13 @@ namespace RuneSkin
                 "Opens / closes the full list of status effects when the strip shows a +N cell.");
             StatusListButton = Config.Bind("Hud", "StatusListGamepadButton", "JoyDPadDown",
                 "Gamepad: this ZInput button while JoyAltKeys is held opens / closes the full status list. Empty = none.");
+            StatsKey = Config.Bind("Hud", "StatsKey", new KeyboardShortcut(UnityEngine.KeyCode.None),
+                "Opens / closes the character stats window (with the inventory). None = only the inventory info button.");
+            StatsRefresh = Config.Bind("Hud", "StatsRefresh", 0.25f, new ConfigDescription(
+                "Seconds between value updates of the open character stats window.", new AcceptableValueRange<float>(0.05f, 2f)));
+            StatsReferenceHit = Config.Bind("Hud", "StatsReferenceHit", 100f, new ConfigDescription(
+                "Character stats resistances: the share of a hit of this size, per damage type, that Epic Loot, resistances and armor remove (the game's own damage steps run on it).",
+                new AcceptableValueRange<float>(1f, 1000f)));
             WorldHud.EnemyHudConfig.Bind(Config);
             // [Diagnostics]: development switches, not looks (perf audit B4: were mixed into [Ownership]).
             _requireAssets = Config.Bind("Diagnostics", "RequireAssets", true, new ConfigDescription(
@@ -223,6 +235,8 @@ namespace RuneSkin
                 [OwnershipRegistry.SummonFrames] = _ownSummonFrames.Value,
                 [OwnershipRegistry.PlayerShields] = _ownPlayerShields.Value,
                 [OwnershipRegistry.Cursor] = _ownCursor.Value,
+                // The window lives in the inventory screen (its info row button, InventorySkin layout).
+                [OwnershipRegistry.CharacterStats] = _ownCharacterStats.Value && _ownInventory.Value,
             }, _requireAssets.Value);
 
             ApiHost = new Host();
@@ -287,7 +301,7 @@ namespace RuneSkin
         public const int Hud = Priority.Last + 1;
         public const int HudGameScreens = Priority.Last - 1, HudExtras = Priority.Last - 2;
         public const int Crafting = Priority.Last - 1, Skills = Priority.Last - 2, Trophies = Priority.Last - 3, Almanac = Priority.Last - 4,
-            InventoryGameScreens = Priority.Last - 5, InventoryExtras = Priority.Last - 6;
+            InventoryGameScreens = Priority.Last - 5, InventoryExtras = Priority.Last - 6, CharacterStats = Priority.Last - 7;
         public const int MainMenuMods = Priority.Last - 1;
     }
 

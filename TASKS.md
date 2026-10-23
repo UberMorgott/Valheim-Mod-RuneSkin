@@ -251,7 +251,29 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
 - [x] Pause menu Compendium entry (0.13.0, family MenuCompendium, Screens\MenuCompendium.cs: copy of the Settings entry, gamepad
       chain spliced; AugaSkin 2.2.23 yields). Run 20261022-181305: entry after Settings + nav PASS, click opens TextsDialog
       (check FAIL only on Menu.IsVisible's 2-frame lag, harness fixed to m_root). Run 20261022-184353: p 11/11 PASS.
-- [ ] Character stats window: 5th Info button + panel (CharacterStatsPanel.cs, 568 lines; RuneSkin InfoTabs mirrors the button).
+- [x] Character stats window (0.17.0, family CharacterStats, API 11 / 2.7.0, AugaSkin 2.2.25 yields; mockup stats-full-b):
+      InfoScreens\StatsWindow.cs (5th info button = Achievements clone, Hud.StatsKey, Escape / B, closes with the
+      inventory; modal: InventoryScreen\FullWindow.cs hides the inventory panels behind a dark backdrop, shared with the
+      compendium and Almanac, restored exactly on close), StatsReader.cs (live data per vanilla formula, file:line cited;
+      regen per second; DPS "≈" from the measured swing time, AttackTimer.cs, for weapons and bare hands), StatsSources.cs
+      (soft delegates: Epic Loot effect sum + resistance steps, MorgottTweaks FoodSlots / PotionSlotCount / EnergyShieldInfo
+      / ArmorResistance), StatsMath.cs (pure; StatsMathTests). In-world titles ("Боевые чары", "Оберег"), no mod names,
+      element icon tints, food rows shrink evenly, rest card (rested time + bonus, comfort here + sources), rows of any
+      card shrink to fit (size.stats.row.fit.min) before scrolling.
+- [x] Stat breakdown (0.17.0): hover a row -> vanilla tooltip with its composition (StatBreakdown.cs model: base,
+      attributed modifiers per item / status effect / skill / world settings, "enchantments and other" = game value minus
+      the attributed parts, result) built by StatsExplain.cs from the decompiled formulas (pools, regen, resistances,
+      speeds, carry weight, run / dodge / jump / swim / block / swing stamina, armor, block, parry, damage per hit with
+      type shares, DPS, secondary attack); plate highlight (color.stats.plate.hover). New rows: swim cost, block cost,
+      swing cost, secondary attack. StatBreakdownTests. Not done: segmented damage-type bar, source-slot highlight on
+      the doll (the doll is hidden while the modal window is open), harness check of per-hit damage against a dummy hit.
+- [x] Art (new pipeline): window chrome = user-approved Codex paint (3x3 tile edit of stats-full-b at 2x, stitched,
+      card interiors wiped) cut into 4 fixed quarters; icons / header icons / bars / plate / trough / divider = Codex 4x
+      redraws (art/src/kit/stats/); second atlas RuneSkinHi (4096, mipmaps, trilinear) via sprites.json "atlas": "hires".
+      Offline compose `go -C art/tools run . compare-stats [full|empty] [scale]`.
+- [x] Harness ui-runeskin-stats (tools): owned, one button, open at 2560x1440 / 1920x1080, modal + backdrop, 8 cards on
+      screen, values set and inside, regen row = formula, live update, DPS sword + unarmed, breakdown rows / hover, swing
+      cost = measured stamina drop, close + restore, compendium / Almanac modal, no tech names.
 - [x] Summon frames (0.13.0, family SummonFrames, Hud\SummonFrames.cs + SummonMath.cs: MorgottTweaks mt_sum_ui slots or loaded
       summons, row below the hotbar or above it when the hotbar sits low; socket_hotbar + rail art, $runeskin_summon_* words).
       Run 181305: 3 slot frames (fill 0.50, ES 1.00, trophy icons, RU status words), loaded path PASS, on screen, no Auga frames

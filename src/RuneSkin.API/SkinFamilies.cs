@@ -1,7 +1,7 @@
 namespace RuneSkin.API
 {
     /// <summary>
-    /// Screen family names for <see cref="Skin.IsOwned"/> (ApiVersion 9). A family is the ownership unit: while RuneSkin
+    /// Screen family names for <see cref="Skin.IsOwned"/> (ApiVersion 11). A family is the ownership unit: while RuneSkin
     /// owns one, no other skin may style its screens. Names are stable strings; an older RuneSkin answers false for a
     /// family it does not know.
     /// </summary>
@@ -91,5 +91,7 @@ namespace RuneSkin.API
         public const string PlayerShields = "PlayerShields";
         /// <summary>Mouse cursor (batch P, ApiVersion 9).</summary>
         public const string Cursor = "Cursor";
+        /// <summary>Character stats window behind the 5th inventory info button (batch P, ApiVersion 11).</summary>
+        public const string CharacterStats = "CharacterStats";
     }
 }
