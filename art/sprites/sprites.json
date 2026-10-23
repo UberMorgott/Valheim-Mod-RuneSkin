@@ -3038,6 +3038,512 @@
       "notes": "M3 detail stat line: borderless dark strip with a dotted leader along the bottom (alpha 0.7 baked); label text_body left, value text_stat_value"
     },
     {
+      "name": "glyph_sub_swords",
+      "file": "glyph_sub_swords.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.swords",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): straight sword; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_axes",
+      "file": "glyph_sub_axes.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.axes",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): bearded axe; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_clubs",
+      "file": "glyph_sub_clubs.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.clubs",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): spiked mace; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_spears",
+      "file": "glyph_sub_spears.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.spears",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): leaf spear; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_knives",
+      "file": "glyph_sub_knives.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.knives",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): short seax; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_polearms",
+      "file": "glyph_sub_polearms.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.polearms",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): atgeir; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_shield",
+      "file": "glyph_sub_shield.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.shield",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): round shield; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_unarmed",
+      "file": "glyph_sub_unarmed.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.unarmed",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): fist; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_bows",
+      "file": "glyph_sub_bows.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.bows",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): bow; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_crossbows",
+      "file": "glyph_sub_crossbows.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.crossbows",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): crossbow; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_elementalmagic",
+      "file": "glyph_sub_elementalmagic.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.elementalmagic",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): flame staff; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_bloodmagic",
+      "file": "glyph_sub_bloodmagic.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.bloodmagic",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): blood drop; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_helmet",
+      "file": "glyph_sub_helmet.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.helmet",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): helmet; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_chest",
+      "file": "glyph_sub_chest.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.chest",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): mail shirt; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_legs",
+      "file": "glyph_sub_legs.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.legs",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): leg armor; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_hands",
+      "file": "glyph_sub_hands.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.hands",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): gauntlet; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_shoulder",
+      "file": "glyph_sub_shoulder.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.shoulder",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): cape; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_utility",
+      "file": "glyph_sub_utility.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.utility",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): belt; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_trinket",
+      "file": "glyph_sub_trinket.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.trinket",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): amulet; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_arrows",
+      "file": "glyph_sub_arrows.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.arrows",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): arrow; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_bolts",
+      "file": "glyph_sub_bolts.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.bolts",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): bolt; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
+      "name": "glyph_sub_missiles",
+      "file": "glyph_sub_missiles.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.sub.missiles",
+      "notes": "M3 crafting sub-group filter (MorgottTweaks MT_CraftSub_*): sling stones; white mask, tint text_body (selected text_active)",
+      "atlas": "hires"
+    },
+    {
       "name": "glyph_cat_all",
       "file": "glyph_cat_all.png",
       "size": [

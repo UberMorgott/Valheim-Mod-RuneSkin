@@ -79,17 +79,18 @@ namespace RuneSkin.Tests
             Assert.True(o.SubCategoryRow.Inside(i.Panel));
             Assert.True(o.SubCategoryRow.Y >= o.CategoryRow.Bottom);
             Assert.True(o.Search.Y >= o.SubCategoryRow.Bottom);
-            Assert.Equal(36f, o.SubCategoryRow.H);
+            Assert.Equal(44f, o.SubCategoryRow.H); // same as the category cells (approved mockup)
             Assert.Equal(8, o.SubCategories.Visible);
             Assert.False(o.SubCategories.Scroll);
-            // Left-aligned like the categories, square, smaller than a category tab.
+            // Left-aligned like the categories, same square cells and pitch.
             Assert.Equal(o.CategoryRow.X, o.SubCategories.Cells[0].X);
-            Assert.True(o.SubCategories.Cells[0].W < o.Categories.Cells[0].W);
+            Assert.Equal(o.Categories.Cells[0].W, o.SubCategories.Cells[0].W);
+            Assert.Equal(o.Categories.Cells[1].X, o.SubCategories.Cells[1].X);
             for (var a = 0; a < 8; a++)
                 for (var b = a + 1; b < 8; b++)
                     Assert.False(o.SubCategories.Cells[a].Overlaps(o.SubCategories.Cells[b]));
             // The row's height comes off the body only.
-            Assert.Equal(without.List.H - (36f + 8f), o.List.H, 2);
+            Assert.Equal(without.List.H - (44f + 8f), o.List.H, 2);
             Assert.Equal(without.Header, o.Header);
         }
 

@@ -748,14 +748,21 @@ namespace RuneSkin.CraftingScreen
 
         private Image CategoryGlyph(RectTransform tab, Box inner)
         {
-            // Category key per tab object, cached (name + Substring allocated two strings per tab per frame). Sub-group tabs
-            // (pooled, renamed by CraftingFilter) get a kit glyph only for their "All" tab, which is always the first one.
+            // Glyph role suffix per tab object, cached (name + Substring allocated two strings per tab per frame; CraftingFilter
+            // keeps one tab object per group, never renamed). Categories: CategoryGlyphs. Sub groups: "All" = the category
+            // glyph, MT_CraftSub_<Group> = glyph_sub_<group> when the theme has it (vanilla kinds); others (modded skills)
+            // keep CraftingFilter's skill / item icon.
             if (!_catKeys.TryGetValue(tab, out var key))
             {
                 var tabName = NameCache.Of(tab);
                 if (tabName.StartsWith(ModCompat.MtCraftTabPrefix, StringComparison.Ordinal))
-                    key = CategoryGlyphs.TryGetValue(tabName.Substring(ModCompat.MtCraftTabPrefix.Length), out var k) ? k : null;
-                else key = tabName == ModCompat.MtCraftSubPrefix + "All" ? "all" : null;
+                    key = CategoryGlyphs.TryGetValue(tabName.Substring(ModCompat.MtCraftTabPrefix.Length), out var k) ? "cat." + k : null;
+                else if (tabName.StartsWith(ModCompat.MtCraftSubPrefix, StringComparison.Ordinal))
+                {
+                    var group = tabName.Substring(ModCompat.MtCraftSubPrefix.Length);
+                    key = group == "All" ? "cat.all" : "sub." + group.ToLowerInvariant();
+                    if (ThemeTokens.Role("craft.glyph." + key) == null) key = null;
+                }
                 _catKeys[tab] = key;
             }
             if (key == null) return null;
@@ -766,7 +773,7 @@ namespace RuneSkin.CraftingScreen
                 image = new GameObject(Prefix + "Glyph", typeof(RectTransform)).AddComponent<Image>();
                 image.rectTransform.SetParent(tab, false);
                 image.raycastTarget = false;
-                var mark = DollCell.Mark(image, "craft.glyph.cat." + key, "CraftingFilter category glyph");
+                var mark = DollCell.Mark(image, "craft.glyph." + key, "CraftingFilter category / sub-group glyph");
                 mark.Outcome = Restyler.Apply(image, mark, ThemeTokens.Role(mark.Role)) ? Outcome.Styled : Outcome.Degraded;
                 image.enabled = mark.Outcome == Outcome.Styled;
             }

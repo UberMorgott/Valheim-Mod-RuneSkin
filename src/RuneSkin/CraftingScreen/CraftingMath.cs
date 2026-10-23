@@ -14,7 +14,7 @@ namespace RuneSkin.CraftingScreen
     {
         public float Pad = 18f, Gap = 8f;
         public float HeaderH = 80f, TabH = 36f, TabW = 150f, TabMinW = 96f, ArrowW = 28f;
-        public float CategoryH = 44f, SubCategoryH = 36f, SearchH = 38f;
+        public float CategoryH = 44f, SubCategoryH = 44f, SearchH = 38f;
         public float ListShare = 0.4f, RowH = 46f, ScrollbarW = 10f;
         public float TitleH = 32f, CraftTypeH = 24f, IconH = 112f, QualityH = 44f, DescriptionMinH = 48f;
         public float ReqW = 68f, ReqH = 88f, ReqMinW = 52f, ReqMaxRows = 2f;
@@ -101,7 +101,7 @@ namespace RuneSkin.CraftingScreen
                 o.Categories = Row(o.CategoryRow, i.Categories, ch, ch, gap * 0.5f, S(t.ArrowW), i.CategoryOffset, false);
                 y += ch + gap;
             }
-            // Sub-group row (weapon kinds, armor slots, ...): same square tabs, a little smaller, only while the filter
+            // Sub-group row (weapon kinds, armor slots, ...): same square tabs and size as the categories, only while the filter
             // shows it (two or more groups); the body gives way.
             if (i.Categories > 0 && i.SubCategories > 0)
             {
