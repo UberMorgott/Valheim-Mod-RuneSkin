@@ -867,7 +867,7 @@
     { "token": "share.hud.strip.timer.band", "value": 0 },
     { "token": "size.hud.status.strip.gap", "value": 5 },
     { "token": "mode.hud.strip.target", "value": 1 },
-    { "token": "size.hud.strip.center.dx", "value": 7.2 },
+    { "token": "size.hud.strip.center.dx", "value": 0 },
     { "token": "size.hud.strip.bars.pad.r", "value": 134.1 },
     { "token": "size.hud.strip.potion.start", "value": 113.8 },
     { "token": "size.hud.strip.potion.gap", "value": 12.2 },
