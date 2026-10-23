@@ -8,8 +8,8 @@ namespace RuneSkin.Restyle
     // owner "cover") while the window shows. Candidates are the subtrees drawn before the window: its earlier siblings at
     // every level up to the root canvas, and other root canvases with a lower sorting order. A candidate whose drawn
     // bounds lie inside the opaque rect is gated whole; one that only overlaps it is searched a few levels down. A
-    // subtree holding a canvas that sorts above the window (the HUD strip over an open inventory, HudCluster
-    // AboveInventory) is never gated whole, only its other children. Recomputed while the window shows (HUD parts move,
+    // subtree holding a canvas that sorts above the window (e.g. the strip's raycast layer StripHits over an open inventory)
+    // is never gated whole, only its other children. Recomputed while the window shows (HUD parts move,
     // appear); only differences are applied.
     public static class CoverCull
     {

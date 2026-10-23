@@ -295,26 +295,35 @@ namespace RuneSkin.PlayerHud
 
         private bool _childrenOn = true;
 
-        // While the inventory is open the strip sorts above the GUI canvas (its hotbar is the inventory's row 0 and a
-        // drop target): otherwise InventoryGui's full-screen root/dropButton (drop to the ground) takes the press over
-        // the strip (run 20261022-194551: raycast top = root/dropButton).
+        // The strip's visuals keep the HUD's sort: every window / info box / TopOverlay / ModalLayer renders above them
+        // (coordinator decision 2026-10-23). Only its raycast-only layer (StripHits) sorts above the GUI canvas while the
+        // inventory is open (the hotbar is the inventory's row 0, potion cells are the EAQS quick cells, both drop
+        // targets): otherwise InventoryGui's full-screen root/dropButton takes the press over the strip (run
+        // 20261022-194551: raycast top = root/dropButton).
+        private readonly StripHits _hits = new StripHits();
+
         private void AboveInventory()
         {
             if (!_canvas) return;
-            var want = InventoryGui.IsVisible();
-            if (_canvas.overrideSorting == want) return;
-            _canvas.overrideSorting = want;
-            if (want && _canvas.transform.parent)
+            if (_canvas.overrideSorting) _canvas.overrideSorting = false;
+            var want = InventoryGui.IsVisible() && _childrenOn && _root.parent;
+            var order = 0;
+            var layer = 0;
+            if (want)
             {
-                var root = _canvas.transform.parent.GetComponentInParent<Canvas>();
+                var root = _root.parent.GetComponentInParent<Canvas>();
                 var top = root ? root.rootCanvas : null;
-                var order = top ? top.sortingOrder : 0;
+                order = top ? top.sortingOrder : 0;
                 if (InventoryGui.instance && InventoryGui.instance.GetComponentInParent<Canvas>() is Canvas inv)
                     order = Mathf.Max(order, inv.rootCanvas.sortingOrder);
-                _canvas.sortingOrder = order + 1;
-                if (top) _canvas.sortingLayerID = top.sortingLayerID;
+                order++;
+                layer = top ? top.sortingLayerID : 0;
             }
+            _hits.Tick(_root, want, order, layer);
         }
+
+        // Raycast-only layer of the strip (harness: hit areas over the cells while the inventory is open).
+        public RectTransform HitLayer => _hits.Layer;
 
         private void SetChildrenActive(bool on)
         {

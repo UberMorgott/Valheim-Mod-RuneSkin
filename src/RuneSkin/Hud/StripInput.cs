@@ -3,8 +3,9 @@ using UnityEngine.EventSystems;
 
 namespace RuneSkin.PlayerHud
 {
-    // Pointer on a strip cell. While the inventory is open the strip canvas sorts above the GUI (HudCluster.AboveInventory)
-    // and every cell's bowl is a raycast target, so the strip, not the inventory element under it, gets the press: each
+    // Pointer on a strip cell. While the inventory is open the strip's raycast-only layer (StripHits, HudCluster
+    // AboveInventory) sorts above the GUI with a hit area per hotbar / potion cell forwarding here (StripHit), so the strip,
+    // not the inventory element under it, gets the press while its visuals stay below every window: each
     // item cell routes it to its player-grid position through the grid's own callbacks, exactly as a press on that grid
     // cell (InventoryGrid.OnLeftDown, InventoryGrid.cs:430-448: Shift = Split, Ctrl = Move, else Select ->
     // InventoryGui.OnSelectedItem picks up / drops / swaps the drag item; right press = m_onRightClick: use / equip).
@@ -77,7 +78,7 @@ namespace RuneSkin.PlayerHud
         public void OnDrop(PointerEventData eventData)
         {
             if (eventData.button != PointerEventData.InputButton.Left || !TryPos(out var pos)) return;
-            if (eventData.pointerPress && eventData.pointerPress.GetComponentInParent<StripInput>() == this) return;
+            if (Of(eventData.pointerPress) == this) return;
             DropCarried(OpenGrid(Player.m_localPlayer), pos);
         }
 
@@ -115,6 +116,14 @@ namespace RuneSkin.PlayerHud
             var pos = grid.GetElementPos(element);
             if (pos.x < 0) return;
             DropCarried(grid, pos);
+        }
+
+        // The cell a pointer object belongs to: the cell itself or its hit area on the raycast layer.
+        private static StripInput Of(GameObject go)
+        {
+            if (!go) return null;
+            var hit = go.GetComponentInParent<StripHit>();
+            return hit ? hit.Target : go.GetComponentInParent<StripInput>();
         }
 
         private static void DropCarried(InventoryGrid grid, Vector2i pos)
