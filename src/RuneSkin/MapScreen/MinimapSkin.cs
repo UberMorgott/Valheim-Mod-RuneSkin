@@ -359,6 +359,7 @@ namespace RuneSkin.MapScreen
             }
             var a = visible ? 1f : 0f;
             if (g.alpha != a) g.alpha = a;
+            RuneSkin.Restyle.RenderGate.Set(go, "minimap.ring", !visible); // outside the hole: not drawn
         }
 
         public static void Stretch(RectTransform rt)

@@ -122,7 +122,9 @@ namespace RuneSkin.GameScreens
                 _group.interactable = false;
             }
             var a = Source && Source.gameObject.activeInHierarchy ? Source.color.a * Source.canvasRenderer.GetAlpha() : 0f;
+            if (RuneSkin.Restyle.RenderGateMath.Concealed(a)) a = 0f;
             if (!Mathf.Approximately(_group.alpha, a)) _group.alpha = a;
+            RuneSkin.Restyle.RenderGate.Set(_group, "fade", a == 0f); // the source faded out: not drawn
         }
     }
 

@@ -421,6 +421,7 @@ namespace RuneSkin.WorldHud
                 var g = t.GetComponent<CanvasGroup>() ?? t.gameObject.AddComponent<CanvasGroup>();
                 g.alpha = 0f;
                 g.blocksRaycasts = false;
+                RuneSkin.Restyle.RenderGate.Set(t, "shiphud", true); // not drawn (vanilla code keeps writing it)
                 _art.Suppressed(t, $"vanilla ship HUD '{t.name}' (RuneSkin ladder replaces it; wind on the minimap ring)");
             }
             var cell = ThemeTokens.GetFloat("size.ship.cell", 46f);
