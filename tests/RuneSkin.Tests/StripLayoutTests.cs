@@ -142,6 +142,34 @@ namespace RuneSkin.Tests
             Assert.InRange(share, 0.15f, 0.3f);
         }
 
+        // Target panel (user 2026-10-23): fixed wing frame, slots grow from the outer medallions inwards with a fixed
+        // pitch, never past the connector knot; frame rects identical for 3 / 4 / 5 slots.
+        [Fact]
+        public void WingSlotsGrowFromTheMedallionsWithAFixedPitch()
+        {
+            StripMath.Layout? first = null;
+            foreach (var n in new[] { 3, 4, 5 })
+            {
+                var i = In(food: n, potions: n, width: 2200f);
+                i.GrowFromEnds = true;
+                i.BarsExtra = 60f;
+                i.ConnW = 40f;
+                var l = StripMath.Compute(i);
+                Assert.Equal(l.CenterX - 60f, l.BarsX, 3);
+                Assert.Equal(i.KnotW + i.SlotPad, l.FoodX, 3);
+                Assert.Equal(i.Cell + i.Gap, l.FoodStep, 3);
+                Assert.Equal(i.Width - i.KnotW - i.SlotPad, l.PotionX + l.PotionShown * i.Cell + (l.PotionShown - 1) * i.Gap, 3);
+                Assert.True(l.FoodX + l.FoodShown * l.FoodStep - i.Gap <= l.BarsX - i.ConnW / 2f + 0.01f);
+                Assert.Equal(System.Math.Min(n, l.FoodMax), l.FoodShown);
+                if (first is StripMath.Layout f)
+                {
+                    Assert.Equal(f.LeftW, l.LeftW, 3);
+                    Assert.Equal(f.RightX, l.RightX, 3);
+                }
+                first = l;
+            }
+        }
+
         [Fact]
         public void SkinScaleMovesBothTogether()
         {
