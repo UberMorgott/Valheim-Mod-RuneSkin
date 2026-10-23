@@ -123,11 +123,67 @@ namespace RuneSkin.Restyle
                 }
             }
             if (min.x > max.x) return;
-            _fitted = true;
             // The stack reaches at least the caps' keep-out beyond the children, so no child runs under a cap.
             var pad = Mathf.Max(ThemeTokens.GetFloat(padToken, 0f), CapClearance(0f));
-            min -= new Vector2(pad, pad);
-            max += new Vector2(pad, pad);
+            SetBox(host, min - new Vector2(pad, pad), max + new Vector2(pad, pad));
+        }
+
+        // Dialogs (one box = backing + glass + frame + caps, user 2026-10-23 "Выйти из игры?"): the stack is sized to
+        // what the dialog shows - text by its rendered bounds (TMP textBounds, not the vanilla fixed text rect),
+        // buttons / other children by their rects - plus the pad (at least the caps' keep-out), widened to minW x minH.
+        // Vanilla panel images switched off under the stack (PanelSwap) are not content. Host space; after a layout pass.
+        public bool FitToContent(string padToken, float minW, float minH)
+        {
+            var self = (RectTransform)transform;
+            var host = self.parent as RectTransform;
+            if (!host) return false;
+            var min = new Vector2(float.MaxValue, float.MaxValue);
+            var max = new Vector2(float.MinValue, float.MinValue);
+            for (var i = 0; i < host.childCount; i++)
+            {
+                var child = host.GetChild(i) as RectTransform;
+                if (!child || child == self || child == _caps || !child.gameObject.activeSelf) continue;
+                if (child.GetComponent<PreWorld.PanelSwap>()) continue;
+                if (child.TryGetComponent<TMPro.TMP_Text>(out var text) && text.enabled)
+                {
+                    if (string.IsNullOrEmpty(text.text)) continue;
+                    text.ForceMeshUpdate();
+                    var b = text.textBounds;
+                    if (b.size.x <= 0f || b.size.y <= 0f) continue;
+                    Grow(host, child, new Vector3(b.min.x, b.min.y), ref min, ref max);
+                    Grow(host, child, new Vector3(b.max.x, b.max.y), ref min, ref max);
+                    continue;
+                }
+                if (child.GetComponentInChildren<Graphic>(false) == null) continue; // layout-only / empty holder
+                child.GetWorldCorners(Corners);
+                foreach (var w in Corners)
+                {
+                    var l = (Vector2)host.InverseTransformPoint(w);
+                    min = Vector2.Min(min, l);
+                    max = Vector2.Max(max, l);
+                }
+            }
+            var pad = Mathf.Max(ThemeTokens.GetFloat(padToken, 0f), CapClearance(0f));
+            // Left / right: past the whole cap (rune end-column + brace) - a dialog is shorter than two caps.
+            var boxH = Mathf.Max(minH, max.y - min.y + 2f * pad);
+            var padX = boxH < CapsHeight() ? Mathf.Max(pad, CapWidth() + ThemeTokens.GetFloat("size.frame.text.margin", 8f)) : pad;
+            if (!PanelMath.FitBox(min.x, min.y, max.x, max.y, padX, pad, minW, minH, out var x0, out var y0, out var x1, out var y1)) return false;
+            SetBox(host, new Vector2(x0, y0), new Vector2(x1, y1));
+            return true;
+        }
+
+        private static void Grow(RectTransform host, Transform child, Vector3 local, ref Vector2 min, ref Vector2 max)
+        {
+            var l = (Vector2)host.InverseTransformPoint(child.TransformPoint(local));
+            min = Vector2.Min(min, l);
+            max = Vector2.Max(max, l);
+        }
+
+        // The stack's box in host space (local min / max).
+        private void SetBox(RectTransform host, Vector2 min, Vector2 max)
+        {
+            var self = (RectTransform)transform;
+            _fitted = true;
             // Anchors at the host pivot, so the local-space box maps 1:1 onto anchoredPosition/sizeDelta.
             self.anchorMin = self.anchorMax = host.pivot;
             self.pivot = new Vector2(0.5f, 0.5f);
@@ -152,6 +208,28 @@ namespace RuneSkin.Restyle
             foreach (var corner in _corners)
                 if (corner && corner.TryGetComponent<Image>(out var image) && image.enabled && image.sprite) w = Mathf.Max(w, corner.rect.width);
             return w;
+        }
+
+        // Host-side inset left / right that keeps text clear of the whole corner caps (rune end-column + copper brace)
+        // plus size.frame.text.margin, whatever the host height (user 2026-10-23, map filter hint).
+        // Only for a stack shorter than its top + bottom caps (they meet into one end-column on each side); a taller
+        // stack keeps its middle clear and ContentInset's keep-out suffices (tooltips keep their text width).
+        public float SideInset() => SideInset(((RectTransform)transform).rect.height);
+
+        public float SideInset(float stackHeight)
+        {
+            var reach = _fitted ? 0f : ThemeTokens.GetFloat(PadToken, 0f);
+            var cap = CapWidth();
+            if (!(cap > 0f) || stackHeight >= CapsHeight()) return 0f;
+            return Mathf.Max(0f, cap - reach) + ThemeTokens.GetFloat("size.frame.text.margin", 8f);
+        }
+
+        // Top + bottom cap heights on the taller side (host units).
+        public float CapsHeight()
+        {
+            if (_corners == null) return 0f;
+            float H(RectTransform c) => c && c.TryGetComponent<Image>(out var i) && i.enabled && i.sprite ? c.rect.height : 0f;
+            return Mathf.Max(H(_corners[0]) + H(_corners[2]), H(_corners[1]) + H(_corners[3]));
         }
 
         private float CapClearance(float pad)

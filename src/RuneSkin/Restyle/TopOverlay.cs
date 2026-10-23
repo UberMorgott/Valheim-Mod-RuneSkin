@@ -12,7 +12,11 @@ namespace RuneSkin.Restyle
 
         // Sorting order the overlay uses near this transform (re-read every call: the strip re-sorts when the
         // inventory opens / closes).
-        public static int Order(Transform near, out int sortingLayerId)
+        public static int Order(Transform near, out int sortingLayerId) => BaseOrder(near, out sortingLayerId) + Band;
+
+        // The highest order the overlay must clear (root canvas near, GUI root, HUD strip); the modal band
+        // (ModalLayer, PanelMath.ModalOrder) sits between it and the overlay.
+        public static int BaseOrder(Transform near, out int sortingLayerId)
         {
             sortingLayerId = 0;
             var order = 0;
@@ -27,7 +31,7 @@ namespace RuneSkin.Restyle
                 order = Mathf.Max(order, inv.rootCanvas.sortingOrder);
             var strip = PlayerHud.HudCluster.Instance;
             if (strip && strip.TryGetComponent<Canvas>(out var sc) && sc.overrideSorting) order = Mathf.Max(order, sc.sortingOrder);
-            return order + Band;
+            return order;
         }
 
         // Puts go on the top overlay sort; idempotent, cheap when nothing changed.
