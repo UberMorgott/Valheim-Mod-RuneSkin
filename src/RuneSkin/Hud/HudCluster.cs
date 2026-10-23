@@ -605,6 +605,7 @@ namespace RuneSkin.PlayerHud
             }
             Status();
             ChatTick();
+            _clear.Tick(_hud, _root);
             var cells = _strip.CellCount + _buffs.CellCount + _summonParented;
             if (cells != _floorCells)
             {
@@ -665,11 +666,20 @@ namespace RuneSkin.PlayerHud
             _reservedTop = bottom + l.Height * _pxPerUnit + ThemeTokens.GetFloat("size.panel.glass.inset", 0f) * s;
             TextFloors();
             ChatClear(bottom + l.Height * _pxPerUnit + ThemeTokens.GetFloat("size.hud.strip.chat.gap", 12f) * s);
+            // Bottom-anchored HUD elements (build piece info, action bar, ship ladder, key hints ...) clear the drawn
+            // strip top by size.hud.strip.clear.gap (StripClear).
+            _stripTopPx = bottom + l.Height * _pxPerUnit;
+            _stripLeftPx = left;
+            _stripRightPx = left + widthPx;
+            _clearGapPx = ThemeTokens.GetFloat("size.hud.strip.clear.gap", 12f) * s;
+            _clear.SetStrip(_stripTopPx, _stripLeftPx, _stripRightPx, _clearGapPx);
             Plugin.Log.LogInfo($"[RuneSkin] HUD strip layout: width {widthPx:0}px slot {slotPx:0.#}px scale {_pxPerUnit:0.###} height {l.Height:0} units = {l.Height * _pxPerUnit:0} px " +
                                $"({100f * l.Height * _pxPerUnit / Mathf.Max(1f, Screen.height):0.0} % of {Screen.height}), food {l.FoodShown}/{_hudStrip.FoodCount} potions {l.PotionShown}/{_hudStrip.PotionCount} (wing fits {l.FoodMax}) abilities {_hudStrip.AbilityCount}{(l.Fits ? "" : " (tight)")}");
         }
 
         private float _stripWidth, _statusBase;
+        private float _stripTopPx, _stripLeftPx, _stripRightPx, _clearGapPx;
+        private readonly StripClear _clear = new StripClear();
 
         // GUI canvas scale the inventory grid is drawn with (InventorySkin: its root canvas scaleFactor); the HUD's own
         // root canvas before the inventory exists (both live under the same GuiScaler).
@@ -823,6 +833,16 @@ namespace RuneSkin.PlayerHud
 
         // Screen y (pixels, bottom-up) of the strip top incl. a reserved status row; 0 while the HUD is hidden.
         public float ReservedScreenTop => _childrenOn && isActiveAndEnabled ? _reservedTop : 0f;
+
+        // Drawn strip box in screen px (bottom-up; top without the reserved inset) and the keep-out gap of the bottom
+        // HUD elements (harness: strip-clear checks); 0 while the HUD is hidden.
+        public float StripTopPx => _childrenOn && isActiveAndEnabled ? _stripTopPx : 0f;
+        public float StripLeftPx => _stripLeftPx;
+        public float StripRightPx => _stripRightPx;
+        public float ClearGapPx => _clearGapPx;
+
+        // Applied lift per tracked bottom element, screen px (harness, diagnostics).
+        public IEnumerable<KeyValuePair<string, float>> ClearLifts() => _clear.Lifts();
 
         // Strip hotbar cell i (harness, drop tests).
         public RectTransform HotbarCell(int i) => _hudStrip?.HotbarRect(i);
