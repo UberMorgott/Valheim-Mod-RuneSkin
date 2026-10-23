@@ -146,7 +146,7 @@ namespace RuneSkin.PlayerHud
             }
             if (Time.unscaledTime >= _keysAt)
             {
-                _keysAt = Time.unscaledTime + 2f; // bindings change only through the config: re-read every 2 s
+                _keysAt = Time.unscaledTime + 10f; // bindings change only through the config: re-read every 10 s
                 for (var k = 0; k < 3; k++) Keys[k] = Label(_binding(k));
             }
             return new AbilitySlotState

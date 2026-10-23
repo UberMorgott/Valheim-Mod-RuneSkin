@@ -338,7 +338,7 @@ namespace RuneSkin.PlayerHud
             if (!ReferenceEquals(c.RarityItem, item) || Time.unscaledTime >= c.RarityAt)
             {
                 c.RarityItem = item;
-                c.RarityAt = Time.unscaledTime + 1f;
+                c.RarityAt = Time.unscaledTime + 5f; // Epic Loot rebuilds its magic data per read (allocates): rarely
                 c.RarityMagic = EpicLootBridge.Rarity(item, out c.RarityColor, out c.RaritySet);
             }
             c.Rim(c.RarityMagic, c.RarityColor);

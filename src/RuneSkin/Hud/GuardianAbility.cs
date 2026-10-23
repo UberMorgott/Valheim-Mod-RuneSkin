@@ -65,7 +65,7 @@ namespace RuneSkin.PlayerHud
             }
             if (Time.unscaledTime >= _keyAt && ZInput.instance != null)
             {
-                _keyAt = Time.unscaledTime + 2f;
+                _keyAt = Time.unscaledTime + 10f;
                 _key = KeyLabel("GP");
             }
             var hash = se.NameHash();
