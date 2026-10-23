@@ -296,6 +296,10 @@ namespace RuneSkin.PlayerHud
         // Strip outer width in screen px: share of the (safe / 16:9 box) width.
         public static float WidthPx(float boxW, float share) => Math.Max(0f, boxW) * Math.Max(0.3f, Math.Min(1f, share));
 
+        // Chat window lift (its parent's units): the drawn bottom at home below the strip top (+ gap) -> raised by the
+        // difference; already above -> 0 (never lowered).
+        public static float ChatLift(float homeBottom, float clearTop) => Math.Max(0f, clearTop - homeBottom);
+
         // Font size (strip units) that renders at least floorPx screen px at unitPx px per unit.
         public static float FontFloor(float size, float floorPx, float unitPx) => unitPx > 0f ? Math.Max(size, floorPx / unitPx) : size;
 

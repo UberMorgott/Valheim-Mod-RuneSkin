@@ -104,6 +104,9 @@ namespace RuneSkin.PlayerHud
                 _timer.enableAutoSizing = true;
                 _timer.fontSizeMax = _timer.fontSize;
                 _timer.fontSizeMin = _timer.fontSize * 0.5f;
+                // bottom-aligned in its band: at the readable floor (720: 12 px = 21.9 units) the glyph box is taller than
+                // the band, centred it ran below the cell (run 20261023-200109 slots-720); it grows up, never out
+                _timer.alignment = TextAlignmentOptions.Bottom;
             }
             _key.gameObject.SetActive(false);
             _count.gameObject.SetActive(false);

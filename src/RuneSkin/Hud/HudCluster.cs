@@ -738,6 +738,8 @@ namespace RuneSkin.PlayerHud
         private static Vector2 _chatHome;
         private float _chatBottomW = float.NaN, _chatTopUnits = -1f, _chatGapPx;
         private bool _chatWasActive;
+        private Vector2 _chatWritten = new Vector2(float.NaN, float.NaN);
+        private int _chatMeasureKey = int.MinValue;
         private readonly List<Graphic> _chatGraphics = new List<Graphic>(16);
         private readonly Vector3[] _corners = new Vector3[4];
 
@@ -750,28 +752,45 @@ namespace RuneSkin.PlayerHud
             {
                 _chatWindow = w;
                 _chatHome = w.anchoredPosition; // before any move of ours
+                _chatWritten = new Vector2(float.NaN, float.NaN);
+                _chatBottomW = float.NaN;
+            }
+            // Someone else placed the window since our last write (vanilla / canvas on a resolution change: the window rect
+            // spans the canvas, its position changes with the screen): that is the new home (run 20261023-200109: the home
+            // taken at 1080 was reused at 720 and back, the lift came out 0 and the chat sat on the strip).
+            if (!float.IsNaN(_chatWritten.x) && (w.anchoredPosition - _chatWritten).sqrMagnitude > 0.01f)
+            {
+                _chatHome = w.anchoredPosition;
                 _chatBottomW = float.NaN;
             }
             var active = w.gameObject.activeInHierarchy;
             if (active && !_chatWasActive) _chatBottomW = float.NaN; // re-measure on show (laid out while shown)
             _chatWasActive = active;
+            var measureKey = Screen.width * 31 + Screen.height * 17 + _stripKey;
+            if (measureKey != _chatMeasureKey)
+            {
+                _chatMeasureKey = measureKey;
+                _chatBottomW = float.NaN;
+            }
             if (float.IsNaN(_chatBottomW))
             {
-                // The window's own rect bottom (run 20261023-191817: measured from the graphics enabled at show time,
-                // the chat background enabled later reached 70 px above the screen bottom, over the right wing / end
-                // medallion at every resolution). The rect holds every chat graphic, so clearing it clears them all.
-                // Run 20261023-194139: the rect alone was not enough either (lifted to the strip top, the drawn chat still
-                // reached 66 px): the lowest of the rect and EVERY graphic under it, inactive ones included (the input
-                // line / background shown later sit below the window rect).
+                // Lowest DRAWN graphic (window-local units), inactive children included (the input line shows while
+                // typing). Not the window rect: it spans the whole canvas (run 20261023-200109 diag: anchors 0,0, rect =
+                // screen), clearing it lifted the chat a full strip height too far.
                 if (w.rect.height < 1f) return; // laid out next frame
-                var min = w.rect.yMin;
+                var min = float.MaxValue;
+                var full = w.rect.size;
                 w.GetComponentsInChildren(true, _chatGraphics);
                 foreach (var g in _chatGraphics)
                 {
-                    if (!g || g.rectTransform.rect.width < 1f || g.rectTransform.rect.height < 1f) continue;
+                    if (!g || !g.enabled || g.color.a <= 0.01f) continue;
+                    var r = g.rectTransform.rect;
+                    if (r.width < 1f || r.height < 1f) continue;
+                    if (g.rectTransform == w && Mathf.Abs(r.width - full.x) < 1f && Mathf.Abs(r.height - full.y) < 1f) continue;
                     g.rectTransform.GetWorldCorners(_corners);
                     min = Mathf.Min(min, w.InverseTransformPoint(_corners[0]).y);
                 }
+                if (min == float.MaxValue) return;
                 _chatBottomW = min;
             }
             var hudCanvas = _canvas ? _canvas.rootCanvas : null;
@@ -785,23 +804,20 @@ namespace RuneSkin.PlayerHud
             if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, top, chatCam, out var topLocal)) return;
             var bottomNow = parent.InverseTransformPoint(w.TransformPoint(new Vector3(0f, _chatBottomW, 0f))).y;
             var homeBottom = bottomNow - (w.anchoredPosition.y - _chatHome.y);
-            var want = _chatHome + new Vector2(0f, Mathf.Max(0f, topLocal.y - homeBottom));
+            var want = _chatHome + new Vector2(0f, StripMath.ChatLift(homeBottom, topLocal.y));
+            _chatWritten = want;
             if ((w.anchoredPosition - want).sqrMagnitude < 0.01f) return;
             w.anchoredPosition = want;
-            // diagnostic (runs 191817 / 194139: lifted per this log, the drawn chat still at 66 px): the window's anchors,
-            // parent scale and its lowest graphic on screen right after the move
             var low = float.MaxValue;
             w.GetComponentsInChildren(false, _chatGraphics);
             foreach (var g in _chatGraphics)
             {
-                if (!g.enabled || g.rectTransform.rect.width < 1f) continue;
+                if (!g.enabled || g.rectTransform.rect.width < 1f || g.rectTransform == w) continue;
                 g.rectTransform.GetWorldCorners(_corners);
                 low = Mathf.Min(low, RectTransformUtility.WorldToScreenPoint(chatCam, _corners[0]).y);
             }
-            Plugin.Log.LogInfo($"[RuneSkin] chat box at {want.y - _chatHome.y:0.#} units above home (strip top {top.y:0} px) " +
-                               $"anchors {w.anchorMin}-{w.anchorMax} rect {w.rect} parent {parent.name} scale {parent.lossyScale.y:0.####} lowest graphic {low:0} px");
+            Plugin.Log.LogInfo($"[RuneSkin] chat box at {want.y - _chatHome.y:0.#} units above home (strip top {top.y:0} px, screen {Screen.width}x{Screen.height}) lowest graphic {low:0} px");
         }
-
         // Status groups above the strip (user call 2026-10-22): buffs on one side, debuffs on the other (Hud.BuffSide),
         // Hud.StatusPerRow cells a row, rows growing upward (Hud.StatusRows, then "+N"); hidden while the inventory is open
         // (it docks on the strip top).
