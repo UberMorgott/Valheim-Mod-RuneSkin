@@ -52,6 +52,43 @@ namespace RuneSkin.Tests
         public void GlyphSideIsAShareOfTheSocket(float socket, float share, float want) =>
             Assert.Equal(want, GameScreenMath.GlyphSide(socket, share), 3);
 
+        // Sleep medallion: its own slot gap above the text block, never overlapping it, whatever the text height
+        // (user screenshot 2026-10-23: a 4-line dream text ran under the fixed 96 lift).
+        [Theory]
+        [InlineData(20f)]
+        [InlineData(80f)]
+        [InlineData(200f)]
+        public void MedallionClearsTextAbove(float halfText)
+        {
+            const float side = 112f, gap = 24f;
+            var y = GameScreenMath.MedallionY(halfText, -halfText, side, gap, 540f, -540f, 24f);
+            Assert.Equal(halfText + gap + side * 0.5f, y, 3);
+            Assert.True(y - side * 0.5f >= halfText + gap - 0.001f);
+        }
+
+        // No room above (text near the top): the medallion goes below, still gap away from the text.
+        [Fact]
+        public void MedallionGoesBelowWhenTopIsFull()
+        {
+            var y = GameScreenMath.MedallionY(500f, 300f, 112f, 24f, 540f, -540f, 24f);
+            Assert.Equal(300f - 24f - 56f, y, 3);
+        }
+
+        // Neither fits: the top slot (text stays clear).
+        [Fact]
+        public void MedallionKeepsTopSlotWhenNothingFits()
+        {
+            var y = GameScreenMath.MedallionY(50f, -50f, 112f, 24f, 100f, -100f, 0f);
+            Assert.Equal(50f + 24f + 56f, y, 3);
+        }
+
+        [Theory]
+        [InlineData(1500f, 1100f, 200f)]
+        [InlineData(900f, 1100f, 0f)]
+        [InlineData(1500f, 0f, 0f)]
+        public void WrapInsetCapsLineWidth(float width, float max, float want) =>
+            Assert.Equal(want, GameScreenMath.WrapInset(width, max), 3);
+
         // M6 batch 2 families are stable API names (other mods ask for them by string).
         [Fact]
         public void BatchTwoFamilyNames()

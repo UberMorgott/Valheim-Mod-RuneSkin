@@ -164,6 +164,86 @@ namespace RuneSkin.GameScreens
         }
     }
 
+    // Sleep medallion slot (socket + rune spinner + moon) laid out from the measured sleep texts (SleepText "Zzz"
+    // m_textField + dream m_dreamField, SleepText.cs; dream texts run to 4+ lines): the medallion sits gap above the
+    // texts' rendered block (below when it would leave the screen top), never on them; the texts wrap at
+    // size.load.text.maxw (TMP margins, centred). Re-measured only when a text changes. Lives on the internal socket
+    // (destroyed on revert: the margins it set go back).
+    public sealed class SleepLayout : MonoBehaviour
+    {
+        private RectTransform _host;
+        private RectTransform[] _parts;
+        private TMP_Text[] _texts;
+        private Vector4[] _margins;
+        private int _key = int.MinValue;
+
+        public static void Ensure(Image socket, RectTransform host, params RectTransform[] others)
+        {
+            if (!socket || !host || socket.TryGetComponent<SleepLayout>(out _)) return;
+            var l = socket.gameObject.AddComponent<SleepLayout>();
+            l._host = host;
+            l._parts = new RectTransform[others.Length + 1];
+            l._parts[0] = socket.rectTransform;
+            for (var i = 0; i < others.Length; i++) l._parts[i + 1] = others[i];
+            var texts = new System.Collections.Generic.List<TMP_Text>();
+            foreach (var t in host.GetComponentsInChildren<TMP_Text>(true))
+                if (!(t.GetComponent<SkinMark>() is SkinMark m && m.Internal)) texts.Add(t);
+            l._texts = texts.ToArray();
+            l._margins = new Vector4[l._texts.Length];
+            for (var i = 0; i < l._texts.Length; i++) l._margins[i] = l._texts[i].margin;
+        }
+
+        private void LateUpdate()
+        {
+            if (!_host || _texts == null) return;
+            var key = 17;
+            foreach (var t in _texts)
+                key = key * 31 + (t && t.isActiveAndEnabled && !string.IsNullOrEmpty(t.text) ? StringComparer.Ordinal.GetHashCode(t.text) ^ (int)t.rectTransform.rect.width : 0);
+            key = key * 31 + (int)_host.rect.height;
+            if (key == _key) return;
+            _key = key;
+            Layout();
+        }
+
+        private void Layout()
+        {
+            var maxw = ThemeTokens.GetFloat("size.load.text.maxw", 1100f);
+            float top = float.NegativeInfinity, bottom = float.PositiveInfinity;
+            for (var i = 0; i < _texts.Length; i++)
+            {
+                var t = _texts[i];
+                if (!t) continue;
+                var inset = GameScreenMath.WrapInset(t.rectTransform.rect.width - _margins[i].x - _margins[i].z, maxw);
+                t.margin = new Vector4(_margins[i].x + inset, _margins[i].y, _margins[i].z + inset, _margins[i].w);
+                if (!t.isActiveAndEnabled || string.IsNullOrEmpty(t.text)) continue;
+                t.ForceMeshUpdate();
+                var b = t.textBounds;
+                if (b.size.y <= 0f) continue;
+                foreach (var y in new[] { b.max.y, b.min.y })
+                {
+                    var local = _host.InverseTransformPoint(t.rectTransform.TransformPoint(new Vector3(b.center.x, y, 0f))).y;
+                    top = Mathf.Max(top, local);
+                    bottom = Mathf.Min(bottom, local);
+                }
+            }
+            if (float.IsNegativeInfinity(top)) return; // no text: the start slot stays
+            var side = Mathf.Max(_parts[0].sizeDelta.x, _parts[0].sizeDelta.y);
+            var r = _host.rect;
+            var y0 = GameScreenMath.MedallionY(top, bottom, side, ThemeTokens.GetFloat("size.load.socket.gap", 24f), r.yMax, r.yMin,
+                ThemeTokens.GetFloat("size.load.socket.margin", 24f));
+            // Centre-anchored parts: anchoredPosition is relative to the host's centre.
+            foreach (var p in _parts)
+                if (p) p.anchoredPosition = new Vector2(p.anchoredPosition.x, y0 - r.center.y);
+        }
+
+        private void OnDestroy()
+        {
+            if (_texts == null) return;
+            for (var i = 0; i < _texts.Length; i++)
+                if (_texts[i]) _texts[i].margin = _margins[i];
+        }
+    }
+
     // ---- LoadScreen ------------------------------------------------------------------------------------------------
 
     // Black screens over the world (Hud.m_loadingScreen, Hud.UpdateBlackScreen :571-630, mockup m6-load-b): respawn tip
@@ -250,13 +330,17 @@ namespace RuneSkin.GameScreens
             if (!host || host.Find("RuneSkin_SleepSocket")) return;
             GameScreenKit.HideImages(host);
             var side = ThemeTokens.GetFloat("size.load.socket", 112f);
-            // Above vanilla's centred sleep text (run 20261022-122517: the socket covered it).
+            // Start slot above the centre; SleepLayout moves the medallion into its own slot above the measured sleep
+            // texts every time they change (the fixed 96 lift sat on multi-line dream texts, SleepText.m_dreamField,
+            // user screenshot 2026-10-23).
             var at = new Vector2(0f, ThemeTokens.GetFloat("size.load.socket.lift", 96f));
-            GameScreenKit.Centre(GameScreenKit.Decor(host, "RuneSkin_SleepSocket", "socket.round", "sleep socket (button_round)").rectTransform, at, side);
+            var socket = GameScreenKit.Decor(host, "RuneSkin_SleepSocket", "socket.round", "sleep socket (button_round)");
+            GameScreenKit.Centre(socket.rectTransform, at, side);
             var spin = RuneSpinner.Add(host, "RuneSkin_SleepSpinner", side * ThemeTokens.GetFloat("share.load.spinner", 0.86f));
             GameScreenKit.Centre(spin.rectTransform, at, spin.rectTransform.sizeDelta.x);
-            GameScreenKit.Centre(GameScreenKit.Decor(host, "RuneSkin_SleepMoon", "glyph.moon", "sleep glyph (glyph_time_moon)").rectTransform, at,
-                GameScreenMath.GlyphSide(side, ThemeTokens.GetFloat("share.load.glyph", 0.42f)));
+            var moon = GameScreenKit.Decor(host, "RuneSkin_SleepMoon", "glyph.moon", "sleep glyph (glyph_time_moon)");
+            GameScreenKit.Centre(moon.rectTransform, at, GameScreenMath.GlyphSide(side, ThemeTokens.GetFloat("share.load.glyph", 0.42f)));
+            SleepLayout.Ensure(socket, (RectTransform)host, spin.rectTransform, moon.rectTransform);
         }
 
         private static void Teleport(Hud hud)
