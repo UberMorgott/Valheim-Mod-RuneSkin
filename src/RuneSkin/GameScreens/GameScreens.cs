@@ -293,8 +293,9 @@ namespace RuneSkin.GameScreens
 
     // Chat (Terminal m_chatWindow / m_output / m_input, Chat.cs): the window backdrop = popup, output in the body sans,
     // input = field_search. In-world texts (shout / ping, m_worldTextBase) and NPC / raven speech bubbles
-    // (m_npcTextBase, m_npcTextBaseLarge: topic + text, Chat.SetNpcText :679) are templates: restyled once, every
-    // instance copies the look; bubble backdrop = popup, topic serif, text sans.
+    // (m_npcTextBase, m_npcTextBaseLarge: topic + text, Chat.SetNpcText :679) are templates: restyled once by
+    // SpeechBubbleSkin (world-anchored, sized to the text, outlined sans, soft backing; never a panel), every instance
+    // copies the look.
     public static class ChatSkin
     {
         public const string ScreenId = "Chat";
@@ -310,6 +311,9 @@ namespace RuneSkin.GameScreens
                 var pad = ThemeTokens.GetFloat("size.chat.pad", 14f);
                 chat.m_output.margin = new Vector4(pad, pad * 0.5f, pad, pad * 0.5f);
             }
+            WorldHud.SpeechBubbleSkin.StyleWorldTextTemplate(chat.m_worldTextBase);
+            WorldHud.SpeechBubbleSkin.StyleNpcTemplate(chat.m_npcTextBase, false);
+            WorldHud.SpeechBubbleSkin.StyleNpcTemplate(chat.m_npcTextBaseLarge, true);
             Template(chat.m_worldTextBase, ScreenId + ".WorldText");
             Template(chat.m_npcTextBase, ScreenId + ".NpcText");
             Template(chat.m_npcTextBaseLarge, ScreenId + ".NpcTextLarge");
@@ -337,16 +341,18 @@ namespace RuneSkin.GameScreens
             foreach (var t in chat.m_worldTexts) if (t?.m_gui) ctx.Exclude(t.m_gui.transform, "world text instance (styled template Chat.WorldText)");
         }
 
+        // Registered for diagnostics only: every graphic is content, styled by SpeechBubbleSkin. Never a panel / popup
+        // role here: the popup frame on the fixed 700x250 bubble rect drew a window over a third of the screen (user
+        // 2026-10-23, Wizardry mage line).
         private static void Template(GameObject template, string id)
         {
             if (!template) return;
             GameScreenKit.Form(template.transform, id, OwnershipRegistry.Chat, (ctx, root) =>
             {
                 foreach (var img in root.GetComponentsInChildren<Image>(true))
-                    if (img.sprite && !img.GetComponentInParent<Selectable>(true)) ctx.Role(img, "popup", "speech bubble backdrop (popup)");
+                    ctx.Role(img, "content", "speech bubble backing (vanilla soft blob, color.speech.plate, sized to the text by SpeechBubbleFit)");
                 foreach (var t in root.GetComponentsInChildren<TMP_Text>(true))
-                    ctx.Role(t, t.name.IndexOf("topic", StringComparison.OrdinalIgnoreCase) >= 0 || t.name.IndexOf("name", StringComparison.OrdinalIgnoreCase) >= 0 ? "text.display" : "text.body",
-                        "speech bubble text");
+                    ctx.Role(t, "content", "speech text (body sans, outline + underlay, SpeechBubbleSkin)");
             }, panels: false);
         }
     }
