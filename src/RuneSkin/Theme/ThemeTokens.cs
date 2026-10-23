@@ -274,6 +274,7 @@ namespace RuneSkin.Theme
         }
 
         public static Shader BossFxShader { get; private set; }
+        public static Shader BarShader { get; private set; }
 
         private const float MipBias = -0.5f;
 
@@ -305,6 +306,9 @@ namespace RuneSkin.Theme
             // other mods (Vaettir); null = their sprite fallback.
             BossFxShader = _bundle.LoadAsset<Shader>("RuneSkinBossFx");
             if (!BossFxShader || !BossFxShader.isSupported) Diagnostics.SkinDiagnostics.Theme("boss FX shader missing or unsupported (sprite fallback)");
+            // HUD strip bar fill / shield glow shader (RuneSkin/UI Bar); null = the sprite bars.
+            BarShader = _bundle.LoadAsset<Shader>("RuneSkinBar");
+            if (!BarShader || !BarShader.isSupported) Diagnostics.SkinDiagnostics.Theme("bar shader missing or unsupported (sprite bars)");
             // Sprites may be standalone assets, texture sub-assets or packed in a SpriteAtlas: index all by name.
             foreach (var s in _bundle.LoadAllAssets<Sprite>())
                 if (s && !BundleSprites.ContainsKey(s.name)) BundleSprites.Add(s.name, s);

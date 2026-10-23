@@ -338,6 +338,7 @@ namespace RuneSkin.PlayerHud
                 gr.sizeDelta = new Vector2(_glyphSize, _glyphSize);
             }
             if (_overlay) PlaceOverlay();
+            FxLayout();
             var nr = _number.rectTransform;
             nr.anchoredPosition = new Vector2(_insetL, _insetB);
             nr.sizeDelta = new Vector2(l, _h);
@@ -466,7 +467,8 @@ namespace RuneSkin.PlayerHud
                     PlaceOverlay();
                 }
             }
-            if (ShieldPerimeter && _sheen)
+            if (_fx) FxRender(cur, max, fillToken, inert);
+            else if (ShieldPerimeter && _sheen)
             {
                 Perimeter(_shieldValue, max, l);
             }
@@ -599,6 +601,110 @@ namespace RuneSkin.PlayerHud
             if (rt.sizeDelta != s) rt.sizeDelta = s;
         }
 
+        // ---- shader bars (HUD strip, user call 2026-10-23) ---------------------------------------------------------
+        // One Image in the window with the RuneSkin/UI Bar material draws trough depth, glossy fill, straight-cut end,
+        // lag ghost, grey missing part and the shield sheen; a second one over the frame draws the shield perimeter
+        // glow. The sprite layers (trough, lag, fill, edge, front, shield band / sheen / perimeter) stay built but
+        // disabled. One material instance per bar; properties written only when they change.
+        private Image _fx, _fxGlow;
+        private Material _fxMat, _fxGlowMat;
+        private float _fxFill = -1f, _fxLag = -1f, _fxShield = -1f, _fxAspect = -1f, _fxGlowAspect = -1f;
+        private string _fxColor;
+        private string _fxColorToken;
+        private static readonly int PFill = Shader.PropertyToID("_Fill"), PLag = Shader.PropertyToID("_Lag"),
+            PShield = Shader.PropertyToID("_Shield"), PAspect = Shader.PropertyToID("_Aspect"), PFillColor = Shader.PropertyToID("_FillColor"),
+            PMode = Shader.PropertyToID("_Mode");
+
+        public bool ShaderFill => _fx;
+
+        // colorToken: the pool's fill colour (color.hud.bar.fx.*).
+        public void UseShader(Shader shader, string colorToken)
+        {
+            if (!shader || _fx) return;
+            _fxColorToken = colorToken;
+            foreach (var img in new[] { _trough, _lag, _fill, _edge, _front, _shield, _shieldEdge, _sheen, _shCapL, _shMid, _shCapR })
+                if (img) img.enabled = false;
+            _fx = _art.Image("BarFx", _window, null, "color.frame", Image.Type.Simple);
+            _fx.color = Color.white;
+            _fx.transform.SetAsFirstSibling();
+            _fxMat = FxMaterial(shader, "RuneSkin bar " + Root.name, 0f);
+            _fxMat.SetColor("_LagColor", ThemeTokens.GetColor("color.hud.bar.fx.lag", new Color(0.95f, 0.88f, 0.82f)));
+            _fxMat.SetColor("_MissingColor", ThemeTokens.GetColor("color.hud.bar.fx.missing", new Color(0.42f, 0.42f, 0.42f)));
+            _fxMat.SetColor("_SheenColor", ThemeTokens.GetColor("color.hud.shield.sheen", new Color(0.36f, 0.91f, 0.95f, 0.22f)));
+            _fx.material = _fxMat;
+            Full(_fx.rectTransform, Mathf.Max(0f, _length));
+            if (ShieldPerimeter)
+            {
+                _fxGlow = _art.Image("ShieldGlow", Root, null, "color.frame", Image.Type.Simple);
+                _fxGlow.color = Color.white;
+                _fxGlow.raycastTarget = false;
+                _fxGlowMat = FxMaterial(shader, "RuneSkin bar glow " + Root.name, 1f);
+                _fxGlowMat.SetColor("_GlowColor", ThemeTokens.GetColor("color.hud.shield.glow", new Color(0.36f, 0.91f, 0.95f)));
+                _fxGlow.material = _fxGlowMat;
+                _number.transform.SetAsLastSibling();
+            }
+            _fx.raycastTarget = false;
+            _shownRun = -1f;
+            FxLayout();
+        }
+
+        private static Material FxMaterial(Shader shader, string name, float mode)
+        {
+            var m = new Material(shader) { name = name };
+            m.SetFloat(PMode, mode);
+            m.SetFloat("_HiPos", ThemeTokens.GetFloat("share.hud.bar.fx.hi.pos", 0.78f));
+            m.SetFloat("_HiWidth", ThemeTokens.GetFloat("share.hud.bar.fx.hi.width", 0.12f));
+            m.SetFloat("_HiAmount", ThemeTokens.GetFloat("share.hud.bar.fx.hi", 0.38f));
+            m.SetFloat("_Bottom", ThemeTokens.GetFloat("share.hud.bar.fx.bottom", 0.55f));
+            m.SetFloat("_Depth", ThemeTokens.GetFloat("share.hud.bar.fx.depth", 0.45f));
+            m.SetFloat("_Rim", ThemeTokens.GetFloat("share.hud.bar.fx.rim", 0.35f));
+            m.SetFloat("_GlowWidth", ThemeTokens.GetFloat("share.hud.bar.fx.glow", 0.16f));
+            return m;
+        }
+
+        // Quad geometry: the fill quad spans the window; the glow quad the bar root grown by size.hud.strip4.shield.out.
+        private void FxLayout()
+        {
+            if (!_fx) return;
+            var l = Mathf.Max(0f, _length);
+            Full(_fx.rectTransform, l);
+            var aspect = _h > 0f ? l / _h : 1f;
+            if (!Mathf.Approximately(aspect, _fxAspect)) { _fxAspect = aspect; _fxMat.SetFloat(PAspect, aspect); }
+            if (!_fxGlow) return;
+            var o = ThemeTokens.GetFloat("size.hud.strip4.shield.out", 3f);
+            var w = Width + 2f * o;
+            var h = Height + 2f * o;
+            var rt = _fxGlow.rectTransform;
+            rt.anchorMin = rt.anchorMax = rt.pivot = Vector2.zero;
+            rt.anchoredPosition = new Vector2(-o, -o);
+            rt.sizeDelta = new Vector2(w, h);
+            var ga = h > 0f ? w / h : 1f;
+            if (!Mathf.Approximately(ga, _fxGlowAspect)) { _fxGlowAspect = ga; _fxGlowMat.SetFloat(PAspect, ga); }
+        }
+
+        private void FxRender(float cur, float max, string fillToken, bool inert)
+        {
+            var color = inert ? "color.hud.inert" : fillToken == _fillColor ? _fxColorToken : fillToken;
+            if (color != _fxColor)
+            {
+                _fxColor = color;
+                _fxMat.SetColor(PFillColor, ThemeTokens.GetColor(color, Color.white));
+            }
+            var f = Mathf.Clamp01(cur / max);
+            if (Mathf.Abs(f - _fxFill) > 0.0001f) { _fxFill = f; _fxMat.SetFloat(PFill, f); }
+            var lag = Mathf.Clamp01(Mathf.Max(_lagValue, cur) / max);
+            if (Mathf.Abs(lag - _fxLag) > 0.0001f) { _fxLag = lag; _fxMat.SetFloat(PLag, lag); }
+            var run = StripMath.ShieldRun(_shieldValue, max, out _, out _);
+            if (Mathf.Abs(run - _fxShield) > 0.0001f)
+            {
+                _fxShield = run;
+                _fxMat.SetFloat(PShield, run);
+                if (_fxGlowMat) _fxGlowMat.SetFloat(PShield, run);
+                var on = run > 0f;
+                if (_fxGlow && _fxGlow.gameObject.activeSelf != on) _fxGlow.gameObject.SetActive(on);
+            }
+        }
+
         // Shield amount drawn over the health fill on the next Render (0 = none).
         public void SetShield(float amount) => _shieldValue = Mathf.Max(0f, amount);
 
@@ -620,6 +726,7 @@ namespace RuneSkin.PlayerHud
         {
             var a = dim ? 0.45f : 1f;
             if (!Mathf.Approximately(_fill.canvasRenderer.GetAlpha(), a)) _fill.canvasRenderer.SetAlpha(a);
+            if (_fx && !Mathf.Approximately(_fx.canvasRenderer.GetAlpha(), a)) _fx.canvasRenderer.SetAlpha(a);
         }
 
         // Rim ending at window x (its right edge), from y up h; width from the sprite's aspect, whole ref px.

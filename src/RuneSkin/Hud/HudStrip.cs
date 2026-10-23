@@ -53,8 +53,8 @@ namespace RuneSkin.PlayerHud
             _back = HudArt.Rect("StripBack", root);
             // Draw order: wings (tucked under the centre) -> bar block -> hotbar block -> divider; the bars follow (HudCluster),
             // then the medallions and the cells (BuildFront).
-            _wingL = Piece("WingLeft", _back, "sprite.hud.strip4.wing", Image.Type.Tiled);
-            _wingR = Piece("WingRight", _back, "sprite.hud.strip4.wing", Image.Type.Tiled);
+            _wingL = Piece("WingLeft", _back, "sprite.hud.strip4.wing", Image.Type.Sliced);
+            _wingR = Piece("WingRight", _back, "sprite.hud.strip4.wing", Image.Type.Sliced);
             _bars = Piece("BarBlock", _back, "sprite.hud.strip4.bars", Image.Type.Tiled);
             _block = Piece("HotbarBlock", _back, "sprite.hud.strip4.block", Image.Type.Tiled);
             _divider = Piece("Divider", _back, "sprite.hud.strip4.divider", Image.Type.Simple);
@@ -158,11 +158,14 @@ namespace RuneSkin.PlayerHud
 
         public StripMath.Input Input(float width, float barsH)
         {
+            var cell = ThemeTokens.GetFloat("size.hud.strip.cell", 85f);
             return new StripMath.Input
             {
                 Width = width,
-                Cell = ThemeTokens.GetFloat("size.hud.strip.cell", 78f),
-                CellH = ThemeTokens.GetFloat("size.hud.strip.cell.h", 94f),
+                // Every slot cell is the same square (user call 2026-10-23): the inventory slot (HudCluster maps
+                // size.hud.strip.cell onto it), food / potion / ability included; wings spread gaps, never cells.
+                Cell = cell,
+                CellH = cell,
                 Gap = ThemeTokens.GetFloat("size.hud.strip.gap", 11f),
                 ZoneGap = ThemeTokens.GetFloat("size.hud.strip.zone.gap", 34f),
                 BlockPadX = ThemeTokens.GetFloat("size.hud.strip.block.pad.x", 26f),
@@ -178,9 +181,9 @@ namespace RuneSkin.PlayerHud
                 MedH = ThemeTokens.GetFloat("size.hud.strip.med.h", 150f),
                 MedY = ThemeTokens.GetFloat("size.hud.strip.med.y", 172f),
                 MedTuck = ThemeTokens.GetFloat("size.hud.strip.med.tuck", 12f),
-                FoodCell = ThemeTokens.GetFloat("size.hud.strip.food.cell", 84f),
-                PotionCell = ThemeTokens.GetFloat("size.hud.strip.potion.cell", 76f),
-                PotionH = ThemeTokens.GetFloat("size.hud.strip.potion.h", 88f),
+                FoodCell = cell,
+                PotionCell = cell,
+                PotionH = cell,
                 TimerH = ThemeTokens.GetFloat("size.hud.strip.timer", 24f),
                 MinCell = ThemeTokens.GetFloat("size.hud.strip.wing.min", 52f),
                 SlotPad = ThemeTokens.GetFloat("size.hud.strip.slot.pad", 8f),
