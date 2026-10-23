@@ -69,6 +69,7 @@ namespace RuneSkin.MapScreen
                     if (!c.TryGetComponent<CanvasGroup>(out var g)) g = c.gameObject.AddComponent<CanvasGroup>();
                     g.alpha = 0f;
                     g.blocksRaycasts = false;
+                    RuneSkin.Restyle.RenderGate.Set(c, "maplegend", true); // not drawn
                     _art.Suppressed(c, "vanilla legend hint graphic (RuneSkin key hint line under the map replaces it)");
                 }
             }

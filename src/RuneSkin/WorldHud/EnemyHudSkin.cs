@@ -476,6 +476,8 @@ namespace RuneSkin.WorldHud
                 if (s.Group && (managed || s.WasManaged) &&
                     (Mathf.Abs(alpha - s.Group.alpha) > 0.004f || (alpha != s.Group.alpha && (alpha <= 0f || alpha >= 1f))))
                     s.Group.alpha = alpha;
+                // A faded-out bar is not drawn (alpha 0 alone kept batching every unpicked HUD).
+                if (s.Group && (managed || s.WasManaged)) RuneSkin.Restyle.RenderGate.Set(s.Group, "fade", RuneSkin.Restyle.RenderGateMath.Concealed(s.Group.alpha));
                 s.WasManaged = managed;
                 s.Alpha = alpha;
 

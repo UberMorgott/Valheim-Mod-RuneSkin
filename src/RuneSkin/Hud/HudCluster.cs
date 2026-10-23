@@ -170,6 +170,9 @@ namespace RuneSkin.PlayerHud
 
         // ---- vanilla suppression ---------------------------------------------------------------------------------
 
+        // RenderGate owner of the vanilla HUD parts the cluster replaces (never drawn while the cluster lives).
+        public const string SuppressOwner = "hudcluster";
+
         // Each vanilla root moves into a stretched wrapper with the parent's rect and pivot (same coordinate space, so
         // vanilla's per-frame anchoredPosition writes, Hud.cs:1112-1116/:1181-1185, land as before) under a
         // CanvasGroup at alpha 0. Animators keep animating their own groups inside it.
@@ -190,6 +193,7 @@ namespace RuneSkin.PlayerHud
                     if (!r.TryGetComponent<CanvasGroup>(out var g)) g = r.gameObject.AddComponent<CanvasGroup>();
                     g.alpha = 0f;
                     g.blocksRaycasts = false;
+                    RuneSkin.Restyle.RenderGate.Set(r, SuppressOwner, true); // not drawn (alpha 0 alone still batched it)
                     _art.Suppressed(r, "vanilla HUD part hidden in place (parent has a LayoutGroup); RuneSkin draws its own");
                     continue;
                 }
@@ -207,6 +211,7 @@ namespace RuneSkin.PlayerHud
                     group.alpha = 0f;
                     group.blocksRaycasts = false;
                     group.interactable = false;
+                    RuneSkin.Restyle.RenderGate.Set(wr, SuppressOwner, true); // not drawn (alpha 0 alone still batched it)
                     wrappers[parent] = w = wr;
                 }
                 r.SetParent(w, false);
@@ -218,9 +223,9 @@ namespace RuneSkin.PlayerHud
             }
         }
 
-        // Vanilla hotbar, EAQS quick bar (hudroot/QuickSlotsHotkeyBar) and Epic Loot's AbilityBar: alpha 0, no raycasts,
-        // their code keeps running (gamepad selection, ability input). Written per frame (LargeMap re-shows hotbars when
-        // the map closes), only when off.
+        // Vanilla hotbar, EAQS quick bar (hudroot/QuickSlotsHotkeyBar) and Epic Loot's AbilityBar: alpha 0, no raycasts, not
+        // drawn (RenderGate); their code keeps running (gamepad selection, ability input). Written per frame (LargeMap
+        // re-shows hotbars when the map closes), only when off.
         private void HideForeign()
         {
             if ((!_quickBar || !_abilityBar) && Time.unscaledTime >= _foreignSearchAt)
@@ -247,6 +252,7 @@ namespace RuneSkin.PlayerHud
             if (g.alpha != 0f) g.alpha = 0f;
             if (g.blocksRaycasts) g.blocksRaycasts = false;
             if (g.interactable) g.interactable = false;
+            if (!RuneSkin.Restyle.RenderGate.Holds(t, SuppressOwner)) RuneSkin.Restyle.RenderGate.Set(t, SuppressOwner, true);
         }
 
         // ---- frame ---------------------------------------------------------------------------------------------

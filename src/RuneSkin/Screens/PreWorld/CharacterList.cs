@@ -97,6 +97,7 @@ namespace RuneSkin.PreWorld
             g.alpha = 0f;
             g.blocksRaycasts = false;
             g.interactable = false;
+            RuneSkin.Restyle.RenderGate.Set(b, "charlist", true); // not drawn (gamepad shoulder input still runs)
         }
 
         public static void Sync(FejdStartup fejd)

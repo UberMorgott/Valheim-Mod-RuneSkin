@@ -1390,7 +1390,7 @@ namespace RuneSkin.InventoryScreen
             var bar = QuickBar();
             if (!bar) return;
             if (!_quickGroup) _quickGroup = bar.GetComponent<CanvasGroup>() ?? bar.gameObject.AddComponent<CanvasGroup>();
-            if (_quickGroup.alpha != 0f) _quickGroup.alpha = 0f;
+            RuneSkin.Restyle.RenderGate.Fade(_quickGroup, 0f, QuickOwner);
         }
 
         private void RestoreQuickBar()
@@ -1399,8 +1399,10 @@ namespace RuneSkin.InventoryScreen
             // EAQS quick-slot bar over the open map, run 20261022-071214).
             // With the HUD strip the quick bar is never drawn (the strip's potion cells show its items).
             var a = Minimap.IsOpen() || PlayerHud.HudCluster.Instance ? 0f : 1f;
-            if (_quickGroup && _quickGroup.alpha != a) _quickGroup.alpha = a;
+            if (_quickGroup) RuneSkin.Restyle.RenderGate.Fade(_quickGroup, a, QuickOwner); // at 0 not drawn
         }
+
+        private const string QuickOwner = "inventory.quickbar";
 
         private void DollScrollInput()
         {
