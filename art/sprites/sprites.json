@@ -8206,6 +8206,121 @@
       "atlas": "hires"
     },
     {
+      "name": "strip6_wing",
+      "file": "strip6_wing.png",
+      "size": [
+        694,
+        284
+      ],
+      "border": {
+        "left": 132,
+        "bottom": 31,
+        "right": 4,
+        "top": 50
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "hud.strip6.wing",
+      "notes": "Track H 0.19 junction repaint (Codex STRICT EDIT of the strip5 piece, art/src/kit/strip6/prompt-*.txt; user 2026-10-23: no hard sprite cuts, closed knot terminations); wing plate: closed knot end-cap fixed, straight rails stretched; right wing mirrored",
+      "atlas": "hires"
+    },
+    {
+      "name": "strip6_bars",
+      "file": "strip6_bars.png",
+      "size": [
+        1346,
+        276
+      ],
+      "border": {
+        "left": 164,
+        "bottom": 65,
+        "right": 164,
+        "top": 66
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "hud.strip6.bars",
+      "notes": "Track H 0.19 junction repaint (Codex STRICT EDIT of the strip5 piece, art/src/kit/strip6/prompt-*.txt; user 2026-10-23: no hard sprite cuts, closed knot terminations); bar block plate: closed knot clasps at both ends over the rail ends, straight rails stretched",
+      "atlas": "hires"
+    },
+    {
+      "name": "strip6_block",
+      "file": "strip6_block.png",
+      "size": [
+        592,
+        377
+      ],
+      "border": {
+        "left": 112,
+        "bottom": 53,
+        "right": 110,
+        "top": 64
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "hud.strip6.block",
+      "notes": "Track H 0.19 junction repaint (Codex STRICT EDIT of the strip5 piece, art/src/kit/strip6/prompt-*.txt; user 2026-10-23: no hard sprite cuts, closed knot terminations); hotbar block: braided pillars with closed finials over the top rail ends, no pins",
+      "atlas": "hires"
+    },
+    {
+      "name": "strip6_medallion",
+      "file": "strip6_medallion.png",
+      "size": [
+        372,
+        239
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip6.medallion",
+      "notes": "Track H 0.19 junction repaint (Codex STRICT EDIT of the strip5 piece, art/src/kit/strip6/prompt-*.txt; user 2026-10-23: no hard sprite cuts, closed knot terminations); medallion knot frame, closed edges, empty disc (glyph = sprite.ornament.triquetra)",
+      "atlas": "hires"
+    },
+    {
+      "name": "strip6_divider",
+      "file": "strip6_divider.png",
+      "size": [
+        42,
+        312
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip6.divider",
+      "notes": "Track H 0.19 junction repaint (Codex STRICT EDIT of the strip5 piece, art/src/kit/strip6/prompt-*.txt; user 2026-10-23: no hard sprite cuts, closed knot terminations); hotbar | ability divider pillar with closed knot finials top and bottom",
+      "atlas": "hires"
+    },
+    {
       "name": "strip5_wing",
       "file": "strip5_wing.png",
       "size": [
