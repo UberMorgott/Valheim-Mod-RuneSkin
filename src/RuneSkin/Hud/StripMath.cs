@@ -42,6 +42,7 @@ namespace RuneSkin.PlayerHud
             public float MedRW, MedRTuck; // right medallion width / tuck when its art differs from the left (0 = as left)
             public float FoodSize, PotionSize; // wing slot sides in that mode (target: round 52 px / square 53 px; 0 = Cell)
             public float CellsDX;        // cell row offset inside the hotbar block (target: the left pad is narrower)
+            public float AbilityCell;    // ability cell side (target: 63 px vs the 59 px hotbar cell; 0 = Cell)
             public int Hotbar, Abilities, Food, Potions;
         }
 
@@ -80,7 +81,7 @@ namespace RuneSkin.PlayerHud
         {
             var o = new Layout();
             o.HotbarW = Zone(i.Hotbar, i.Cell, i.Gap);
-            o.AbilityW = Zone(i.Abilities, i.Cell, i.Gap);
+            o.AbilityW = Zone(i.Abilities, i.AbilityCell > 0f ? i.AbilityCell : i.Cell, i.Gap);
             // The block closes its width around the live ability count (no set skill: one cell, no empty socket).
             var topW = o.HotbarW + (i.Abilities > 0 ? i.ZoneGap + o.AbilityW : 0f);
             o.CenterW = Math.Max(topW + 2f * i.BlockPadX, i.MinCenterW);
