@@ -49,7 +49,8 @@ namespace RuneSkin.InventoryScreen
         private float _previewX, _previewY, _previewW = 1f, _previewH = 1f, _previewInset = 8f;
         private readonly InventoryTokens _tokens = new InventoryTokens();
         private readonly InventoryInput _input = new InventoryInput();
-        private InventoryLayout _layout;
+        // _base = the docked layout (InventoryMath.Compute), _layout = it moved by the user's group offset (WindowMove).
+        private InventoryLayout _layout, _base;
         private int _layoutHash;
         private GameObject _tooltipPrefab;
 
@@ -113,6 +114,7 @@ namespace RuneSkin.InventoryScreen
             BuildDecor();
             BuildDoll();
             HideVanillaBackgrounds();
+            WindowMove.OnMoved(WindowMove.Inventory, Move);
             foreach (var root in OwnedRoots())
             {
                 var r = root;
@@ -547,7 +549,8 @@ namespace RuneSkin.InventoryScreen
             i.HudTop = HudTopLogical(scale);
             ReadTokens();
             _tokens.PanelCapInset = CapKeepOut(_chestHost);
-            _layout = InventoryMath.Compute(i, _tokens);
+            _base = InventoryMath.Compute(i, _tokens);
+            Move();
             RequestBand(scale);
             _entriesRevision = -1; // rebuild doll order
             _logPlacement = 3;
@@ -562,8 +565,9 @@ namespace RuneSkin.InventoryScreen
         private void RequestBand(float scale)
         {
             var cluster = PlayerHud.HudCluster.Instance;
-            if (!cluster || _layout == null) return;
-            InventoryMath.BlockEdges(_layout, out var left, out var right);
+            if (!cluster || _base == null) return;
+            // The band follows the docked block (the HUD stays put when the user moves the group).
+            InventoryMath.BlockEdges(_base, out var left, out var right);
             var quick = 0;
             foreach (var s in _eaqs) if (s.Kind == EaqsBridge.Kind.Quick) quick++;
             cluster.SetBand(left * scale, right * scale, quick);
@@ -582,6 +586,19 @@ namespace RuneSkin.InventoryScreen
             var cluster = PlayerHud.HudCluster.Instance;
             if (cluster) cluster.ClearBand();
         }
+
+        // The column block moved by the group offset (drag on any of its title bands: name row, dock panel headers,
+        // crafting header, skills / trophies titles), clamped on screen above the HUD strip.
+        private void Move()
+        {
+            if (_base == null) return;
+            var o = WindowMove.Applied(WindowMove.Inventory, InventoryMath.Block(_base), _canvas);
+            _layout = InventoryMath.Shift(_base, o.x, o.y);
+        }
+
+        // Harness: the group's docked block and where it is shown (canvas units).
+        public Box DockedBlock => _base != null ? InventoryMath.Block(_base) : default;
+        public Box ShownBlock => _layout != null ? InventoryMath.Block(_layout) : default;
 
         // ---------------------------------------------------------------- panels
 
@@ -687,6 +704,9 @@ namespace RuneSkin.InventoryScreen
             Geo.Place(_canvas, info, box);
             var k = _input.SkinScale;
             var nameH = Mathf.Min(ThemeTokens.GetFloat("size.inv.name.h", 52f) * k, box.H * 0.42f);
+            // Name row = the group's drag band (moves the whole docked block).
+            var band = WindowMove.Handle(info, WindowMove.Inventory);
+            if (band) Geo.Place(_canvas, band.rectTransform, new Box(box.X, box.Y, box.W, nameH));
             var title = info.Find("TitlePanel") as RectTransform;
             if (title)
             {
@@ -873,6 +893,9 @@ namespace RuneSkin.InventoryScreen
             var headerH = _tokens.PanelHeaderH * k;
             Geo.Place(_canvas, panel, box);
             var header = new Box(box.X + pad, box.Y + pad / 2f, box.W - 2f * pad, headerH - pad / 2f);
+            // Panel header = a drag band of the docked group (chest and backpack move with the inventory).
+            var band = WindowMove.Handle(panel, WindowMove.Inventory);
+            if (band) Geo.Place(_canvas, band.rectTransform, header);
             // Grid top-aligned under the title (view = visible rows), glyph actions in their own row at the bottom,
             // right-aligned, clear of the bottom-right corner cap (InventoryMath.ActionRow); the title keeps the header width.
             if (grid) Geo.Place(_canvas, (RectTransform)grid.transform, InventoryMath.ContainerGridView(box, fit, _tokens, k));

@@ -49,6 +49,8 @@ namespace RuneSkin.MapScreen
             foreach (var panel in LegendPanels) Adopt(panel);
             foreach (var panel in TogglePanels) Adopt(panel);
             BuildLegendRows();
+            // Side panel: movable by its title band (offset added after LargeLateUpdate's anchoring, WindowMove).
+            MovableWindow.Ensure(_legend, WindowMove.MapLegend);
 
             _title = HudArtRect("RuneSkin_MapTitle", _large);
             _titleImage = _title.gameObject.AddComponent<Image>();

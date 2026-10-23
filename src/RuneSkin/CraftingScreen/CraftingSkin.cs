@@ -503,6 +503,9 @@ namespace RuneSkin.CraftingScreen
             Geo.Place(_canvas, _crafting, box);
 
             Header(o);
+            // Station title row = a drag band of the docked inventory group (the column moves with it).
+            var band = Restyle.WindowMove.Handle(_crafting, Restyle.WindowMove.Inventory);
+            if (band) Geo.Place(_canvas, band.rectTransform, new Box(box.X, o.Title.Y, box.W, o.Title.H));
             Tabs(o);
             Categories(o);
             List(o);

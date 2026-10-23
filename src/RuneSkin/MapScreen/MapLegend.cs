@@ -324,6 +324,9 @@ namespace RuneSkin.MapScreen
             var y = pad;
             Place(_pinsHeader.rectTransform, pad, y, w - 2f * pad, headerH);
             _pinsHeader.text = Words.Get("$runeskin_map_pins");
+            // The "Pins" title band drags the legend side panel (MovableWindow on _legend, BuildLarge).
+            var band = RuneSkin.Restyle.WindowMove.Handle(_rows, RuneSkin.Restyle.WindowMove.MapLegend, _legend);
+            if (band) Place(band.rectTransform, 0f, 0f, w, y + headerH);
             y += headerH;
             Place(_pinsDivider.rectTransform, pad, y, w - 2f * pad, ThemeTokens.GetFloat("size.map.legend.divider", 11f));
             y += ThemeTokens.GetFloat("size.map.legend.divider", 11f) + 4f;
