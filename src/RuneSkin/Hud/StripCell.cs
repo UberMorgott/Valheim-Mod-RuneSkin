@@ -119,20 +119,29 @@ namespace RuneSkin.PlayerHud
             _side = w;
             _h = h;
             _dur = durBand;
-            var side = Mathf.Min(w, h);
             Root.sizeDelta = new Vector2(w, h);
+            // Round (food) cells, user call 2026-10-23: the square cell holds the socket disc at its top, centred
+            // horizontally, and a reserved band under it for the timer - the text never sits on the ring. Every other
+            // cell: the whole square.
+            var band = _round && timerBelow ? Mathf.Clamp(ThemeTokens.GetFloat("share.hud.strip.timer.band", 0.27f), 0f, 0.5f) * h : 0f;
+            var bw = _round ? Mathf.Min(w, h - band) : w;
+            var bh = _round ? bw : h;
+            var oy = (h - bh) / 2f; // disc centre above the cell centre (half the band)
+            var side = Mathf.Min(bw, bh);
             var halo = side * (ThemeTokens.GetFloat("share.hud.strip.glow", 1.375f) - 1f);
-            Center(_glow.rectTransform, w + halo, h + halo);
+            Center(_glow.rectTransform, bw + halo, bh + halo, oy);
             var seat = side * ThemeTokens.GetFloat("share.hud.strip.seat", 0.08f);
-            Center(_shadow.rectTransform, w + seat, h + seat);
+            Center(_shadow.rectTransform, bw + seat, bh + seat, oy);
             var sel = side * (ThemeTokens.GetFloat("share.hud.strip.select", 1.08f) - 1f);
-            Center(_select.rectTransform, w + sel, h + sel);
-            Fill(Bowl.rectTransform, 0f);
-            Fill(_rim.rectTransform, side * ThemeTokens.GetFloat("share.hud.strip.rim.inset", 0.035f)); // inside the metal rim
-            Center(_icon.rectTransform, side * ThemeTokens.GetFloat("share.hud.strip.icon", 0.72f));
-            Center(_ghost.rectTransform, side * ThemeTokens.GetFloat("share.hud.strip.ghost", 0.62f));
-            Fill(_sweep.rectTransform, side * 0.06f);
-            Fill(_ring.rectTransform, _round ? side * 0.06f : side * 0.04f);
+            Center(_select.rectTransform, bw + sel, bh + sel, oy);
+            Center(Bowl.rectTransform, bw, bh, oy);
+            var rimIn = 2f * side * ThemeTokens.GetFloat("share.hud.strip.rim.inset", 0.035f); // inside the metal rim
+            Center(_rim.rectTransform, bw - rimIn, bh - rimIn, oy);
+            Center(_icon.rectTransform, side * ThemeTokens.GetFloat("share.hud.strip.icon", 0.72f), side * ThemeTokens.GetFloat("share.hud.strip.icon", 0.72f), oy);
+            Center(_ghost.rectTransform, side * ThemeTokens.GetFloat("share.hud.strip.ghost", 0.62f), side * ThemeTokens.GetFloat("share.hud.strip.ghost", 0.62f), oy);
+            Center(_sweep.rectTransform, bw - side * 0.12f, bh - side * 0.12f, oy);
+            var ringIn = 2f * (_round ? side * 0.06f : side * 0.04f);
+            Center(_ring.rectTransform, bw - ringIn, bh - ringIn, oy);
             var m = side * ThemeTokens.GetFloat("share.hud.strip.mark", 0.24f);
             var mr = _mark.rectTransform;
             mr.anchorMin = mr.anchorMax = mr.pivot = new Vector2(1f, 1f);
@@ -141,9 +150,8 @@ namespace RuneSkin.PlayerHud
             var inset = side * 0.09f;
             Box(_key.rectTransform, inset, h * 0.5f, w - 2f * inset, h * 0.5f - inset);
             Box(_count.rectTransform, inset, inset * 0.8f, w - 2f * inset, h * 0.5f);
-            var timerH = ThemeTokens.GetFloat("size.hud.strip.timer", 18f);
-            if (timerBelow) // food: on the ring's lower arc (mockup hud-4M3 "8m")
-                Box(_timer.rectTransform, -w * 0.1f, h * 0.02f, w * 1.2f, timerH);
+            if (timerBelow) // food: in the band under the disc (never over the ring)
+                Box(_timer.rectTransform, 0f, 0f, w, band > 0f ? band : ThemeTokens.GetFloat("size.hud.strip.timer", 18f));
             else
                 Box(_timer.rectTransform, 0f, 0f, w, h);
             var line = ThemeTokens.GetFloat("size.hud.strip.dur.line", 5f);
@@ -292,20 +300,11 @@ namespace RuneSkin.PlayerHud
 
         private static void Center(RectTransform rt, float side) => Center(rt, side, side);
 
-        private static void Center(RectTransform rt, float w, float h)
+        private static void Center(RectTransform rt, float w, float h, float oy = 0f)
         {
             rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = Vector2.zero;
+            rt.anchoredPosition = new Vector2(0f, oy);
             rt.sizeDelta = new Vector2(w, h);
-        }
-
-        private static void Fill(RectTransform rt, float inset)
-        {
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.one;
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.offsetMin = new Vector2(inset, inset);
-            rt.offsetMax = new Vector2(-inset, -inset);
         }
 
         private static void Box(RectTransform rt, float x, float y, float w, float h)

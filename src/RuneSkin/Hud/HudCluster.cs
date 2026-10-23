@@ -117,6 +117,16 @@ namespace RuneSkin.PlayerHud
             _health = new BarView(_art, _root, "Health", false, well, "color.hud.strip.fill.health", hpScale, mainValue: true, fillToken: fill + ".hp", troughColorToken: trough, troughToken: fill);
             _health.Plain = _stamina.Plain = _eitr.Plain = _adrenaline.Plain = true;
             _health.ShieldPerimeter = true;
+            // Bar fills on the RuneSkin/UI Bar shader (user call 2026-10-23): glossy cylinder, straight-cut end, grey
+            // missing part, lag ghost, shield sheen + perimeter glow; the sprite fills stay as the fallback.
+            var barShader = ThemeTokens.BarShader;
+            if (barShader && barShader.isSupported)
+            {
+                _health.UseShader(barShader, "color.hud.bar.fx.health");
+                _stamina.UseShader(barShader, "color.hud.bar.fx.stamina");
+                _eitr.UseShader(barShader, "color.hud.bar.fx.eitr");
+                _adrenaline.UseShader(barShader, "color.hud.bar.fx.adrenaline");
+            }
             _row[0] = _stamina;
             _row[1] = _eitr;
             _row[2] = _adrenaline;

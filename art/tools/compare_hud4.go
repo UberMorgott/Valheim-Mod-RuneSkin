@@ -244,11 +244,11 @@ func renderHud4(opt hud4Opts) (*image.NRGBA, image.Rectangle, float64) {
 	hp, row, gap := tv("size.hud.strip.bar.hp", 46), tv("size.hud.strip.bar.row", 40), tv("size.hud.strip.bar.gap", 12)
 	padT, padB, padX := tv("size.hud.strip.bars.pad.t", 14), tv("size.hud.strip.bars.pad.b", 16), tv("size.hud.strip.bars.pad.x", 22)
 	barsH := padT + hp + gap + row + padB
-	in := s4In{Cell: tv("size.hud.strip.cell", 78), CellH: tv("size.hud.strip.cell.h", 92), Gap: tv("size.hud.strip.gap", 11), ZoneGap: tv("size.hud.strip.zone.gap", 30),
+	in := s4In{Cell: tv("size.hud.strip.cell", 78), CellH: tv("size.hud.strip.cell", 78), Gap: tv("size.hud.strip.gap", 11), ZoneGap: tv("size.hud.strip.zone.gap", 30),
 		BlockPadX: tv("size.hud.strip.block.pad.x", 26), BlockPadT: tv("size.hud.strip.block.pad.t", 18), BlockPadB: tv("size.hud.strip.block.pad.b", 8), DurH: tv("size.hud.strip.dur", 14),
 		BarsH: barsH, MinCenterW: tv("size.hud.strip.min.bars", 760), WingH: tv("size.hud.strip.wing.h", 130), KnotW: tv("size.hud.strip.knot", 72), WingTuck: tv("size.hud.strip.wing.tuck", 14),
 		MedW: tv("size.hud.strip.med.w", 218), MedH: tv("size.hud.strip.med.h", 142), MedY: tv("size.hud.strip.med.y", 172), MedTuck: tv("size.hud.strip.med.tuck", 14),
-		FoodCell: tv("size.hud.strip.food.cell", 84), PotCell: tv("size.hud.strip.potion.cell", 76), PotH: tv("size.hud.strip.potion.h", 88), MinCell: tv("size.hud.strip.wing.min", 52),
+		FoodCell: tv("size.hud.strip.cell", 78), PotCell: tv("size.hud.strip.cell", 78), PotH: tv("size.hud.strip.cell", 78), MinCell: tv("size.hud.strip.wing.min", 52),
 		SlotPad: tv("size.hud.strip.slot.pad", 8), Hot: 8, Ab: opt.abilities, Food: 4, Pot: 4}
 	designW := tv("size.hud.strip.width", 1860)
 	in.W = designW
