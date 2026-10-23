@@ -153,6 +153,8 @@ namespace RuneSkin.Theme
             { "runeskin_stats_after", new[] { "after", "через" } },
             { "runeskin_stats_break_delay", new[] { "Delay after break", "Задержка после пробоя" } },
             { "runeskin_stats_potency", new[] { "Potion effect", "Эффект зелий" } },
+            // Enchanting table tab tooltip while the feature is locked (ElTabCell): where it is unlocked.
+            { "runeskin_el_tab_locked", new[] { "Locked: unlock it on the Upgrade tab", "Закрыто: открывается во вкладке «Улучшить»" } },
         };
 
         public static void Apply(Localization loc, string language)
