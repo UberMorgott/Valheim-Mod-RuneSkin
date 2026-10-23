@@ -8226,7 +8226,7 @@
       "fillCenter": true,
       "token": "hud.strip7.wing_l",
       "notes": "Target panel (user screenshot 2026-10-23, strip-target/spec.md): 4x piece wing-left by the mockup agent, 0.72 = 2.88 sprite px per target px (85 strip units per 59 px cell, 2 px per unit)",
-      "atlas": "hires"
+      "atlas": "strip"
     },
     {
       "name": "strip7_wing_r",
@@ -8249,7 +8249,7 @@
       "fillCenter": true,
       "token": "hud.strip7.wing_r",
       "notes": "Target panel (user screenshot 2026-10-23, strip-target/spec.md): 4x piece wing-right by the mockup agent, 0.72 = 2.88 sprite px per target px (85 strip units per 59 px cell, 2 px per unit)",
-      "atlas": "hires"
+      "atlas": "strip"
     },
     {
       "name": "strip7_bars",
@@ -8272,7 +8272,7 @@
       "fillCenter": true,
       "token": "hud.strip7.bars",
       "notes": "Target panel (user screenshot 2026-10-23, strip-target/spec.md): 4x piece bar-frame by the mockup agent, 0.72 = 2.88 sprite px per target px (85 strip units per 59 px cell, 2 px per unit)",
-      "atlas": "hires"
+      "atlas": "strip"
     },
     {
       "name": "strip7_block",
@@ -8295,7 +8295,7 @@
       "fillCenter": true,
       "token": "hud.strip7.block",
       "notes": "Target panel (user screenshot 2026-10-23, strip-target/spec.md): 4x piece hotbar-frame by the mockup agent, 0.72 = 2.88 sprite px per target px (85 strip units per 59 px cell, 2 px per unit)",
-      "atlas": "hires"
+      "atlas": "strip"
     },
     {
       "name": "strip7_knot_s",
@@ -8318,7 +8318,7 @@
       "fillCenter": true,
       "token": "hud.strip7.knot_s",
       "notes": "Target panel (user screenshot 2026-10-23, strip-target/spec.md): 4x piece knot-small by the mockup agent, 0.72 = 2.88 sprite px per target px (85 strip units per 59 px cell, 2 px per unit)",
-      "atlas": "hires"
+      "atlas": "strip"
     },
     {
       "name": "strip7_medallion",
@@ -8341,7 +8341,7 @@
       "fillCenter": true,
       "token": "hud.strip7.medallion",
       "notes": "Target panel (user screenshot 2026-10-23, strip-target/spec.md): 4x piece medallion by the mockup agent, 0.72 = 2.88 sprite px per target px (85 strip units per 59 px cell, 2 px per unit)",
-      "atlas": "hires"
+      "atlas": "strip"
     },
     {
       "name": "strip7_rail",
@@ -8364,7 +8364,7 @@
       "fillCenter": true,
       "token": "hud.strip7.rail",
       "notes": "Target panel (user screenshot 2026-10-23, strip-target/spec.md): 4x piece rail-tile by the mockup agent, 0.72 = 2.88 sprite px per target px (85 strip units per 59 px cell, 2 px per unit)",
-      "atlas": "hires"
+      "atlas": "strip"
     },
     {
       "name": "strip7_cell",
@@ -8387,7 +8387,7 @@
       "fillCenter": true,
       "token": "hud.strip7.cell",
       "notes": "Target panel (user screenshot 2026-10-23, strip-target/spec.md): 4x piece cell-square by the mockup agent, 0.72 = 2.88 sprite px per target px (85 strip units per 59 px cell, 2 px per unit)",
-      "atlas": "hires"
+      "atlas": "strip"
     },
     {
       "name": "strip7_socket_round",
@@ -8410,7 +8410,191 @@
       "fillCenter": true,
       "token": "hud.strip7.socket_round",
       "notes": "Target panel (user screenshot 2026-10-23, strip-target/spec.md): 4x piece food-socket by the mockup agent, 0.72 = 2.88 sprite px per target px (85 strip units per 59 px cell, 2 px per unit)",
-      "atlas": "hires"
+      "atlas": "strip"
+    },
+    {
+      "name": "strip7_medallion_hl",
+      "file": "strip7_medallion_hl.png",
+      "size": [
+        274,
+        248
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip7.medallion_hl",
+      "notes": "Target panel: 4x piece medallion-hotbar-l by the mockup agent (exact crop of the user's screenshot), 0.72 = 2.88 sprite px per target px",
+      "atlas": "strip"
+    },
+    {
+      "name": "strip7_medallion_hr",
+      "file": "strip7_medallion_hr.png",
+      "size": [
+        308,
+        248
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip7.medallion_hr",
+      "notes": "Target panel: 4x piece medallion-hotbar-r by the mockup agent (exact crop of the user's screenshot), 0.72 = 2.88 sprite px per target px",
+      "atlas": "strip"
+    },
+    {
+      "name": "strip7_end_r",
+      "file": "strip7_end_r.png",
+      "size": [
+        294,
+        242
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip7.end_r",
+      "notes": "Target panel: 4x piece medallion-end-r by the mockup agent (exact crop of the user's screenshot), 0.72 = 2.88 sprite px per target px",
+      "atlas": "strip"
+    },
+    {
+      "name": "strip7_rail_r",
+      "file": "strip7_rail_r.png",
+      "size": [
+        294,
+        132
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "hud.strip7.rail_r",
+      "notes": "Target panel: 4x piece rail-tile-r by the mockup agent (exact crop of the user's screenshot), 0.72 = 2.88 sprite px per target px",
+      "atlas": "strip"
+    },
+    {
+      "name": "strip7_knot_s_r",
+      "file": "strip7_knot_s_r.png",
+      "size": [
+        86,
+        98
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip7.knot_s_r",
+      "notes": "Target panel: 4x piece knot-small-r by the mockup agent (exact crop of the user's screenshot), 0.72 = 2.88 sprite px per target px",
+      "atlas": "strip"
+    },
+    {
+      "name": "strip7_icon_hp",
+      "file": "strip7_icon_hp.png",
+      "size": [
+        78,
+        52
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip7.icon_hp",
+      "notes": "Target panel: 4x piece icon-heart by the mockup agent (exact crop of the user's screenshot), 0.72 = 2.88 sprite px per target px",
+      "atlas": "strip"
+    },
+    {
+      "name": "strip7_icon_st",
+      "file": "strip7_icon_st.png",
+      "size": [
+        78,
+        55
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip7.icon_st",
+      "notes": "Target panel: 4x piece icon-lightning by the mockup agent (exact crop of the user's screenshot), 0.72 = 2.88 sprite px per target px",
+      "atlas": "strip"
+    },
+    {
+      "name": "strip7_icon_ei",
+      "file": "strip7_icon_ei.png",
+      "size": [
+        86,
+        55
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip7.icon_ei",
+      "notes": "Target panel: 4x piece icon-eitr-socket by the mockup agent (exact crop of the user's screenshot), 0.72 = 2.88 sprite px per target px",
+      "atlas": "strip"
     },
     {
       "name": "strip6_wing",

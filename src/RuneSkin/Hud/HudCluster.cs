@@ -497,6 +497,7 @@ namespace RuneSkin.PlayerHud
                 prevEnd = _rowX[k] + w;
             }
             for (; div < HudStrip.MaxRowDividers; div++) _hudStrip.RowDivider(div, 0f, 0f, 0f, 0f);
+            _hudStrip.EitrIcon(_rowW.Length > 1 && _rowW[1] > 1f && _rowWeight[1] > 0.5f);
             _halfOuter = total > 0f ? _rowW[0] : 0f;
             // Frame: full with a resource row; without one it closes under the HP row (mockup hud-4M3-nostam).
             var full = BarsFullHeight();
