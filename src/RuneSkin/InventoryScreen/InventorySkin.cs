@@ -695,6 +695,7 @@ namespace RuneSkin.InventoryScreen
                 if (!plate || !plate.gameObject.activeSelf) return;
                 var w = ThemeTokens.GetFloat(token, width) * k;
                 StatPlate(plate, new Box(x, box.Y, w, box.H));
+                AboveGrid(plate);
                 x += w + gap;
             }
             Left(PlateOf(_gui.m_armor), "size.inv.plate.armor", 104f);
@@ -707,9 +708,23 @@ namespace RuneSkin.InventoryScreen
             {
                 var w = ThemeTokens.GetFloat("size.inv.plate.trash", 150f) * k;
                 StatPlate(trash, new Box(right - w, box.Y, w, box.H));
+                AboveGrid(trash);
                 right -= w + gap;
             }
             _footerActions = new Box(x, box.Y, Mathf.Max(0f, right - x), box.H);
+        }
+
+        // Footer plates draw (and raycast) after the player grid. Vanilla sizes the grid's hit area m_gridRoot to every
+        // inventory row (InventoryGrid.cs:405-406), and Reposition draws fewer rows (hotbar row in the HUD strip, EAQS
+        // rows hidden), so that transparent raycast Image reaches past the visible grid over the footer. The prefab puts
+        // Armor / Weight (and the MorgottTweaks MT_Trash clone, CurrencyPocket CoinPocketUI) before PlayerGrid: the hit
+        // area ate every click and hover on the trash plate (no drop, no tooltip) and on the coin pocket's button.
+        private void AboveGrid(RectTransform plate)
+        {
+            var grid = _gui.m_playerGrid ? _gui.m_playerGrid.transform : null;
+            if (!plate || !grid || plate.parent != grid.parent) return;
+            var g = grid.GetSiblingIndex();
+            if (plate.GetSiblingIndex() < g) plate.SetSiblingIndex(g); // removal shifts the grid down: lands right after it
         }
 
         // One stat plate on its box at scale 1: the plate_stat strip (Weight's own image, else its "bkg" child) over the
