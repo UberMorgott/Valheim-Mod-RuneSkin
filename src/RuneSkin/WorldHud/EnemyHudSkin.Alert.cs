@@ -19,9 +19,8 @@ namespace RuneSkin.WorldHud
             var nameRect = name.rectTransform;
             var textW = name.GetPreferredValues(text).x;
             var gap = ThemeTokens.GetFloat("size.enemy.alert.gap", 3f);
-            var iconW = 0f;
-            if (data.m_alerted) iconW = Mathf.Max(iconW, data.m_alerted.rect.width * data.m_alerted.localScale.x);
-            if (data.m_aware) iconW = Mathf.Max(iconW, data.m_aware.rect.width * data.m_aware.localScale.x);
+            // the slot is the visible icon graphic, not its container (the prefab container is a wide row)
+            var iconW = Mathf.Max(IconWidth(data.m_alerted), IconWidth(data.m_aware));
             if (!s.NameBaseSet)
             {
                 s.NameBaseSet = true;
@@ -35,6 +34,21 @@ namespace RuneSkin.WorldHud
             Place(data.m_aware, nameRect, centre + new Vector2(iconX, 0f));
         }
 
+        private static UnityEngine.UI.Graphic IconGraphic(RectTransform icon) => icon ? icon.GetComponentInChildren<UnityEngine.UI.Graphic>(true) : null;
+
+        private static float IconWidth(RectTransform icon)
+        {
+            var g = IconGraphic(icon);
+            if (!g) return 0f;
+            var r = g.rectTransform.rect;
+            var w = r.width;
+            // an aspect-kept sprite in a wide rect: the visible width is its height x the sprite aspect
+            if (g is UnityEngine.UI.Image img && img.sprite && img.sprite.rect.height > 0f)
+                w = Mathf.Min(w, r.height * img.sprite.rect.width / img.sprite.rect.height);
+            return w * Mathf.Abs(g.rectTransform.lossyScale.x / Mathf.Max(1e-5f, icon.lossyScale.x));
+        }
+
+        // Moves the icon container so its visible graphic's centre lands on centre (name parent space).
         private static void Place(RectTransform icon, RectTransform name, Vector2 centre)
         {
             if (!icon) return;
@@ -43,6 +57,12 @@ namespace RuneSkin.WorldHud
             icon.anchorMax = name.anchorMax;
             icon.pivot = new Vector2(0.5f, 0.5f);
             icon.anchoredPosition = centre;
+            var g = IconGraphic(icon);
+            if (!g || g.rectTransform == icon) return;
+            var parent = (RectTransform)icon.parent;
+            var gc = parent.InverseTransformPoint(g.rectTransform.TransformPoint(g.rectTransform.rect.center));
+            var ic = parent.InverseTransformPoint(icon.TransformPoint(icon.rect.center));
+            icon.anchoredPosition = centre - (Vector2)(gc - ic);
         }
     }
 }
