@@ -420,8 +420,15 @@ func cmdSymCheck() {
 		}
 		return float64(inter) / float64(max(1, union))
 	}
-	fmt.Printf("centroid %.1f,%.1f (canvas centre %.1f,%.1f, off %.1f px)  IoU120 %.3f  IoU240 %.3f\n", cx, cy, float64(W)/2, float64(H)/2,
-		math.Hypot(cx-float64(W)/2, cy-float64(H)/2), iou(120), iou(240))
+	a1, a2 := 120.0, 240.0
+	if len(os.Args) > 4 {
+		if _, err := fmt.Sscanf(os.Args[4], "%g", &a1); err != nil {
+			a1 = 120
+		}
+		a2 = 2 * a1
+	}
+	fmt.Printf("centroid %.1f,%.1f (canvas centre %.1f,%.1f, off %.1f px)  IoU%.0f %.3f  IoU%.0f %.3f\n", cx, cy, float64(W)/2, float64(H)/2,
+		math.Hypot(cx-float64(W)/2, cy-float64(H)/2), a1, iou(a1), a2, iou(a2))
 }
 
 // cmdEmblem: BASE SOCKET OX,OY GLYPH GCX,GCY SCALE DCX,DCY OUT. Mechanical composite: the SOCKET image (magenta keyed) is
