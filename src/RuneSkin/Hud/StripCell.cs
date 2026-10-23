@@ -110,7 +110,7 @@ namespace RuneSkin.PlayerHud
         private TMP_Text Text(HudArt art, string name, string sizeToken, string colorToken, TextAlignmentOptions align)
         {
             var t = art.Text(name, Root, "font.body", colorToken, ThemeTokens.GetFloat(sizeToken, 16f), align);
-            WorldHud.TextLook.Apply(t, "font.body", "hudvalue", ThemeTokens.GetFloat("size.hud.value.dilate", 0.2f));
+            WorldHud.TextLook.ApplyHudNumber(t);
             return t;
         }
 

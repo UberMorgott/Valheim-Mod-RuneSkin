@@ -27,6 +27,8 @@ namespace RuneSkin
 
         public static ManualLogSource Log { get; private set; }
         public static ConfigEntry<float> SkinScale { get; private set; }
+        public static ConfigEntry<float> PanelFade { get; private set; }
+        public static ConfigEntry<float> NumberOutline { get; private set; }
         public static ConfigEntry<bool> CharacterPreview { get; private set; }
         public static Host ApiHost { get; private set; }
         public static ConfigEntry<float> HudScale { get; private set; }
@@ -35,6 +37,7 @@ namespace RuneSkin
         public static ConfigEntry<float> StripWidth { get; private set; }
         public static ConfigEntry<int> StatusPerRow { get; private set; }
         public static ConfigEntry<int> StatusRows { get; private set; }
+        public static ConfigEntry<float> StatusSize { get; private set; }
         public static ConfigEntry<string> BuffSide { get; private set; }
         public static ConfigEntry<bool> CenterGauges { get; private set; }
         public static ConfigEntry<float> GaugeIdleDelay { get; private set; }
@@ -168,6 +171,8 @@ namespace RuneSkin
                 "Width of the bottom HUD strip (key Span: the old Width was only a cap) as a share of the screen (or of the centred 16:9 box on ultrawide); only the straight wing rails stretch. Its height follows the slot size: hotbar cells = inventory grid cells (theme size.slot x Layout.SkinScale x the game's UI scale).", new AcceptableValueRange<float>(0.5f, 1f)));
             StatusPerRow = Config.Bind("HudStrip", "StatusPerRow", 10, new ConfigDescription(
                 "Status effect icons per row above the HUD strip (buffs on one side, debuffs on the other); a full row wraps upward.", new AcceptableValueRange<int>(1, 30)));
+            StatusSize = Config.Bind("HudStrip", "StatusSize", 0.6f, new ConfigDescription(
+                "Status effect tile side as a share of the hotbar slot (frameless icon tiles, timer over the icon bottom).", new AcceptableValueRange<float>(0.3f, 1f)));
             StatusRows = Config.Bind("HudStrip", "StatusRows", 2, new ConfigDescription(
                 "Rows of status icons per side before the rest folds into \"+N\" (F7 lists all).", new AcceptableValueRange<int>(1, 6)));
             BuffSide = Config.Bind("HudStrip", "BuffSide", "Left", new ConfigDescription(
@@ -202,6 +207,12 @@ namespace RuneSkin
             SkinScale = Config.Bind("Layout", "SkinScale", 1f, new ConfigDescription(
                 "Extra scale of RuneSkin panels on top of the game's UI scale.",
                 new AcceptableValueRange<float>(ResponsiveContext.MinSkinScale, ResponsiveContext.MaxSkinScale)));
+            NumberOutline = Config.Bind("Hud", "NumberOutline", 0.18f, new ConfigDescription(
+                "Dark outline width (TMP SDF units) of every HUD number (bar values, slot keys / counts / timers, status timers); with a soft dark shadow, so white digits read on white. Applies on the next start or theme reload.",
+                new AcceptableValueRange<float>(0f, 0.4f)));
+            PanelFade = Config.Bind("Layout", "PanelFade", 0.15f, new ConfigDescription(
+                "Seconds the inventory screen fades in / out in place (open and close; 0 = instant). Replaces the vanilla slide, which moved the RuneSkin panels off their layout.",
+                new AcceptableValueRange<float>(0f, 1f)));
             CharacterPreview = Config.Bind("Layout", "CharacterPreview", true,
                 "Live 3D preview of your character in the inventory (off = carved silhouette). Applies on the next game start.");
 

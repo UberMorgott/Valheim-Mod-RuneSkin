@@ -56,6 +56,12 @@ namespace RuneSkin.InventoryScreen
         [HarmonyPostfix]
         private static void Hide_Postfix() => InventorySkin.Instance?.OnHide();
 
+        // The panels parked after the close fade come back before vanilla Show touches them (InventorySkin.Fade).
+        [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Show))]
+        [HarmonyPrefix]
+        [HarmonyPriority(Priority.First)]
+        private static void Show_Prefix() => InventorySkin.Instance?.Unpark();
+
         // Character preview refresh events (CharacterPreview.MarkDirty), local player only: every equipment change
         // ends in Humanoid.SetupEquipment -> Player.SetupVisEquipment(m_visEquipment, false) (equip, unequip, hide /
         // show hand items, SetHair / SetBeard; Humanoid.cs:1428-1432, :1957); model and colours change through

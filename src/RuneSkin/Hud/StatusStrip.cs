@@ -75,6 +75,14 @@ namespace RuneSkin.PlayerHud
         public static float CellSize => _cellSize > 0f && _cellRevision == ThemeTokens.Revision ? _cellSize : ThemeTokens.GetFloat("size.hud.status.cell", 42f);
         public const float IconShare = 0.6f;
 
+        // Strip groups (user call 2026-10-23: many effects, save room): frameless tiles, the icon fills the tile, side =
+        // HudStrip.StatusSize x the slot cell (strip units), timer outlined over the icon bottom, debuffs a thin red
+        // underline; tight gap size.hud.status.strip.gap.
+        public static float StripCell => Mathf.Clamp(Plugin.StatusSize?.Value ?? 0.6f, 0.3f, 1f) * ThemeTokens.GetFloat("size.hud.strip.cell", 85f);
+        public static float StripGap => ThemeTokens.GetFloat("size.hud.status.strip.gap", 5f);
+        private float TileSize => Upward ? StripCell : CellSize;
+        private float TileGap => Upward ? StripGap : ThemeTokens.GetFloat("size.hud.status.gap", 4f);
+
         private void Measure()
         {
             if (_cellSize > 0f && _cellRevision == ThemeTokens.Revision) return;
@@ -134,8 +142,8 @@ namespace RuneSkin.PlayerHud
         // Lays out within width x budget (ref px, top edge at y = 0 going down). Returns the used height.
         public float Arrange(float width, float budget)
         {
-            var cell = StatusStrip.CellSize;
-            var gap = ThemeTokens.GetFloat("size.hud.status.gap", 4f);
+            var cell = TileSize;
+            var gap = TileGap;
             var flow = HudMath.Wrap(_entries.Count, cell, gap, width, HudMath.MaxRows(budget, cell, gap));
             Layout = flow;
             Root.sizeDelta = new Vector2(width, flow.Rows * (cell + gap));
@@ -197,7 +205,7 @@ namespace RuneSkin.PlayerHud
         // One stud between neighbours in a row (none after the last drawn cell).
         private void Separators(HudMath.Flow flow, float cell, float gap)
         {
-            var drawn = flow.Visible + (flow.MoreCell ? 1 : 0);
+            var drawn = Upward ? 0 : flow.Visible + (flow.MoreCell ? 1 : 0); // frameless strip tiles: no studs
             var n = 0;
             for (var i = 0; i + 1 < drawn; i++)
             {
@@ -295,9 +303,19 @@ namespace RuneSkin.PlayerHud
             c.Root.sizeDelta = new Vector2(size, size);
             // Effect cells are bare icons on the strip (mockup); only the "+N" cell has its socket art.
             // Strip groups (mockup hud-3): each effect in a small glass socket, teal rim for buffs, crimson for debuffs.
-            c.Back = _art.Image("Socket", c.Root, more ? "sprite.hud.status.more" : Upward ? "sprite.hud.status.cell" : null,
-                more ? "color.frame" : Upward ? (_harmful ? "color.hud.status.debuff" : "color.hud.status.buff") : "color.hud.clear", Image.Type.Simple, raycast: more);
+            c.Back = _art.Image("Socket", c.Root, more ? "sprite.hud.status.more" : null,
+                more ? "color.frame" : Upward && _harmful ? "color.hud.status.debuff.line" : "color.hud.clear", Image.Type.Simple, raycast: more);
             Stretch(c.Back.rectTransform, 0f);
+            if (Upward && !more)
+            {
+                // frameless tile: debuff = a thin red underline under the icon, buff = nothing
+                var br = c.Back.rectTransform;
+                br.anchorMin = Vector2.zero;
+                br.anchorMax = new Vector2(1f, 0f);
+                br.offsetMin = new Vector2(size * 0.1f, -size * 0.06f);
+                br.offsetMax = new Vector2(-size * 0.1f, -size * 0.06f + Mathf.Max(1.5f, size * 0.05f));
+                c.Back.enabled = _harmful;
+            }
             if (!more)
             {
                 c.Icon = _art.Image("Icon", c.Root, null, "color.frame", Image.Type.Simple);
@@ -306,7 +324,7 @@ namespace RuneSkin.PlayerHud
                 // Centred on both axes (user call 2026-10-22: the icon sat at the top of the 62 px cell); the timer is a
                 // band at the cell bottom and never moves it.
                 ir.anchorMin = ir.anchorMax = ir.pivot = new Vector2(0.5f, 0.5f);
-                var side = HudMath.IconSide(size, IconShare);
+                var side = Upward ? size : HudMath.IconSide(size, IconShare);
                 ir.sizeDelta = new Vector2(side, side);
                 ir.anchoredPosition = Vector2.zero;
             }
@@ -323,8 +341,9 @@ namespace RuneSkin.PlayerHud
             var tr = c.Timer.rectTransform;
             // Timer / icon text inside the cell under the icon (cell sized for WorstText); anything longer shrinks
             // (auto-size down to the timer floor) instead of running into the neighbour.
-            tr.sizeDelta = more ? new Vector2(size, size) : new Vector2(size, HudMath.TimerBand(size, IconShare, ThemeTokens.GetFloat("size.hud.status.timer.band", 17f)));
-            tr.anchoredPosition = Vector2.zero;
+            tr.sizeDelta = more ? new Vector2(size, size) : Upward ? new Vector2(size * 1.3f, size * 0.42f) : new Vector2(size, HudMath.TimerBand(size, IconShare, ThemeTokens.GetFloat("size.hud.status.timer.band", 17f)));
+            tr.anchoredPosition = Upward && !more ? new Vector2(-size * 0.15f, -size * 0.04f) : Vector2.zero; // strip tile: over the icon bottom
+            if (Upward) WorldHud.TextLook.ApplyHudNumber(c.Timer); // over the icon: the shared outlined number style
             if (!more)
             {
                 c.Timer.enableAutoSizing = true;
