@@ -90,7 +90,17 @@ func cmdPaint4(args []string) {
 	savePNG(filepath.Join(kit, "strip5_wing.png"), crop(t1b, tileRect(90, 560, 1000, 1015)))
 	savePNG(filepath.Join(kit, "strip5_medallion.png"), crop(t1b, tileRect(880, 220, 1475, 630)))
 	savePNG(filepath.Join(kit, "strip5_cell.png"), crop(t3, tileRect(190, 215, 463, 533)))
-	savePNG(filepath.Join(kit, "strip5_socket_round.png"), crop(t1a, tileRect(315, 638, 597, 920)))
+	round := crop(t1a, tileRect(315, 638, 597, 920))
+	// only the ring and its bowl: the plate around it is the wing's own (a square of plate read as a tile)
+	cx, cy, rr := float64(round.Bounds().Dx())/2, float64(round.Bounds().Dy())/2, float64(round.Bounds().Dx())/2-3
+	for y := 0; y < round.Bounds().Dy(); y++ {
+		for x := 0; x < round.Bounds().Dx(); x++ {
+			if dx, dy := float64(x)+0.5-cx, float64(y)+0.5-cy; dx*dx+dy*dy > rr*rr {
+				round.SetNRGBA(x, y, color.NRGBA{255, 0, 255, 255})
+			}
+		}
+	}
+	savePNG(filepath.Join(kit, "strip5_socket_round.png"), round)
 	savePNG(filepath.Join(kit, "strip5_socket_square.png"), crop(t5a, tileRect(440, 642, 697, 932)))
 	fmt.Println("paint4 ok")
 }
