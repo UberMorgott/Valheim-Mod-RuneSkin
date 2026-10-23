@@ -194,14 +194,9 @@ namespace RuneSkin.WorldHud
             isBoss && !string.IsNullOrEmpty(guiName) && !string.IsNullOrEmpty(bossTemplateName) &&
             guiName.StartsWith(bossTemplateName, StringComparison.Ordinal);
 
-        // Alert icon slot left of the name text, name + icon centred as a group: returns the name's x shift and gives the icon
-        // centre x relative to the (unshifted) name centre.
-        public static float AlertShift(float textWidth, float iconWidth, float gap, out float iconX)
-        {
-            var shift = (iconWidth + gap) * 0.5f;
-            iconX = shift - textWidth * 0.5f - gap - iconWidth * 0.5f;
-            return shift;
-        }
+        // Alert / aware indicator stacked above the name (user 2026-10-23, replaces the 0.16.3 slot left of it): centre y
+        // of an icon `iconHeight` tall whose bottom clears the name text top by `gap`.
+        public static float AlertAboveY(float textTop, float iconHeight, float gap) => textTop + gap + iconHeight * 0.5f;
 
         // boss-c bar span (spear tip to spear tip): the body plus each cap's part outside it (cap pivot 1 at the bar end,
         // pulled inwards by capOffset).

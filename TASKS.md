@@ -769,3 +769,10 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
 - [x] r3 art pass (lead review): frame repainted EMPTY by Codex as strict 2x-crop tiles (art/src/kit/strip5_tiles), composed by `paint4` into strip5_* (fixed knot / curl ends, sampled runs, mirrored right ends, wells open), gauges from rs-C1 / rs-C2 crops (gauge5_*); all HUD art in the hires atlas. Eitr = neutral fill tinted (the violet fill was keyed as magenta). Summon frames 0.7 above the buffs.
 - [x] In-game Codex fidelity (runs 20261023-055133 / -062811 / -070615): strip 7.5 -> 8, gauges 7 -> 8. Perf (99r, run 20261023-052657 vs main 3efc5bf run -050706): RuneSkin B/frame hud-idle 376 vs 997, inventory 20.8 K vs 22.1 K, crafting 13.9 K vs 31.8 K (CharacterPreview dominates on main too).
 - [ ] Remaining art diffs (Codex): metal a bit darker / bluer than the mockup, hotbar cells slightly smaller, rage arc slightly redder, column frame detail softer.
+
+## Enemy names + alert above (0.18.1, 2026-10-23)
+
+- [x] User: enemy name not shown over the overhead bar. Root cause: Smart rule `name only for aimed / engaged` (EnemyHudSkin.AfterUpdate) hid it on every threat bar. Now the name shows whenever the bar shows (fades with its CanvasGroup), placed explicitly: bottom-centre pivot, one-line bottom-centred text, size.enemy.name.gap over the frame top, centred on Health.
+- [x] Alert / aware indicator stacked above the name, centred (replaces the 0.16.3 slot left of the name): EnemyHudMath.AlertAboveY + unit test.
+- [x] Vaettir 0.10.1 drops the duplicate top-center target panel (Hud.Mode OverheadOnly); RuneSkin overhead bars unchanged otherwise.
+- Harness ui-runeskin-enemybars `eb-name` (every shown bar: name visible, centred, 0..12 px over the frame) + `eb-alert-slot` (stacked above, centred, no overlap).

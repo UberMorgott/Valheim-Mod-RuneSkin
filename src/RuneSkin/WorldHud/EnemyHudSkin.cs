@@ -65,15 +65,12 @@ namespace RuneSkin.WorldHud
             public bool Managed, Picked, WasManaged;
             public EnemyHudMath.Reason Reason;
             public float AimedAt = -1f, Alpha = 1f, Distance, ScaleK = 1f, ShieldW = -1f, StaggerW = -1f;
-            public bool NameShown = true;
             public EnemyHudMath.StaggerState Stg;
             public EnemyHudMath.StaggerPhase ShownPhase = (EnemyHudMath.StaggerPhase)(-1);
             public float ShownFlash = -1f;
             public Image Weld, Sparks, SparksB, Flare, FlareB;
             public bool WeldLooked, SparksLooked, FlareLooked, BossC, BossCTried;
             public string AlertLaidFor; // name text the alert slot was laid out for
-            public bool NameBaseSet;
-            public Vector2 NameBase;
             public int SparkFrame = -1;
             public float BossFit = 1f, LastHp = -1f, Flash;
             public int Tier;
@@ -341,22 +338,29 @@ namespace RuneSkin.WorldHud
             return fit;
         }
 
-        // The enemy name (and star rows) sit above the frame top (socket included): moved up until their rect bottom clears it by
-        // size.enemy.name.gap.
+        // The enemy name sits centred right above the frame top (socket included), size.enemy.name.gap away: bottom-centre
+        // pivot, bottom-centred one-line text, its bottom-centre placed explicitly over the Health centre (the prefab rect's
+        // own offset / alignment no longer matter). Star rows move up by the name's lift, as before.
         private static void ClearName(Transform hud, RectTransform health, float frameTop)
         {
             var top = health.rect.yMax + frameTop + ThemeTokens.GetFloat("size.enemy.name.gap", 2f);
-            var topInHud = hud.InverseTransformPoint(health.TransformPoint(new Vector3(0f, top, 0f))).y;
+            var want = (Vector2)hud.InverseTransformPoint(health.TransformPoint(new Vector3(health.rect.center.x, top, 0f)));
             var name = hud.Find("Name") as RectTransform;
             if (!name) return;
-            var bottom = hud.InverseTransformPoint(name.TransformPoint(new Vector3(0f, name.rect.yMin, 0f))).y;
-            var up = topInHud - bottom;
-            if (Mathf.Abs(up) < 0.25f) return;
+            var up = want.y - hud.InverseTransformPoint(name.TransformPoint(new Vector3(0f, name.rect.yMin, 0f))).y;
             for (var i = 0; i < hud.childCount; i++)
             {
                 var c = hud.GetChild(i) as RectTransform;
-                if (c && (c == name || c.name.StartsWith("level_", StringComparison.Ordinal))) c.anchoredPosition += new Vector2(0f, up);
+                if (c && c.name.StartsWith("level_", StringComparison.Ordinal)) c.anchoredPosition += new Vector2(0f, up);
             }
+            if (name.TryGetComponent<TMP_Text>(out var text))
+            {
+                text.alignment = TextAlignmentOptions.Bottom;
+                text.textWrappingMode = TextWrappingModes.NoWrap;
+                text.overflowMode = TextOverflowModes.Overflow;
+            }
+            name.pivot = new Vector2(0.5f, 0f);
+            name.anchoredPosition += want - (Vector2)name.localPosition; // pivot (bottom-centre) onto want
         }
 
         private static State Get(EnemyHud.HudData data)
@@ -470,12 +474,9 @@ namespace RuneSkin.WorldHud
                 s.WasManaged = managed;
                 s.Alpha = alpha;
 
-                var showName = !managed || (s.Picked && s.Reason >= EnemyHudMath.Reason.Engaged);
-                if (s.Name && showName != s.NameShown)
-                {
-                    s.Name.enabled = showName;
-                    s.NameShown = showName;
-                }
+                // The name shows whenever the bar shows (user 2026-10-23; the 0.16 "aimed / engaged only" rule hid it on
+                // every threat bar). It fades with the bar's CanvasGroup.
+                if (s.Name && !s.Name.enabled) s.Name.enabled = true;
 
                 if (managed && !s.Boss)
                 {
@@ -637,7 +638,7 @@ namespace RuneSkin.WorldHud
                     .Append(" alpha=").Append(s.Alpha.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))
                     .Append(" dist=").Append(s.Distance.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture))
                     .Append(" scale=").Append(data.m_gui.transform.localScale.x.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))
-                    .Append(" name=").Append(s.NameShown ? 1 : 0)
+                    .Append(" name=").Append(s.Name && s.Name.enabled ? 1 : 0)
                     .Append(" frame=").Append(s.Vt && s.Vt.enabled && s.Vt.sprite ? s.Vt.sprite.name : s.Own && s.Own.enabled && s.Own.sprite ? s.Own.sprite.name : "-")
                     .Append(" shieldW=").Append((s.Shield && s.Shield.enabled ? s.Shield.rectTransform.sizeDelta.x : 0f).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture))
                     .Append(" barW=").Append(s.Health.rect.width.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture))
