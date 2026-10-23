@@ -25,7 +25,10 @@ namespace RuneSkin.PlayerHud
         private readonly HudArt _art;
         private readonly RectTransform _root, _back;
         private RectTransform _front;
-        private readonly Image _wingL, _wingR, _bars, _block, _divider;
+        private readonly Image _wingL, _wingR, _bars, _block, _divider, _railL, _railR, _knotL, _knotR, _endL, _endR;
+
+        // Target panel layout (mode.hud.strip.target, user screenshot 2026-10-23, strip-target/spec.md).
+        public static bool Target => ThemeTokens.GetFloat("mode.hud.strip.target", 0f) > 0.5f;
         private Image _medL, _medR, _glyphL, _glyphR;
         private readonly Image[] _rowDiv = new Image[MaxRowDividers];
         private readonly StripCell[] _hotbar = new StripCell[HotbarCells];
@@ -53,8 +56,17 @@ namespace RuneSkin.PlayerHud
             _back = HudArt.Rect("StripBack", root);
             // Draw order: wings (tucked under the centre) -> bar block -> hotbar block -> divider; the bars follow (HudCluster),
             // then the medallions and the cells (BuildFront).
+            // Target panel extras (user screenshot 2026-10-23): rail runs and small diamond knots between the wings and the
+            // bar block, the wings themselves (fixed pieces, the right one its own art), end medallions over the wing ends.
+            _railL = Piece("RailLeft", _back, "sprite.hud.strip7.rail", Image.Type.Sliced);
+            _railR = Piece("RailRight", _back, "sprite.hud.strip7.rail", Image.Type.Sliced);
+            _knotL = Piece("KnotLeft", _back, "sprite.hud.strip7.knot", Image.Type.Simple);
+            _knotR = Piece("KnotRight", _back, "sprite.hud.strip7.knot", Image.Type.Simple);
             _wingL = Piece("WingLeft", _back, "sprite.hud.strip4.wing", Image.Type.Sliced);
-            _wingR = Piece("WingRight", _back, "sprite.hud.strip4.wing", Image.Type.Sliced);
+            _wingR = Piece("WingRight", _back, ThemeTokens.GetSprite("sprite.hud.strip4.wing.r") ? "sprite.hud.strip4.wing.r" : "sprite.hud.strip4.wing", Image.Type.Sliced);
+            _endL = Piece("EndLeft", _back, "sprite.hud.strip7.end", Image.Type.Simple);
+            _endR = Piece("EndRight", _back, "sprite.hud.strip7.end", Image.Type.Simple);
+            foreach (var img in new[] { _railL, _railR, _knotL, _knotR, _endL, _endR }) img.gameObject.SetActive(Target);
             _bars = Piece("BarBlock", _back, "sprite.hud.strip4.bars", Image.Type.Sliced);
             _block = Piece("HotbarBlock", _back, "sprite.hud.strip4.block", Image.Type.Sliced);
             _divider = Piece("Divider", _back, "sprite.hud.strip4.divider", Image.Type.Simple);
@@ -187,6 +199,9 @@ namespace RuneSkin.PlayerHud
                 BarsExtra = ThemeTokens.GetFloat("size.hud.strip.bars.extra", 0f),
                 ConnW = ThemeTokens.GetFloat("size.hud.strip.conn", 0f),
                 WingGap = ThemeTokens.GetFloat("size.hud.strip.wing.gap", 0f),
+                PotionStart = ThemeTokens.GetFloat("size.hud.strip.potion.start", 0f),
+                PotionGap = ThemeTokens.GetFloat("size.hud.strip.potion.gap", 0f),
+                CenterDX = ThemeTokens.GetFloat("size.hud.strip.center.dx", 0f),
                 GrowFromEnds = ThemeTokens.GetFloat("mode.hud.strip.wing.grow", 0f) > 0.5f,
                 FoodCell = cell,
                 PotionCell = cell,
@@ -214,8 +229,12 @@ namespace RuneSkin.PlayerHud
         public void Apply(in StripMath.Layout l, in StripMath.Input i)
         {
             L = l;
-            Box(_wingL.rectTransform, 0f, 0f, l.LeftW, l.WingH, false);
-            Box(_wingR.rectTransform, l.RightX, 0f, l.RightW, l.WingH, true);
+            if (Target) TargetFrame(l);
+            else
+            {
+                Box(_wingL.rectTransform, 0f, 0f, l.LeftW, l.WingH, false);
+                Box(_wingR.rectTransform, l.RightX, 0f, l.RightW, l.WingH, true);
+            }
             var lap = ThemeTokens.GetFloat("size.hud.strip.block.overlap", 6f);
             Box(_block.rectTransform, l.CenterX, l.BlockY - lap, l.CenterW, l.BlockH + lap, false);
             var divOn = AbilityCount > 0 && _divider.sprite;
@@ -225,6 +244,7 @@ namespace RuneSkin.PlayerHud
             Box(_medR.rectTransform, l.MedRX, l.MedY, i.MedW, i.MedH, true);
             Glyph(_glyphL, i.MedW, i.MedH);
             Glyph(_glyphR, i.MedW, i.MedH);
+            if (_glyphL.gameObject.activeSelf == Target) { _glyphL.gameObject.SetActive(!Target); _glyphR.gameObject.SetActive(!Target); } // target medallion piece carries its glyph
             for (var n = 0; n < HotbarCells; n++)
             {
                 var c = _hotbar[n];
@@ -254,11 +274,33 @@ namespace RuneSkin.PlayerHud
             }
         }
 
+        // Target panel frame (strip-target/spec.md, units = target px x 85 / 59): fixed wing pieces from the outer ends,
+        // end medallions over them, a small diamond knot and a stretched rail run from each wing to the bar block.
+        private static float T7(string name, float fallback) => ThemeTokens.GetFloat("size.hud.strip7." + name, fallback);
+
+        private void TargetFrame(in StripMath.Layout l)
+        {
+            var w = l.RightX + l.RightW;
+            float endW = T7("end.w", 132.5f), endH = T7("end.h", 115.3f), endY = T7("end.y", -10f);
+            Box(_endL.rectTransform, 0f, endY, endW, endH, false);
+            Box(_endR.rectTransform, w - endW, endY, endW, endH, true);
+            float wingH = T7("wing.h", 95f), wingX = T7("wing.x", 85f), wingW = T7("wing.w", 371.7f), wingRW = T7("wing.r.w", 334.2f), wingRR = T7("wing.r.right", 111f);
+            Box(_wingL.rectTransform, wingX, 0f, wingW, wingH, false);
+            Box(_wingR.rectTransform, w - wingRR - wingRW, 0f, wingRW, wingH, false);
+            float knotX = T7("knot.x", 448f), knotW = T7("knot.w", 40.3f), knotY = T7("knot.y", 26f), knotH = T7("knot.h", 43.2f), knotRR = T7("knot.r.right", 436.5f);
+            Box(_knotL.rectTransform, knotX, knotY, knotW, knotH, false);
+            Box(_knotR.rectTransform, w - knotRR - knotW, knotY, knotW, knotH, true);
+            float railX = T7("rail.x", 486f), railY = T7("rail.y", 15.8f), railH = T7("rail.h", 60.6f), railRR = T7("rail.r.right", 474f), tuck = T7("rail.tuck", 6f);
+            Box(_railL.rectTransform, railX, railY, Mathf.Max(0f, l.BarsX + tuck - railX), railH, false);
+            var rx = l.BarsX + l.BarsW - tuck;
+            Box(_railR.rectTransform, rx, railY, Mathf.Max(0f, w - railRR - rx), railH, true);
+        }
         // The bar block frame: its top is fixed under the hotbar block, its height follows the bar rows (no resource
         // row: the frame closes right under the HP row and the space below shows the scene, mockup hud-4M3-nostam).
         public void BarFrame(float height)
         {
             var top = L.BarsY + L.BarsH;
+            if (Target) height = L.BarsH; // the target's bar block is one fixed piece
             Box(_bars.rectTransform, L.BarsX, top - height, L.BarsW, height, false);
         }
 

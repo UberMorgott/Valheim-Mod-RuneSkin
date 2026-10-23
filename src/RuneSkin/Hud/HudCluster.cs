@@ -119,6 +119,14 @@ namespace RuneSkin.PlayerHud
             _health.ShieldPerimeter = true;
             // Bar fills on the RuneSkin/UI Bar shader (user call 2026-10-23): glossy cylinder, straight-cut end, grey
             // missing part, lag ghost, shield sheen + perimeter glow; the sprite fills stay as the fallback.
+            // Target panel (user screenshot 2026-10-23): the bar block piece carries the channels - frameless bars.
+            if (HudStrip.Target)
+            {
+                _health.Frameless(ThemeTokens.GetFloat("size.hud.strip.bar.hp", 26f));
+                _stamina.Frameless(ThemeTokens.GetFloat("size.hud.strip.bar.row", 27f));
+                _eitr.Frameless(ThemeTokens.GetFloat("size.hud.strip.bar.row", 27f));
+                _adrenaline.Frameless(ThemeTokens.GetFloat("size.hud.strip.bar.row", 27f));
+            }
             var barShader = ThemeTokens.BarShader;
             if (barShader && barShader.isSupported)
             {
@@ -452,11 +460,15 @@ namespace RuneSkin.PlayerHud
         }
 
         // Places the resource row from the weights (StripMath.RowSplit), its knot dividers and the bar block frame.
+        private readonly float[] _rowShare = new float[RowEntries];
+
         private void RowPlace()
         {
             if (_stripKey == int.MinValue) return;
             var gap = ThemeTokens.GetFloat("size.hud.strip.row.gap", 18f);
-            var total = StripMath.RowSplit(_barsInnerW, gap, _rowWeight, RowEntries, _rowX, _rowW);
+            // target panel: stamina | eitr channels of unequal length (share.hud.strip.row.<k> scales the weights)
+            for (var k = 0; k < RowEntries; k++) _rowShare[k] = _rowWeight[k] * ThemeTokens.GetFloat("share.hud.strip.row." + k, 1f);
+            var total = StripMath.RowSplit(_barsInnerW, gap, _rowShare, RowEntries, _rowX, _rowW);
             var pxPerUnitY = _root.lossyScale.y;
             var y = HudMath.Snap(_rowY, pxPerUnitY);
             var div = 0;
@@ -480,7 +492,7 @@ namespace RuneSkin.PlayerHud
                     view.Root.anchoredPosition = new Vector2(_barsInnerX + _rowX[k], y);
                     view.Root.localScale = Vector3.one;
                 }
-                if (prevEnd >= 0f && div < HudStrip.MaxRowDividers)
+                if (prevEnd >= 0f && div < HudStrip.MaxRowDividers && !HudStrip.Target)
                     _hudStrip.RowDivider(div++, _barsInnerX + (prevEnd + _rowX[k]) / 2f, y, _stamina.Height, Mathf.Min(1f, _rowWeight[k]));
                 prevEnd = _rowX[k] + w;
             }
@@ -630,7 +642,7 @@ namespace RuneSkin.PlayerHud
             var padT = ThemeTokens.GetFloat("size.hud.strip.bars.pad.t", 14f);
             var padX = ThemeTokens.GetFloat("size.hud.strip.bars.pad.x", 22f);
             _barsInnerX = l.BarsX + padX;
-            _barsInnerW = Mathf.Max(0f, l.BarsW - 2f * padX);
+            _barsInnerW = Mathf.Max(0f, l.BarsW - padX - ThemeTokens.GetFloat("size.hud.strip.bars.pad.r", padX));
             _hpOuter = _barsInnerW;
             _health.SetOuterWidth(_barsInnerW);
             var pxPerUnitY = _root.lossyScale.y;
