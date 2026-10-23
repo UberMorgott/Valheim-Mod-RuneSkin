@@ -4,10 +4,12 @@ namespace RuneSkin.InventoryScreen
 {
     // Pure geometry of inventory layout A (no Unity types: unit-tested on net8). Coordinates are logical canvas
     // units of the InventoryGui canvas (screen px / CanvasScaler.scaleFactor), origin top-left, y down.
-    // Layout A (inventory-layout.md section 9): left dock (chest, backpack under it only while worn), centre column
-    // (name + tabs header, doll, player grid, footer), crafting right; HUD band reserved at the bottom; on wide
-    // screens a centred column capped at the design width. Every count comes from the input (grid sizes, doll
-    // cells, mirrors); tokens give only sizes and gaps.
+    // Layout A (inventory-layout.md section 9): centre column (name + tabs header, doll, player grid, footer),
+    // crafting right; HUD band reserved at the bottom; on wide screens a centred column capped at the design width.
+    // With a container open (chest dock, user call 2026-10-23: no long drags across the screen) the container stack
+    // (chest, backpack above it) sits right above the player grid in the centre column, one gap apart, same cell
+    // pitch, grids centred on one axis; the character block (header + doll) moves to the left column. Every count
+    // comes from the input (grid sizes, doll cells); tokens give only sizes and gaps.
     public struct Box
     {
         public float X, Y, W, H;
@@ -57,7 +59,9 @@ namespace RuneSkin.InventoryScreen
         // Figure box right of the storage cells: portrait, width = height x aspect.
         public float DollFigureAspect = 0.66f;
         public float GridCell = 64f, GridGap = 8f, HotbarHeaderH = 30f;
-        public float ContainerCell = 56f, ContainerGap = 6f;
+        // Container stack over the player grid (chest dock, 2026-10-23): cells = the player grid's pitch (columns line
+        // up), stack height capped here (and by the room above the grid); taller containers scroll inside it.
+        public float ContainerMaxH = 600f;
         public float DollCell = 48f, DollGap = 8f, DollPad = 8f, DollColumns = 3f, DollFigureGap = 24f, DollMinRows = 2f;
         public float ScrollbarW = 14f;
         public float MinCellPhysPx = 44f;
@@ -102,6 +106,12 @@ namespace RuneSkin.InventoryScreen
     {
         public InventoryMode Mode;
         public Box Workspace, Dock, Chest, Backpack, Center, Header, Doll, Grid, Footer, Crafting;
+        // Player panel (grid + footer). Without a container = Center; with one (Docked) the centre column's bottom part:
+        // the container stack sits right above it, the character block (header + doll) moves to the Dock column.
+        public Box PlayerPanel;
+        // Room the container stack may use (centre column, above the player panel, capped by ContainerMaxH).
+        public Box Stack;
+        public bool Docked;
         public GridFit Player, ChestGrid, BackpackGrid;
         public DollFit DollCells;
         // Dock minimums did not fit: both panels at their minimum, the dock scrolls.
@@ -201,7 +211,8 @@ namespace RuneSkin.InventoryScreen
             }
 
             LayoutCenter(i, t, k, o);
-            LayoutDock(i, t, k, o);
+            o.PlayerPanel = o.Center;
+            if (hasDock) LayoutStack(i, t, k, o);
             return o;
         }
 
@@ -345,18 +356,60 @@ namespace RuneSkin.InventoryScreen
             return (i.DollStorage + cols - 1) / cols;
         }
 
-        private static void LayoutDock(InventoryInput i, InventoryTokens t, float k, InventoryLayout o)
+        // Container panel height: title row + glyph action row + padding (layout-a2.png "Взять всё").
+        private static float PanelChromeH(InventoryTokens t, float k) => (t.PanelHeaderH + t.PanelActionsH) * k + ActionLift(t, k);
+
+        // Chest dock: the container stack right above the player panel, one gap apart, as wide as the centre column (grids
+        // centred in it = centred over the player grid; same pitch, so equal widths line the columns up). The player grid
+        // keeps the place it has without a container. Fallback when not even one container row fits above the grid (a
+        // very short canvas): the stack takes the left column beside the centre and the character block stays.
+        private static void LayoutStack(InventoryInput i, InventoryTokens t, float k, InventoryLayout o)
         {
-            var dock = o.Dock;
+            var c = o.Center;
             var gap = t.Gap * k;
-            // Container panels: title row on top, glyph action row at the bottom (layout-a2.png "Взять всё").
             var pad = t.PanelPad * k;
-            var headerH = (t.PanelHeaderH + t.PanelActionsH) * k + ActionLift(t, k);
+            var player = new Box(c.X, o.Grid.Y, c.W, c.Bottom - o.Grid.Y);
+            var bottom = player.Y - gap;
+            var room = Math.Max(0f, bottom - c.Y);
+            if (t.ContainerMaxH > 0f) room = Math.Min(room, t.ContainerMaxH * k);
+            var minPitch = o.MinCell + t.GridGap * k;
+            if (room < PanelChromeH(t, k) + 2f * pad + Math.Max(o.Player.Pitch, minPitch) - 0.01f)
+            {
+                LayoutContainers(i, t, k, o, o.Dock, fill: true, bottomUp: false);
+                return;
+            }
+            o.Docked = true;
+            o.PlayerPanel = player;
+            o.Stack = new Box(c.X, bottom - room, c.W, room);
+            // Character block (header + doll) in the left column, same top as the centre.
+            var col = o.Dock;
+            o.Header = new Box(col.X, col.Y, col.W, o.Header.H);
+            var dollTop = o.Header.Bottom + o.InnerGap;
+            o.Doll = new Box(col.X, dollTop, col.W, Math.Max(0f, col.Bottom - dollTop));
+            var d = o.DollCells;
+            d.VisibleRows = VisibleDollRows(o.Doll.H, d.Pitch, t, k);
+            d.Scroll = d.Rows > d.VisibleRows;
+            o.DollCells = d;
+            LayoutContainers(i, t, k, o, o.Stack, fill: false, bottomUp: true);
+        }
+
+        private static int VisibleDollRows(float dollH, float pitch, InventoryTokens t, float k) =>
+            pitch > 0f ? Math.Max(0, (int)Math.Floor((dollH - 2f * t.DollPad * k + t.DollGap * k + 0.01f) / pitch)) : 0;
+
+        // Chest and backpack panels in `area`. fill: one panel takes the whole area, two split it to the last unit (side
+        // dock: one bottom edge with the other columns); else each panel is as tall as its rows, capped by the area, and
+        // taller ones scroll. bottomUp: the chest sits at the area's bottom, the backpack above it; else top-down.
+        private static void LayoutContainers(InventoryInput i, InventoryTokens t, float k, InventoryLayout o, Box dock, bool fill, bool bottomUp)
+        {
+            var gap = t.Gap * k;
+            var pad = t.PanelPad * k;
+            var headerH = PanelChromeH(t, k);
             var hasChest = i.ChestW > 0 && i.ChestH > 0;
             var hasPack = i.BackpackW > 0 && i.BackpackH > 0;
+            // Same cell and pitch as the player grid (shrinks only when the columns do not fit the width).
             GridFit chest = default, pack = default;
-            if (hasChest) chest = Fit(i.ChestW, i.ChestH, dock.W, dock.H, headerH, pad, t.ContainerCell * k, t.ContainerGap * k, o.MinCell, t.ScrollbarW * k);
-            if (hasPack) pack = Fit(i.BackpackW, i.BackpackH, dock.W, dock.H, headerH, pad, t.ContainerCell * k, t.ContainerGap * k, o.MinCell, t.ScrollbarW * k);
+            if (hasChest) chest = Fit(i.ChestW, i.ChestH, dock.W, dock.H, headerH, pad, o.Player.Cell, t.GridGap * k, o.MinCell, t.ScrollbarW * k);
+            if (hasPack) pack = Fit(i.BackpackW, i.BackpackH, dock.W, dock.H, headerH, pad, o.Player.Cell, t.GridGap * k, o.MinCell, t.ScrollbarW * k);
 
             float chestH = 0f, packH = 0f;
             if (hasChest && hasPack)
@@ -366,23 +419,26 @@ namespace RuneSkin.InventoryScreen
                 var avail = dock.H - gap;
                 if (chest.DesiredH + pack.DesiredH <= avail + 0.01f)
                 {
-                    // Both fit: the backpack keeps its content height, the chest fills the rest of the dock (one
-                    // bottom edge with centre and crafting, layout-a3.png).
+                    // Both fit: the backpack keeps its content height; filling, the chest takes the rest of the dock
+                    // (one bottom edge with centre and crafting, layout-a3.png), else its own rows.
                     packH = pack.DesiredH;
-                    chestH = avail - packH;
+                    chestH = fill ? avail - packH : chest.DesiredH;
                 }
                 else if (minChest + minPack > avail + 0.01f)
                 {
-                    // Minimums do not fit: halves of the dock, each grid scrolls inside its panel (at least one
-                    // visible row each), so both stay reachable and nothing overlaps (Codex M2 review #9).
-                    chestH = avail / 2f;
+                    // Minimums do not fit: one row each, the rest shared by wanted height; each grid scrolls inside its
+                    // panel, so both stay reachable and nothing overlaps (Codex M2 review #9).
+                    var rowChest = headerH + 2f * pad + chest.Pitch;
+                    var rowPack = headerH + 2f * pad + pack.Pitch;
+                    var spare = Math.Max(0f, avail - rowChest - rowPack);
+                    chestH = rowChest + spare * (chest.DesiredH - rowChest) / Math.Max(1f, chest.DesiredH - rowChest + pack.DesiredH - rowPack);
                     packH = avail - chestH;
                     o.DockOverflow = true;
                     // Not even one row each: the chest keeps the dock, the backpack folds away (still reachable
                     // through its own open key, which shows it alone) - never an unusable sliver (Codex M2 review).
-                    if (chestH < headerH + 2f * pad + chest.Pitch || packH < headerH + 2f * pad + pack.Pitch)
+                    if (chestH < rowChest - 0.01f || packH < rowPack - 0.01f)
                     {
-                        chestH = dock.H;
+                        chestH = One(chest);
                         packH = 0f;
                         hasPack = false;
                         o.BackpackFolded = true;
@@ -396,24 +452,27 @@ namespace RuneSkin.InventoryScreen
                     packH = avail - chestH;
                 }
             }
-            // One panel: the whole dock height (same bottom edge as the other columns; the grid sits at the top).
+            // One panel: the whole dock height when filling (same bottom edge as the other columns; the grid sits at
+            // the top), else its rows, capped.
             else if (hasChest)
             {
-                chestH = dock.H;
+                chestH = One(chest);
             }
             else if (hasPack)
             {
-                packH = dock.H;
+                packH = One(pack);
             }
+
+            float One(GridFit g) => fill ? dock.H : Math.Min(g.DesiredH, dock.H);
 
             if (hasChest)
             {
-                o.Chest = new Box(dock.X, dock.Y, dock.W, chestH);
+                o.Chest = new Box(dock.X, bottomUp ? dock.Bottom - chestH : dock.Y, dock.W, chestH);
                 o.ChestGrid = Refit(chest, chestH, headerH, pad);
             }
             if (hasPack)
             {
-                var y = hasChest ? o.Chest.Bottom + gap : dock.Y;
+                var y = bottomUp ? (hasChest ? o.Chest.Y - gap : dock.Bottom) - packH : hasChest ? o.Chest.Bottom + gap : dock.Y;
                 o.Backpack = new Box(dock.X, y, dock.W, packH);
                 o.BackpackGrid = Refit(pack, packH, headerH, pad);
             }
