@@ -122,9 +122,9 @@ namespace RuneSkin.PlayerHud
             var barShader = ThemeTokens.BarShader;
             if (barShader && barShader.isSupported)
             {
-                _health.UseShader(barShader, "color.hud.bar.fx.health");
-                _stamina.UseShader(barShader, "color.hud.bar.fx.stamina");
-                _eitr.UseShader(barShader, "color.hud.bar.fx.eitr");
+                _health.UseShader(barShader, "color.hud.bar.fx.health", BarFxPool.Blood);
+                _stamina.UseShader(barShader, "color.hud.bar.fx.stamina", BarFxPool.Energy);
+                _eitr.UseShader(barShader, "color.hud.bar.fx.eitr", BarFxPool.Arcane);
                 _adrenaline.UseShader(barShader, "color.hud.bar.fx.adrenaline");
             }
             _row[0] = _stamina;
@@ -270,6 +270,7 @@ namespace RuneSkin.PlayerHud
             AboveInventory();
             if (!visible) return;
             var dt = Time.deltaTime;
+            BarFxConfig.TickClock(); // shared living-fill clock (one global write per frame)
             StatusKeys();
             _hudStrip.Counts(player);
             Sample(player, dt);
@@ -311,6 +312,7 @@ namespace RuneSkin.PlayerHud
         {
             if (_childrenOn == on) return;
             _childrenOn = on;
+            if (on) { _health?.FxResync(); _stamina?.FxResync(); _eitr?.FxResync(); } // values changed while hidden are no events
             foreach (var c in Children.Of(_root)) c.gameObject.SetActive(on);
             if (on) _stripKey = int.MinValue; // views re-enabled: re-apply their visibility
         }
