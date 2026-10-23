@@ -268,8 +268,8 @@ namespace RuneSkin.Restyle
         public void OnEndDrag(PointerEventData eventData)
         {
             if (!_dragging) return;
-            _dragging = false;
             OnDrag(eventData);
+            _dragging = false;
             WindowMove.Save();
         }
 
