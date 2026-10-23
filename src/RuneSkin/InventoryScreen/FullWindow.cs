@@ -1,18 +1,24 @@
+using System;
 using System.Collections.Generic;
 using HarmonyLib;
+using RuneSkin.Restyle;
 using UnityEngine;
 
 namespace RuneSkin.InventoryScreen
 {
     // Full windows opened from the inventory (character stats, compendium) are modal screens: while one is open the
     // inventory panels (every child of InventoryGui.m_inventoryRoot that does not hold the window) are hidden and take
-    // no input - a CanvasGroup per panel at alpha 0, not blocking raycasts, not interactable - and they come back
-    // exactly as they were when it closes (Esc / B / close button / Tab). One window at a time: opening another closes
-    // nothing but hides the same panels; the panels return when the last window leaves. The HUD (outside the
-    // inventory root) stays. No GameObject is deactivated, so vanilla state machines (groups, drag, crafting) keep
-    // running unchanged.
+    // no input - a CanvasGroup per panel at alpha 0, not blocking raycasts, not interactable, and a render gate
+    // (RenderGate: a disabled Canvas, so the hidden panels are not drawn at all; alpha 0 alone still batched and drew
+    // every panel under the window) - and they come back exactly as they were when it closes (Esc / B / close button /
+    // Tab). One window at a time: opening another closes nothing but hides the same panels; the panels return when the
+    // last window leaves. A window that declares its opaque area (screen rect) also gates the UI drawn before it inside
+    // that area (CoverCull: HUD parts, minimap) until it closes. No GameObject is deactivated, so vanilla state machines
+    // (groups, drag, crafting) keep running unchanged.
     public static class FullWindow
     {
+        public const string Owner = "fullwindow";
+
         private sealed class Hidden
         {
             public CanvasGroup Group;
@@ -22,24 +28,36 @@ namespace RuneSkin.InventoryScreen
         }
 
         private static readonly List<Transform> Open = new List<Transform>(2);
+        private static readonly Dictionary<Transform, Func<Rect>> Opaque = new Dictionary<Transform, Func<Rect>>();
         private static readonly List<Hidden> HiddenPanels = new List<Hidden>(8);
+        private static readonly List<Transform> CoverWindows = new List<Transform>(2);
+        private static readonly List<Rect> CoverRects = new List<Rect>(2);
+        private static readonly List<Transform> Stale = new List<Transform>(2);
+        private static float _nextCull;
+
+        // Seconds between two cover passes while a window with an opaque area shows.
+        private const float CullEvery = 0.25f;
 
         public static bool Any => Open.Count > 0;
 
-        public static void Enter(Transform window)
+        public static void Enter(Transform window, Func<Rect> opaque = null)
         {
             var gui = InventoryGui.instance;
             if (!window || !gui || !gui.m_inventoryRoot) return;
             if (!Open.Contains(window)) Open.Add(window);
+            if (opaque != null) Opaque[window] = opaque;
             Apply(gui.m_inventoryRoot);
+            _nextCull = 0f;
         }
 
         public static void Exit(Transform window)
         {
             Open.Remove(window);
+            Opaque.Remove(window);
             Open.RemoveAll(t => !t);
             if (Open.Count == 0) Restore();
             else if (InventoryGui.instance) Apply(InventoryGui.instance.m_inventoryRoot);
+            _nextCull = 0f;
         }
 
         // Every frame (InventoryGui.Update postfix): a window closed by any path (vanilla Escape handling, SetActive)
@@ -52,7 +70,37 @@ namespace RuneSkin.InventoryScreen
             Open.RemoveAll(t => !t || !t.gameObject.activeInHierarchy);
             if (Open.Count == 0) Restore();
             else if (Open.Count != n && InventoryGui.instance) Apply(InventoryGui.instance.m_inventoryRoot);
+            if (Open.Count != n)
+            {
+                _nextCull = 0f;
+                Stale.Clear();
+                foreach (var w in Opaque.Keys)
+                    if (!w || !Open.Contains(w)) Stale.Add(w);
+                foreach (var w in Stale) Opaque.Remove(w);
+                Stale.Clear();
+            }
+            Cull();
         }
+
+        private static void Cull()
+        {
+            if (Open.Count == 0 || Time.unscaledTime < _nextCull) return;
+            _nextCull = Time.unscaledTime + CullEvery;
+            CoverWindows.Clear();
+            CoverRects.Clear();
+            foreach (var w in Open)
+                if (w && Opaque.TryGetValue(w, out var f) && f != null)
+                {
+                    CoverWindows.Add(w);
+                    CoverRects.Add(f());
+                }
+            CoverCull.Refresh(CoverWindows, CoverRects);
+        }
+
+        // Harness / diagnostics: the open windows' opaque areas (screen px).
+        public static int CoverCount => CoverWindows.Count;
+        public static Transform CoverWindow(int i) => i >= 0 && i < CoverWindows.Count ? CoverWindows[i] : null;
+        public static Rect CoverRect(int i) => i >= 0 && i < CoverRects.Count ? CoverRects[i] : default;
 
         // Almanac (another mod: its window replaces the trophies panel under hudroot's parent, HUD/Almanac) is a full window
         // too: found by its root name (no dependency), entered while it shows, left when it hides.
@@ -79,6 +127,7 @@ namespace RuneSkin.InventoryScreen
         public static void ExitAll()
         {
             Open.Clear();
+            Opaque.Clear();
             Restore();
         }
 
@@ -101,6 +150,7 @@ namespace RuneSkin.InventoryScreen
                 h.Group.alpha = 0f;
                 h.Group.blocksRaycasts = false;
                 h.Group.interactable = false;
+                RenderGate.Set(child.gameObject, Owner, true);
                 HiddenPanels.Add(h);
             }
         }
@@ -130,7 +180,8 @@ namespace RuneSkin.InventoryScreen
         private static void Put(Hidden h)
         {
             if (!h.Group) return;
-            if (h.Added) Object.Destroy(h.Group);
+            RenderGate.Set(h.Group.gameObject, Owner, false);
+            if (h.Added) UnityEngine.Object.Destroy(h.Group);
             else
             {
                 h.Group.alpha = h.Alpha;
@@ -143,12 +194,14 @@ namespace RuneSkin.InventoryScreen
         {
             foreach (var h in HiddenPanels) Put(h);
             HiddenPanels.Clear();
+            CoverWindows.Clear();
+            CoverRects.Clear();
+            CoverCull.Clear();
         }
 
         // Harness / diagnostics: inventory root children currently hidden by a full window.
         public static int HiddenCount => HiddenPanels.Count;
     }
-
     // Compendium (vanilla TextsDialog inside the inventory): a full window too. Installed with the Inventory family.
     [HarmonyPatch]
     public static class FullWindowAdapter

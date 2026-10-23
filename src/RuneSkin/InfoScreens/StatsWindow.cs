@@ -422,7 +422,7 @@ namespace RuneSkin.InfoScreens
             if (_gui.m_uiGroups != null && _gui.m_uiGroups.Length > 2) _gui.SetActiveGroup(_gui.m_uiGroups[2]);
             _root.SetAsLastSibling();
             _root.gameObject.SetActive(true);
-            FullWindow.Enter(_root); // modal: the inventory panels hide until it closes
+            FullWindow.Enter(_root, OpaqueRect); // modal: the inventory panels hide (not drawn) until it closes
             _layoutDirty = true;
             _nextRefresh = 0f;
             Refresh();
@@ -435,6 +435,31 @@ namespace RuneSkin.InfoScreens
             if (_root) FullWindow.Exit(_root);
         }
 
+        // The chrome's opaque interior on screen (px): the four quarters' union less their transparent rim. Measured on
+        // stats_chrome_*.png (3840x2160 composed, alpha >= 250 everywhere inside 88 / 104 / 88 / 56 px = 44 / 52 / 44 /
+        // 28 design px), plus 4 design px of slack. The UI drawn before the window inside it is gated (CoverCull).
+        private Rect OpaqueRect()
+        {
+            if (_pieces.Count == 0 || !_canvasComp) return default;
+            var cam = _canvasComp.renderMode == RenderMode.ScreenSpaceOverlay ? null : _canvasComp.worldCamera;
+            var corners = new Vector3[4];
+            float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
+            foreach (var p in _pieces)
+            {
+                if (!p.Image || !p.Image.isActiveAndEnabled || !p.Image.sprite) return default; // a missing quarter: no claim
+                p.Image.rectTransform.GetWorldCorners(corners);
+                foreach (var c in corners)
+                {
+                    var s = RectTransformUtility.WorldToScreenPoint(cam, c);
+                    x0 = Mathf.Min(x0, s.x); y0 = Mathf.Min(y0, s.y);
+                    x1 = Mathf.Max(x1, s.x); y1 = Mathf.Max(y1, s.y);
+                }
+            }
+            RuneSkin.Restyle.RenderGateMath.Interior(x0, y0, x1, y1, 1920f, 1080f,
+                T("size.stats.opaque.left", 48f), T("size.stats.opaque.top", 56f), T("size.stats.opaque.right", 48f), T("size.stats.opaque.bottom", 32f),
+                out var innerLeft, out var innerBottom, out var innerRight, out var innerTop);
+            return Rect.MinMaxRect(innerLeft, innerBottom, innerRight, innerTop);
+        }
         // ---------------------------------------------------------------- update
 
         private void Update()

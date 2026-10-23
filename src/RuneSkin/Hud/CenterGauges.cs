@@ -139,9 +139,12 @@ namespace RuneSkin.PlayerHud
             SetAlpha(_colGroup, _stagger.Alpha * opacity);
         }
 
+        // Faded out = not drawn (RenderGate); the gauges' idle state is alpha 0, so this is most of the time.
         private static void SetAlpha(CanvasGroup g, float a)
         {
-            if (Mathf.Abs(g.alpha - a) > 0.002f) g.alpha = a;
+            if (RuneSkin.Restyle.RenderGateMath.Concealed(a)) a = 0f;
+            if (Mathf.Abs(g.alpha - a) > 0.002f || (a == 0f && g.alpha != 0f)) g.alpha = a;
+            RuneSkin.Restyle.RenderGate.Set(g, "fade", RuneSkin.Restyle.RenderGateMath.Concealed(g.alpha));
         }
 
         private static void Centre(RectTransform rt, Vector2 at, float w, float h)

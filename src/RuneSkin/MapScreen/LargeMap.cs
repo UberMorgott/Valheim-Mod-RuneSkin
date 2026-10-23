@@ -145,7 +145,9 @@ namespace RuneSkin.MapScreen
         }
 
         // The owned player HUD cluster draws over the map frame whatever the sorting (Codex r2): hidden while the
-        // large map is open (CanvasGroup alpha, the cluster keeps updating), restored when it closes.
+        // large map is open (CanvasGroup alpha + RenderGate: not drawn under the map, the cluster keeps updating), restored
+        // when it closes.
+        public const string MapOwner = "largemap";
         private CanvasGroup _clusterGroup;
         private bool _clusterHidden;
 
@@ -158,6 +160,7 @@ namespace RuneSkin.MapScreen
             {
                 if (!_clusterGroup && !cluster.TryGetComponent(out _clusterGroup)) _clusterGroup = cluster.gameObject.AddComponent<CanvasGroup>();
                 _clusterGroup.alpha = hide ? 0f : 1f;
+                RuneSkin.Restyle.RenderGate.Set(cluster, MapOwner, hide);
             }
             // The hotbar (and the summon frames riding it) sits outside the map frame top-left (run 20261022-043546):
             // hidden with the cluster, as in mockup m4-map-a. With the HUD strip the vanilla bars are never drawn (the strip
@@ -168,6 +171,7 @@ namespace RuneSkin.MapScreen
                 if (!bar.TryGetComponent<CanvasGroup>(out var g)) g = bar.gameObject.AddComponent<CanvasGroup>();
                 g.alpha = hide ? 0f : 1f;
                 g.blocksRaycasts = !hide;
+                RuneSkin.Restyle.RenderGate.Set(bar, MapOwner, hide);
             }
         }
 

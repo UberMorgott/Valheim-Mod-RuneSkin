@@ -235,7 +235,9 @@ namespace RuneSkin.WorldHud
             }
             if (!_banner || !_bannerTitle) return;
             var a = Alpha(_bannerTitle);
+            if (RuneSkin.Restyle.RenderGateMath.Concealed(a)) a = 0f;
             if (!Mathf.Approximately(_bannerGroup.alpha, a)) _bannerGroup.alpha = a;
+            RuneSkin.Restyle.RenderGate.Set(_bannerGroup, "fade", a == 0f); // faded out = not drawn
             var tt = _bannerTitle.rectTransform;
             _banner.localPosition = tt.localPosition;
             _banner.localScale = tt.localScale;

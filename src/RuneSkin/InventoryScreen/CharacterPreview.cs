@@ -165,6 +165,9 @@ namespace RuneSkin.InventoryScreen
                 _image.enabled = false;
                 return;
             }
+            // Under a full window (stats, compendium) the doll panel is gated (FullWindow, RenderGate): the camera would
+            // render the rig every frame into a texture nobody sees. The texture keeps its last frame for the return.
+            if (RuneSkin.Restyle.RenderGate.IsConcealed(transform)) return;
             var px = ScreenSize();
             var size = PreviewMath.TextureSize(px.x, px.y, 1f);
             if (size.W <= 0) return;
