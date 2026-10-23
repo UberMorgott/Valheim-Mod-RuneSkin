@@ -277,6 +277,19 @@ namespace RuneSkin.PlayerHud
             if (Root.gameObject.activeSelf != on) Root.gameObject.SetActive(on);
         }
 
+        // Target panel: the bar block piece carries the carved channels, so the bar draws no frame of its own; its window
+        // is exactly the channel (height h, no insets, no caps).
+        public void Frameless(float h)
+        {
+            if (_frame) _frame.enabled = false;
+            if (_cap) _cap.enabled = false;
+            if (_glyph) _glyph.enabled = false;
+            _insetL = _insetR = _insetB = _insetT = 0f;
+            _h = Mathf.Max(2f, h);
+            _window.anchoredPosition = Vector2.zero;
+            _length = -1f;
+        }
+
         // Fixed outer width: window = outer - caps (readable floor size.hud.bar.min).
         public void SetOuterWidth(float outer)
         {

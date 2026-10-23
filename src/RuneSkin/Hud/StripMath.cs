@@ -37,6 +37,8 @@ namespace RuneSkin.PlayerHud
             public float ConnW;          // connector knot over the wing | bar block joint (slots stop before its half)
             public bool GrowFromEnds;    // target panel: fixed cells + fixed gap from the outer medallion inwards
             public float WingGap;        // gap between wing slots in that mode (0 = Gap)
+            public float PotionStart, PotionGap; // right wing in that mode: margin from the right end / gap (0 = as food)
+            public float CenterDX;       // centre column offset from the strip middle (target panel: +7.2 units)
             public int Hotbar, Abilities, Food, Potions;
         }
 
@@ -79,7 +81,7 @@ namespace RuneSkin.PlayerHud
             // The block closes its width around the live ability count (no set skill: one cell, no empty socket).
             var topW = o.HotbarW + (i.Abilities > 0 ? i.ZoneGap + o.AbilityW : 0f);
             o.CenterW = Math.Max(topW + 2f * i.BlockPadX, i.MinCenterW);
-            o.CenterX = (i.Width - o.CenterW) / 2f;
+            o.CenterX = (i.Width - o.CenterW) / 2f + i.CenterDX;
             o.BarsX = o.CenterX - Math.Max(0f, i.BarsExtra);
             o.BarsW = o.CenterW + 2f * Math.Max(0f, i.BarsExtra);
             o.BarsY = 0f;
@@ -137,14 +139,19 @@ namespace RuneSkin.PlayerHud
             var start = i.KnotW + i.SlotPad;
             var stop = o.BarsX - i.ConnW / 2f;
             var max = pitch > 0f ? Math.Max(0, (int)Math.Floor((stop - start + g) / pitch)) : 0;
-            o.FoodMax = o.PotionMax = max;
+            o.FoodMax = max;
             o.FoodShown = Math.Min(i.Food, max);
-            o.PotionShown = Math.Min(i.Potions, max);
             o.FoodCell = o.PotionCell = o.PotionH = i.Cell;
-            o.FoodStep = o.PotionStep = pitch;
+            o.FoodStep = pitch;
             o.FoodX = start;
             // right wing mirrored: the last potion sits against the right medallion, earlier ones to its left
-            o.PotionX = i.Width - start - o.PotionShown * i.Cell - Math.Max(0, o.PotionShown - 1) * g;
+            var ps = i.PotionStart > 0f ? i.PotionStart : start;
+            var pg = i.PotionGap > 0f ? i.PotionGap : g;
+            var pmax = i.Cell + pg > 0f ? Math.Max(0, (int)Math.Floor((i.Width - ps - (o.BarsX + o.BarsW + i.ConnW / 2f) + pg) / (i.Cell + pg))) : 0;
+            o.PotionMax = pmax;
+            o.PotionShown = Math.Min(i.Potions, pmax);
+            o.PotionStep = i.Cell + pg;
+            o.PotionX = i.Width - ps - o.PotionShown * i.Cell - Math.Max(0, o.PotionShown - 1) * pg;
             var inner = i.WingInnerY > 0f ? i.WingInnerY : i.WingH / 2f;
             o.FoodY = inner - i.Cell / 2f - i.FoodLift;
             o.PotionY = inner - i.Cell / 2f;
