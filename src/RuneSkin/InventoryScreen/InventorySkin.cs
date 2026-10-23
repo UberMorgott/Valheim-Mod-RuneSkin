@@ -321,7 +321,7 @@ namespace RuneSkin.InventoryScreen
 
         // ---------------------------------------------------------------- per frame
 
-        // InventoryGui.Update postfix, after EAQS and AugaSkin.
+        // InventoryGui.Update postfix, after EAQS.
         public void Frame()
         {
             if (!InventoryGui.IsVisible() || !_canvas || !Player.m_localPlayer)

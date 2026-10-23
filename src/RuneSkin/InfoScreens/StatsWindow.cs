@@ -314,6 +314,8 @@ namespace RuneSkin.InfoScreens
             var plate = half == 0 ? r.Plate : r.Plate2;
             if (enter)
             {
+                // One line per hover start (diagnostics: the breakdown runs other mods' status-effect hooks every frame).
+                if (_hoverRow != r || _hoverHalf != half) Plugin.Log.LogInfo($"[RuneSkin] stats hover {(half == 0 ? r.Explain : r.Explain2)} arg {(half == 0 ? r.Arg : r.Arg2)}");
                 _hoverRow = r;
                 _hoverHalf = half;
                 if (plate) plate.color = ThemeTokens.GetColor("color.stats.plate.hover", r.PlateColor * 1.35f);

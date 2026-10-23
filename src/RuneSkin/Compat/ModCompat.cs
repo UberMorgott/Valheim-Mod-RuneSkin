@@ -9,7 +9,6 @@ namespace RuneSkin.Compat
     public static class ModCompat
     {
         // ---- skins and frameworks
-        public const string AugaSkinGuid = "morgott.valheim.augaskin";
         public const string ValheimPlusGuid = "org.bepinex.plugins.valheim_plus";
         public const string JotunnAssembly = "Jotunn";
         public const string JotunnGuiManager = "Jotunn.Managers.GUIManager";

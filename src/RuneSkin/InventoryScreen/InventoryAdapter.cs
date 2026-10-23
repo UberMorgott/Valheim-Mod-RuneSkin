@@ -15,13 +15,12 @@ namespace RuneSkin.InventoryScreen
         private static bool Prepare() => OwnershipRegistry.IsOwned(OwnershipRegistry.Inventory);
 
         private const string Eaqs = EaqsBridge.PluginGuid;
-        private const string AugaSkin = ModCompat.AugaSkinGuid;
         private const string ValheimPlus = ModCompat.ValheimPlusGuid;
 
         [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Awake))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]
-        [HarmonyAfter(AugaSkin, Eaqs)]
+        [HarmonyAfter(Eaqs)]
         private static void Awake_Postfix(InventoryGui __instance)
         {
             try { InventorySkin.Attach(__instance); }
@@ -31,7 +30,7 @@ namespace RuneSkin.InventoryScreen
         [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Update))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]
-        [HarmonyAfter(AugaSkin, Eaqs, ValheimPlus)]
+        [HarmonyAfter(Eaqs, ValheimPlus)]
         private static void Update_Postfix()
         {
             var skin = InventorySkin.Instance;
@@ -43,7 +42,7 @@ namespace RuneSkin.InventoryScreen
         [HarmonyPatch(typeof(InventoryGrid), nameof(InventoryGrid.UpdateGui))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]
-        [HarmonyAfter(AugaSkin, Eaqs, ValheimPlus)]
+        [HarmonyAfter(Eaqs, ValheimPlus)]
         private static void UpdateGui_Postfix(InventoryGrid __instance)
         {
             var skin = InventorySkin.Instance;

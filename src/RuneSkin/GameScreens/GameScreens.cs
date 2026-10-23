@@ -512,7 +512,7 @@ namespace RuneSkin.GameScreens
     // Compendium (TextsDialog, mockup m6-dialogs-a): panel stack, topic list rows = row_recipe_* (selected child =
     // row_recipe_selected), names body sans, reading pane topic serif + body text. The row template is a child of the
     // dialog (TextsDialog.FillTextList clones m_elementPrefab), so clones copy the look. The active effects page is
-    // RuneSkin's own list (ActiveEffectsPage, own registration; AugaSkin >= 2.2.21 yields its page); Epic Loot's own page
+    // RuneSkin's own list (ActiveEffectsPage, own registration); Epic Loot's own page
     // parts are left to their owner.
     public static class CompendiumSkin
     {
@@ -525,7 +525,6 @@ namespace RuneSkin.GameScreens
                 foreach (var t in r.GetComponentsInChildren<Transform>(true))
                 {
                     if (t.name == ActiveEffectsPage.RootName) ctx.Exclude(t, "active effects list (own registration Compendium.ActiveEffects)");
-                    else if (t.name == "AugaActiveEffects") ctx.Exclude(t, "older AugaSkin's active effects page (its own)");
                 }
                 // Search field focus glow (button_glow under searchField): vanilla highlight art, kept.
                 foreach (var img in r.GetComponentsInChildren<Image>(true))

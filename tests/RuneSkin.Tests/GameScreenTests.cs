@@ -52,7 +52,7 @@ namespace RuneSkin.Tests
         public void GlyphSideIsAShareOfTheSocket(float socket, float share, float want) =>
             Assert.Equal(want, GameScreenMath.GlyphSide(socket, share), 3);
 
-        // M6 batch 2 families are stable API names (AugaSkin asks for them by string).
+        // M6 batch 2 families are stable API names (other mods ask for them by string).
         [Fact]
         public void BatchTwoFamilyNames()
         {
