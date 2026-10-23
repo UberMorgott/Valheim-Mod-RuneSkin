@@ -613,15 +613,28 @@ namespace RuneSkin.PlayerHud
         private string _fxColorToken;
         private static readonly int PFill = Shader.PropertyToID("_Fill"), PLag = Shader.PropertyToID("_Lag"),
             PShield = Shader.PropertyToID("_Shield"), PAspect = Shader.PropertyToID("_Aspect"), PFillColor = Shader.PropertyToID("_FillColor"),
-            PMode = Shader.PropertyToID("_Mode");
+            PMode = Shader.PropertyToID("_Mode"), PPool = Shader.PropertyToID("_Pool"), PFxOn = Shader.PropertyToID("_FxOn"),
+            PFxIntensity = Shader.PropertyToID("_FxIntensity"), PFxSpeed = Shader.PropertyToID("_FxSpeed"), PHitAt = Shader.PropertyToID("_HitAt"),
+            PHitSize = Shader.PropertyToID("_HitSize"), PHealAt = Shader.PropertyToID("_HealAt"), PPulseAt = Shader.PropertyToID("_PulseAt"),
+            PRegen = Shader.PropertyToID("_Regen"), PExhaust = Shader.PropertyToID("_Exhaust");
+
+        // Living fill (barfx): the pool look, its event state, and the last written on / intensity / speed / pool.
+        private BarFxPool _fxPool = BarFxPool.Plain, _fxShownPool = (BarFxPool)(-2);
+        private readonly BarFxState _fxEvents = new BarFxState();
+        private float _fxOnShown = -1f, _fxIntensityShown = -1f, _fxSpeedShown = -1f;
+
+        public BarFxPool FxPool => _fxPool;
+        public Material FxMaterialInstance => _fxMat;
 
         public bool ShaderFill => _fx;
 
         // colorToken: the pool's fill colour (color.hud.bar.fx.*).
-        public void UseShader(Shader shader, string colorToken)
+        // pool: the living fill look of this bar (Plain = the glossy cylinder only).
+        public void UseShader(Shader shader, string colorToken, BarFxPool pool = BarFxPool.Plain)
         {
             if (!shader || _fx) return;
             _fxColorToken = colorToken;
+            _fxPool = pool;
             foreach (var img in new[] { _trough, _lag, _fill, _edge, _front, _shield, _shieldEdge, _sheen, _shCapL, _shMid, _shCapR })
                 if (img) img.enabled = false;
             _fx = _art.Image("BarFx", _window, null, "color.frame", Image.Type.Simple);
@@ -631,6 +644,7 @@ namespace RuneSkin.PlayerHud
             _fxMat.SetColor("_LagColor", ThemeTokens.GetColor("color.hud.bar.fx.lag", new Color(0.95f, 0.88f, 0.82f)));
             _fxMat.SetColor("_MissingColor", ThemeTokens.GetColor("color.hud.bar.fx.missing", new Color(0.42f, 0.42f, 0.42f)));
             _fxMat.SetColor("_SheenColor", ThemeTokens.GetColor("color.hud.shield.sheen", new Color(0.36f, 0.91f, 0.95f, 0.22f)));
+            _fxMat.SetColor("_ClotColor", ThemeTokens.GetColor("color.hud.bar.fx.clot", new Color(0.30f, 0.035f, 0.045f)));
             _fx.material = _fxMat;
             Full(_fx.rectTransform, Mathf.Max(0f, _length));
             if (ShieldPerimeter)
@@ -694,6 +708,8 @@ namespace RuneSkin.PlayerHud
             if (Mathf.Abs(f - _fxFill) > 0.0001f) { _fxFill = f; _fxMat.SetFloat(PFill, f); }
             var lag = Mathf.Clamp01(Mathf.Max(_lagValue, cur) / max);
             if (Mathf.Abs(lag - _fxLag) > 0.0001f) { _fxLag = lag; _fxMat.SetFloat(PLag, lag); }
+            // the living look only for the bar's own pool (an energy shield shown in the HP window stays plain)
+            FxEvents(fillToken == _fillColor && !inert ? _fxPool : BarFxPool.Plain, cur, max);
             var run = StripMath.ShieldRun(_shieldValue, max, out _, out _);
             if (Mathf.Abs(run - _fxShield) > 0.0001f)
             {
@@ -705,6 +721,44 @@ namespace RuneSkin.PlayerHud
             }
         }
 
+        // Living fill: live config (on / intensity per pool, shared speed) and the bar's events, written to the material
+        // only when they change (events once per event: the shader animates from the shared clock).
+        private void FxEvents(BarFxPool pool, float cur, float max)
+        {
+            BarFxConfig.For(pool, out var on, out var intensity);
+            var onF = on ? 1f : 0f;
+            if (pool != _fxShownPool)
+            {
+                _fxShownPool = pool;
+                FxSet(PPool, (float)pool);
+                _fxEvents.Resync();
+            }
+            if (onF != _fxOnShown) { _fxOnShown = onF; FxSet(PFxOn, onF); }
+            if (intensity != _fxIntensityShown) { _fxIntensityShown = intensity; FxSet(PFxIntensity, intensity); }
+            var speed = BarFxConfig.Speed?.Value ?? 1f;
+            if (speed != _fxSpeedShown) { _fxSpeedShown = speed; FxSet(PFxSpeed, speed); }
+            var changed = _fxEvents.Step(on ? pool : BarFxPool.Plain, cur, max, BarFxConfig.Now, Time.deltaTime, BarFxConfig.Tuning);
+            if (changed == BarFxState.Changed.None) return;
+            if ((changed & BarFxState.Changed.Hit) != BarFxState.Changed.None) { FxSet(PHitAt, _fxEvents.HitAt); FxSet(PHitSize, _fxEvents.HitSize); }
+            if ((changed & BarFxState.Changed.Heal) != BarFxState.Changed.None) FxSet(PHealAt, _fxEvents.HealAt);
+            if ((changed & BarFxState.Changed.Pulse) != BarFxState.Changed.None) FxSet(PPulseAt, _fxEvents.PulseAt);
+            if ((changed & BarFxState.Changed.Regen) != BarFxState.Changed.None) FxSet(PRegen, _fxEvents.Regen ? 1f : 0f);
+            if ((changed & BarFxState.Changed.Exhaust) != BarFxState.Changed.None) FxSet(PExhaust, _fxEvents.Exhaust ? 1f : 0f);
+            BarFxConfig.Count(changed);
+        }
+
+        // Writes a living-fill property to the base material and, when a stencil Mask made uGUI render a copy, to that
+        // copy too (StencilMaterial keeps its copy's properties: a base-only write would stay invisible).
+        private void FxSet(int id, float value)
+        {
+            _fxMat.SetFloat(id, value);
+            var shown = _fx.materialForRendering;
+            if (shown && shown != _fxMat) shown.SetFloat(id, value);
+        }
+
+        // The HUD was hidden (dead, menu, cutscene) or the player changed: forget the last samples, so the values seen on
+        // return are no hit / heal.
+        public void FxResync() => _fxEvents.Resync();
         // Shield amount drawn over the health fill on the next Render (0 = none).
         public void SetShield(float amount) => _shieldValue = Mathf.Max(0f, amount);
 
