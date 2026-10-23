@@ -33,6 +33,8 @@ public static class RenderBarFx
         public Material Mat;
         public Text Value;
         public float Max;
+        public Material Glow;
+        public Image GlowImage;
     }
 
     public static void Render()
@@ -71,11 +73,13 @@ public static class RenderBarFx
             var bgTex = new Texture2D(2, 2, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
             if (!bgTex.LoadImage(File.ReadAllBytes(bgPath))) throw new Exception("cannot load " + bgPath);
             var bg = Child(root, "bg").gameObject.AddComponent<RawImage>();
+            CleanShield(bgTex);
             bg.texture = bgTex;
             bg.uvRect = new Rect((float)Crop.x / bgTex.width, 1f - (float)(Crop.y + Crop.height) / bgTex.height,
                 (float)Crop.width / bgTex.width, (float)Crop.height / bgTex.height);
 
             var hp = MakeBar(root, shader, font, mats, HpWin, s, HpColor, 0f, HpMax, 25);
+            hp.Glow = MakeGlow(hp, shader, mats, HpWin, s);
             var st = MakeBar(root, shader, font, mats, StWin, s, StColor, 1f, StMax, 20);
             var ei = MakeBar(root, shader, font, mats, EiWin, s, EiColor, 2f, EiMax, 20);
 
@@ -130,6 +134,11 @@ public static class RenderBarFx
         Set(hp, t, hpFill, hpLag);
         hp.Mat.SetFloat("_HitAt", hitAt);
         hp.Mat.SetFloat("_HealAt", healAt);
+        // shield (BarView ShieldRun share): absorbs part of each hit, gone after the second
+        var shield = t < 2f ? 0.55f : t < 9f ? 0.25f : 0f;
+        hp.Mat.SetFloat("_Shield", shield);
+        hp.Glow.SetFloat("_Shield", shield);
+        hp.GlowImage.enabled = shield > 0f;
 
         // stamina: full, sprint drain 3..5 s, exhausted 5..6.8 s, regenerating from 6.8 s
         float stFill, exhaust = 0f, regen = 0f;
@@ -188,6 +197,7 @@ public static class RenderBarFx
         m.SetFloat("_Depth", 0.45f);
         m.SetFloat("_Rim", 1f);
         m.SetFloat("_Shield", 0f);
+        m.SetColor("_SheenColor", Hex("#5BE8F238"));
         m.SetFloat("_Pool", pool);
         m.SetFloat("_FxOn", 1f);
         m.SetFloat("_FxIntensity", 1f);
@@ -205,6 +215,47 @@ public static class RenderBarFx
         ol.effectColor = new Color(0.03f, 0.02f, 0.02f, 0.95f);
         ol.effectDistance = new Vector2(1.4f * s, -1.4f * s);
         return new Bar { Mat = m, Value = text, Max = max };
+    }
+
+    // The shield perimeter glow exactly as BarView.FxLayout builds it: mode 1 of the same shader on a quad = the bar
+    // grown by size.hud.strip4.shield.out (3) on every side, drawn over the frame, under the value.
+    static Material MakeGlow(Bar bar, Shader shader, List<Material> mats, RectInt win, float s)
+    {
+        var parent = (RectTransform)bar.Value.transform.parent;
+        var r = Child(parent, "shieldGlow");
+        var o = 3f * s;
+        r.offsetMin = new Vector2(-o, -o);
+        r.offsetMax = new Vector2(o, o);
+        r.SetSiblingIndex(bar.Value.transform.GetSiblingIndex());
+        var img = r.gameObject.AddComponent<Image>();
+        img.raycastTarget = false;
+        var m = new Material(shader);
+        mats.Add(m);
+        m.SetFloat("_Mode", 1f);
+        m.SetFloat("_Aspect", (win.width * s + 2f * o) / (win.height * s + 2f * o));
+        m.SetColor("_GlowColor", Hex("#5BE8F2"));
+        m.SetFloat("_GlowWidth", 0.16f);
+        img.material = m;
+        bar.GlowImage = img;
+        return m;
+    }
+
+    // The mockup has the shield line painted around the HP well: turn its cyan pixels into the steel rail colour so
+    // the only shield in the render is the shader's (follows the HP shield value).
+    static void CleanShield(Texture2D tex)
+    {
+        var px = tex.GetPixels32();
+        for (var y = 876; y <= 948; y++)
+        for (var x = 466; x <= 1448; x++)
+        {
+            var i = (tex.height - 1 - y) * tex.width + x;
+            var c = px[i];
+            if ((c.g + c.b) / 2 - c.r < 30 || c.b < 40) continue;
+            var lum = Mathf.Max(c.g, c.b) / 255f;
+            px[i] = new Color32((byte)(13 + lum * 26), (byte)(21 + lum * 34), (byte)(25 + lum * 40), 255);
+        }
+        tex.SetPixels32(px);
+        tex.Apply();
     }
 
     static Shader ImportShader()
