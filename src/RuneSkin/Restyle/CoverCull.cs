@@ -22,6 +22,7 @@ namespace RuneSkin.Restyle
         private static readonly List<GameObject> Drop = new List<GameObject>();
         private static readonly List<Graphic> Graphics = new List<Graphic>(256);
         private static readonly List<Canvas> Canvases = new List<Canvas>(16);
+        private static readonly List<Canvas> Inner = new List<Canvas>(16);
         private static readonly Vector3[] Corners = new Vector3[4];
 
         public static int CoveredCount => Covered.Count;
@@ -106,11 +107,13 @@ namespace RuneSkin.Restyle
         {
             bounds = default;
             above = null;
-            Canvases.Clear();
-            t.GetComponentsInChildren(false, Canvases);
-            foreach (var c in Canvases)
+            // own list: Collect is iterating Canvases while it calls Consider -> Bounds (combined run 20261023-161531:
+            // 36 x 'Collection was modified' from InventoryGui.Update, half-applied gates = covered > 0)
+            Inner.Clear();
+            t.GetComponentsInChildren(false, Inner);
+            foreach (var c in Inner)
                 if (c.overrideSorting && c.enabled && (above == null || c.sortingOrder > above.sortingOrder)) above = c;
-            Canvases.Clear();
+            Inner.Clear();
             Graphics.Clear();
             t.GetComponentsInChildren(false, Graphics);
             var any = false;
