@@ -9195,6 +9195,52 @@
       "atlas": "strip"
     },
     {
+      "name": "strip7_tipcap_l",
+      "file": "strip7_tipcap_l.png",
+      "size": [
+        63,
+        132
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip7_tipcap_l",
+      "notes": "Target panel: block-tip rail cap left (target 428..450 x 148..194), 4x piece by the mockup agent; drawn under knot-inner-l + the bar block tip",
+      "atlas": "strip"
+    },
+    {
+      "name": "strip7_tipcap_r",
+      "file": "strip7_tipcap_r.png",
+      "size": [
+        63,
+        132
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip7_tipcap_r",
+      "notes": "Target panel: block-tip rail cap right (target 1178..1200 x 148..194), 4x piece by the mockup agent; drawn under knot-inner-r",
+      "atlas": "strip"
+    },
+    {
       "name": "strip6_wing",
       "file": "strip6_wing.png",
       "size": [

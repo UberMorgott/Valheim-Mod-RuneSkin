@@ -77,8 +77,9 @@ namespace RuneSkin.PlayerHud
             // then the medallions and the cells (BuildFront).
             // Target panel extras (user screenshot 2026-10-23): rail runs and small diamond knots between the wings and the
             // bar block, the wings themselves (fixed pieces, the right one its own art), end medallions over the wing ends.
-            _capL = Piece("RailCapLeft", _back, "sprite.hud.strip7.rail", Image.Type.Tiled);
-            _capR = Piece("RailCapRight", _back, Own("sprite.hud.strip7.rail"), Image.Type.Tiled);
+            // block-tip rail caps: first = under the inner diamonds (Knot2) and the bar block's tips (composite gate of the pieces)
+            _capL = Piece("RailCapLeft", _back, "sprite.hud.strip7.tipcap", Image.Type.Simple);
+            _capR = Piece("RailCapRight", _back, Own("sprite.hud.strip7.tipcap"), Image.Type.Simple);
             _stubL = Piece("RailStubLeft", _back, "sprite.hud.strip7.rail", Image.Type.Tiled);
             _stubR = Piece("RailStubRight", _back, Own("sprite.hud.strip7.rail"), Image.Type.Tiled);
             _railL = Piece("RailLeft", _back, "sprite.hud.strip7.rail", Image.Type.Sliced);
@@ -340,7 +341,7 @@ namespace RuneSkin.PlayerHud
             Place(_stubL, f.StubL, false);
             Place(_stubR, f.StubR, false);
             Place(_capL, f.CapL, false);
-            Place(_capR, f.CapR, false);
+            Place(_capR, f.CapR, !HasOwn("sprite.hud.strip7.tipcap"));
             Place(_knot2L, f.Knot2L, false);
             Place(_knot2R, f.Knot2R, !HasOwn("sprite.hud.strip7.knot2"));
             // a wing slot grown onto the rail run hides the wing-tip diamond under it (the round socket would leave its

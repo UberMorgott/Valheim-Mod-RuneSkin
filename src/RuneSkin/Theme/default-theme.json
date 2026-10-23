@@ -231,6 +231,8 @@
     { "token": "sprite.hud.strip7.knot.r", "asset": "strip7_knot_s_r" },
     { "token": "sprite.hud.strip7.knot2", "asset": "strip7_knot_in" },
     { "token": "sprite.hud.strip7.knot2.r", "asset": "strip7_knot_in_r" },
+    { "token": "sprite.hud.strip7.tipcap", "asset": "strip7_tipcap_l" },
+    { "token": "sprite.hud.strip7.tipcap.r", "asset": "strip7_tipcap_r" },
     { "token": "sprite.hud.strip7.icon.hp", "asset": "strip7_icon_hp" },
     { "token": "sprite.hud.strip7.icon.st", "asset": "strip7_icon_st" },
     { "token": "sprite.hud.strip7.icon.ei", "asset": "strip7_icon_ei" },

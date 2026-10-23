@@ -211,11 +211,11 @@ namespace RuneSkin.PlayerHud
             f.StubL = new Box(stubL, railY, railX + t7("rail.stub.lap", 4f) - stubL, railH);
             var stubR = f.RailR.Right - t7("rail.stub.lap", 4f);
             f.StubR = new Box(stubR, f.RailR.Y, f.KnotR.Right - stubR, f.RailR.H);
-            // rail caps (the tileable rail) under the bar block's pointed ends: the runs stop short of the tip (stretching them
-            // would break their pinned wire pattern) and a gap showed above / below it
-            float capW = t7("rail.cap.w", 20.2f), capIn = t7("rail.cap.in", 6f);
-            f.CapL = new Box(l.BarsX + capIn - capW, railY, capW, railH);
-            f.CapR = new Box(l.BarsX + l.BarsW - capW, f.RailR.Y, capW, f.RailR.H); // the right run starts under the block already
+            // block-tip rail caps under the bar block's pointed ends (target px 428..450 / 1178..1200, y 148..194; bar block
+            // 438..1190, bottom 203; 85 units per 59 px): the inner diamond and the block's own tip are drawn over them
+            float capW = t7("tipcap.w", 31.7f), capH = t7("tipcap.h", 66.3f), capY = t7("tipcap.y", 13f);
+            f.CapL = new Box(l.BarsX + t7("tipcap.dx", -14.4f), capY, capW, capH);
+            f.CapR = new Box(l.BarsX + l.BarsW + t7("tipcap.r.dx", -17.3f), capY, capW, capH);
             float k2dx = t7("knot2.dx", -21.6f), k2y = t7("knot2.y", 47.5f), k2w = t7("knot2.w", 30.5f), k2h = t7("knot2.h", 32.6f);
             f.Knot2L = new Box(l.BarsX + k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h);
             f.Knot2R = new Box(l.BarsX + l.BarsW - k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h);
