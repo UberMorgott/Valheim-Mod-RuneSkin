@@ -62,6 +62,9 @@ namespace RuneSkin.InventoryScreen
         // Container stack over the player grid (chest dock, 2026-10-23): cells = the player grid's pitch (columns line
         // up), stack height capped here (and by the room above the grid); taller containers scroll inside it.
         public float ContainerMaxH = 600f;
+        // Stacked container panel: as wide as its grid (+ pad, + scrollbar on both sides to keep the grid on the axis), at
+        // least this wide (title + weight plate + action row; approved mockups chest-small / chest-big 2026-10-23).
+        public float ContainerMinW = 430f;
         public float DollCell = 48f, DollGap = 8f, DollPad = 8f, DollColumns = 3f, DollFigureGap = 24f, DollMinRows = 2f;
         public float ScrollbarW = 14f;
         public float MinCellPhysPx = 44f;
@@ -111,6 +114,8 @@ namespace RuneSkin.InventoryScreen
         public Box PlayerPanel;
         // Room the container stack may use (centre column, above the player panel, capped by ContainerMaxH).
         public Box Stack;
+        // Docked: the character block's panel in the left column (header + doll, as tall as its content).
+        public Box Character;
         public bool Docked;
         public GridFit Player, ChestGrid, BackpackGrid;
         public DollFit DollCells;
@@ -326,6 +331,10 @@ namespace RuneSkin.InventoryScreen
                 Grid = S(o.Grid),
                 Footer = S(o.Footer),
                 Crafting = S(o.Crafting),
+                PlayerPanel = S(o.PlayerPanel),
+                Stack = S(o.Stack),
+                Character = S(o.Character),
+                Docked = o.Docked,
                 Player = o.Player,
                 ChestGrid = o.ChestGrid,
                 BackpackGrid = o.BackpackGrid,
@@ -359,8 +368,9 @@ namespace RuneSkin.InventoryScreen
         // Container panel height: title row + glyph action row + padding (layout-a2.png "Взять всё").
         private static float PanelChromeH(InventoryTokens t, float k) => (t.PanelHeaderH + t.PanelActionsH) * k + ActionLift(t, k);
 
-        // Chest dock: the container stack right above the player panel, one gap apart, as wide as the centre column (grids
-        // centred in it = centred over the player grid; same pitch, so equal widths line the columns up). The player grid
+        // Chest dock: the container stack right above the player panel, one gap apart, each panel as wide as its grid and
+        // centred on the centre column's axis (grids centred = centred over the player grid; same pitch, so a full-width
+        // container lines the columns up). The player grid
         // keeps the place it has without a container. Fallback when not even one container row fits above the grid (a
         // very short canvas): the stack takes the left column beside the centre and the character block stays.
         private static void LayoutStack(InventoryInput i, InventoryTokens t, float k, InventoryLayout o)
@@ -385,8 +395,11 @@ namespace RuneSkin.InventoryScreen
             var col = o.Dock;
             o.Header = new Box(col.X, col.Y, col.W, o.Header.H);
             var dollTop = o.Header.Bottom + o.InnerGap;
-            o.Doll = new Box(col.X, dollTop, col.W, Math.Max(0f, col.Bottom - dollTop));
+            // As tall as the doll content (storage rows / figure, whichever is taller), never past the column.
             var d = o.DollCells;
+            var dollWant = Math.Max(3, d.Rows) * d.Pitch - t.DollGap * k + 2f * t.DollPad * k;
+            o.Doll = new Box(col.X, dollTop, col.W, Math.Max(0f, Math.Min(col.Bottom - dollTop, dollWant)));
+            o.Character = new Box(col.X, col.Y, col.W, Math.Min(col.H, o.Doll.Bottom + t.PanelPad * k - col.Y));
             d.VisibleRows = VisibleDollRows(o.Doll.H, d.Pitch, t, k);
             d.Scroll = d.Rows > d.VisibleRows;
             o.DollCells = d;
@@ -465,16 +478,25 @@ namespace RuneSkin.InventoryScreen
 
             float One(GridFit g) => fill ? dock.H : Math.Min(g.DesiredH, dock.H);
 
+            // Filling: the dock's width; stacked: as wide as the grid, centred on the column axis; as many columns as the
+            // player grid (or more): the player panel's width, one edge with it (mockup chest-big).
+            Box Span(GridFit g, float y, float h)
+            {
+                if (fill || g.Columns >= o.Player.Columns) return new Box(dock.X, y, dock.W, h);
+                var sb = g.ScrollV ? t.ScrollbarW * k : 0f;
+                var w = Math.Min(dock.W, Math.Max(t.ContainerMinW * k, g.ContentW + 2f * (pad + sb)));
+                return new Box(dock.X + (dock.W - w) / 2f, y, w, h);
+            }
             if (hasChest)
             {
-                o.Chest = new Box(dock.X, bottomUp ? dock.Bottom - chestH : dock.Y, dock.W, chestH);
                 o.ChestGrid = Refit(chest, chestH, headerH, pad);
+                o.Chest = Span(o.ChestGrid, bottomUp ? dock.Bottom - chestH : dock.Y, chestH);
             }
             if (hasPack)
             {
                 var y = bottomUp ? (hasChest ? o.Chest.Y - gap : dock.Bottom) - packH : hasChest ? o.Chest.Bottom + gap : dock.Y;
-                o.Backpack = new Box(dock.X, y, dock.W, packH);
                 o.BackpackGrid = Refit(pack, packH, headerH, pad);
+                o.Backpack = Span(o.BackpackGrid, y, packH);
             }
         }
 

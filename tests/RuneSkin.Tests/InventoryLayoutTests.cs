@@ -63,14 +63,43 @@ namespace RuneSkin.Tests
             Assert.True(o.Docked, "container stack over the player grid");
             var lowest = o.Chest.IsEmpty ? o.Backpack : o.Chest;
             Assert.Equal(o.PlayerPanel.Y - T.Gap, lowest.Bottom, 2);
-            foreach (var panel in new[] { o.Chest, o.Backpack })
+            foreach (var (panel, fit) in new[] { (o.Chest, o.ChestGrid), (o.Backpack, o.BackpackGrid) })
             {
                 if (panel.IsEmpty) continue;
-                Assert.Equal(o.Center.X, panel.X, 2);
-                Assert.Equal(o.Center.W, panel.W, 2);
+                // Centred on the column axis, as wide as its grid (min width for title + actions, never past the column).
+                Assert.Equal(o.Center.X + o.Center.W / 2f, panel.X + panel.W / 2f, 2);
+                var want = fit.ContentW + 2f * (T.PanelPad + (fit.ScrollV ? T.ScrollbarW : 0f));
+                Assert.Equal(fit.Columns >= o.Player.Columns ? o.Center.W : Math.Min(o.Center.W, Math.Max(T.ContainerMinW, want)), panel.W, 2);
                 Assert.True(panel.H <= T.ContainerMaxH + 0.01f);
             }
             if (!o.Chest.IsEmpty && !o.Backpack.IsEmpty) Assert.Equal(o.Chest.Y - T.Gap, o.Backpack.Bottom, 2);
+            // Character panel in the left column: header + doll, ends a pad under the doll (mockups chest-small / chest-big).
+            Assert.True(o.Character.Inside(o.Dock), $"{o.Character} outside {o.Dock}");
+            Assert.True(o.Header.Inside(o.Character) && o.Doll.Inside(o.Character), $"{o.Header} {o.Doll} outside {o.Character}");
+            Assert.True(o.Character.H < o.Dock.H || o.Doll.Bottom >= o.Dock.Bottom - T.PanelPad - 0.01f, "character panel sized to its content");
+        }
+
+        [Fact]
+        public void DraggedLayoutKeepsTheDock()
+        {
+            var o = Run(1920, 1080, cw: 5, ch: 2, hudTop: 900f);
+            var s = InventoryMath.Shift(o, 40f, -20f);
+            Assert.True(s.Docked);
+            Assert.Equal(o.PlayerPanel.X + 40f, s.PlayerPanel.X, 2);
+            Assert.Equal(o.Character.Y - 20f, s.Character.Y, 2);
+            Assert.Equal(o.Stack.W, s.Stack.W, 2);
+        }
+
+        [Fact]
+        public void SmallChestPanelFitsItsGrid()
+        {
+            var o = Run(1920, 1080, gh: 3, cw: 5, ch: 2, hudTop: 900f);
+            DockedOverGrid(o);
+            Assert.True(o.Chest.W < o.PlayerPanel.W - 1f, $"{o.Chest} vs {o.PlayerPanel}");
+            Assert.False(o.ChestGrid.ScrollV);
+            var full = Run(1920, 1080, gh: 3, cw: 8, ch: 2, hudTop: 900f);
+            Assert.Equal(full.PlayerPanel.X, full.Chest.X, 2);
+            Assert.Equal(full.PlayerPanel.W, full.Chest.W, 2);
         }
 
         private static void OneTopOneBottom(InventoryLayout o)

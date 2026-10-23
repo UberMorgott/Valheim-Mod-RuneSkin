@@ -153,7 +153,7 @@ namespace RuneSkin.InventoryScreen
             t.HudBand = F("size.inv.hud.band", t.HudBand); t.HeaderH = F("size.inv.header", t.HeaderH); t.FooterH = F("size.inv.footer", t.FooterH);
             t.PanelHeaderH = F("size.inv.panel.header", t.PanelHeaderH); t.PanelPad = F("size.inv.panel.pad", t.PanelPad);
             t.GridCell = F("size.slot", t.GridCell); t.GridGap = F("size.inv.cell.gap", t.GridGap); t.HotbarHeaderH = StripHotbar ? 0f : F("size.inv.hotbar.header", t.HotbarHeaderH);
-            t.ContainerMaxH = F("size.inv.container.max.h", t.ContainerMaxH);
+            t.ContainerMaxH = F("size.inv.container.max.h", t.ContainerMaxH); t.ContainerMinW = F("size.inv.container.min.w", t.ContainerMinW);
             t.DollCell = F("size.inv.doll.cell", t.DollCell); t.DollGap = F("size.inv.doll.gap", t.DollGap);
             t.DollColumns = F("size.inv.doll.columns", t.DollColumns); t.DollPad = F("size.inv.doll.pad", t.DollPad); t.DollFigureGap = F("size.inv.doll.figure.gap", t.DollFigureGap);
             t.DollFigureAspect = F("share.inv.doll.figure", t.DollFigureAspect); t.HeaderMinH = F("size.inv.header.min", t.HeaderMinH); t.InnerGapMin = F("size.inv.inner.gap.min", t.InnerGapMin);
@@ -649,7 +649,7 @@ namespace RuneSkin.InventoryScreen
             // Player panel (grid + footer; the whole centre without a container) and, with the chest dock, the character
             // block (header + doll) in the left column.
             Show(_centerHost, o.PlayerPanel);
-            Show(_charHost, o.Docked ? o.Dock : default);
+            Show(_charHost, o.Docked ? o.Character : default);
             var containerShown = _gui.m_container && _gui.m_container.gameObject.activeSelf;
             var backpackInContainer = containerShown && ContainerIsBackpack();
             Show(_chestHost, containerShown && !backpackInContainer ? o.Chest : default);
@@ -904,6 +904,14 @@ namespace RuneSkin.InventoryScreen
             // right-aligned, clear of the bottom-right corner cap (InventoryMath.ActionRow); the title keeps the header width.
             if (grid) Geo.Place(_canvas, (RectTransform)grid.transform, InventoryMath.ContainerGridView(box, fit, _tokens, k));
             if (grid) Want(grid, fit.Pitch, fit.Cell);
+            // Scrollbar in the view's right margin (the stacked panel keeps a scrollbar-wide margin on both sides, so the
+            // grid stays on the column axis), never over the cells.
+            if (grid && grid.m_scrollbar && fit.ScrollV)
+            {
+                var view = InventoryMath.ContainerGridView(box, fit, _tokens, k);
+                var sbw = _tokens.ScrollbarW * k;
+                Geo.Place(_canvas, (RectTransform)grid.m_scrollbar.transform, new Box(view.Right - sbw, view.Y, sbw, view.H));
+            }
             Bar(panel, kind, inventory, takeAll, stackAll, InventoryMath.ActionRow(box, _tokens, k));
             var weightPlate = DirectChild(panel, weight);
             var right = header.Right;
