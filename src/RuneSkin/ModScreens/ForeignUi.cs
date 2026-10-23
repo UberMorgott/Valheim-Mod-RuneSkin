@@ -321,6 +321,7 @@ namespace RuneSkin.ModScreens
             if (!hud) ForeignRoles.Before(unit, family);
             GameScreenKit.Form(unit, id, family, (ctx, r) => Roles(ctx, r, family), panels: !hud);
             ForeignRoles.After(unit, family);
+            if (!hud) ForeignRoles.Movable(unit, id);
             SkinDiagnostics_Note(id, unit);
         }
 

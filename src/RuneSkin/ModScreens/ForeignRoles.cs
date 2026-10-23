@@ -70,6 +70,22 @@ namespace RuneSkin.ModScreens
             }
         }
 
+        // A mod window (its panel stack on the unit root or a direct child, PanelSwap) moves by the top band of that panel;
+        // the mod keeps placing the unit, the user offset rides on top (MovableWindow, WindowMove).
+        public static void Movable(Transform unit, string id)
+        {
+            if (!(unit is RectTransform ur)) return;
+            foreach (var swap in unit.GetComponentsInChildren<PanelSwap>(true))
+            {
+                var t = swap.transform;
+                if ((t != unit && t.parent != unit) || !(t is RectTransform panel)) continue;
+                var key = "mod." + id;
+                MovableWindow.Ensure(ur, key);
+                WindowMove.TopBand(panel, key, ThemeTokens.GetFloat("size.window.band", 64f), ur);
+                return;
+            }
+        }
+
         // ---------------------------------------------------------------- roles
 
         public static void Precise(ScreenContext ctx, Transform root, string family)

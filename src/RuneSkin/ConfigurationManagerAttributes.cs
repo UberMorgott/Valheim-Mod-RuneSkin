@@ -7,5 +7,8 @@ namespace RuneSkin
     {
         public int? Order;
         public bool? IsAdvanced;
+        // Draws the setting itself (IMGUI, inside ConfigurationManager's window).
+        public System.Action<BepInEx.Configuration.ConfigEntryBase> CustomDrawer;
+        public bool? HideDefaultButton;
     }
 }

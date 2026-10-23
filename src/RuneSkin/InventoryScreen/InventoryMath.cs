@@ -283,6 +283,49 @@ namespace RuneSkin.InventoryScreen
             if (left > right) left = right = 0f;
         }
 
+        // The column block that moves as one window (dock panels, centre, crafting): their bounding box.
+        public static Box Block(InventoryLayout o)
+        {
+            float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
+            foreach (var b in new[] { o.Dock, o.Chest, o.Backpack, o.Center, o.Crafting })
+            {
+                if (b.IsEmpty) continue;
+                x0 = Math.Min(x0, b.X); y0 = Math.Min(y0, b.Y);
+                x1 = Math.Max(x1, b.Right); y1 = Math.Max(y1, b.Bottom);
+            }
+            return x0 > x1 ? default : new Box(x0, y0, x1 - x0, y1 - y0);
+        }
+
+        // A copy of the layout moved by (dx, dy) canvas units (the user dragged the group): every box shifts, sizes and
+        // grid fits stay. Zero offset returns the layout itself.
+        public static InventoryLayout Shift(InventoryLayout o, float dx, float dy)
+        {
+            if (o == null || (Math.Abs(dx) < 0.001f && Math.Abs(dy) < 0.001f)) return o;
+            Box S(Box b) => b.IsEmpty ? b : new Box(b.X + dx, b.Y + dy, b.W, b.H);
+            return new InventoryLayout
+            {
+                Mode = o.Mode,
+                Workspace = S(o.Workspace),
+                Dock = S(o.Dock),
+                Chest = S(o.Chest),
+                Backpack = S(o.Backpack),
+                Center = S(o.Center),
+                Header = S(o.Header),
+                Doll = S(o.Doll),
+                Grid = S(o.Grid),
+                Footer = S(o.Footer),
+                Crafting = S(o.Crafting),
+                Player = o.Player,
+                ChestGrid = o.ChestGrid,
+                BackpackGrid = o.BackpackGrid,
+                DollCells = o.DollCells,
+                DockOverflow = o.DockOverflow,
+                BackpackFolded = o.BackpackFolded,
+                MinCell = o.MinCell,
+                InnerGap = o.InnerGap
+            };
+        }
+
         // Storage grid and figure inside the doll box: the figure is a portrait box (height = the doll rows, width =
         // height x aspect, never wider than the room left), the whole group centred.
         public static DollStrip Strip(Box box, DollFit d, float cellGap, float figureGap, float aspect)

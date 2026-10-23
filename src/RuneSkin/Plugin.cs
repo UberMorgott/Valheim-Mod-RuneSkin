@@ -22,13 +22,15 @@ namespace RuneSkin
     [BepInProcess("valheim.exe")]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Version = "0.19.0";
+        public const string Version = "0.20.0";
 
         public static ManualLogSource Log { get; private set; }
         public static ConfigEntry<float> SkinScale { get; private set; }
         public static ConfigEntry<float> PanelFade { get; private set; }
         public static ConfigEntry<float> NumberOutline { get; private set; }
         public static ConfigEntry<bool> CharacterPreview { get; private set; }
+        public static ConfigEntry<bool> MovableWindows { get; private set; }
+        public static ConfigEntry<bool> ResetLayout { get; private set; }
         public static Host ApiHost { get; private set; }
         public static ConfigEntry<float> HudScale { get; private set; }
         public static ConfigEntry<float> MinimapScale { get; private set; }
@@ -215,6 +217,14 @@ namespace RuneSkin
                 new AcceptableValueRange<float>(0f, 1f)));
             CharacterPreview = Config.Bind("Layout", "CharacterPreview", true,
                 "Live 3D preview of your character in the inventory (off = carved silhouette). Applies on the next game start.");
+            MovableWindows = Config.Bind("Layout", "MovableWindows", true,
+                "Windows can be dragged by their title band (inventory group, crafting, stats, skills, trophies, compendium, map legend, mod panels); a double-click on the band puts that window back. Off = every window at its default dock.");
+            ResetLayout = Config.Bind("Layout", "ResetLayout", false, new ConfigDescription(
+                "Reset layout: every moved window back to its default dock (all resolutions; positions file BepInEx\\cache\\RuneSkin\\window-positions.txt). Set to true (or press the button) to reset; it turns itself off.",
+                null, new ConfigurationManagerAttributes { CustomDrawer = DrawResetLayout, HideDefaultButton = true }));
+            MovableWindows.SettingChanged += (_, __) => Restyle.WindowMove.Load(); // owners re-lay out (offsets on / off)
+            ResetLayout.SettingChanged += (_, __) => ConsumeResetLayout();
+            ConsumeResetLayout();
 
             if (!ThemeTokens.Load())
             {
@@ -315,6 +325,21 @@ namespace RuneSkin
         public static string[] Coverage(string state) => Diagnostics.Coverage.Scan(string.IsNullOrEmpty(state) ? "now" : state);
 
         // Diagnostics entry for tools (AutotestDriver calls it by reflection): writes BepInEx\RuneSkin\diag\<screen>.txt.
+        // Layout.ResetLayout: true (cfg edit, ConfigurationManager toggle or its button) resets every window position,
+        // then the entry turns itself back off.
+        private static void ConsumeResetLayout()
+        {
+            if (ResetLayout == null || !ResetLayout.Value) return;
+            Restyle.WindowMove.ResetAll();
+            ResetLayout.Value = false;
+        }
+
+        // ConfigurationManager custom drawer (IMGUI, its own window): one button.
+        private static void DrawResetLayout(ConfigEntryBase entry)
+        {
+            if (UnityEngine.GUILayout.Button("Reset layout (all windows)", UnityEngine.GUILayout.ExpandWidth(true))) Restyle.WindowMove.ResetAll();
+        }
+
         public static string[] DiagDump(string screen)
         {
             PlayerHud.HudCluster.Instance?.Record();
