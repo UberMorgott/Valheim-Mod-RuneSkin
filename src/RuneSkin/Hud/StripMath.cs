@@ -31,6 +31,8 @@ namespace RuneSkin.PlayerHud
             public float FoodCell, PotionCell, PotionH, TimerH;
             public float MinCell;        // wing slots never scale below this
             public float SlotPad;        // margin inside a wing at its block end
+            public float WingInnerY;     // centre of the wing plate's inner area above the strip bottom (0 = WingH / 2)
+            public float FoodLift;       // food disc centre above its cell centre (the timer band under the disc)
             public int Hotbar, Abilities, Food, Potions;
         }
 
@@ -108,8 +110,11 @@ namespace RuneSkin.PlayerHud
             var potW = Zone(i.Potions, o.PotionCell, pg);
             o.FoodX = i.KnotW + (span - foodW) / 2f;
             o.PotionX = o.CenterX + o.CenterW + i.SlotPad + (span - potW) / 2f;
-            o.FoodY = (i.WingH - o.FoodCell) / 2f; // the timer sits on the ring's lower arc (mockup), inside the box
-            o.PotionY = (i.WingH - o.PotionH) / 2f;
+            // Sockets centred on the plate's inner area (user 2026-10-23: they sat high): the food DISC centre (the cell's
+            // timer band hangs under it) and the potion cell centre on WingInnerY.
+            var inner = i.WingInnerY > 0f ? i.WingInnerY : i.WingH / 2f;
+            o.FoodY = inner - o.FoodCell / 2f - i.FoodLift;
+            o.PotionY = inner - o.PotionH / 2f;
             o.Fits = o.CenterX >= i.KnotW + i.SlotPad && (i.Food == 0 || o.FoodCell >= i.FoodCell * 0.6f) && (i.Potions == 0 || o.PotionCell >= i.PotionCell * 0.6f);
             return o;
         }

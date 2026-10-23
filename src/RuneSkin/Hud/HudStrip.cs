@@ -55,8 +55,8 @@ namespace RuneSkin.PlayerHud
             // then the medallions and the cells (BuildFront).
             _wingL = Piece("WingLeft", _back, "sprite.hud.strip4.wing", Image.Type.Sliced);
             _wingR = Piece("WingRight", _back, "sprite.hud.strip4.wing", Image.Type.Sliced);
-            _bars = Piece("BarBlock", _back, "sprite.hud.strip4.bars", Image.Type.Tiled);
-            _block = Piece("HotbarBlock", _back, "sprite.hud.strip4.block", Image.Type.Tiled);
+            _bars = Piece("BarBlock", _back, "sprite.hud.strip4.bars", Image.Type.Sliced);
+            _block = Piece("HotbarBlock", _back, "sprite.hud.strip4.block", Image.Type.Sliced);
             _divider = Piece("Divider", _back, "sprite.hud.strip4.divider", Image.Type.Simple);
         }
 
@@ -181,6 +181,9 @@ namespace RuneSkin.PlayerHud
                 MedH = ThemeTokens.GetFloat("size.hud.strip.med.h", 150f),
                 MedY = ThemeTokens.GetFloat("size.hud.strip.med.y", 172f),
                 MedTuck = ThemeTokens.GetFloat("size.hud.strip.med.tuck", 12f),
+                WingInnerY = WingInner(ThemeTokens.GetFloat("size.hud.strip.wing.h", 130f)),
+                // the food disc sits above the timer band (StripCell.Size): half the band above the cell centre
+                FoodLift = cell * Mathf.Clamp(ThemeTokens.GetFloat("share.hud.strip.timer.band", 0.27f), 0f, 0.5f) / 2f,
                 FoodCell = cell,
                 PotionCell = cell,
                 PotionH = cell,
@@ -192,6 +195,16 @@ namespace RuneSkin.PlayerHud
                 Food = FoodCount,
                 Potions = PotionCount
             };
+        }
+
+        // Centre of the wing plate's inner area (between the top and bottom rails = the 9-slice top / bottom borders of
+        // the wing sprite), in strip units above the strip bottom; 0 = no sprite (StripMath uses the middle).
+        private static float WingInner(float wingH)
+        {
+            var s = ThemeTokens.GetSprite("sprite.hud.strip4.wing");
+            if (!s || s.rect.height <= 0f) return 0f;
+            var b = s.border; // (left, bottom, right, top) in sprite px
+            return wingH * (b.y + (s.rect.height - b.w)) / 2f / s.rect.height;
         }
 
         public void Apply(in StripMath.Layout l, in StripMath.Input i)

@@ -270,21 +270,21 @@ func renderHud4(opt hud4Opts) (*image.NRGBA, image.Rectangle, float64) {
 	frame := tcol("color.hud.strip.frame", "#FFFFFFFF")
 
 	// wings, bar block, hotbar block, divider
-	draw9s(img, "strip5_wing", R(0, 0, l.LeftW, in.WingH), art, frame, false)
-	draw9s(img, "strip5_wing", R(l.RightX, 0, l.RightW, in.WingH), art, frame, true)
+	draw9s(img, "strip6_wing", R(0, 0, l.LeftW, in.WingH), art, frame, false)
+	draw9s(img, "strip6_wing", R(l.RightX, 0, l.RightW, in.WingH), art, frame, true)
 	rowOn := opt.stamina || opt.eitr
 	barsFrameH := barsH
 	if !rowOn {
 		barsFrameH = padT + hp + padB
 	}
-	draw9s(img, "strip5_bars", R(l.BarsX, l.BarsH-barsFrameH, l.BarsW, barsFrameH), art, frame, false)
+	draw9s(img, "strip6_bars", R(l.BarsX, l.BarsH-barsFrameH, l.BarsW, barsFrameH), art, frame, false)
 	lap := tv("size.hud.strip.block.overlap", 6)
-	draw9s(img, "strip5_block", R(l.CX, l.BlockY-lap, l.CW, l.BlockH+lap), art, frame, false)
+	draw9s(img, "strip6_block", R(l.CX, l.BlockY-lap, l.CW, l.BlockH+lap), art, frame, false)
 	if opt.abilities > 0 {
-		ds := sprites["strip4_divider"].img.Bounds()
+		ds := sprites["strip6_divider"].img.Bounds()
 		dh := in.CellH + in.DurH
 		dw := dh * float64(ds.Dx()) / float64(ds.Dy())
-		draw9s(img, "strip4_divider", R(l.DivX-dw/2, l.CellsY-in.DurH, dw, dh), art, frame, false)
+		draw9s(img, "strip6_divider", R(l.DivX-dw/2, l.CellsY-in.DurH, dw, dh), art, frame, false)
 	}
 
 	// bars: well (frame) over trough + fill; BarView scale = wanted height / sprite height (sprite px = ref units)
@@ -354,7 +354,7 @@ func renderHud4(opt hud4Opts) (*image.NRGBA, image.Rectangle, float64) {
 
 	// medallions + glyph
 	glyph := func(mx float64, mirror bool) {
-		draw9s(img, "strip5_medallion", R(mx, l.MedY, in.MedW, in.MedH), art, frame, mirror)
+		draw9s(img, "strip6_medallion", R(mx, l.MedY, in.MedW, in.MedH), art, frame, mirror)
 		dx := tv("share.hud.strip4.med.disc.x", 0.556)
 		if mirror {
 			dx = 1 - dx
