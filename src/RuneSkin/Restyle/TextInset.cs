@@ -34,6 +34,8 @@ namespace RuneSkin.Restyle
         private RectTransform _viewport;
         private Vector2 _origMin, _origMax, _setMin, _setMax;
         private bool _origAuto;
+        private bool _toggleLabel, _hasOverflow;
+        private TextOverflowModes _origOverflow;
         private int _columns = -1; // 1 = column text of a multi-text row button, 0 = not, -1 = undecided
         private float _origSizeMin, _origSizeMax;
 
@@ -70,7 +72,7 @@ namespace RuneSkin.Restyle
             var sel = GetComponentInParent<Selectable>();
             if (sel is TMP_InputField input) Field(input);
             else if (sel is TMP_Dropdown dropdown) Caption(dropdown);
-            else if (sel is Toggle toggle && !GetComponentInParent<TMP_Dropdown>()) Beside(toggle);
+            else if (sel is Toggle toggle && !GetComponentInParent<TMP_Dropdown>()) { Beside(toggle); _toggleLabel = true; }
             else if (sel is Button button)
             {
                 Row(button);
@@ -164,6 +166,16 @@ namespace RuneSkin.Restyle
         // overflowing column drew over the next one.
         private void FitTruncated()
         {
+            // Checkbox labels keep the readable size and run past their (narrow vanilla) box instead of shrinking or
+            // cutting: the character-creation sex toggles shrank to 15.5 px fighting the readable floor (runs
+            // 20261023-012017 / -032312), a one-word label has no second line to take.
+            if (_toggleLabel && (_text.overflowMode == TextOverflowModes.Ellipsis || _text.overflowMode == TextOverflowModes.Truncate) && _text.isTextTruncated)
+            {
+                if (!_hasOverflow) { _origOverflow = _text.overflowMode; _hasOverflow = true; }
+                _text.overflowMode = TextOverflowModes.Overflow;
+                return;
+            }
+            if (_toggleLabel && _text.enableAutoSizing && _text.fontSizeMin < ThemeTokens.GetFloat("size.text.readable", 16f)) return;
             var column = _columns == 1 && _text.overflowMode == TextOverflowModes.Overflow;
             if (!column && _text.overflowMode != TextOverflowModes.Ellipsis && _text.overflowMode != TextOverflowModes.Truncate) return;
             // Column texts of a list row keep the readable size (16) and end in their ellipsis below it (m5-text-min,
@@ -313,6 +325,7 @@ namespace RuneSkin.Restyle
             {
                 if (_hasMargin && _text.margin == _setMargin) _text.margin = _origMargin;
                 if (_hasAlign && _text.horizontalAlignment == _setAlign) _text.horizontalAlignment = _origAlign;
+                if (_hasOverflow && _text.overflowMode == TextOverflowModes.Overflow) _text.overflowMode = _origOverflow;
                 if (_hasAuto)
                 {
                     _text.enableAutoSizing = _origAuto;
