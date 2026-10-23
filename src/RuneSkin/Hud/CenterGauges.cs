@@ -82,7 +82,7 @@ namespace RuneSkin.PlayerHud
             Stretch(_colFrame.rectTransform);
             var inset = ThemeTokens.GetFloat("share.hud.gauge.stagger.inset", 0.18f);
             Inset(_colFill.rectTransform, cw * inset, ch * 0.06f);
-            Inset(_colBurst.rectTransform, cw * inset * 0.6f, ch * 0.05f);
+            Inset(_colBurst.rectTransform, cw * inset, ch * 0.06f); // inside the frame channel (the burst never covers the frame)
         }
 
         public void SetActive(bool on)
