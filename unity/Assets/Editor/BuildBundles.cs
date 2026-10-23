@@ -26,6 +26,7 @@ public static class BuildBundles
     // High-resolution art (sprites.json "atlas": "hires", e.g. the 4x Codex redraws of the stats window): own atlas up
     // to 4096 with mipmaps (trilinear), so large sprites are never downscaled to fit the 2048 main atlas.
     const string HiAtlasPath = Root + "/RuneSkinHi.spriteatlas";
+    const string StripAtlasPath = Root + "/RuneSkinStrip.spriteatlas";
     const string OutDir = "Build";
 
     [Serializable] public class Border { public int left, bottom, right, top; }
@@ -60,8 +61,11 @@ public static class BuildBundles
             var man = JsonUtility.FromJson<Manifest>(File.ReadAllText(Path.Combine(Art, "sprites", "sprites.json")));
             var sprites = ImportSprites(man);
             var hi = new HashSet<string>(man.sprites.Where(s => s.atlas == "hires").Select(s => s.name));
+            // third atlas: the target-panel strip pieces (the main and hires atlases are full at 4096)
+            var st = new HashSet<string>(man.sprites.Where(s => s.atlas == "strip").Select(s => s.name));
             BuildAtlas(sprites.Where(s => !hi.Contains(s.name) && !st.Contains(s.name)).ToList(), AtlasPath, 4096, true); // main atlas: 4x redraws, mipmapped (padding 8 keeps the mips from bleeding)
             if (hi.Count > 0) BuildAtlas(sprites.Where(s => hi.Contains(s.name)).ToList(), HiAtlasPath, 4096, true);
+            if (st.Count > 0) BuildAtlas(sprites.Where(s => st.Contains(s.name)).ToList(), StripAtlasPath, 4096, true);
             var fonts = BakeFonts();
             fonts.AddRange(ImportLegacyFonts());
             fonts.AddRange(ImportTextures());
