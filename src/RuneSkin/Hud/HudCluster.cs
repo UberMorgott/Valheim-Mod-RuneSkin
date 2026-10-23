@@ -109,10 +109,11 @@ namespace RuneSkin.PlayerHud
             var fill = "sprite.hud.strip4.fill";
             var trough = "color.hud.strip.trough";
             var hpScale = FrameScale(well, ThemeTokens.GetFloat("size.hud.strip.bar.hp", 46f));
-            var rowScale = FrameScale(well, ThemeTokens.GetFloat("size.hud.strip.bar.row", 40f));
-            _eitr = new BarView(_art, _root, "Eitr", false, well, "color.hud.strip.fill.eitr", rowScale, fillToken: fill + ".eitr", troughColorToken: trough, troughToken: fill);
-            _adrenaline = new BarView(_art, _root, "Adrenaline", false, well, "color.hud.strip.fill.adrenaline", rowScale, fillToken: fill + ".rage", troughColorToken: trough, troughToken: fill);
-            _stamina = new BarView(_art, _root, "Stamina", false, well, "color.hud.strip.fill.stamina", rowScale, fillToken: fill + ".stamina", troughColorToken: trough, troughToken: fill);
+            var rowWell = "sprite.hud.strip4.well.row";
+            var rowScale = FrameScale(rowWell, ThemeTokens.GetFloat("size.hud.strip.bar.row", 40f));
+            _eitr = new BarView(_art, _root, "Eitr", false, rowWell, "color.hud.strip.fill.eitr", rowScale, fillToken: fill /* the violet fill is too close to the magenta key: neutral fill tinted */, troughColorToken: trough, troughToken: fill);
+            _adrenaline = new BarView(_art, _root, "Adrenaline", false, rowWell, "color.hud.strip.fill.adrenaline", rowScale, fillToken: fill + ".rage", troughColorToken: trough, troughToken: fill);
+            _stamina = new BarView(_art, _root, "Stamina", false, rowWell, "color.hud.strip.fill.stamina", rowScale, fillToken: fill + ".stamina", troughColorToken: trough, troughToken: fill);
             _health = new BarView(_art, _root, "Health", false, well, "color.hud.strip.fill.health", hpScale, mainValue: true, fillToken: fill + ".hp", troughColorToken: trough, troughToken: fill);
             _health.Plain = _stamina.Plain = _eitr.Plain = _adrenaline.Plain = true;
             _health.ShieldPerimeter = true;
@@ -707,9 +708,12 @@ namespace RuneSkin.PlayerHud
             var buffsLeft = (Plugin.BuffSide?.Value ?? "Left") != "Right";
             var inset = ThemeTokens.GetFloat("size.hud.strip.knot", 70f) + ThemeTokens.GetFloat("size.hud.status.pad", 6f);
             var x = buffsLeft ? inset : _stripWidth - inset - rt.sizeDelta.x;
-            var want = new Vector2(x, _statusBase + _buffs.Root.sizeDelta.y + ThemeTokens.GetFloat("size.hud.gap", 5f) * 2f + h);
+            var want = new Vector2(x, _statusBase + _buffs.Root.sizeDelta.y + ThemeTokens.GetFloat("size.hud.gap", 5f) * 4f + h * ThemeTokens.GetFloat("share.hud.summon.strip", 0.7f));
             if ((rt.anchoredPosition - want).sqrMagnitude > 0.25f) rt.anchoredPosition = want;
-            if (rt.localScale != Vector3.one) rt.localScale = Vector3.one;
+            // Smaller than the status cells and kept above the buff rows (lead review: the summon row cluttered the buffs).
+            var k = ThemeTokens.GetFloat("share.hud.summon.strip", 0.7f);
+            var scale = new Vector3(k, k, 1f);
+            if (rt.localScale != scale) rt.localScale = scale;
             return true;
         }
 
