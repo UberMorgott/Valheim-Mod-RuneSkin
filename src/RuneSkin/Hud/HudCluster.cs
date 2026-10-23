@@ -573,7 +573,8 @@ namespace RuneSkin.PlayerHud
                 Relayout();
             }
             Status();
-            var cells = _strip.CellCount + _buffs.CellCount;
+            ChatTick();
+            var cells = _strip.CellCount + _buffs.CellCount + _summonParented;
             if (cells != _floorCells)
             {
                 _floorCells = cells;
@@ -581,7 +582,7 @@ namespace RuneSkin.PlayerHud
             }
         }
 
-        private int _floorCells = -1;
+        private int _floorCells = -1, _summonParented;
 
         // Geometry pass (inputs changed): strip layout, bars, scale and screen placement.
         private void Relayout()
@@ -655,52 +656,61 @@ namespace RuneSkin.PlayerHud
 
         private void TextFloors()
         {
+            TextFloor.Root = _root;
+            TextFloor.RootPx = _pxPerUnit;
             _root.GetComponentsInChildren(true, _floors);
-            var rootScale = Mathf.Abs(_root.lossyScale.y);
-            if (!(rootScale > 0f)) return;
             foreach (var f in _floors)
-            {
-                if (!f || !f.TryGetComponent<TMPro.TMP_Text>(out var t)) continue;
-                if (f.Base <= 0f) f.Base = t.fontSize;
-                // screen px per text unit: the root's px per unit times the text's own scale under the root
-                var unit = _pxPerUnit * Mathf.Abs(t.rectTransform.lossyScale.y) / rootScale;
-                var size = StripMath.FontFloor(f.Base, f.Px, unit);
-                if (!Mathf.Approximately(t.fontSize, size)) t.fontSize = size;
-                if (t.enableAutoSizing)
-                {
-                    var min = StripMath.FontFloor(0f, f.Px, unit);
-                    if (t.fontSizeMin < min) t.fontSizeMin = min;
-                    if (t.fontSizeMax < size) t.fontSizeMax = size;
-                }
-            }
+                if (f) f.Apply();
         }
 
-        // The vanilla chat window (bottom left, Terminal.m_chatWindow; vanilla never moves it, Chat.cs) sits on the strip
-        // when the strip spans the screen: lifted so its bottom clears the strip top (screen px), its own offset kept.
+        // The vanilla chat box (bottom right, Terminal.m_chatWindow; vanilla never moves it, Chat.cs) sits on the strip's
+        // right wing once the strip spans the screen: lifted so the box (its drawn graphics, not the window rect) clears
+        // the strip top. Measured while the window is shown (a hidden chat keeps stale rects): pending until then.
         private RectTransform _chatWindow;
         private Vector2 _chatHome;
+        private float _chatTarget;
+        private bool _chatPending;
+        private readonly List<Graphic> _chatGraphics = new List<Graphic>(16);
+        private readonly Vector3[] _corners = new Vector3[4];
 
         private void ChatClear(float stripTopPx)
         {
+            _chatTarget = stripTopPx;
+            _chatPending = true;
+            ChatTick();
+        }
+
+        private void ChatTick()
+        {
+            if (!_chatPending) return;
             var chat = Chat.instance;
             var w = chat ? chat.m_chatWindow : null;
-            if (!w) return;
+            if (!w || !w.gameObject.activeInHierarchy) return;
             if (w != _chatWindow)
             {
                 _chatWindow = w;
                 _chatHome = w.anchoredPosition;
             }
+            _chatPending = false;
             if (w.anchoredPosition != _chatHome) w.anchoredPosition = _chatHome;
-            var canvas = w.GetComponentInParent<Canvas>(true);
+            var canvas = w.GetComponentInParent<Canvas>();
             if (!canvas) return;
             var cam = canvas.rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.rootCanvas.worldCamera;
-            var corners = new Vector3[4];
-            w.GetWorldCorners(corners);
-            var bottom = RectTransformUtility.WorldToScreenPoint(cam, corners[0]).y;
-            var lift = stripTopPx - bottom;
+            w.GetComponentsInChildren(false, _chatGraphics);
+            var bottom = float.MaxValue;
+            foreach (var g in _chatGraphics)
+            {
+                if (!g.enabled || g.rectTransform.rect.width < 1f || g.rectTransform.rect.height < 1f) continue;
+                g.rectTransform.GetWorldCorners(_corners);
+                bottom = Mathf.Min(bottom, RectTransformUtility.WorldToScreenPoint(cam, _corners[0]).y);
+            }
+            if (bottom == float.MaxValue) return;
+            var lift = _chatTarget - bottom;
             if (lift <= 0f) return;
             // screen px -> the window's anchored units (its parent's scale)
-            var up = RectTransformUtility.WorldToScreenPoint(cam, corners[0] + w.parent.TransformVector(Vector3.up)).y - bottom;
+            w.GetWorldCorners(_corners);
+            var p0 = RectTransformUtility.WorldToScreenPoint(cam, _corners[0]).y;
+            var up = RectTransformUtility.WorldToScreenPoint(cam, _corners[0] + w.parent.TransformVector(Vector3.up)).y - p0;
             if (!(up > 0f)) return;
             w.anchoredPosition = _chatHome + new Vector2(0f, lift / up);
         }
@@ -778,7 +788,11 @@ namespace RuneSkin.PlayerHud
         public bool PlaceSummons(RectTransform rt, float h)
         {
             if (!_root || _stripKey == int.MinValue) return false;
-            if (rt.parent != _root) rt.SetParent(_root, false);
+            if (rt.parent != _root)
+            {
+                rt.SetParent(_root, false);
+                _summonParented++; // its texts get the readable floor on the next Arrange
+            }
             rt.anchorMin = rt.anchorMax = Vector2.zero;
             rt.pivot = new Vector2(0f, 1f);
             // In the buff side area (mockup hud-3: side groups above the strip), over the buff rows.

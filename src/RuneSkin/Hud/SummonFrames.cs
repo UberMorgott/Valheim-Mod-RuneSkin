@@ -347,6 +347,10 @@ namespace RuneSkin.PlayerHud
             t.color = ThemeTokens.GetColor("color.hud.text", Color.white);
             t.raycastTarget = false;
             t.textWrappingMode = TextWrappingModes.NoWrap;
+            // Rides the strip root (PlaceSummons): raised to the readable floor with the strip's scale (TextFloor.Apply).
+            var floor = rt.gameObject.AddComponent<TextFloor>();
+            floor.Base = size;
+            floor.Px = ThemeTokens.GetFloat("floor.text.timer.px", 12f);
             return t;
         }
     }

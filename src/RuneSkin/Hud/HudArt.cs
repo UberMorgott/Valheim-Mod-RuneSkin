@@ -228,5 +228,40 @@ namespace RuneSkin.PlayerHud
         // Readable minimum in screen px; Base = the theme font size (strip units) before any floor raise.
         public float Px;
         public float Base;
+
+        // The HUD strip root and its screen px per unit (HudCluster, every relayout): texts under it are raised to their
+        // floor there; a text created later (pooled frames) applies it once on Start.
+        public static Transform Root;
+        public static float RootPx;
+
+        private void Start()
+        {
+            if (Root && transform.IsChildOf(Root)) Apply();
+        }
+
+        public void Apply()
+        {
+            if (!Root || !(RootPx > 0f) || !TryGetComponent<TMP_Text>(out var t)) return;
+            var rootScale = Mathf.Abs(Root.lossyScale.y);
+            if (!(rootScale > 0f)) return;
+            if (Base <= 0f) Base = t.fontSize;
+            // screen px per text unit: the root's px per unit times the text's own scale under the root
+            var unit = RootPx * Mathf.Abs(t.rectTransform.lossyScale.y) / rootScale;
+            var size = StripMath.FontFloor(Base, Px, unit);
+            if (!Mathf.Approximately(t.fontSize, size)) t.fontSize = size;
+            if (!t.enableAutoSizing) return;
+            if (_baseMax <= 0f)
+            {
+                _baseMin = t.fontSizeMin;
+                _baseMax = t.fontSizeMax;
+            }
+            // auto-size range from the theme's, both ends raised to the floor at this scale (and back when it grows)
+            var max = StripMath.FontFloor(_baseMax, Px, unit);
+            var min = Mathf.Min(max, StripMath.FontFloor(_baseMin, Px, unit));
+            if (!Mathf.Approximately(t.fontSizeMax, max)) t.fontSizeMax = max;
+            if (!Mathf.Approximately(t.fontSizeMin, min)) t.fontSizeMin = min;
+        }
+
+        private float _baseMin, _baseMax;
     }
 }
