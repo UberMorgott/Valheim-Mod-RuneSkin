@@ -211,11 +211,17 @@ namespace RuneSkin.PlayerHud
             f.StubL = new Box(stubL, railY, railX + t7("rail.stub.lap", 4f) - stubL, railH);
             var stubR = f.RailR.Right - t7("rail.stub.lap", 4f);
             f.StubR = new Box(stubR, f.RailR.Y, f.KnotR.Right - stubR, f.RailR.H);
-            // block-tip rail caps under the bar block's pointed ends (target px 428..450 / 1178..1200, y 148..194; bar block
-            // 438..1190, bottom 203; 85 units per 59 px): the inner diamond and the block's own tip are drawn over them
-            float capW = t7("tipcap.w", 31.7f), capH = t7("tipcap.h", 66.3f), capY = t7("tipcap.y", 13f);
-            f.CapL = new Box(l.BarsX + t7("tipcap.dx", -14.4f), capY, capW, capH);
-            f.CapR = new Box(l.BarsX + l.BarsW + t7("tipcap.r.dx", -17.3f), capY, capW, capH);
+            // rail extensions under the bar block's pointed ends: the same rail (its own y / height, tiled) runs on from the
+            // rail end to rail.under units INSIDE the block, so the block tip and the inner diamond are drawn over a
+            // continuous rail (user crops 0.20.0: separate tip caps of another height left a hard rectangular step and
+            // see-through gaps next to the tip)
+            var under = t7("rail.under", 24f);
+            var lap = t7("rail.stub.lap", 4f);
+            var capLX = f.RailL.Right - lap;
+            f.CapL = new Box(capLX, f.RailL.Y, Math.Max(0f, l.BarsX + under - capLX), f.RailL.H);
+            var capRR = f.RailR.X + lap;
+            var capRX = l.BarsX + l.BarsW - under;
+            f.CapR = new Box(capRX, f.RailR.Y, Math.Max(0f, capRR - capRX), f.RailR.H);
             float k2dx = t7("knot2.dx", -21.6f), k2y = t7("knot2.y", 47.5f), k2w = t7("knot2.w", 30.5f), k2h = t7("knot2.h", 32.6f);
             f.Knot2L = new Box(l.BarsX + k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h);
             f.Knot2R = new Box(l.BarsX + l.BarsW - k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h);

@@ -8761,8 +8761,8 @@
       "name": "strip7_field",
       "file": "strip7_field.png",
       "size": [
-        1665,
-        164
+        1475,
+        138
       ],
       "border": {
         "left": 0,
@@ -9146,6 +9146,75 @@
       "fillCenter": true,
       "token": "hud.strip7.icon_ei",
       "notes": "Target panel: 4x piece icon-eitr-socket by the mockup agent (exact crop of the user's screenshot), 0.72 = 2.88 sprite px per target px",
+      "atlas": "strip"
+    },
+    {
+      "name": "strip7_socket_hp",
+      "file": "strip7_socket_hp.png",
+      "size": [
+        184,
+        184
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip7.socket_hp",
+      "notes": "0.20.1: whole round pool socket (ring + glyph), Codex strip7_sockets.prompt.txt; replaces the cut strip7_icon_hp crop",
+      "atlas": "strip"
+    },
+    {
+      "name": "strip7_socket_st",
+      "file": "strip7_socket_st.png",
+      "size": [
+        184,
+        184
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip7.socket_st",
+      "notes": "0.20.1: whole round pool socket (ring + glyph), Codex strip7_sockets.prompt.txt; replaces the cut strip7_icon_st crop",
+      "atlas": "strip"
+    },
+    {
+      "name": "strip7_socket_ei",
+      "file": "strip7_socket_ei.png",
+      "size": [
+        184,
+        184
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip7.socket_ei",
+      "notes": "0.20.1: whole round pool socket (ring + glyph), Codex strip7_sockets.prompt.txt; replaces the cut strip7_icon_ei crop",
       "atlas": "strip"
     },
     {

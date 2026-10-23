@@ -716,7 +716,7 @@ namespace RuneSkin.PlayerHud
             var l = Mathf.Max(0f, _length);
             Full(_fx.rectTransform, l);
             var aspect = _h > 0f ? l / _h : 1f;
-            if (!Mathf.Approximately(aspect, _fxAspect)) { _fxAspect = aspect; _fxMat.SetFloat(PAspect, aspect); }
+            if (!Mathf.Approximately(aspect, _fxAspect)) { _fxAspect = aspect; FxSet(PAspect, aspect); }
             if (!_fxGlow) return;
             var o = ThemeTokens.GetFloat("size.hud.strip4.shield.out", 3f);
             var w = Width + 2f * o;
@@ -735,19 +735,19 @@ namespace RuneSkin.PlayerHud
             if (color != _fxColor)
             {
                 _fxColor = color;
-                _fxMat.SetColor(PFillColor, ThemeTokens.GetColor(color, Color.white));
+                FxSetColor(PFillColor, ThemeTokens.GetColor(color, Color.white));
             }
             var f = Mathf.Clamp01(cur / max);
-            if (Mathf.Abs(f - _fxFill) > 0.0001f) { _fxFill = f; _fxMat.SetFloat(PFill, f); }
+            if (Mathf.Abs(f - _fxFill) > 0.0001f) { _fxFill = f; FxSet(PFill, f); }
             var lag = Mathf.Clamp01(Mathf.Max(_lagValue, cur) / max);
-            if (Mathf.Abs(lag - _fxLag) > 0.0001f) { _fxLag = lag; _fxMat.SetFloat(PLag, lag); }
+            if (Mathf.Abs(lag - _fxLag) > 0.0001f) { _fxLag = lag; FxSet(PLag, lag); }
             // the living look only for the bar's own pool (an energy shield shown in the HP window stays plain)
             FxEvents(fillToken == _fillColor && !inert ? _fxPool : BarFxPool.Plain, cur, max);
             var run = StripMath.ShieldRun(_shieldValue, max, out _, out _);
             if (Mathf.Abs(run - _fxShield) > 0.0001f)
             {
                 _fxShield = run;
-                _fxMat.SetFloat(PShield, run);
+                FxSet(PShield, run);
                 if (_fxGlowMat) _fxGlowMat.SetFloat(PShield, run);
                 var on = run > 0f;
                 if (_fxGlow && _fxGlow.gameObject.activeSelf != on) _fxGlow.gameObject.SetActive(on);
@@ -782,11 +782,39 @@ namespace RuneSkin.PlayerHud
 
         // Writes a living-fill property to the base material and, when a stencil Mask made uGUI render a copy, to that
         // copy too (StencilMaterial keeps its copy's properties: a base-only write would stay invisible).
+        // Every material property goes through here (0.20.1: fill / lag / shield / colour / aspect were base-only, so a
+        // stencil copy made after them kept stale values), and the material actually drawn is logged whenever its
+        // living-fill state changes (user crops 0.20.0 showed the plain glossy fill: the log names shader, pool, on and
+        // intensity of the rendered material, base or stencil copy).
         private void FxSet(int id, float value)
         {
             _fxMat.SetFloat(id, value);
             var shown = _fx.materialForRendering;
             if (shown && shown != _fxMat) shown.SetFloat(id, value);
+            FxLogShown(shown);
+        }
+
+        private void FxSetColor(int id, Color value)
+        {
+            _fxMat.SetColor(id, value);
+            var shown = _fx.materialForRendering;
+            if (shown && shown != _fxMat) shown.SetColor(id, value);
+        }
+
+        private Material _fxLoggedMat;
+        private float _fxLoggedPool = -9f, _fxLoggedOn = -9f, _fxLoggedI = -9f;
+
+        private void FxLogShown(Material shown)
+        {
+            if (!shown) return;
+            float pool = shown.GetFloat(PPool), on = shown.GetFloat(PFxOn), intensity = shown.GetFloat(PFxIntensity);
+            if (shown == _fxLoggedMat && pool == _fxLoggedPool && on == _fxLoggedOn && intensity == _fxLoggedI) return;
+            _fxLoggedMat = shown;
+            _fxLoggedPool = pool;
+            _fxLoggedOn = on;
+            _fxLoggedI = intensity;
+            Plugin.Log.LogInfo($"[RuneSkin] bar fx {Root.name}: shader={(shown.shader ? shown.shader.name : "none")} " +
+                $"{(shown == _fxMat ? "base" : "stencil copy")} pool={pool:0} on={on:0.##} intensity={intensity:0.##}");
         }
 
         // The HUD was hidden (dead, menu, cutscene) or the player changed: forget the last samples, so the values seen on

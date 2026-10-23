@@ -41,6 +41,22 @@ namespace RuneSkin.Tests
             Assert.Equal(486f, f.RailL.X, 3);                      // the run keeps the target's own start
         }
 
+        // User crops 0.20.0: a hard step and see-through gaps between the rail ends and the bar block tips. The rail runs
+        // on (same y / height) into the block, under its tip, on both sides.
+        [Fact]
+        public void Rails_RunOnUnderTheBarBlockTips()
+        {
+            var l = Layout(2330f);
+            var f = StripMath.TargetFrame(l, 2330f, T7);
+            Assert.True(f.CapL.X <= f.RailL.Right && f.CapL.Right >= l.BarsX + 20f, $"{f.CapL.X}..{f.CapL.Right} vs rail end {f.RailL.Right}, block {l.BarsX}");
+            Assert.Equal(f.RailL.Y, f.CapL.Y, 3);
+            Assert.Equal(f.RailL.H, f.CapL.H, 3);
+            var blockR = l.BarsX + l.BarsW;
+            Assert.True(f.CapR.X <= blockR - 20f && f.CapR.Right >= f.RailR.X, $"{f.CapR.X}..{f.CapR.Right} vs rail start {f.RailR.X}, block end {blockR}");
+            Assert.Equal(f.RailR.Y, f.CapR.Y, 3);
+            Assert.Equal(f.RailR.H, f.CapR.H, 3);
+        }
+
         [Fact]
         public void Bottom_IsTheLowestPiece()
         {

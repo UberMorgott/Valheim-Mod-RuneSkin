@@ -1,0 +1,16 @@
+Use the image_gen tool (plus python/PIL for exact layout, alpha and checks). Load with view_image:
+- D:\tmp\claude\E--DEV\d62659f5-98fd-415e-8c61-9c596d73bdf9\scratchpad\art201\ref-sockets-left.png (6x crop of the APPROVED HUD panel: the heart socket over the lightning socket, left of the HP / stamina bars)
+- D:\tmp\claude\E--DEV\d62659f5-98fd-415e-8c61-9c596d73bdf9\scratchpad\art201\ref-socket-eitr.png (6x crop: the eitr socket with the violet triquetra between the stamina and eitr bars)
+- D:\tmp\claude\E--DEV\d62659f5-98fd-415e-8c61-9c596d73bdf9\scratchpad\art201\ref-field.png (3x crop of the whole bar block for context)
+
+Task: redraw these three round icon sockets as clean, WHOLE, separate game UI sprites (in the reference they are cut by neighbouring art; ours must be complete circles).
+Each socket = a perfect circle: outer ring of dark carved metal with a thin glowing teal/cyan bevel line (exactly the teal of the reference rings), a dark slate inner disc, and the glyph centred inside:
+1) gold heart (same gold, shape and soft shading as the reference heart),
+2) gold lightning bolt (same as the reference),
+3) glowing violet/purple triquetra knot (same as the reference eitr glyph).
+Same style, ring thickness and glyph scale on all three (glyph ~55 % of the inner disc diameter).
+
+Output ONE PNG sheet 768x256, RGBA, fully TRANSPARENT background (alpha 0 outside the ring, clean anti-aliased circular edge, no halo, no drop shadow outside the ring), three sockets side by side in 256x256 cells in this order: heart, lightning, triquetra. Each circle centred in its cell, outer ring diameter exactly 240 px (8 px transparent margin).
+No text, no captions, no other elements.
+Verify with python: alpha=0 in all four corners of every cell, ring diameter 240 +-2 px, centred +-1 px; print the measurements.
+Save to: D:\tmp\claude\E--DEV\d62659f5-98fd-415e-8c61-9c596d73bdf9\scratchpad\art201\sockets-sheet.png

@@ -39,10 +39,16 @@ namespace RuneSkin.PlayerHud
         private static bool HasOwn(string token) => ThemeTokens.GetSprite(token + ".r");
         private static string Own(string token) => HasOwn(token) ? token + ".r" : token;
 
+        // Pool socket (whole round ring + glyph, own sprite): a circle of size.hud.strip7.socket.d centred on the target's
+        // icon box (icon.<name>.x / y / w / h). User crops 0.20.0: the old icon crops cut the ring and the field / frame
+        // art carried ring fragments (an eitr ring splitting the stamina row with no eitr).
         private void Icon(Image img, string name, float barsX)
         {
             if (!img || !img.sprite) return;
-            Box(img.rectTransform, barsX + T7(name + ".x", 0f), T7(name + ".y", 0f), T7(name + ".w", 0f), T7(name + ".h", 0f), false);
+            var d = T7("socket.d", 37f);
+            var cx = barsX + T7(name + ".x", 0f) + T7(name + ".w", 0f) / 2f;
+            var cy = T7(name + ".y", 0f) + T7(name + ".h", 0f) / 2f;
+            Box(img.rectTransform, cx - d / 2f, cy - d / 2f, d, d, false);
         }
 
         // The eitr socket between stamina and eitr shows with the eitr channel (HudCluster.RowPlace).
@@ -82,8 +88,9 @@ namespace RuneSkin.PlayerHud
             // Target panel extras (user screenshot 2026-10-23): rail runs and small diamond knots between the wings and the
             // bar block, the wings themselves (fixed pieces, the right one its own art), end medallions over the wing ends.
             // block-tip rail caps: first = under the inner diamonds (Knot2) and the bar block's tips (composite gate of the pieces)
-            _capL = Piece("RailCapLeft", _back, "sprite.hud.strip7.tipcap", Image.Type.Simple);
-            _capR = Piece("RailCapRight", _back, Own("sprite.hud.strip7.tipcap"), Image.Type.Simple);
+            // rail extensions under the bar block tips (StripMath.TargetFrame CapL / CapR): the rail itself, tiled
+            _capL = Piece("RailCapLeft", _back, "sprite.hud.strip7.rail", Image.Type.Tiled);
+            _capR = Piece("RailCapRight", _back, Own("sprite.hud.strip7.rail"), Image.Type.Tiled);
             _stubL = Piece("RailStubLeft", _back, "sprite.hud.strip7.rail", Image.Type.Tiled);
             _stubR = Piece("RailStubRight", _back, Own("sprite.hud.strip7.rail"), Image.Type.Tiled);
             _railL = Piece("RailLeft", _back, "sprite.hud.strip7.rail", Image.Type.Sliced);
@@ -101,8 +108,9 @@ namespace RuneSkin.PlayerHud
             foreach (var img in new[] { _capL, _capR, _stubL, _stubR, _railL, _railR, _knotL, _knotR, _endL, _endR, _knot2L, _knot2R }) img.gameObject.SetActive(Target);
             // always built like the other target pieces (run 20261023-191817: created only when the sprite resolved at
             // construction -> never built in game, the scene showed between the HP and stamina channels)
-            // own tint: the field art reads ~27 % lighter than the target's metal (in-game mean grey 31.2 vs 24.5 over the
-            // field mask, run 20261023-204838; offline composite 30.6 vs 22.7) -> color.hud.strip7.field darkens it to match
+            // own tint token (color.hud.strip7.field): the 0.20.0 field art read ~27 % lighter than the target's metal (mean
+            // grey 31.2 vs 24.5, run 20261023-204838); the 0.20.1 plain field (no baked channels / sockets) is drawn at the
+            // target tone (mean ~24), tint white
             _field = _art.Image("BarField", _back, "sprite.hud.strip7.field", Target ? "color.hud.strip7.field" : FrameTint, Image.Type.Simple);
             _art.Track(_field, ArtScale);
             _field.gameObject.SetActive(Target);
@@ -351,7 +359,7 @@ namespace RuneSkin.PlayerHud
             Place(_stubL, f.StubL, false);
             Place(_stubR, f.StubR, false);
             Place(_capL, f.CapL, false);
-            Place(_capR, f.CapR, !HasOwn("sprite.hud.strip7.tipcap"));
+            Place(_capR, f.CapR, !HasOwn("sprite.hud.strip7.rail"));
             Place(_knot2L, f.Knot2L, false);
             Place(_knot2R, f.Knot2R, !HasOwn("sprite.hud.strip7.knot2"));
             // a wing slot grown onto the rail run hides the wing-tip diamond under it (the round socket would leave its
