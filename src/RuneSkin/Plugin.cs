@@ -292,7 +292,6 @@ namespace RuneSkin
 
             var patchStart = Stopwatch.GetTimestamp();
             _harmony = new Harmony(Skin.PluginGuid);
-            PlayerHud.ChatWriteProbe.Init(_harmony); // ONE-RUN DIAGNOSTIC: remove after the chat writer is named
             // M7: precise mod panels + the fallback restyler for every UI no family owns, Jotunn windows, IMGUI fonts
             // (their own runtime hooks), set up before the class patches that read their state.
             ModScreens.AlmanacAdapter.Harmony = _harmony;

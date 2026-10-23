@@ -1360,9 +1360,6 @@ namespace RuneSkin.InventoryScreen
             // The strip's own visible potion cells first, independent of the vanilla quick bar (run 20261023-194139:
             // the bar lookup returned before the strip path, the cells stayed where EAQS put them)
             var cluster0 = PlayerHud.HudCluster.Instance;
-            // diagnostic (runs 194139 / 200109: quick cells stayed at the vanilla quick-bar spots, same px both runs)
-            if (Time.frameCount % 120 == 0)
-                Plugin.Log.LogInfo($"[RuneSkin] quick cells: cluster={(bool)cluster0} potion0={(cluster0 ? cluster0.PotionCellRect(0)?.name ?? "null" : "-")} eaqsQuick={_eaqs.FindAll(x => x.Kind == EaqsBridge.Kind.Quick).Count} elements={grid.m_elements.Count}");
             if (cluster0 && cluster0.PotionCellRect(0))
             {
                 var k = 0;

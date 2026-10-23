@@ -64,8 +64,9 @@ namespace RuneSkin.PlayerHud
         private void Build()
         {
             Instance = this;
-            // the chat lift runs right before the canvases render (after every Update / LateUpdate writer; run
-            // 20261023-202815: lifted per the log, yet the shot and the check showed the chat at home)
+            // the chat lift runs right before the canvases render: run 20261023-204838's setter probe saw only our own
+            // writes, yet the window was back at home (1010,590) before each of them - a native (non-managed) writer between
+            // Update and render (animation / layout driver) resets it, so the lift must be the last write before render
             Canvas.willRenderCanvases += ChatBeforeRender;
             _art = new HudArt();
             _root = (RectTransform)transform;
