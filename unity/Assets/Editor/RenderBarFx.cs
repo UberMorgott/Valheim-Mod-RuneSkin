@@ -6,7 +6,7 @@
 // explicit _FxClock, so the result is deterministic.
 // Unity.exe -batchmode -quit -projectPath unity -executeMethod RenderBarFx.Render -logFile <log>
 // env: RSBARFX_OUT (dir), RSBARFX_BG (hud-4M3.png, 1920 x 1080), RSBARFX_SCALE (1 = 1080p, 1.3333 = 1440p),
-//      RSBARFX_FRAMES (optional, 0 = stills only)
+//      RSBARFX_FRAMES (optional, 0 = stills only), RSBARFX_NOSHIELD (1 = shield forced off, A/B tone check)
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -136,6 +136,7 @@ public static class RenderBarFx
         hp.Mat.SetFloat("_HealAt", healAt);
         // shield (BarView ShieldRun share): absorbs part of each hit, gone after the second
         var shield = t < 2f ? 0.55f : t < 9f ? 0.25f : 0f;
+        if (Environment.GetEnvironmentVariable("RSBARFX_NOSHIELD") == "1") shield = 0f; // A/B for the under-shield tone check
         hp.Mat.SetFloat("_Shield", shield);
         hp.Glow.SetFloat("_Shield", shield);
         hp.GlowImage.enabled = shield > 0f;
