@@ -59,6 +59,7 @@ namespace RuneSkin.PlayerHud
         // The shared effect clock (seconds since the HUD started, unwrapped: no wrap jump; float precision stays below
         // 1 ms for ~4.5 h and 8 ms at ~36 h). Written once per frame as a shader global; events use the same clock.
         public static readonly int ClockId = Shader.PropertyToID("_RuneSkinFxClock");
+        private static readonly int LinearId = Shader.PropertyToID("_RuneSkinLinear");
         private static double _start = -1;
         public static float Now { get; private set; }
 
@@ -81,7 +82,12 @@ namespace RuneSkin.PlayerHud
         public static void TickClock()
         {
             var t = Time.unscaledTimeAsDouble;
-            if (_start < 0) _start = t;
+            if (_start < 0)
+            {
+                _start = t;
+                // the shader runs the living-fill colour math in gamma space and linearises it in a linear-space game
+                Shader.SetGlobalFloat(LinearId, QualitySettings.activeColorSpace == ColorSpace.Linear ? 1f : 0f);
+            }
             Now = (float)(t - _start);
             Shader.SetGlobalFloat(ClockId, Now);
         }
