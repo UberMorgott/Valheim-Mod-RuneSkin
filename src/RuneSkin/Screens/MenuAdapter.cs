@@ -62,6 +62,11 @@ namespace RuneSkin.Screens
                 // Menu.cs:58), and an empty plaque reads as a missing label.
                 PanelDecor.Ensure(menu.menuEntriesParent, "size.panel.pad", glass: true, plaque: false);
             }
+            // Confirm dialogs: one framed box each, sized to content, on the modal band (DialogFrame).
+            DialogFrame.Apply(menu.m_quitDialog);
+            DialogFrame.Apply(menu.m_logoutDialog);
+            DialogFrame.Apply(menu.m_cloudStorageWarning ? menu.m_cloudStorageWarning.transform : null);
+            DialogFrame.Apply(menu.m_cloudStorageWarningNextSave ? menu.m_cloudStorageWarningNextSave.transform : null);
             ScreenRegistry.Register(root, () => Context(menu));
             ScreenRegistry.Restyle(root);
             // SkinScale on the dialogs' content roots, never on the canvas (GuiScaler owns scaleFactor).
@@ -95,6 +100,10 @@ namespace RuneSkin.Screens
                             ctx.Role(text, "menu.entry", "Menu.menuEntriesParent entry label");
                 }
             }
+            // Vanilla panel images under a dialog's panel stack (DialogFrame): off, reported skipped.
+            foreach (var img in menu.GetComponentsInChildren<Image>(true))
+                if (img.TryGetComponent<PreWorld.PanelSwap>(out _))
+                    ctx.Role(img, "skip", "vanilla dialog panel image (RuneSkin panel stack replaces it, off; DialogFrame)");
             // "Last saved" line (Menu.lastSaveText, Menu.cs:54, written in Update :366): body text.
             ctx.Role(menu.lastSaveText, "text.body", "Menu.lastSaveText");
             return ctx;

@@ -747,6 +747,7 @@
     { "token": "size.banner.rule.gap", "value": 18 },
     { "token": "size.tooltip.panel.pad", "value": 0 },
     { "token": "size.panel.pad", "value": 40 },
+    { "token": "size.dialog.pad", "value": 28 }, { "token": "size.dialog.minw", "value": 320 }, { "token": "size.dialog.minh", "value": 150 }, { "token": "size.frame.text.margin", "value": 8 },
     { "token": "size.effects.pad", "value": 12 }, { "token": "size.effects.icon", "value": 48 }, { "token": "size.effects.name", "value": 22 }, { "token": "size.effects.body", "value": 18 }, { "token": "size.effects.gap", "value": 6 },
     { "token": "size.panel.glass.inset", "value": 11.5 },
     { "token": "size.plaque.width", "value": 160 },

@@ -403,6 +403,8 @@ namespace RuneSkin.GameScreens
             Template(chat.m_worldTextBase, ScreenId + ".WorldText");
             Template(chat.m_npcTextBase, ScreenId + ".NpcText");
             Template(chat.m_npcTextBaseLarge, ScreenId + ".NpcTextLarge");
+            // Hidden while a modal (pause menu / its dialogs, UnifiedPopup) is open: never over a dialog.
+            WorldHud.WorldTextGate.Ensure(chat);
             Plugin.Log.LogInfo("[RuneSkin] chat attached");
         }
 
