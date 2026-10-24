@@ -14,7 +14,9 @@ namespace RuneSkin.Restyle
     // - row: a left-aligned label in a Button with a visible plate (list rows) -> starts size.row.pad after the row
     //   edge or the icon beside it;
     // - toggle: the label beside a checkbox -> size.row.pad from the box on its side;
-    // - any: a text that still truncates (Ellipsis / Truncate) auto-sizes down to size.text.fit.min.
+    // - any: a text that still truncates (Ellipsis / Truncate) auto-sizes down to size.text.fit.min - never an input
+    //   field's text: its overflow is Overflow and its viewport grows to hold one line (0.20.3 track F, the blinking
+    //   new-world inputs; see LayoutMath.MayShrinkToFit).
     // Writes are journaled (margin, alignment, viewport offsets, auto-size) and reverted while they still hold
     // RuneSkin's value. Cells (square slot / socket buttons) are CellFit's.
     [DisallowMultipleComponent]
@@ -70,6 +72,7 @@ namespace RuneSkin.Restyle
             if (!_text) _text = GetComponent<TMP_Text>();
             if (!_text || !_text.enabled) return;
             var sel = GetComponentInParent<Selectable>();
+            var field = sel is TMP_InputField;
             if (sel is TMP_InputField input) Field(input);
             else if (sel is TMP_Dropdown dropdown) Caption(dropdown);
             else if (sel is Toggle toggle && !GetComponentInParent<TMP_Dropdown>()) { Beside(toggle); _toggleLabel = true; }
@@ -78,7 +81,34 @@ namespace RuneSkin.Restyle
                 Row(button);
                 if (_columns < 0) _columns = RuneSkin.Classify.Classifier.RowTexts(button) > 1 ? 1 : 0;
             }
-            FitTruncated();
+            // Input texts are never shrunk (LayoutMath.MayShrinkToFit: the auto-size here fought the readable floor and
+            // blinked the new-world inputs); the field holds their line instead (FieldLine).
+            if (LayoutMath.MayShrinkToFit(field)) FitTruncated();
+        }
+
+        // Value / placeholder of an input field: never truncated (TMP_InputField scrolls the text inside its RectMask2D
+        // viewport; vanilla's Truncate dropped the whole line once the readable floor made it taller than the 25-unit
+        // text area). Journaled like the toggle labels' overflow.
+        private void FieldText()
+        {
+            if (_text.overflowMode != TextOverflowModes.Truncate && _text.overflowMode != TextOverflowModes.Ellipsis) return;
+            if (!_hasOverflow) { _origOverflow = _text.overflowMode; _hasOverflow = true; }
+            _text.overflowMode = TextOverflowModes.Overflow;
+        }
+
+        // Height of one line of the field's value / placeholder (current size and faces, fallback glyphs included), in
+        // the viewport parent's units.
+        private static float FieldLine(TMP_InputField input, Transform space)
+        {
+            var h = 0f;
+            foreach (var t in new[] { input.textComponent, input.placeholder as TMP_Text })
+            {
+                if (!t) continue;
+                var line = t.GetPreferredValues((t.text ?? "") + "Hg", float.PositiveInfinity, float.PositiveInfinity).y + t.margin.y + t.margin.w;
+                var k = Mathf.Abs(space.InverseTransformVector(t.rectTransform.TransformVector(Vector3.up)).y);
+                h = Mathf.Max(h, line * (k > 0.0001f ? k : 1f));
+            }
+            return h;
         }
 
         // ------------------------------------------------------------------ modes
@@ -88,6 +118,7 @@ namespace RuneSkin.Restyle
             var box = input.targetGraphic ? input.targetGraphic.rectTransform : (RectTransform)input.transform;
             var pad = ThemeTokens.GetFloat("size.field.inset", 12f);
             Align(HorizontalAlignmentOptions.Left);
+            FieldText();
             var vp = input.textViewport;
             // One owner per viewport: the value text moves it (the placeholder shares it).
             if (vp && _text != input.textComponent && input.textComponent && input.textComponent.transform.IsChildOf(vp)) return;
@@ -100,7 +131,13 @@ namespace RuneSkin.Restyle
                 // Viewport edges move by the error of the text area (the text stretches inside it; RectMask2D clips there).
                 var dl = span.Min + pad - area.xMin;
                 var dr = span.Max - pad - area.xMax;
-                if (Mathf.Abs(dl) < 0.05f && Mathf.Abs(dr) < 0.05f) return;
+                if (Mathf.Abs(dl) < 0.05f) dl = 0f;
+                if (Mathf.Abs(dr) < 0.05f) dr = 0f;
+                // Vertically the viewport holds one line of the text at its current (readable-floor) size, inside the box.
+                var host = vp.parent ? vp.parent : (Transform)box;
+                var grow = LayoutMath.FieldViewportGrow(RectIn(vp, vp.rect, host).height, RectIn(box, br, host).height, FieldLine(input, host));
+                if (grow < 0.05f) grow = 0f;
+                if (dl == 0f && dr == 0f && grow == 0f) return;
                 if (!_hasViewport || _viewport != vp)
                 {
                     _viewport = vp;
@@ -109,8 +146,8 @@ namespace RuneSkin.Restyle
                     _hasViewport = true;
                 }
                 var k = vp.parent ? ScaleX(vp.parent, space) : 1f;
-                vp.offsetMin = _setMin = vp.offsetMin + new Vector2(dl / k, 0f);
-                vp.offsetMax = _setMax = vp.offsetMax + new Vector2(dr / k, 0f);
+                vp.offsetMin = _setMin = vp.offsetMin + new Vector2(dl / k, -grow);
+                vp.offsetMax = _setMax = vp.offsetMax + new Vector2(dr / k, grow);
                 return;
             }
             Margins(span.Min, span.Max, pad, pad, space, right: true);

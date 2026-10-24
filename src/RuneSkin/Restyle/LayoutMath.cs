@@ -76,6 +76,24 @@ namespace RuneSkin.Restyle
             return Math.Max(Math.Min(floor, original), Math.Min(original, want));
         }
 
+        // Input field text (TMP_InputField value / placeholder, 0.20.3 track F): the field owns the line, never the
+        // fit rules. Root cause of the blinking new-world inputs: the readable floor (PreWorldKit.ReadableSweep, every
+        // 30 frames) raised the text above its 25-unit vanilla text area, TMP's Truncate overflow dropped the whole line,
+        // TextInset.FitTruncated (every 10-17 frames) saw it truncated and auto-sized it down to size.text.fit.min, the
+        // sweep raised the minimum again - two writers alternating the line between shown and gone. An input text is
+        // never auto-sized and never truncated (TMP_InputField scrolls it inside its RectMask2D viewport); the viewport
+        // grows to hold one line instead.
+        public static bool MayShrinkToFit(bool inputField) => !inputField;
+
+        // Per-side vertical growth of an input viewport of height viewH inside its box (boxH) so one line of lineH fits,
+        // never past the box. 0 once it fits: applying the result and asking again returns 0 (idempotent).
+        public static float FieldViewportGrow(float viewH, float boxH, float lineH)
+        {
+            if (!(lineH > viewH + 0.05f)) return 0f;
+            var room = Math.Max(0f, (boxH - viewH) * 0.5f);
+            return Math.Min(room, (lineH - viewH) * 0.5f);
+        }
+
         // True when the open spans [aMin, aMax] and [bMin, bMax] overlap by more than tol.
         public static bool Overlaps(float aMin, float aMax, float bMin, float bMax, float tol = 0f) =>
             Math.Min(aMax, bMax) - Math.Max(aMin, bMin) > tol;
