@@ -303,6 +303,11 @@ namespace RuneSkin.PlayerHud
             Glyph(_glyphL, i.MedW, i.MedH);
             Glyph(_glyphR, i.MedW, i.MedH);
             if (_glyphL.gameObject.activeSelf == Target) { _glyphL.gameObject.SetActive(!Target); _glyphR.gameObject.SetActive(!Target); } // target medallion piece carries its glyph
+            // Target panel: no medallions at the hotbar block ends (user 2026-10-24) - the block's own crest ends close it.
+            // Only these two go: the end medallions the wing slots grow from are EndLeft / EndRight. MedLX / MedRX stay in
+            // the layout (status rows end there), no cell moves.
+            Show(_medL, !Target);
+            Show(_medR, !Target);
             for (var n = 0; n < HotbarCells; n++)
             {
                 var c = _hotbar[n];

@@ -68,6 +68,27 @@ namespace RuneSkin.Tests
             Assert.True(two.DividerX > two.HotbarX + two.HotbarW && two.DividerX < two.AbilityX);
         }
 
+        // User 2026-10-24: the hotbar-end medallions are removed from the target panel; the hotbar cells must not move
+        // (column alignment). No cell / block / wing coordinate depends on the medallion geometry.
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void HotbarCells_IndependentOfTheMedallions(bool grow)
+        {
+            var with = In();
+            with.GrowFromEnds = grow;
+            var without = with;
+            without.MedW = without.MedH = without.MedY = without.MedTuck = without.MedRW = without.MedRTuck = 0f;
+            var a = StripMath.Compute(with);
+            var b = StripMath.Compute(without);
+            for (var n = 0; n < with.Hotbar; n++)
+                Assert.Equal(StripMath.CellX(a.HotbarX, n, with.Cell, with.Gap), StripMath.CellX(b.HotbarX, n, without.Cell, without.Gap), 4);
+            Assert.Equal(a.CellsY, b.CellsY, 4);
+            Assert.Equal(a.AbilityX, b.AbilityX, 4);
+            Assert.Equal((a.CenterX, a.CenterW, a.BarsX, a.BarsW, a.LeftW, a.RightX), (b.CenterX, b.CenterW, b.BarsX, b.BarsW, b.LeftW, b.RightX));
+            Assert.Equal((a.FoodX, a.FoodStep, a.PotionX, a.PotionStep, a.FoodShown, a.PotionShown), (b.FoodX, b.FoodStep, b.PotionX, b.PotionStep, b.FoodShown, b.PotionShown));
+        }
+
         [Fact]
         public void MedallionsTouchTheBlockSides()
         {
