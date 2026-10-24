@@ -1,16 +1,12 @@
-Use the image_gen tool (plus python/PIL for exact layout, alpha and checks). Load with view_image:
-- D:\tmp\claude\E--DEV\d62659f5-98fd-415e-8c61-9c596d73bdf9\scratchpad\art201\ref-sockets-left.png (6x crop of the APPROVED HUD panel: the heart socket over the lightning socket, left of the HP / stamina bars)
-- D:\tmp\claude\E--DEV\d62659f5-98fd-415e-8c61-9c596d73bdf9\scratchpad\art201\ref-socket-eitr.png (6x crop: the eitr socket with the violet triquetra between the stamina and eitr bars)
-- D:\tmp\claude\E--DEV\d62659f5-98fd-415e-8c61-9c596d73bdf9\scratchpad\art201\ref-field.png (3x crop of the whole bar block for context)
+Use the image_gen tool for ALL artwork pixels (python/PIL only for exact canvas size, assembling generated sections, LANCZOS resizing, alpha and checks - never draw ornament with code). Load with view_image:
+- D:\tmp\claude\E--DEV\95fa013a-f085-4add-972f-b088b5a35fa8\scratchpad\refs\strip7_sockets.png (the CURRENT sprite, 768x256 RGBA: the exact silhouette, proportions and feature layout to keep; it is too soft / blurry, a smeared repaint)
+- D:\tmp\claude\E--DEV\95fa013a-f085-4add-972f-b088b5a35fa8\scratchpad\refs\reference-target.png (the user's APPROVED target HUD panel screenshot, 1633x222; this piece is the three round pool SOCKETS left of / between the bars (reference: gold heart at ~540,155; gold lightning at ~540,183; violet triquetra at ~815,183))
+- D:\tmp\claude\E--DEV\95fa013a-f085-4add-972f-b088b5a35fa8\scratchpad\refs\minimap_ring.png (the DETAIL target: crisp carved Celtic interlace knotwork, sharp dark grooves, bright bevel highlights, dense high-frequency carved detail)
 
-Task: redraw these three round icon sockets as clean, WHOLE, separate game UI sprites (in the reference they are cut by neighbouring art; ours must be complete circles).
-Each socket = a perfect circle: outer ring of dark carved metal with a thin glowing teal/cyan bevel line (exactly the teal of the reference rings), a dark slate inner disc, and the glyph centred inside:
-1) gold heart (same gold, shape and soft shading as the reference heart),
-2) gold lightning bolt (same as the reference),
-3) glowing violet/purple triquetra knot (same as the reference eitr glyph).
-Same style, ring thickness and glyph scale on all three (glyph ~55 % of the inner disc diameter).
+Task: redraw this piece of a dark Norse game HUD as a crisp, high-detail sprite. Same outline, same proportions and the same position of every feature as the current sprite, but with the detail level and sharpness of the minimap ring: dark weathered steel-grey carved metal, sharp bevelled edges, fine scratches, engraved interlaced knotwork on the frame bands and knots, small glowing cyan / teal gem diamonds and teal accent lines with the colours of the reference. No blur, no smear, no painterly softness.
+Sheet of three 256x256 cells in order heart, lightning, triquetra; each socket = the same ring shape as the current one (keep the oval / round ring proportion of the reference, outer diameter 240, centred, 8 px margin): dark carved steel ring with fine engraved knot detail and a thin teal bevel line, dark slate inner disc, the glyph centred (~55 % of the inner disc): 1) gold heart, 2) gold lightning bolt, 3) glowing violet triquetra. Crisp glyph edges.
 
-Output ONE PNG sheet 768x256, RGBA, fully TRANSPARENT background (alpha 0 outside the ring, clean anti-aliased circular edge, no halo, no drop shadow outside the ring), three sockets side by side in 256x256 cells in this order: heart, lightning, triquetra. Each circle centred in its cell, outer ring diameter exactly 240 px (8 px transparent margin).
-No text, no captions, no other elements.
-Verify with python: alpha=0 in all four corners of every cell, ring diameter 240 +-2 px, centred +-1 px; print the measurements.
-Save to: D:\tmp\claude\E--DEV\d62659f5-98fd-415e-8c61-9c596d73bdf9\scratchpad\art201\sockets-sheet.png
+Generate at high resolution (at least the final size; if the aspect ratio is too extreme for one image, generate the left end, the right end and a seamless middle section separately at the same scale and assemble them with PIL). Then resize with LANCZOS to EXACTLY 768x256 and align every feature to the current sprite. Background transparent; as the last step copy the current sprite's alpha channel onto the result so the alpha footprint is identical (no halo).
+Verify with python and print: size; mean abs alpha difference vs the current sprite (must be < 2); the variance of the 4-neighbour Laplacian of luminance (0.299R+0.587G+0.114B, 0..255) over texels whose 3x3 neighbourhood has alpha >= 128, measured after a LANCZOS downscale by 0.72 (the shipped size): the current sprite gives ~884, the minimap ring ~4600, aim for >= 3000.
+No text, no captions, no watermark.
+Save PNG (RGBA) to: D:\tmp\claude\E--DEV\95fa013a-f085-4add-972f-b088b5a35fa8\scratchpad\gen\sockets.png
