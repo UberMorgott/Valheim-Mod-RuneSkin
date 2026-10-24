@@ -295,6 +295,7 @@ namespace RuneSkin
             // M7: precise mod panels + the fallback restyler for every UI no family owns, Jotunn windows, IMGUI fonts
             // (their own runtime hooks), set up before the class patches that read their state.
             ModScreens.AlmanacAdapter.Harmony = _harmony;
+            Screens.TooltipAdapter.Harmony = _harmony;
             ModScreens.ForeignUi.Init(gameObject, _harmony, _modUiOptOut.Value);
             ModScreens.JotunnHook.Init(_harmony);
             ModScreens.ImguiFonts.Init(gameObject, _harmony);

@@ -23,6 +23,9 @@ namespace RuneSkin.Screens
         // Harmony asks before patching this class (Plugin: one PatchAll(Assembly), batched by FastStartup).
         private static bool Prepare() => OwnershipRegistry.IsOwned(OwnershipRegistry.Tooltips);
 
+        // Plugin's instance, for patches on other mods' types applied once those are loaded (EpicLootTooltipBox).
+        internal static Harmony Harmony;
+
         [HarmonyPatch(typeof(UITooltip), nameof(UITooltip.OnHoverStart))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]
@@ -86,6 +89,7 @@ namespace RuneSkin.Screens
                 var keep = decor ? decor.ContentInset() + ThemeTokens.GetFloat("size.frame.text.margin", 8f) : 0f;
                 if (!ContentInset.Ensure(box.rectTransform, "size.tooltip.content.inset", keep))
                     FrameTextInset.Ensure(box.rectTransform);
+                else Compat.EpicLootTooltipBox.EnsurePatched(Harmony); // Epic Loot re-pads the content on every fit
             }
             else if (text && text.TryGetComponent<TMP_Text>(out var bare)) TooltipFrame.Ensure(bare);
             return ctx;

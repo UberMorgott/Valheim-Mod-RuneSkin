@@ -16,6 +16,7 @@ namespace RuneSkin.Restyle
         private RectOffset _original;
         private RectOffset _written;
         private bool _tookWidth;
+        private int _px;
 
         // False when the box has no LayoutGroup (the caller reports it: inset not applicable there).
         // minInset: floor from the box's panel stack (PanelDecor.ContentInset: corner-cap keep-out), every side.
@@ -34,8 +35,8 @@ namespace RuneSkin.Restyle
                 inset._original = new RectOffset(p.left, p.right, p.top, p.bottom);
             }
             var px = Mathf.CeilToInt(Mathf.Max(ThemeTokens.GetFloat(insetToken, 0f), minInset));
-            var o = inset._original;
-            var want = new RectOffset(Mathf.Max(o.left, px), Mathf.Max(o.right, px), Mathf.Max(o.top, px), Mathf.Max(o.bottom, px));
+            inset._px = px;
+            var want = Raise(inset._original, px);
             if (!Same(group.padding, want))
             {
                 group.padding = want;
@@ -53,6 +54,28 @@ namespace RuneSkin.Restyle
             inset._written = want;
             return true;
         }
+
+        // Foreign layout code that rewrites the padding after Ensure (Epic Loot 0.15 TooltipBox.LayOut: (10, right, 5, 5)
+        // on every fit, EpicLoot.dll decompile 2026-10-24) wiped the keep-out: the item tooltip's Topic ran under the
+        // top corner caps, its lines under the side caps (menufix run 20261024-194221). The padding it wrote becomes the
+        // new original and every side is raised again. grow = how much wider the box must get so the inner width that
+        // code chose stays (LayoutMath.InsetGrowth). False when the keep-out still holds (nothing written).
+        public bool Reassert(out int grow)
+        {
+            grow = 0;
+            if (!_group || _original == null || _px <= 0) return false;
+            var p = _group.padding;
+            if (_written != null && Same(p, _written)) return false;
+            _original = new RectOffset(p.left, p.right, p.top, p.bottom);
+            var want = Raise(_original, _px);
+            _group.padding = want;
+            _written = want;
+            grow = LayoutMath.InsetGrowth(p.left, p.right, _px);
+            return true;
+        }
+
+        private static RectOffset Raise(RectOffset o, int px) =>
+            new RectOffset(LayoutMath.RaiseSide(o.left, px), LayoutMath.RaiseSide(o.right, px), LayoutMath.RaiseSide(o.top, px), LayoutMath.RaiseSide(o.bottom, px));
 
         public void Revert()
         {

@@ -94,6 +94,16 @@ namespace RuneSkin.Restyle
             return Math.Min(room, (lineH - viewH) * 0.5f);
         }
 
+        // Padding side raised to the frame keep-out (ContentInset): never lowered.
+        public static int RaiseSide(int side, int inset) => Math.Max(side, inset);
+
+        // Width a box grows by when its left / right padding is raised to inset, so the inner (text) width another
+        // layout chose stays the same (ContentInset.Reassert over Epic Loot's TooltipBox: 0.21.1 menufix run
+        // 20261024-194221, the item tooltip wrapped to EL's width with RuneSkin's padding cut away). 0 when both sides
+        // already clear the inset.
+        public static int InsetGrowth(int left, int right, int inset) =>
+            RaiseSide(left, inset) - left + RaiseSide(right, inset) - right;
+
         // True when the open spans [aMin, aMax] and [bMin, bMax] overlap by more than tol.
         public static bool Overlaps(float aMin, float aMax, float bMin, float bMax, float tol = 0f) =>
             Math.Min(aMax, bMax) - Math.Max(aMin, bMin) > tol;

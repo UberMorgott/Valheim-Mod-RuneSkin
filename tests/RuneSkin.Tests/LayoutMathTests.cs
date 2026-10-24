@@ -101,5 +101,18 @@ namespace RuneSkin.Tests
         [InlineData(10f, 10f, false)]
         [InlineData(300f, 300f, false)]
         public void CellShapeIsSquareIsh(float w, float h, bool want) => Assert.Equal(want, LayoutMath.IsCellShape(w, h));
+
+        // Epic Loot's TooltipBox pads (10, 10) or (10, 20) with its scrollbar; the frame keep-out (cap clear + text
+        // margin) is 52: the box widens by both raises so the text keeps Epic Loot's wrap width. Never negative.
+        [Theory]
+        [InlineData(10, 10, 52, 84)]
+        [InlineData(10, 20, 52, 74)]
+        [InlineData(60, 70, 52, 0)]
+        [InlineData(0, 0, 0, 0)]
+        public void InsetGrowthKeepsTheInnerWidth(int left, int right, int inset, int want)
+        {
+            Assert.Equal(want, LayoutMath.InsetGrowth(left, right, inset));
+            Assert.Equal(System.Math.Max(left, inset), LayoutMath.RaiseSide(left, inset));
+        }
     }
 }
