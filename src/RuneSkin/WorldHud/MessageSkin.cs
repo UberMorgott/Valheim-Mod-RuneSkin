@@ -141,18 +141,34 @@ namespace RuneSkin.WorldHud
             if (!t || !_centerBand) return;
             var a = Alpha(t);
             _centerBand.canvasRenderer.SetAlpha(a);
-            if (t.text != _centerText)
+            var textChanged = t.text != _centerText;
+            if (textChanged)
             {
                 _centerText = t.text;
                 if (string.IsNullOrEmpty(_centerText)) return;
-                t.ForceMeshUpdate();
             }
             else if (a <= 0f) return;
-            // Every visible frame from the laid-out glyphs (cheap: one line of text): a font / size / rect change after
-            // the text arrived re-fits too. Before (user screenshot 2026-10-24) the band was sized once from
-            // GetPreferredValues and centred on the text rect, so the rune caps sat half outside it.
+            // Re-fit from the laid-out glyphs only when the text or its layout inputs (rect, font size, canvas scale)
+            // changed, so a message held on screen costs a few compares per frame, no glyph walk / mesh rebuild. A
+            // font / size / rect change after the text arrived still re-fits. Before (user screenshot 2026-10-24) the
+            // band was sized once from GetPreferredValues and centred on the text rect, so the rune caps sat half
+            // outside it.
+            var tr = t.rectTransform;
+            var canvas = t.canvas;
+            var key = new Vector4(tr.rect.width, tr.rect.height, t.fontSize, canvas ? canvas.scaleFactor : 1f);
+            var keyPos = tr.localPosition;
+            var keyScale = tr.lossyScale.x;
+            if (!textChanged && key == _fitKey && keyPos == _fitPos && Mathf.Approximately(keyScale, _fitScale)) return;
+            _fitKey = key;
+            _fitPos = keyPos;
+            _fitScale = keyScale;
+            t.ForceMeshUpdate();
             FitCenterPlate(t);
         }
+
+        private Vector4 _fitKey;
+        private Vector3 _fitPos;
+        private float _fitScale;
 
         private float[] _quads = new float[256];
 
