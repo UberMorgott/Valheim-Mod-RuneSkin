@@ -34,43 +34,14 @@ namespace RuneSkin.Tests
             for (var a = 0; a < boxes.Count; a++)
                 for (var b = a + 1; b < boxes.Count; b++)
                     Assert.False(boxes[a].Overlaps(boxes[b]), $"{boxes[a]} overlaps {boxes[b]}");
-            // Chest dock: the character block (header + doll) lives in the left column, the containers above the grid.
-            var character = o.Docked ? o.Dock : o.Center;
-            foreach (var inner in new[] { o.Header, o.Doll })
-                if (!inner.IsEmpty) Assert.True(inner.Inside(character), $"{inner} outside {character}");
-            foreach (var inner in new[] { o.Grid, o.Footer })
-                if (!inner.IsEmpty) Assert.True(inner.Inside(o.PlayerPanel), $"{inner} outside player panel {o.PlayerPanel}");
-            Assert.True(o.PlayerPanel.Inside(o.Center));
+            foreach (var inner in new[] { o.Header, o.Doll, o.Grid, o.Footer })
+                if (!inner.IsEmpty) Assert.True(inner.Inside(o.Center), $"{inner} outside centre {o.Center}");
             Assert.False(o.Doll.Overlaps(o.Grid));
             Assert.False(o.Grid.Overlaps(o.Footer));
             Assert.False(o.Header.Overlaps(o.Doll));
-            var dock = o.Docked ? o.Stack : o.Dock;
-            foreach (var panel in new[] { o.Chest, o.Backpack })
-            {
-                if (panel.IsEmpty) continue;
-                Assert.True(panel.Inside(dock), $"{panel} outside {dock}");
-                Assert.False(panel.Overlaps(o.PlayerPanel), $"{panel} over the player panel {o.PlayerPanel}");
-                Assert.False(panel.Overlaps(o.Crafting));
-                Assert.False(panel.Overlaps(o.Header) || panel.Overlaps(o.Doll));
-            }
+            if (!o.Chest.IsEmpty) Assert.True(o.Chest.Inside(o.Dock));
+            if (!o.Backpack.IsEmpty) Assert.True(o.Backpack.Inside(o.Dock));
             Assert.False(o.Chest.Overlaps(o.Backpack));
-        }
-
-        // Chest dock contract (harness ui-runeskin-m2 `chest-dock`): the lowest container panel ends one gap above the player
-        // panel, every container panel spans the centre column (grids centred over the player grid), same pitch.
-        private static void DockedOverGrid(InventoryLayout o)
-        {
-            Assert.True(o.Docked, "container stack over the player grid");
-            var lowest = o.Chest.IsEmpty ? o.Backpack : o.Chest;
-            Assert.Equal(o.PlayerPanel.Y - T.Gap, lowest.Bottom, 2);
-            foreach (var panel in new[] { o.Chest, o.Backpack })
-            {
-                if (panel.IsEmpty) continue;
-                Assert.Equal(o.Center.X, panel.X, 2);
-                Assert.Equal(o.Center.W, panel.W, 2);
-                Assert.True(panel.H <= T.ContainerMaxH + 0.01f);
-            }
-            if (!o.Chest.IsEmpty && !o.Backpack.IsEmpty) Assert.Equal(o.Chest.Y - T.Gap, o.Backpack.Bottom, 2);
         }
 
         private static void OneTopOneBottom(InventoryLayout o)
@@ -98,63 +69,8 @@ namespace RuneSkin.Tests
             Assert.Equal(T.GridCell + T.GridGap, o.Player.Pitch, 2);
             Assert.False(o.Player.ScrollV);
             Assert.False(o.DollCells.Scroll);
-            DockedOverGrid(o);
-            Assert.Equal(o.Player.Pitch, o.ChestGrid.Pitch, 2);
-            Assert.True(o.ChestGrid.VisibleRows >= 3, $"{o.ChestGrid}");
-            // Live strip layout (hotbar row on the HUD strip, 3 grid rows, no hotbar header): the 8x4 chest shows whole.
-            var strip = InventoryMath.Compute(new InventoryInput { CanvasW = 1920, CanvasH = 1080, GridW = 8, GridH = 3, ChestW = 8, ChestH = 4 },
-                new InventoryTokens { HotbarHeaderH = 0f });
-            Assert.True(strip.Docked && !strip.ChestGrid.ScrollV, $"{strip.ChestGrid}");
-            Assert.Equal(strip.ChestGrid.DesiredH, strip.Chest.H, 2); // as tall as its rows
+            Assert.Equal(o.Dock.H, o.Chest.H, 2); // chest alone fills the dock
             NoOverlaps(o);
-        }
-
-        [Fact]
-        public void ChestNeverMovesThePlayerGrid()
-        {
-            var alone = Run(1920, 1080, hudTop: 900f);
-            foreach (var (cw, ch) in new[] { (5, 2), (8, 4), (8, 30), (12, 8) })
-            {
-                var o = Run(1920, 1080, cw: cw, ch: ch, hudTop: 900f);
-                DockedOverGrid(o);
-                Assert.Equal(alone.Grid.Y, o.Grid.Y, 2);
-                Assert.Equal(alone.Grid.H, o.Grid.H, 2);
-                Assert.Equal(alone.Footer.Y, o.Footer.Y, 2);
-                Assert.Equal(alone.Player.Pitch, o.Player.Pitch, 2);
-                // Grid centred in the centre column, container grid centred in a panel of the same column: one axis.
-                Assert.Equal(o.Grid.X + o.Grid.W / 2f, o.Chest.X + o.Chest.W / 2f, 2);
-                NoOverlaps(o);
-            }
-        }
-
-        [Fact]
-        public void CharacterBlockMovesToTheLeftColumn()
-        {
-            var o = Run(1920, 1080, cw: 8, ch: 4);
-            Assert.True(o.Header.Inside(o.Dock) && o.Doll.Inside(o.Dock));
-            Assert.Equal(o.Center.Y, o.Header.Y, 2);
-            Assert.False(o.DollCells.Scroll, "the left column holds every doll row");
-            var alone = Run(1920, 1080);
-            Assert.False(alone.Docked);
-            Assert.True(alone.Header.Inside(alone.Center) && alone.Doll.Inside(alone.Center));
-            Assert.Equal(alone.Center.X, alone.PlayerPanel.X, 2);
-            Assert.Equal(alone.Center.H, alone.PlayerPanel.H, 2);
-        }
-
-        [Theory]
-        [InlineData(1f)]          // 1920x1080 at GuiScale 1
-        [InlineData(2f / 3f)]     // 1280x720: logical 1920x1080, 44 px floor = 66 units
-        [InlineData(4f / 3f)]     // 2560x1440
-        public void ChestDockAtEveryResolution(float phys)
-        {
-            foreach (var (cw, ch) in new[] { (5, 2), (8, 4) })
-            {
-                var o = Run(1920, 1080, phys: phys, cw: cw, ch: ch, hudTop: 1080f - 190f);
-                DockedOverGrid(o);
-                Assert.True(o.ChestGrid.VisibleRows >= 1);
-                Assert.True(o.Chest.Inside(new Box(0, 0, 1920, 1080)) && o.Chest.Y >= o.Center.Y - 0.01f);
-                NoOverlaps(o);
-            }
         }
 
         [Fact]
@@ -178,7 +94,7 @@ namespace RuneSkin.Tests
             Assert.False(o.DollCells.Scroll, "every doll row visible");
             Assert.True(o.Player.Pitch < T.GridCell + T.GridGap && o.Player.Cell >= T.MinCellPhysPx - 0.01f);
             Assert.True(o.Grid.Bottom <= o.Footer.Y + 0.01f && o.Doll.Y >= o.Header.Bottom - 0.01f);
-            DockedOverGrid(o);
+            Assert.Equal(o.Dock.Bottom, o.Backpack.Bottom, 2);
             NoOverlaps(o);
         }
 
@@ -219,67 +135,53 @@ namespace RuneSkin.Tests
         {
             var one = Run(1920, 1080, cw: 1, ch: 1);
             Assert.Equal(1, one.ChestGrid.Columns);
-            Assert.Equal(one.Player.Pitch, one.ChestGrid.Pitch, 2); // the player grid's cells
-            Assert.Equal(one.ChestGrid.DesiredH, one.Chest.H, 2);
-            DockedOverGrid(one);
+            Assert.Equal(T.ContainerCell + T.ContainerGap, one.ChestGrid.Pitch, 2);
+            Assert.Equal(one.Dock.H, one.Chest.H, 2); // one bottom edge for every column
 
-            // Drawers / big chests / carts: scroll inside the capped stack, the grid stays put.
             var huge = Run(1920, 1080, cw: 8, ch: 30);
-            DockedOverGrid(huge);
             Assert.True(huge.ChestGrid.ScrollV);
-            Assert.True(huge.ChestGrid.VisibleRows >= 1 && huge.ChestGrid.VisibleRows < 30);
-            Assert.True(huge.Chest.H <= huge.Stack.H + 0.01f);
+            Assert.True(huge.ChestGrid.VisibleRows < 30);
+            Assert.True(huge.Chest.H <= huge.Dock.H + 0.01f);
             Assert.True(huge.ChestGrid.Cell >= 44f - 0.01f);
-            NoOverlaps(huge);
 
             var wide = Run(1920, 1080, phys: 0.5f, cw: 20, ch: 3);
-            Assert.True(wide.ChestGrid.ScrollH, "20 columns at the 88-unit floor do not fit the centre column");
+            Assert.True(wide.ChestGrid.ScrollH, "20 columns at the 88-unit floor do not fit 528");
             Assert.True(wide.ChestGrid.VisibleColumns < 20);
         }
 
         [Fact]
-        public void BackpackStacksAboveTheChest()
+        public void DockSplitByNeededHeight()
         {
-            var both = Run(1920, 1080, gh: 2, cw: 5, ch: 2, bw: 3, bh: 1);
-            DockedOverGrid(both);
+            var both = Run(1920, 1080, cw: 8, ch: 4, bw: 6, bh: 3);
             Assert.False(both.DockOverflow);
             Assert.Equal(both.BackpackGrid.DesiredH, both.Backpack.H, 2);
-            Assert.Equal(both.ChestGrid.DesiredH, both.Chest.H, 2);
-            // Short of room: one row each at least, both scroll, the backpack never folds while a row each fits.
-            // (live strip layout: 3 grid rows, no hotbar header; ui-runeskin-m2 chest-backpack state)
-            var tight = InventoryMath.Compute(new InventoryInput { CanvasW = 1920, CanvasH = 1080, GridW = 8, GridH = 3, ChestW = 8, ChestH = 4, BackpackW = 3, BackpackH = 1 },
-                new InventoryTokens { HotbarHeaderH = 0f });
-            Assert.True(tight.DockOverflow);
-            DockedOverGrid(tight);
-            Assert.False(tight.BackpackFolded);
-            Assert.True(tight.ChestGrid.VisibleRows >= 1 && tight.BackpackGrid.VisibleRows >= 1);
-            NoOverlaps(tight);
-            NoOverlaps(both);
+            Assert.Equal(both.Dock.Bottom, both.Backpack.Bottom, 2); // the chest takes the rest of the dock
+            Assert.True(both.Backpack.Y > both.Chest.Bottom);
 
-            var tall = Run(1920, 1080, gh: 2, cw: 8, ch: 20, bw: 8, bh: 10);
-            DockedOverGrid(tall);
+            var tall = Run(1920, 1080, cw: 8, ch: 20, bw: 8, bh: 10);
+            Assert.False(tall.DockOverflow);
             Assert.True(tall.ChestGrid.ScrollV && tall.BackpackGrid.ScrollV);
-            Assert.Equal(tall.Stack.H, tall.Chest.Bottom - tall.Backpack.Y, 1);
-            Assert.True(tall.Chest.H >= tall.Backpack.H, "split follows wanted height");
-            NoOverlaps(tall);
+            Assert.Equal(tall.Dock.H, tall.Backpack.Bottom - tall.Chest.Y, 1);
+            Assert.True(tall.Chest.H > tall.Backpack.H, "split follows wanted height");
 
-            // Worn backpack alone (AdventureBackpacks shows it in m_container): same spot as a chest.
             var packOnly = Run(1920, 1080, bw: 6, bh: 3);
             Assert.True(packOnly.Chest.IsEmpty);
-            DockedOverGrid(packOnly);
-            NoOverlaps(packOnly);
+            Assert.Equal(packOnly.Dock.Y, packOnly.Backpack.Y, 2);
+            Assert.Equal(packOnly.Dock.H, packOnly.Backpack.H, 2);
         }
 
         [Fact]
-        public void ShortCanvasFallsBackToTheSideDock()
+        public void ImpossibleDockMinimumsFlagOverflow()
         {
-            // Not one container row fits above the grid: the stack takes the left column, character block stays.
-            var o = Run(1280, 480, cw: 8, ch: 10, bw: 8, bh: 10);
-            Assert.False(o.Docked);
-            Assert.True(o.Chest.Inside(o.Dock) && o.ChestGrid.VisibleRows >= 1);
-            Assert.True(o.Header.Inside(o.Center) && o.Doll.Inside(o.Center));
-            Assert.Equal(o.Center.X, o.PlayerPanel.X, 2);
-            NoOverlaps(o);
+            var folded = Run(1280, 600, cw: 8, ch: 10, bw: 8, bh: 10);
+            Assert.True(folded.BackpackFolded && folded.Backpack.IsEmpty);
+            Assert.True(folded.Chest.Inside(folded.Dock) && folded.ChestGrid.VisibleRows >= 1);
+            var o = Run(1920, 760, cw: 8, ch: 10, bw: 8, bh: 10);
+            Assert.True(o.DockOverflow);
+            Assert.False(o.Chest.Overlaps(o.Backpack));
+            Assert.True(o.Chest.Inside(o.Dock) && o.Backpack.Inside(o.Dock), "fallback stays inside the dock");
+            Assert.True(o.ChestGrid.VisibleRows >= 1 && o.BackpackGrid.VisibleRows >= 1);
+            Assert.True(o.ChestGrid.ScrollV && o.BackpackGrid.ScrollV);
         }
 
         [Fact]

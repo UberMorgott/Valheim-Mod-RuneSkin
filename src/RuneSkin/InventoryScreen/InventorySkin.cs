@@ -43,7 +43,7 @@ namespace RuneSkin.InventoryScreen
         private InventoryGui _gui;
         private RectTransform _canvas;
         private Canvas _rootCanvas;
-        private RectTransform _decor, _centerHost, _charHost, _chestHost, _packHost, _doll, _hotbarHeader, _backdrop, _silhouette;
+        private RectTransform _decor, _centerHost, _chestHost, _packHost, _doll, _hotbarHeader, _backdrop, _silhouette;
         private CharacterPreview _preview;
         // Theme rect of the live preview inside the figure box (PreviewMath.Place): normalized x, y, w, h + inset.
         private float _previewX, _previewY, _previewW = 1f, _previewH = 1f, _previewInset = 8f;
@@ -153,7 +153,7 @@ namespace RuneSkin.InventoryScreen
             t.HudBand = F("size.inv.hud.band", t.HudBand); t.HeaderH = F("size.inv.header", t.HeaderH); t.FooterH = F("size.inv.footer", t.FooterH);
             t.PanelHeaderH = F("size.inv.panel.header", t.PanelHeaderH); t.PanelPad = F("size.inv.panel.pad", t.PanelPad);
             t.GridCell = F("size.slot", t.GridCell); t.GridGap = F("size.inv.cell.gap", t.GridGap); t.HotbarHeaderH = StripHotbar ? 0f : F("size.inv.hotbar.header", t.HotbarHeaderH);
-            t.ContainerMaxH = F("size.inv.container.max.h", t.ContainerMaxH);
+            t.ContainerCell = F("size.inv.container.cell", t.ContainerCell); t.ContainerGap = F("size.inv.container.gap", t.ContainerGap);
             t.DollCell = F("size.inv.doll.cell", t.DollCell); t.DollGap = F("size.inv.doll.gap", t.DollGap);
             t.DollColumns = F("size.inv.doll.columns", t.DollColumns); t.DollPad = F("size.inv.doll.pad", t.DollPad); t.DollFigureGap = F("size.inv.doll.figure.gap", t.DollFigureGap);
             t.DollFigureAspect = F("share.inv.doll.figure", t.DollFigureAspect); t.HeaderMinH = F("size.inv.header.min", t.HeaderMinH); t.InnerGapMin = F("size.inv.inner.gap.min", t.InnerGapMin);
@@ -177,7 +177,6 @@ namespace RuneSkin.InventoryScreen
             _decor.anchorMax = Vector2.one;
             _decor.offsetMin = _decor.offsetMax = Vector2.zero;
             _centerHost = Host("Center");
-            _charHost = Host("Character");
             _chestHost = Host("Chest");
             _packHost = Host("Backpack");
         }
@@ -629,7 +628,7 @@ namespace RuneSkin.InventoryScreen
                 sb.Append($" cell0={Geo.BoxOf(_canvas, (RectTransform)_gui.m_playerGrid.m_elements[0].transform)}");
             var armor = _gui.m_armor ? DirectChild(_gui.m_player, _gui.m_armor.transform) : null;
             if (armor) sb.Append($" armorPlate={Geo.BoxOf(_canvas, armor)} footer={_layout.Footer}");
-            One("player", _gui.m_player, _layout.PlayerPanel);
+            One("player", _gui.m_player, _layout.Center);
             var gi = Inset(_layout.Grid, _tokens.PanelPad * _input.SkinScale, _tokens.PanelPad * _input.SkinScale);
             var hh = _tokens.HotbarHeaderH * _input.SkinScale;
             One("grid", _gui.m_playerGrid, new Box(gi.X, gi.Y + hh, gi.W, gi.H - hh));
@@ -647,17 +646,14 @@ namespace RuneSkin.InventoryScreen
             var o = _layout;
             var pad = _tokens.PanelPad * _input.SkinScale;
             // Decor hosts.
-            // Player panel (grid + footer; the whole centre without a container) and, with the chest dock, the character
-            // block (header + doll) in the left column.
-            Show(_centerHost, o.PlayerPanel);
-            Show(_charHost, o.Docked ? o.Dock : default);
+            Show(_centerHost, o.Center);
             var containerShown = _gui.m_container && _gui.m_container.gameObject.activeSelf;
             var backpackInContainer = containerShown && ContainerIsBackpack();
             Show(_chestHost, containerShown && !backpackInContainer ? o.Chest : default);
             Show(_packHost, backpackInContainer || _packPanel ? o.Backpack : default);
 
             // Centre: player panel, info header, grid, footer.
-            Geo.Place(_canvas, _gui.m_player, o.PlayerPanel);
+            Geo.Place(_canvas, _gui.m_player, o.Center);
             InfoHeader(Inset(o.Header, pad, pad / 2f));
             // Grid box = carved hotbar header strip (digits 1-8 on it) + the grid below it.
             var headerH = _tokens.HotbarHeaderH * _input.SkinScale;
