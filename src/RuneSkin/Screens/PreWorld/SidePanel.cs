@@ -34,8 +34,7 @@ namespace RuneSkin.PreWorld
         {
             var rt = (RectTransform)transform;
             var pr = rt.rect;
-            var decor = GetComponentInChildren<PanelDecor>(true);
-            var inset = Mathf.Max(ThemeTokens.GetFloat("size.sidepanel.inset", 14f), decor ? decor.ContentInset() : 0f);
+            var inset = KeepOut();
             TextBuffer.Clear();
             GetComponentsInChildren(true, TextBuffer);
             foreach (var t in TextBuffer)
@@ -53,6 +52,15 @@ namespace RuneSkin.PreWorld
             TextBuffer.Clear();
         }
         private static readonly Vector3[] Corners = new Vector3[4];
+
+        // Text inset from the panel edge: the corner caps' keep-out (PanelDecor.ContentInset: every opaque cap pixel lies
+        // within it of an edge) plus size.frame.text.margin, at least size.sidepanel.inset; every side.
+        private float KeepOut()
+        {
+            var floor = ThemeTokens.GetFloat("size.sidepanel.inset", 14f);
+            var decor = GetComponentInChildren<PanelDecor>(true);
+            return decor ? Mathf.Max(floor, decor.ContentInset() + ThemeTokens.GetFloat("size.frame.text.margin", 8f)) : floor;
+        }
         private static readonly System.Collections.Generic.List<PanelDecor> DecorBuffer = new System.Collections.Generic.List<PanelDecor>(4);
 
         public static SidePanel Ensure(RectTransform panel, Func<RectTransform[]> window, string padToken = "size.tooltip.panel.pad", bool decor = true, bool onTop = true)
@@ -120,7 +128,7 @@ namespace RuneSkin.PreWorld
         {
             var rt = (RectTransform)transform;
             if (!Mathf.Approximately(rt.anchorMin.y, rt.anchorMax.y)) return;
-            var inset = ThemeTokens.GetFloat("size.sidepanel.inset", 14f);
+            var inset = KeepOut();
             if (!_body)
             {
                 TextBuffer.Clear();
@@ -142,7 +150,9 @@ namespace RuneSkin.PreWorld
                 _stretched = true;
                 _bodyAMin = tr.anchorMin; _bodyAMax = tr.anchorMax; _bodyOMin = tr.offsetMin; _bodyOMax = tr.offsetMax;
                 var top = rt.InverseTransformPoint(tr.TransformPoint(new Vector3(0f, tr.rect.yMax, 0f))).y;
-                var topOff = Mathf.Max(0f, rt.rect.yMax - top);
+                // Never above the corner caps' keep-out (0.20.3 track F: the modifier description's first line ran under
+                // the top rune caps, "Ч" of "Частота" and the "т" of "зависит" cut).
+                var topOff = Mathf.Max(inset, rt.rect.yMax - top);
                 tr.anchorMin = new Vector2(tr.anchorMin.x, 0f);
                 tr.anchorMax = new Vector2(tr.anchorMax.x, 1f);
                 tr.offsetMin = new Vector2(tr.offsetMin.x, inset);

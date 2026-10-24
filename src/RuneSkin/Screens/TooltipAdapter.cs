@@ -81,7 +81,10 @@ namespace RuneSkin.Screens
                 // LayoutGroup: their texts' margins, left / right past the whole cap when the box is shorter than its
                 // caps (FrameTextInset; user 2026-10-23, the map filter hint ran under the caps), the box grows to the
                 // wrapped text. Layout-grouped item tooltips keep the keep-out only (their text width stays usable).
-                if (!ContentInset.Ensure(box.rectTransform, "size.tooltip.content.inset", decor ? decor.ContentInset() : 0f))
+                // Keep-out + size.frame.text.margin like every framed text (FrameTextInset, SidePanel; 0.20.3 track F):
+                // glyphs never touch a cap's edge.
+                var keep = decor ? decor.ContentInset() + ThemeTokens.GetFloat("size.frame.text.margin", 8f) : 0f;
+                if (!ContentInset.Ensure(box.rectTransform, "size.tooltip.content.inset", keep))
                     FrameTextInset.Ensure(box.rectTransform);
             }
             else if (text && text.TryGetComponent<TMP_Text>(out var bare)) TooltipFrame.Ensure(bare);
