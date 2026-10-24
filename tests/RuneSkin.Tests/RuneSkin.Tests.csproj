@@ -56,6 +56,7 @@
     <Compile Include="..\..\src\RuneSkin\Hud\EffectTaxonomy.cs" Link="Linked\EffectTaxonomy.cs" />
     <Compile Include="..\..\src\RuneSkin\Hud\ResourceCheck.cs" Link="Linked\ResourceCheck.cs" />
     <Compile Include="..\..\src\RuneSkin\Hud\SummonMath.cs" Link="Linked\SummonMath.cs" />
+    <Compile Include="..\..\src\RuneSkin\Hud\PartyMath.cs" Link="Linked\PartyMath.cs" />
     <Compile Include="..\..\src\RuneSkin\Theme\LegacyFaces.cs" Link="Linked\LegacyFaces.cs" />
     <Compile Include="..\..\src\RuneSkin\Theme\ThemeMerge.cs" Link="Linked\ThemeMerge.cs" />
     <Compile Include="..\..\src\RuneSkin\Diagnostics\Bounded.cs" Link="Linked\Bounded.cs" />

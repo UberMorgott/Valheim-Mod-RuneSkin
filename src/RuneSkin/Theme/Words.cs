@@ -49,6 +49,10 @@ namespace RuneSkin.Theme
             { "runeskin_summon_noreserve", new[] { "No reserve", "Нет резерва" } },
             { "runeskin_summon_waiting", new[] { "Respawning", "Возврат" } },
             { "runeskin_summon_stay", new[] { "Stay", "Стоит" } },
+            // Party frame tooltip (0.20.3): weakest unit's health ({0}), combat modes (mt_sum_ui flags bit 1 / 2).
+            { "runeskin_party_weakest", new[] { "Weakest: {0}", "Слабейший: {0}" } },
+            { "runeskin_party_defensive", new[] { "Defensive", "Оборона" } },
+            { "runeskin_party_aggressive", new[] { "Aggressive", "Атака" } },
             // Character stats window (batch P, stats-full-b): card titles, row labels, units.
             { "runeskin_stats_title", new[] { "Character stats", "Характеристики" } },
             { "runeskin_stats_resources", new[] { "Resources", "Ресурсы" } },
