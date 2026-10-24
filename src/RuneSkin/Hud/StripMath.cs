@@ -203,23 +203,36 @@ namespace RuneSkin.PlayerHud
             // a short stub of the same tileable rail under the whole wing-tip diamond up to the run's start: the
             // diamond's art ends short of its box, so without it a gap showed between diamond and rail (run
             // 20261023-175632; the run itself must not move or stretch: its wire pattern is pinned to the target).
-            float railX = t7("rail.x", 486f), railY = t7("rail.y", 15.8f), railH = t7("rail.h", 60.6f), railRR = t7("rail.r.right", 474f), tuck = t7("rail.tuck", 6f);
+            // Rail band (user crops 0.20.0, wing-tip joints): the rail sprites carry transparent padding rows, so a box of
+            // the sprite's height drew the rail ~9 sprite px thinner than the rail stubs baked into both wing tips (and
+            // than the target's 37 px rail) -> a hard step at every wing-tip | rail joint. The OPAQUE rail is fitted onto
+            // the wing stub band instead (RailBand); rail.y / rail.h only apply without a band.
+            float railX = t7("rail.x", 486f), railRR = t7("rail.r.right", 474f), tuck = t7("rail.tuck", 6f);
+            RailBand(t7("rail.band.b", 17f), t7("rail.band.t", 72f), t7("rail.pad.b", 12f / 121f), t7("rail.pad.t", 18f / 121f),
+                t7("rail.y", 15.8f), t7("rail.h", 60.6f), out var railY, out var railH);
+            RailBand(t7("rail.r.band.b", 19f), t7("rail.r.band.t", 74f), t7("rail.r.pad.b", 11f / 132f), t7("rail.r.pad.t", 14f / 132f),
+                t7("rail.r.y", railY), t7("rail.r.h", railH), out var railRY, out var railRH);
             f.RailL = new Box(railX, railY, l.BarsX + t7("rail.tuck.l", tuck) - railX, railH);
             var rx = l.BarsX + l.BarsW - tuck;
-            f.RailR = new Box(rx, t7("rail.r.y", railY), w - railRR - rx, t7("rail.r.h", railH));
-            var stubL = f.KnotL.X;
-            f.StubL = new Box(stubL, railY, railX + t7("rail.stub.lap", 4f) - stubL, railH);
-            var stubR = f.RailR.Right - t7("rail.stub.lap", 4f);
-            f.StubR = new Box(stubR, f.RailR.Y, f.KnotR.Right - stubR, f.RailR.H);
+            f.RailR = new Box(rx, railRY, w - railRR - rx, railRH);
+            // Stubs: the same tileable rail from INSIDE the wing tip (rail.stub.wing under the tip's chevron, whose notches
+            // are see-through - user crop 0.20.0: scene showing under the left tip) to the run. Tile phase: a stub / cap
+            // abuts its run (no overlap) and starts its tiling at that joint (StubL / CapR are drawn mirrored, HudStrip),
+            // so the wire pattern meets the run's first / last column instead of an arbitrary column (seam next to the
+            // diamonds and the bar block tips).
+            var inWing = t7("rail.stub.wing", 30f);
+            var stubL = Math.Min(f.KnotL.X, f.WingL.Right - inWing);
+            f.StubL = new Box(stubL, railY, railX - stubL, railH);
+            var stubR = f.RailR.Right;
+            f.StubR = new Box(stubR, f.RailR.Y, Math.Max(f.KnotR.Right, f.WingR.X + inWing) - stubR, f.RailR.H);
             // rail extensions under the bar block's pointed ends: the same rail (its own y / height, tiled) runs on from the
             // rail end to rail.under units INSIDE the block, so the block tip and the inner diamond are drawn over a
             // continuous rail (user crops 0.20.0: separate tip caps of another height left a hard rectangular step and
             // see-through gaps next to the tip)
             var under = t7("rail.under", 24f);
-            var lap = t7("rail.stub.lap", 4f);
-            var capLX = f.RailL.Right - lap;
+            var capLX = f.RailL.Right;
             f.CapL = new Box(capLX, f.RailL.Y, Math.Max(0f, l.BarsX + under - capLX), f.RailL.H);
-            var capRR = f.RailR.X + lap;
+            var capRR = f.RailR.X;
             var capRX = l.BarsX + l.BarsW - under;
             f.CapR = new Box(capRX, f.RailR.Y, Math.Max(0f, capRR - capRX), f.RailR.H);
             float k2dx = t7("knot2.dx", -21.6f), k2y = t7("knot2.y", 47.5f), k2w = t7("knot2.w", 30.5f), k2h = t7("knot2.h", 32.6f);
@@ -227,6 +240,21 @@ namespace RuneSkin.PlayerHud
             f.Knot2R = new Box(l.BarsX + l.BarsW - k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h);
             f.Bottom = Math.Min(0f, Math.Min(Math.Min(endY, endRY), Math.Min(f.RailL.Y, f.RailR.Y)));
             return f;
+        }
+
+        // Sprite box (y, h) whose opaque rows [padB, 1 - padT] of the sprite height fill the band [bandB, bandT]; no band
+        // (bandT <= bandB) or padding >= the whole sprite: the fallback box.
+        public static void RailBand(float bandB, float bandT, float padB, float padT, float fallbackY, float fallbackH, out float y, out float h)
+        {
+            var opaque = 1f - padB - padT;
+            if (!(bandT > bandB) || !(opaque > 0.05f))
+            {
+                y = fallbackY;
+                h = fallbackH;
+                return;
+            }
+            h = (bandT - bandB) / opaque;
+            y = bandB - padB * h;
         }
 
         // A wing slot [x, x + w] covers a connector diamond when it spans the diamond's centre (the slot hides it).

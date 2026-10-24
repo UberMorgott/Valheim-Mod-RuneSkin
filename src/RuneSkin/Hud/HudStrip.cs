@@ -356,10 +356,13 @@ namespace RuneSkin.PlayerHud
             Place(_knotR, f.KnotR, !HasOwn("sprite.hud.strip7.knot"));
             Place(_railL, f.RailL, false);
             Place(_railR, f.RailR, !HasOwn("sprite.hud.strip7.rail"));
-            Place(_stubL, f.StubL, false);
+            // tile phase: every stub / cap starts its tiling at the joint with its run (StripMath.TargetFrame); a tiled image
+            // tiles from its local left, so the pieces left of a run (StubL, CapR) are drawn mirrored
+            Place(_stubL, f.StubL, true);
             Place(_stubR, f.StubR, false);
             Place(_capL, f.CapL, false);
-            Place(_capR, f.CapR, !HasOwn("sprite.hud.strip7.rail"));
+            Place(_capR, f.CapR, true);
+            foreach (var (img, h) in new[] { (_stubL, f.StubL.H), (_stubR, f.StubR.H), (_capL, f.CapL.H), (_capR, f.CapR.H) }) FitTile(img, h);
             Place(_knot2L, f.Knot2L, false);
             Place(_knot2R, f.Knot2R, !HasOwn("sprite.hud.strip7.knot2"));
             // a wing slot grown onto the rail run hides the wing-tip diamond under it (the round socket would leave its
@@ -371,6 +374,15 @@ namespace RuneSkin.PlayerHud
             Icon(_iconHp, "icon.hp", l.BarsX);
             Icon(_iconSt, "icon.st", l.BarsX);
             Icon(_iconEi, "icon.ei", l.BarsX);
+        }
+
+        // Tiled rail piece: one tile row fills the box height exactly (the band fit draws the rail taller than its sprite;
+        // tiles are sprite px x the tracked scale), so no second, cut tile row shows at the top.
+        private void FitTile(Image img, float h)
+        {
+            var s = img ? img.sprite : null;
+            if (!s || s.rect.height <= 0f || s.pixelsPerUnit <= 0f || h <= 0f) return;
+            _art.Track(img, h / (s.rect.height * 100f / s.pixelsPerUnit));
         }
 
         private static void Place(Image img, in StripMath.Box b, bool mirrored) => Box(img.rectTransform, b.X, b.Y, b.W, b.H, mirrored);

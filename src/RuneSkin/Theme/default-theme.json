@@ -933,8 +933,6 @@
     { "token": "size.hud.strip7.knot.r.h", "value": 49 },
     { "token": "size.hud.strip7.knot.r.y", "value": 23 },
     { "token": "size.hud.strip7.rail.r.right", "value": 481.2 },
-    { "token": "size.hud.strip7.rail.r.y", "value": 13 },
-    { "token": "size.hud.strip7.rail.r.h", "value": 66.3 },
     { "token": "size.hud.strip7.socket.d", "value": 37 },
     { "token": "size.hud.strip7.icon.hp.x", "value": 125.3 },
     { "token": "size.hud.strip7.icon.hp.y", "value": 54.7 },
