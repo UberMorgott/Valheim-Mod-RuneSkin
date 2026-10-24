@@ -236,5 +236,22 @@ namespace RuneSkin.Tests
             foreach (var token in new[] { "sprite.ench.lock.badge", "sprite.ench.lock.glyph" })
                 Assert.Contains(f.sprites, x => x.token == token);
         }
+
+        // Almanac grid cell: recess art in every state (no SpriteSwap to slot_cell_selected on hover / select), neutral
+        // tint states; slot.recess itself keeps its hover / selected art (BuildHud piece sockets).
+        [Fact]
+        public void AlmanacCellKeepsRecessArtOnHover()
+        {
+            using var s = typeof(ThemeSchema).Assembly.GetManifestResourceStream("RuneSkin.default-theme.json");
+            using var r = new System.IO.StreamReader(s!);
+            var f = ThemeJson.Parse(r.ReadToEnd());
+            var cell = Assert.Single(f.roles, x => x.role == "almanac.cell");
+            Assert.Equal("sprite.slot.recess", cell.sprite);
+            Assert.True(string.IsNullOrEmpty(cell.spriteHover) && string.IsNullOrEmpty(cell.spriteSelected) && string.IsNullOrEmpty(cell.spritePressed) && string.IsNullOrEmpty(cell.spriteDisabled));
+            foreach (var state in new[] { cell.stateNormal, cell.stateHover, cell.statePressed, cell.stateSelected, cell.stateDisabled })
+                Assert.Equal("color.frame", state);
+            var recess = Assert.Single(f.roles, x => x.role == "slot.recess");
+            Assert.Equal("sprite.slot.cell.selected", recess.spriteHover);
+        }
     }
 }

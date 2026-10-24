@@ -1253,6 +1253,7 @@
     { "role": "glyph.panel.backpack", "sprite": "sprite.glyph.panel.backpack", "color": "color.frame", "imageType": "Simple", "preserveAspect": true },
     { "role": "glyph.link", "sprite": "sprite.glyph.link", "color": "color.slot.link", "imageType": "Simple", "preserveAspect": true },
     { "role": "slot.recess", "cell": true, "sprite": "sprite.slot.recess", "color": "color.frame", "imageType": "Sliced", "fillCenter": "true", "spriteHover": "sprite.slot.cell.selected", "spriteSelected": "sprite.slot.cell.selected" },
+    { "role": "almanac.cell", "cell": true, "sprite": "sprite.slot.recess", "color": "color.frame", "imageType": "Sliced", "fillCenter": "true", "stateNormal": "color.frame", "stateHover": "color.frame", "statePressed": "color.frame", "stateSelected": "color.frame", "stateDisabled": "color.frame" },
     { "role": "slot.recess.item", "cell": true, "zones": true, "sprite": "sprite.slot.recess", "color": "color.frame", "imageType": "Sliced", "fillCenter": "true", "spriteHover": "sprite.slot.cell.selected", "spriteSelected": "sprite.slot.cell.selected" },
     { "role": "tab.background", "sprite": "sprite.tab.normal", "color": "color.frame", "imageType": "Sliced", "fillCenter": "true" },
     { "role": "doll.backdrop", "sprite": "sprite.doll.backdrop", "color": "color.doll.backdrop", "imageType": "Sliced", "fillCenter": "true" },

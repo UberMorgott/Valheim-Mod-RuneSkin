@@ -214,7 +214,9 @@ namespace RuneSkin.ModScreens
             if (element)
             {
                 if (t.name == "Selected") { reason = "grid element selection rim"; return element.name.StartsWith("Button", StringComparison.Ordinal) ? "craft.row.selected" : "slot.focus"; }
-                if (target && t.name == "Background") { reason = "grid item cell (Element.Background button)"; return "slot.recess"; }
+                // Recess art in every state: slot.recess's hover / selected swap to slot_cell_selected read as the cell
+                // background changing on hover (live report 0.20.1); Almanac's own Selected rim (slot.focus) marks the pick.
+                if (target && t.name == "Background") { reason = "grid item cell (Element.Background button)"; return "almanac.cell"; }
                 if (target) { reason = "list button row (ElementButton)"; return "craft.row"; }
                 reason = "element icon / notice";
                 return "content";
