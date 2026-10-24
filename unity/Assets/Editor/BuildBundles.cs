@@ -188,7 +188,8 @@ public static class BuildBundles
             st.spriteGenerateFallbackPhysicsShape = false;
             ti.SetTextureSettings(st);
             ti.mipmapEnabled = true; // ART PIPELINE: 4x art shown small (the atlas carries the mips; the source matches for previews)
-            ti.mipMapBias = -0.5f;
+            ti.mipMapBias = -0.5f; // source previews only: packing drops it, the runtime sets the page bias (ThemeTokens.SharpenMips)
+            ti.maxTextureSize = 4096; // default 2048 clamped wide sources (strip7_bars 2166 px) before packing
             ti.alphaIsTransparency = true;
             ti.sRGBTexture = true;
             ti.wrapMode = TextureWrapMode.Clamp;

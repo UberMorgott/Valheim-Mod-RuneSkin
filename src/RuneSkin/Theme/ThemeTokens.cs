@@ -140,18 +140,29 @@ namespace RuneSkin.Theme
 
         // Late binding of our SpriteAtlas: Unity asks for an atlas a sprite references when it was not loaded with it.
         // Atlas pages carry mipmaps (BuildBundles): a negative bias keeps minified HUD art crisp (ART PIPELINE rule:
-        // mipmaps on with a sharp bias). Once per bundle load, each page once.
+        // mipmaps on with a sharp bias). The importer's bias (BuildBundles ImportSprites) does not survive packing: the
+        // shipped pages (RuneSkinStrip 2048x2048, RuneSkin 2048x4096, Hi 4096x4096, BC7 + mips) carry bias 0 (UnityPy
+        // dump, batch201), so the bias is set here on every page a bundle sprite lives on. Runs after the bundle load
+        // (fallback MipBias) and again after each theme apply (token bias.atlas.mip).
         private static void SharpenMips()
         {
-            var bias = GetFloat("bias.atlas.mip", -0.5f);
+            var bias = GetFloat("bias.atlas.mip", MipBias);
+            var pages = new List<string>();
             var seen = new HashSet<Texture2D>();
             foreach (var s in BundleSprites.Values)
             {
                 var tex = s ? s.texture : null;
                 if (!tex || !seen.Add(tex) || tex.mipmapCount <= 1) continue;
                 tex.mipMapBias = bias;
+                pages.Add($"{tex.name} {tex.width}x{tex.height} mips {tex.mipmapCount}");
+            }
+            if (pages.Count > 0 && bias != _loggedMipBias)
+            {
+                _loggedMipBias = bias;
+                Plugin.Log.LogInfo($"[RuneSkin] atlas mip bias {bias:0.##} on {pages.Count} page(s): {string.Join("; ", pages)}");
             }
         }
+        private static float _loggedMipBias = float.NaN;
         private static void OnAtlasRequested(string tag, Action<SpriteAtlas> done)
         {
             var atlas = Atlases.FirstOrDefault(a => a && (a.tag == tag || a.name == tag));
@@ -276,7 +287,9 @@ namespace RuneSkin.Theme
         public static Shader BossFxShader { get; private set; }
         public static Shader BarShader { get; private set; }
 
-        private const float MipBias = -0.5f;
+        // Sprite atlas page mip bias (theme token bias.atlas.mip overrides): -0.7 keeps the 4x HUD art crisp at 1080p
+        // (hud2 sharpness, batch201; -0.5 was the importer value that never reached the packed pages).
+        private const float MipBias = -0.7f;
 
         private static void LoadBundle()
         {
@@ -324,8 +337,6 @@ namespace RuneSkin.Theme
                 foreach (var s in packed)
                 {
                     if (!s) continue;
-                    // ART PIPELINE: the atlas is mipmapped (4x art shown small); a sharp bias keeps it crisp
-                    if (s.texture && s.texture.mipmapCount > 1 && s.texture.mipMapBias != MipBias) s.texture.mipMapBias = MipBias;
                     var name = s.name.EndsWith("(Clone)", StringComparison.Ordinal) ? s.name.Substring(0, s.name.Length - 7) : s.name;
                     if (!BundleSprites.ContainsKey(name)) BundleSprites.Add(name, s);
                 }
@@ -475,6 +486,7 @@ namespace RuneSkin.Theme
             _fallbacksLinked = false;
             foreach (var v in f.floats ?? new FloatEntry[0])
                 Floats[v.token] = v.value;
+            SharpenMips(); // the theme's bias.atlas.mip (the bundle load ran with the fallback)
             Sprite S(string t) => !string.IsNullOrEmpty(t) && Sprites.TryGetValue(t, out var s) ? s : null;
             Color? C(string t) => !string.IsNullOrEmpty(t) && Colors.TryGetValue(t, out var c) ? c : (Color?)null;
             foreach (var r in f.roles ?? new RoleRule[0])

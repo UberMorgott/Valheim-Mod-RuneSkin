@@ -128,7 +128,7 @@ namespace RuneSkin.InfoScreens
             Build();
             // Trilinear hi-res atlas (4x redraws): a slightly sharp mip bias keeps 1080p crisp.
             var hiSprite = ThemeTokens.GetSprite("sprite.stats.chrome.tl");
-            if (hiSprite && hiSprite.texture) hiSprite.texture.mipMapBias = T("size.stats.mip.bias", -0.5f);
+            if (hiSprite && hiSprite.texture) hiSprite.texture.mipMapBias = T("size.stats.mip.bias", -0.7f);
             _button = CreateButton(gui);
             WindowMove.OnMoved(WindowMove.Stats, () => _layoutDirty = true);
             ScreenRegistry.Register(_root, Context);

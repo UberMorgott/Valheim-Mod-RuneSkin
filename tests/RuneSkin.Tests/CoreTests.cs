@@ -80,6 +80,18 @@ namespace RuneSkin.Tests
             Assert.Contains(f.sprites, x => x.token == "sprite.hud.strip7.field");
         }
 
+        // hud2 sharpness (batch201): the packed atlas pages ship mip bias 0 (the importer's -0.5 is lost in packing),
+        // the runtime sets the theme's bias on every page; the stats Hi atlas uses the same value.
+        [Fact]
+        public void DefaultThemeAtlasMipBiasIsSharp()
+        {
+            using var s = typeof(ThemeSchema).Assembly.GetManifestResourceStream("RuneSkin.default-theme.json");
+            using var r = new System.IO.StreamReader(s!);
+            var f = ThemeJson.Parse(r.ReadToEnd());
+            Assert.Equal(-0.7f, System.Array.Find(f.floats, x => x.token == "bias.atlas.mip").value, 3);
+            Assert.Equal(-0.7f, System.Array.Find(f.floats, x => x.token == "size.stats.mip.bias").value, 3);
+        }
+
         // The shipped minimap (0.9.3, user ask): ring 320 ref (was 220) capped at 26 % of the safe height (was 18 %).
         [Fact]
         public void DefaultThemeMinimapIsLarge()
