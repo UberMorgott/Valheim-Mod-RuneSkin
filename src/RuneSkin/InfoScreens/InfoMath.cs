@@ -19,6 +19,11 @@ namespace RuneSkin.InfoScreens
             return cells;
         }
 
+        // One info tab strip on screen: the inventory header row (m_info buttons) shows only while no docked info panel
+        // (skills / trophies) draws its own InfoTabs mirror of the same buttons. Texts / stats hide the whole inventory
+        // (FullWindow); achievements and mod panels (Almanac) have no mirror, so the header row stays for them.
+        public static bool HeaderTabsShown(bool skillsOpen, bool trophiesOpen) => !skillsOpen && !trophiesOpen;
+
         // Skill row order: mode 0 = as given, 1 = level high first (ties by name), 2 = name. Returns source indices.
         public static int[] SkillOrder(IReadOnlyList<float> levels, IReadOnlyList<string> names, int mode, StringComparer comparer)
         {

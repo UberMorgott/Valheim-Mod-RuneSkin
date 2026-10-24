@@ -9,6 +9,17 @@ namespace RuneSkin.Tests
     // M3 polish: info tab row, skill sort order, VNEI grid fit, RecipeChains height cap, repair-free button row.
     public class InfoPolishTests
     {
+        [Theory]
+        [InlineData(false, false, true)]
+        [InlineData(true, false, false)]
+        [InlineData(false, true, false)]
+        [InlineData(true, true, false)]
+        public void HeaderTabsOnlyWithoutDockedStrip(bool skills, bool trophies, bool shown)
+        {
+            // One tab strip on screen (RuneSkin 0.20.1 defect): skills / trophies carry the InfoTabs mirror.
+            Assert.Equal(shown, InfoMath.HeaderTabsShown(skills, trophies));
+        }
+
         [Fact]
         public void TabRowCentredAndInside()
         {

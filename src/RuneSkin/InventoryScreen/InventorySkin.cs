@@ -735,13 +735,38 @@ namespace RuneSkin.InventoryScreen
             h = Mathf.Min(h, w);
             var x = box.X + (box.W - (tabs * w + (tabs - 1) * gap)) / 2f;
             var y = box.Y + nameH + gap;
+            // One tab strip on screen (user defect 2026-10-24, RuneSkin 0.20.1: the skills window showed its own row next
+            // to this one): while a docked info panel draws its InfoTabs mirror of m_info, this row is scaled to 0 - not
+            // deactivated, InfoTabs collects only active m_info buttons and invokes them.
+            var shown = InfoScreens.InfoMath.HeaderTabsShown(
+                InfoScreens.SkillsSkin.Instance && InfoScreens.SkillsSkin.Instance.IsOpen,
+                InfoScreens.TrophiesSkin.Instance && InfoScreens.TrophiesSkin.Instance.IsOpen);
             for (var n = 0; n < info.childCount; n++)
             {
                 var child = info.GetChild(n);
                 if (!child.gameObject.activeSelf || !child.TryGetComponent<Selectable>(out _)) continue;
-                Tab((RectTransform)child, new Box(x, y, w, h));
+                HeaderTabShown(child, shown);
+                if (shown) Tab((RectTransform)child, new Box(x, y, w, h));
                 x += w + gap;
             }
+        }
+
+        // Header tab scale while hidden: the button's own scale is kept and given back when the docked panel closes.
+        private readonly Dictionary<Transform, Vector3> _hiddenTabScale = new Dictionary<Transform, Vector3>(8);
+
+        private void HeaderTabShown(Transform tab, bool shown)
+        {
+            if (shown)
+            {
+                if (_hiddenTabScale.TryGetValue(tab, out var scale))
+                {
+                    tab.localScale = scale;
+                    _hiddenTabScale.Remove(tab);
+                }
+                return;
+            }
+            if (!_hiddenTabScale.ContainsKey(tab)) _hiddenTabScale[tab] = tab.localScale;
+            Geo.SetScale(tab, 0f);
         }
 
         // One info tab on its box: the button, its Background child over the whole box, the icon (Icon / Image /

@@ -23,6 +23,9 @@ namespace RuneSkin.InfoScreens
         public const string ScreenId = "Skills";
         public static SkillsSkin Instance { get; private set; }
 
+        // Open = the dialog is shown; its InfoTabs row then replaces the inventory header tab row (InfoMath.HeaderTabsShown).
+        public bool IsOpen => _root && _root.gameObject.activeInHierarchy;
+
         // 0 = vanilla order, 1 = level (high first), 2 = name. Session-wide, like the list it orders.
         private static int _sort = 1;
 

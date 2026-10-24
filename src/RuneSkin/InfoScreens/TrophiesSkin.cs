@@ -22,6 +22,9 @@ namespace RuneSkin.InfoScreens
         public const string ScreenId = "Trophies";
         public static TrophiesSkin Instance { get; private set; }
 
+        // Open = the panel is shown; its InfoTabs row then replaces the inventory header tab row (InfoMath.HeaderTabsShown).
+        public bool IsOpen => _root && _root.gameObject.activeInHierarchy;
+
         private InventoryGui _gui;
         private RectTransform _root, _frame, _canvas, _strip;
         private Image _stripWell, _knotL, _knotR;
