@@ -533,8 +533,18 @@ namespace RuneSkin.PlayerHud
         }
 
         // One line per shown icon (harness): index, prefab, pet, state, count, fills, shown parts and the icon's screen
-        // rect (x,y,w,h bottom-left origin, socket + bars).
+        // rect (x,y,w,h bottom-left origin, socket + bars). Machine-read: numbers in the invariant culture ("0.50", not the
+        // game culture's "0,50" - run 20261024-192847, ru-RU: every fill parsed as NaN by the harness).
         public static string DebugState()
+        {
+            var thread = System.Threading.Thread.CurrentThread;
+            var culture = thread.CurrentCulture;
+            thread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+            try { return DebugStateText(); }
+            finally { thread.CurrentCulture = culture; }
+        }
+
+        private static string DebugStateText()
         {
             var f = Instance;
             if (!f) return "no party frame";
