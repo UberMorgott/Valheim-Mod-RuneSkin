@@ -61,6 +61,27 @@ namespace RuneSkin.PreWorld
             return h < 0 ? h + n : h;
         }
 
+        // A hint line on its own row under a field (new world "Минимум 5 символов", track F): y up, one space. The hint's
+        // top sits gap under the field bottom; the next row (top nextTop) moves down by the returned shift so it keeps
+        // gap under the hint. Shift 0 once laid out (idempotent).
+        public static (float hintTop, float shift) RowBelow(float fieldBottom, float hintH, float gap, float nextTop)
+        {
+            var top = fieldBottom - gap;
+            var bottom = top - Math.Max(0f, hintH);
+            return (top, Math.Max(0f, nextTop - (bottom - gap)));
+        }
+
+        // Header band of a tabbed panel (start game: mode tabs, separator, sub-panel title; track F): y up, one space.
+        // The separator moves down until its top is gap under the tab row, then the content under it (the title) moves
+        // down until its top is gap under the separator. Both shifts >= 0, 0 once laid out (idempotent).
+        public static (float divider, float below) HeaderBand(float tabsBottom, float dividerTop, float dividerH, float belowTop, float gap)
+        {
+            var d = Math.Max(0f, dividerTop - (tabsBottom - gap));
+            var dividerBottom = dividerTop - d - Math.Max(0f, dividerH);
+            var b = Math.Max(0f, belowTop - (dividerBottom - gap));
+            return (d, b);
+        }
+
         // Vertical category column: y offset (down from the column top) of tab i.
         public static float TabOffset(int index, float height, float gap) => index * (height + gap);
 

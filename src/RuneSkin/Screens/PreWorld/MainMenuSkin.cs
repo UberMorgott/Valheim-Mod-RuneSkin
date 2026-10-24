@@ -78,6 +78,9 @@ namespace RuneSkin.PreWorld
                     Field(servers.m_addServerTextInput);
                 }
             }
+            // Row spacing (0.20.3 track F): the new-world name hint on its own row, tab rows clear of their separators.
+            NewWorldHint.Ensure(fejd);
+            Bands(fejd);
             CharacterFraming.Ensure(fejd);
             SaveRows(fejd);
             if (fejd.m_worldListElement) RegisterTemplate(fejd.m_worldListElement.transform, fejd);
@@ -107,6 +110,51 @@ namespace RuneSkin.PreWorld
                 fejd.m_versionLabel.alignment = TextAlignmentOptions.BottomRight;
                 fejd.m_versionLabel.overflowMode = TextOverflowModes.Overflow;                // Vanilla 14: below the readability floor (m5-text-min, run 20261022-205726).
                 fejd.m_versionLabel.fontSize = Mathf.Max(fejd.m_versionLabel.fontSize, ThemeTokens.GetFloat("size.text.readable", 16f));
+            }
+        }
+
+        // Tab row / separator / content bands (HeaderBand): the start-game mode tabs over Panel/"bkg (1)" over the
+        // sub-panel titles (WorldPanel, JoinPanel move down, the panel grows), and the server filter tabs over JoinPanel's
+        // separator over the server list (the list gives up its top). Character select and the new-world / server-options
+        // dialogs have no tab row over a separator.
+        private static void Bands(FejdStartup fejd)
+        {
+            var panel = fejd.m_startGamePanel ? fejd.m_startGamePanel.transform.Find("Panel") as RectTransform : null;
+            if (!panel) return;
+            var servers = panel.GetComponentInChildren<ServerListGui>(true);
+            var tabs = new List<RectTransform>();
+            foreach (var h in panel.GetComponentsInChildren<TabHandler>(true))
+            {
+                if (servers && (h.transform.IsChildOf(servers.transform) || h == servers.m_serverListTabHandler)) continue;
+                foreach (var tab in h.m_tabs)
+                    if (tab != null && tab.m_button) tabs.Add((RectTransform)tab.m_button.transform);
+            }
+            var divider = HeaderBand.FindDivider(panel);
+            if (divider && tabs.Count > 0)
+            {
+                var subs = new List<RectTransform>();
+                var titles = new List<TMP_Text>();
+                foreach (Transform c in panel)
+                {
+                    // Sub-panels: the tall children under the separator (WorldPanel, JoinPanel).
+                    if (!(c is RectTransform rt) || rt == divider || tabs.Contains(rt) || rt.rect.height < 200f || !Mathf.Approximately(rt.anchorMin.y, rt.anchorMax.y)) continue;
+                    if (rt.GetComponent<PanelSwap>() || rt.GetComponent<PanelCaps>()) continue;
+                    subs.Add(rt);
+                    if (rt.Find("topic") is Transform topic && topic.TryGetComponent<TMP_Text>(out var tt)) titles.Add(tt);
+                }
+                HeaderBand.Ensure(panel, divider, tabs.ToArray(), titles.ToArray(), subs.ToArray(), null);
+            }
+            var join = servers ? servers.transform as RectTransform : null;
+            var joinDivider = join ? HeaderBand.FindDivider(join) : null;
+            if (joinDivider && servers.m_serverListTabHandler)
+            {
+                var filterTabs = new List<RectTransform>();
+                foreach (var tab in servers.m_serverListTabHandler.m_tabs)
+                    if (tab != null && tab.m_button) filterTabs.Add((RectTransform)tab.m_button.transform);
+                var shrink = new List<RectTransform>();
+                foreach (var n in new[] { "ServerList", "ServerListScroll" })
+                    if (join.Find(n) is RectTransform s) shrink.Add(s);
+                if (filterTabs.Count > 0) HeaderBand.Ensure(join, joinDivider, filterTabs.ToArray(), null, null, shrink.ToArray());
             }
         }
 

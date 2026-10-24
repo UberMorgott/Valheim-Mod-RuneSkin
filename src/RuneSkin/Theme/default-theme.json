@@ -747,6 +747,9 @@
     { "token": "size.row.pad", "value": 12 },
     { "token": "size.field.font", "value": 19 },
     { "token": "size.charframe.body", "value": 1.9 },
+    // --- 0.20.3 track F (menu rows): gap between a row and the next (new-world hint row, tab row / separator / title).
+    { "token": "size.menu.row.gap", "value": 8 },
+    // --- end track F
     { "token": "share.charframe.x", "value": 0.4 },
     { "token": "share.charframe.top", "value": 0.93 },
     { "token": "share.charframe.floor.gap", "value": 0.02 },
