@@ -100,6 +100,15 @@ namespace RuneSkin.Screens
                             ctx.Role(text, "menu.entry", "Menu.menuEntriesParent entry label");
                 }
             }
+            // Legacy uGUI labels of buttons other mods put on the menu root: Epic Loot's QuickConfigBroker
+            // (Common.QuickConfigBroker.EnsurePauseButton, EpicLoot.dll decompile 2026-10-24) adds "ModQuickConfigButton"
+            // to Menu.m_root through Jotunn GUIManager.CreateButton - its Image is the Button.targetGraphic (button role),
+            // its label a UnityEngine.UI.Text the classifier has no rule for ("unknown Menu: ... Text not handled", 0.21.1
+            // menufix run 20261024-194221). The plate's label face, like every RuneSkin button label.
+            foreach (var button in menu.GetComponentsInChildren<Button>(true))
+                foreach (var label in button.GetComponentsInChildren<Text>(true))
+                    if (label.GetComponentInParent<Button>(true) == button)
+                        ctx.Role(label, "button.label", "legacy Text label of a mod button on the menu (Jotunn CreateButton)");
             // Vanilla panel images under a dialog's panel stack (DialogFrame): off, reported skipped.
             foreach (var img in menu.GetComponentsInChildren<Image>(true))
                 if (img.TryGetComponent<PreWorld.PanelSwap>(out _))
