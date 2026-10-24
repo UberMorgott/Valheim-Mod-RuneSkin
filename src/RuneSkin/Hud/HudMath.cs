@@ -175,6 +175,17 @@ namespace RuneSkin.PlayerHud
 
         // Shield layer over the HP fill (user call 2026-10-22: one translucent layer ON the health bar, no rail):
         // width = shield / max HP of the window, clamped to the window; no shield / no max = 0.
+        // HP bar label (0.20.1 shield text variant A): "cur/max", plus " +shield" in the shield glow colour (TMP rich
+        // text, hexRgb without '#') while a shield is up; one string so the bar centres the whole label. Values
+        // rounded up as the bar shows them; shield <= 0 (or NaN) drops the "+N" part entirely.
+        public static string HealthLabel(float cur, float max, float shield, string hexRgb)
+        {
+            var c = (int)Math.Ceiling(Math.Max(0f, cur));
+            var m = (int)Math.Ceiling(Math.Max(0f, max));
+            var s = shield > 0f && !float.IsInfinity(shield) ? (int)Math.Ceiling(shield) : 0;
+            return s > 0 ? $"{c}/{m} <color=#{hexRgb}>+{s}</color>" : $"{c}/{m}";
+        }
+
         public static float ShieldOverlay(float shield, float maxHp, float windowPx)
         {
             if (!(shield > 0f) || !(maxHp > 0f) || !(windowPx > 0f) || float.IsInfinity(shield)) return 0f;

@@ -413,6 +413,15 @@ namespace RuneSkin.Tests
             Assert.Equal(want, HudMath.ShieldOverlay(shield, max, window), 3);
 
         [Theory]
+        [InlineData(142f, 200f, 80f, "142/200 <color=#5CE8F2>+80</color>")]
+        [InlineData(141.2f, 200f, 79.1f, "142/200 <color=#5CE8F2>+80</color>")] // rounded up as the bar shows them
+        [InlineData(142f, 200f, 0f, "142/200")]                                  // no shield: "+N" gone entirely
+        [InlineData(142f, 200f, -3f, "142/200")]
+        [InlineData(142f, 200f, float.NaN, "142/200")]
+        public void HealthLabelShieldVariantA(float cur, float max, float shield, string want) =>
+            Assert.Equal(want, HudMath.HealthLabel(cur, max, shield, "5CE8F2"));
+
+        [Theory]
         [InlineData(120f, 340f, 400f, 42f, 0.4f, 141.176f, 16.8f, 25.2f)] // band = top 40 %, HP visible below
         [InlineData(900f, 340f, 400f, 42f, 0.4f, 400f, 16.8f, 25.2f)]     // over max: clamped width
         [InlineData(0f, 340f, 400f, 42f, 0.4f, 0f, 0f, 42f)]              // no shield: nothing

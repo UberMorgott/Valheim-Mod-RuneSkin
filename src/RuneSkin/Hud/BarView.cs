@@ -39,7 +39,7 @@ namespace RuneSkin.PlayerHud
         private float _capW, _overFill, _overTrough, _overLag;
         public static string CapVariantOverride;
         // Plain (HUD strip, mockup hud-3): the bar shows its fill, lag, shield band and the plain value only - no DoT
-        // stripes, reserve hatch / edge / lock, paused rune, "cur/avail" or "+ shield" texts.
+        // stripes, reserve hatch / edge / lock, paused rune or "cur/avail" texts (the main value keeps "cur/max +shield").
         public bool Plain;
         // Shield as a thin line above the bar (older strip) instead of the band inside the window.
         public bool ShieldLine;
@@ -51,7 +51,7 @@ namespace RuneSkin.PlayerHud
         private float _frontCore, _frontClock;
         // Shield layer (health bar only): translucent shield-coloured strip over the fill, HudMath.ShieldOverlay wide.
         private Image _shield;
-        private float _shieldValue, _shownShield = -1f;
+        private float _shieldValue, _shownShield = -1f, _shownMaxLabel = -2f;
         // Wet: a few single drip clusters at irregular spots along the frame bottom (a tiled row read as a zipper).
         private static readonly float[] WetSpots = { 0.07f, 0.38f, 0.79f };
         private readonly Image[] _wet = new Image[WetSpots.Length];
@@ -541,15 +541,18 @@ namespace RuneSkin.PlayerHud
             }
             if (Plain) showAvail = false;
             var extra = showAvail ? avail : -1f;
-            var shieldShown = _shield && !Plain ? Mathf.Ceil(Mathf.Max(0f, _shieldValue)) : 0f;
-            if (Mathf.CeilToInt(cur) != Mathf.CeilToInt(_shownCur) || Mathf.CeilToInt(extra) != Mathf.CeilToInt(_shownExtra) || _shownCur < 0f || shieldShown != _shownShield)
+            var shieldShown = _main ? Mathf.Ceil(Mathf.Max(0f, _shieldValue)) : 0f;
+            var maxShown = _main ? Mathf.Ceil(max) : -1f;
+            if (Mathf.CeilToInt(cur) != Mathf.CeilToInt(_shownCur) || Mathf.CeilToInt(extra) != Mathf.CeilToInt(_shownExtra) || _shownCur < 0f || shieldShown != _shownShield || maxShown != _shownMaxLabel)
             {
-                // Health: "HP + shield" with the shield in its colour, "HP" alone without one (user call 2026-10-22).
-                if (shieldShown > 0f) _number.text = $"{Mathf.Ceil(cur)} <color=#{ColorUtility.ToHtmlStringRGB(ThemeTokens.GetColor("color.hud.shield.text", new Color(0.44f, 0.85f, 0.9f)))}>+ {shieldShown}</color>";
+                // Health (0.20.1 shield text variant A): "cur/max +shield", the "+shield" in the neon shield outline's
+                // colour, hidden at 0; one rich-text string centred in the window as a whole.
+                if (_main) _number.text = HudMath.HealthLabel(cur, max, shieldShown, ColorUtility.ToHtmlStringRGB(ThemeTokens.GetColor("color.hud.shield.glow", new Color(0.36f, 0.91f, 0.95f))));
                 else if (showAvail) _number.SetText("{0}/{1}", Mathf.Ceil(cur), Mathf.Ceil(avail));
                 else _number.SetText("{0}", Mathf.Ceil(cur));
                 _shownExtra = extra;
                 _shownShield = shieldShown;
+                _shownMaxLabel = maxShown;
             }
             _shownCur = cur;
             _shownAvail = avail;
