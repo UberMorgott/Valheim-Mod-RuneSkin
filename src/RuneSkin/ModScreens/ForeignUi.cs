@@ -78,7 +78,7 @@ namespace RuneSkin.ModScreens
             _generic = OwnershipRegistry.IsOwned(OwnershipRegistry.ModUi);
             _on = _generic || ForeignRoles.AnyPreciseOwned();
             if (!_on) return;
-            _optOut = ForeignMath.ParseList(optOut);
+            _optOut = ForeignMath.ParseOptOut(optOut);
             _instance = host.AddComponent<ForeignUi>();
             var tmpEnable = AccessTools.DeclaredMethod(typeof(TextMeshProUGUI), "OnEnable");
             if (tmpEnable != null) harmony.Patch(tmpEnable, postfix: new HarmonyMethod(typeof(ForeignUiPatches), nameof(ForeignUiPatches.Enable_Postfix)));

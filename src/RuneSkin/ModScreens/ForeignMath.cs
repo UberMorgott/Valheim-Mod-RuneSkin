@@ -28,6 +28,15 @@ namespace RuneSkin.ModScreens
             return AssemblyKind.Foreign;
         }
 
+        // ModUiOptOut list -> set. Saved configs keep the pre-0.14.0 default "BossAwakening", the old assembly name of
+        // Vaettir (morgott.valheim.vaettir since 0.14.0): it opts Vaettir out too.
+        public static HashSet<string> ParseOptOut(string csv)
+        {
+            var set = ParseList(csv);
+            if (set.Contains("BossAwakening")) set.Add("Vaettir");
+            return set;
+        }
+
         // Config list "A, B,C" -> set (case-insensitive, blanks dropped).
         public static HashSet<string> ParseList(string csv)
         {
@@ -54,7 +63,7 @@ namespace RuneSkin.ModScreens
             public bool Own;             // a RuneSkin component on the object or a RuneSkin-named object
             public bool OptedOut;        // object name in the opt-out list
             // A MonoBehaviour of an opted-out plugin on the object. Blocks only a would-be unit: on the vanilla boundary
-            // (BossAwakening's WorldBoss sits on _GameMain, Game.instance) it must not take every screen below with it.
+            // (Vaettir's WorldBoss sits on _GameMain, Game.instance) it must not take every screen below with it.
             public bool OptedOutPlugin;
             public bool WorldCanvas;     // world-space canvas (in-world signs, name plates): never restyled
         }

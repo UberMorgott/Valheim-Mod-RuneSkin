@@ -6,7 +6,7 @@
     <AssemblyName>RuneSkin</AssemblyName>
     <RootNamespace>RuneSkin</RootNamespace>
     <!-- Keep in sync with Plugin.Version. -->
-    <Version>0.20.0</Version>
+    <Version>0.20.1</Version>
     <!-- Plugin internals are not public API; XML docs are required on RuneSkin.API only. -->
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>

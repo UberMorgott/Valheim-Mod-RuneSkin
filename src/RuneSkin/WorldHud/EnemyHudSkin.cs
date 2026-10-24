@@ -23,7 +23,7 @@ namespace RuneSkin.WorldHud
     // vanilla colours, GuiBar.cs:32-38), name in the body font with a dark outline, stars as badges, a
     // RuneSkin_EnemyFrame (frame_enemy_normal / frame_boss) fitted around Health with the tier emblem socket at the bar's left
     // end (part of the tier frame, cut with it from the mockup), the shield band and the stagger line inside the window, the boss name on a header plaque. Vaettir
-    // (morgott.valheim.bossawakening, UI\RarityFrames.cs) adds its own VT_Frame child per HUD with the creature's rarity
+    // (morgott.valheim.vaettir, UI\RarityFrames.cs) adds its own VT_Frame child per HUD with the creature's rarity
     // tier and hides the stars: RuneSkin keeps that frame object and its tier and redraws it with the matching RuneSkin
     // tier art (frame_enemy_<tier>: socket + rail + cap cut from enemy-b; boss bars frame_boss) after Vaettir's UpdateHuds postfix.
     //
@@ -750,7 +750,7 @@ namespace RuneSkin.WorldHud
         [HarmonyPatch(typeof(EnemyHud), nameof(EnemyHud.UpdateHuds))]
         [HarmonyPostfix]
         [HarmonyPriority(Priority.Last)]
-        [HarmonyAfter(ModCompat.BossAwakeningGuid, ModCompat.MtGuid, ModCompat.StarLevelSystemGuid)]
+        [HarmonyAfter(ModCompat.VaettirGuid, ModCompat.MtGuid, ModCompat.StarLevelSystemGuid)]
         private static void UpdateHuds_Postfix(EnemyHud __instance)
         {
             try { EnemyHudSkin.Update(__instance); }
