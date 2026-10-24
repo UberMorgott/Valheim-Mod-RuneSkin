@@ -11,3 +11,17 @@ Verify with python and print: size; mean abs alpha difference vs the current spr
 No text, no captions, no watermark.
 Save PNG (RGBA) to: D:\tmp\claude\E--DEV\95fa013a-f085-4add-972f-b088b5a35fa8\scratchpad\gen\tipcap_l-v2.png
 
+--- pass 2 (2026-10-24, user pick 'steel with teal'): teal inlays restored on the steel redraw ---
+Use the image_gen tool for ALL artwork pixels (image edit of the NEW sprite; python/PIL only for canvas size, assembling generated sections, LANCZOS resizing, alpha and checks - never draw lines, gems or ornament with code, no procedural tinting / hue shifting). Load with view_image:
+- refs\steel_tipcap_l.png (the NEW steel sprite, 88x184 RGBA: the BASE to edit. Keep every carved detail, its sharpness, the outline and the position of every feature exactly)
+- refs\old_tipcap_l.png (the OLD sprite, same size: shows WHERE the teal inlays / gems / stripes go - its detail is blurry, take only the teal placement from it)
+- refs\ref_tipcap_l.png (crop of the user's APPROVED reference panel, 4x enlarged: the teal colour, glow strength and placement to match)
+
+Task: the new steel version lost the teal. Restore the teal (cyan-teal, hue ~188 deg, like the reference: bright glowing #3fd8e8-ish core, darker #0e6b78 edges) exactly where the reference / old sprite have it, painted INTO the carved steel as inlays (inlaid enamel / glowing rune-metal lines sitting in carved grooves), not as an overlay glow on top. Teal in the reference / old sprite: the end cap has a teal inlay outline and a small glowing teal gem in its centre, and the teal rail lines end in it.
+Do not change anything else: same steel, same knotwork, same silhouette, same dark fields; no blur, no softening, no new motifs.
+
+Work at high resolution (at least the final size; edit in sections if the aspect ratio is extreme and assemble them with PIL), then resize with LANCZOS to EXACTLY 88x184, aligned 1:1 to the new sprite. As the last step copy the new sprite's alpha channel onto the result.
+Verify with python and print: size; mean abs alpha difference vs the new sprite (must be < 1); the fraction of opaque pixels that are teal (HSV hue 160..210 deg, S >= 0.35, V >= 0.30): the new steel sprite has ~0.02, the old sprite / reference ~0.12, aim for 0.12 +- 30 %; the variance of the 4-neighbour Laplacian of luminance over texels whose 3x3 neighbourhood has alpha >= 128 after a LANCZOS downscale by 0.72 must stay >= 3000 (the new sprite is well above that).
+No text, no captions, no watermark.
+Save PNG (RGBA) to: gen\tipcap_l.png
+

@@ -10,3 +10,18 @@ Generate at high resolution (at least the final size; if the aspect ratio is too
 Verify with python and print: size; mean abs alpha difference vs the current sprite (must be < 2); the variance of the 4-neighbour Laplacian of luminance (0.299R+0.587G+0.114B, 0..255) over texels whose 3x3 neighbourhood has alpha >= 128, measured after a LANCZOS downscale by 0.72 (the shipped size): the current sprite gives ~215, the minimap ring ~4600, aim for >= 3000.
 No text, no captions, no watermark.
 Save PNG (RGBA) to: D:\tmp\claude\E--DEV\95fa013a-f085-4add-972f-b088b5a35fa8\scratchpad\gen\wing_l.png
+
+--- pass 2 (2026-10-24, user pick 'steel with teal'): teal inlays restored on the steel redraw ---
+Use the image_gen tool for ALL artwork pixels (image edit of the NEW sprite; python/PIL only for canvas size, assembling generated sections, LANCZOS resizing, alpha and checks - never draw lines, gems or ornament with code, no procedural tinting / hue shifting). Load with view_image:
+- refs\steel_wing_l.png (the NEW steel sprite, 1032x264 RGBA: the BASE to edit. Keep every carved detail, its sharpness, the outline and the position of every feature exactly)
+- refs\old_wing_l.png (the OLD sprite, same size: shows WHERE the teal inlays / gems / stripes go - its detail is blurry, take only the teal placement from it)
+- refs\ref_wing_l.png (crop of the user's APPROVED reference panel, 4x enlarged: the teal colour, glow strength and placement to match)
+
+Task: the new steel version lost the teal. Restore the teal (cyan-teal, hue ~188 deg, like the reference: bright glowing #3fd8e8-ish core, darker #0e6b78 edges) exactly where the reference / old sprite have it, painted INTO the carved steel as inlays (inlaid enamel / glowing rune-metal lines sitting in carved grooves), not as an overlay glow on top. Teal in the reference / old sprite: a thin glowing teal inlay line runs along the INNER edge of the top frame band and of the bottom frame band over the whole length of the wing; the medallion ring at the left edge has a teal inner bevel line and its teal diamond gems; the knot at the right end has a glowing teal diamond gem and teal inlay on the double rail stubs.
+Do not change anything else: same steel, same knotwork, same silhouette, same dark fields; no blur, no softening, no new motifs.
+
+Work at high resolution (at least the final size; edit in sections if the aspect ratio is extreme and assemble them with PIL), then resize with LANCZOS to EXACTLY 1032x264, aligned 1:1 to the new sprite. As the last step copy the new sprite's alpha channel onto the result.
+Verify with python and print: size; mean abs alpha difference vs the new sprite (must be < 1); the fraction of opaque pixels that are teal (HSV hue 160..210 deg, S >= 0.35, V >= 0.30): the new steel sprite has ~0.02, the old sprite / reference ~0.08, aim for 0.08 +- 30 %; the variance of the 4-neighbour Laplacian of luminance over texels whose 3x3 neighbourhood has alpha >= 128 after a LANCZOS downscale by 0.72 must stay >= 3000 (the new sprite is well above that).
+No text, no captions, no watermark.
+Save PNG (RGBA) to: gen\wing_l.png
+
