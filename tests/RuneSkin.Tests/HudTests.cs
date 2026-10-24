@@ -428,7 +428,7 @@ namespace RuneSkin.Tests
         [InlineData(0f, 6f, -10f, 1f, 0f)]                     // no window yet
         public void ValueInkFitsWindow(float windowH, float top, float bottom, float wantScale, float wantShift)
         {
-            HudMath.ValueInkFit(windowH, top, bottom, out var scale, out var shift);
+            HudMath.ValueInkFit(windowH, top, bottom, 0f, out var scale, out var shift);
             Assert.Equal(wantScale, scale, 3);
             Assert.Equal(wantShift, shift, 3);
             if (windowH > 0f)
@@ -438,6 +438,23 @@ namespace RuneSkin.Tests
                 Assert.True(bottom * scale + shift >= -windowH / 2f - 0.01f);
                 Assert.Equal(0f, (top + bottom) / 2f * scale + shift, 3);
             }
+        }
+
+        // Run 20261024-143631 text-min-1280x720: the fit drew the HP value at 13.2 px under its 14 px floor. At 720p the
+        // strip is 0.55x (design 16.5 px, window 11.8 px): the scale stops at the floor (14 / 16.5) and the ink stays
+        // centred, overhanging the window evenly (well inside shield-text-inside's 1 px); at 1080p the floor (14 / 30)
+        // is below the fit (0.8), nothing changes.
+        [Theory]
+        [InlineData(11.78f, 6.21f, -8.51f, 14f / 16.5f, 0.8484f)]
+        [InlineData(21.41f, 11.29f, -15.47f, 14f / 30f, 0.8001f)]
+        public void ValueInkFit_StopsAtTheReadableFloor(float windowH, float top, float bottom, float minScale, float wantScale)
+        {
+            HudMath.ValueInkFit(windowH, top, bottom, minScale, out var scale, out var shift);
+            Assert.Equal(wantScale, scale, 3);
+            Assert.True(scale >= minScale - 1e-4f);
+            Assert.Equal(0f, (top + bottom) / 2f * scale + shift, 3); // ink centred
+            var over = System.Math.Max(0f, (top - bottom) * scale - windowH) / 2f;
+            Assert.True(over <= 1f, $"ink overhang {over} px a side");
         }
 
         [Theory]

@@ -239,14 +239,29 @@ namespace RuneSkin.PlayerHud
             if (Root && transform.IsChildOf(Root)) Apply();
         }
 
+        // Screen px per font unit of t under the strip root (0 = unknown: no root / scale yet).
+        private static float Unit(TMP_Text t)
+        {
+            if (!Root || !(RootPx > 0f) || !t) return 0f;
+            var rootScale = Mathf.Abs(Root.lossyScale.y);
+            // the root's px per unit times the text's own scale under the root
+            return rootScale > 0f ? RootPx * Mathf.Abs(t.rectTransform.lossyScale.y) / rootScale : 0f;
+        }
+
+        // Smallest font size (the text's units) that renders at Px screen px; 0 when the scale is not known yet. A fitter
+        // that shrinks the font (BarView.FitValue) never goes under it.
+        public float MinSize()
+        {
+            var unit = TryGetComponent<TMP_Text>(out var t) ? Unit(t) : 0f;
+            return unit > 0f ? Px / unit : 0f;
+        }
+
         public void Apply()
         {
-            if (!Root || !(RootPx > 0f) || !TryGetComponent<TMP_Text>(out var t)) return;
-            var rootScale = Mathf.Abs(Root.lossyScale.y);
-            if (!(rootScale > 0f)) return;
+            if (!TryGetComponent<TMP_Text>(out var t)) return;
+            var unit = Unit(t);
+            if (!(unit > 0f)) return;
             if (Base <= 0f) Base = t.fontSize;
-            // screen px per text unit: the root's px per unit times the text's own scale under the root
-            var unit = RootPx * Mathf.Abs(t.rectTransform.lossyScale.y) / rootScale;
             var size = StripMath.FontFloor(Base, Px, unit);
             if (!Mathf.Approximately(t.fontSize, size)) t.fontSize = size;
             if (!t.enableAutoSizing) return;

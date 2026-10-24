@@ -568,6 +568,10 @@ namespace RuneSkin.PlayerHud
         // margin, the font shrinks until the ink height fits the window and a top / bottom margin moves the ink centre
         // onto the window centre (the rect stays the window, TMP centres the line box in the margin-reduced rect).
         // Nothing drawn yet (hidden, no mesh) -> retried on the next Render.
+        // Readable floor (run 20261024-143631 text-min-1280x720: the fit drew the HP value at 13.2 px < its 14 px floor -
+        // at 720p the strip is 0.55x the 1080p one, its 11.8 px window under the ~12.5 px ink of a 14 px "180/180 +90"):
+        // the fit never shrinks under the text's TextFloor size; the ink then overhangs the window evenly (~0.35 px a
+        // side at 720p, centred), at 1080p+ the window fits the floor size and nothing changes.
         private bool _fitPending;
 
         private void FitValue()
@@ -575,7 +579,9 @@ namespace RuneSkin.PlayerHud
             _fitPending = true;
             if (!_number || !(_numberSize > 0f)) return;
             var nr = _number.rectTransform;
-            _number.fontSize = _numberSize;
+            var floor = _number.TryGetComponent<TextFloor>(out var tf) ? tf.MinSize() : 0f;
+            var design = Mathf.Max(_numberSize, floor);
+            _number.fontSize = design;
             _number.margin = Vector4.zero;
             _number.ForceMeshUpdate();
             var info = _number.textInfo;
@@ -589,8 +595,8 @@ namespace RuneSkin.PlayerHud
             }
             if (top < bottom) return;
             var rect = nr.rect;
-            HudMath.ValueInkFit(rect.height, top - rect.center.y, bottom - rect.center.y, out var scale, out var shift);
-            _number.fontSize = _numberSize * scale;
+            HudMath.ValueInkFit(rect.height, top - rect.center.y, bottom - rect.center.y, floor / design, out var scale, out var shift);
+            _number.fontSize = design * scale;
             _number.margin = shift >= 0f ? new Vector4(0f, 0f, 0f, 2f * shift) : new Vector4(0f, -2f * shift, 0f, 0f);
             _fitPending = false;
         }

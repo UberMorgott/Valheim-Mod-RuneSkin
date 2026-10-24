@@ -298,14 +298,15 @@ namespace RuneSkin.PlayerHud
         // fill; TMP centres the line box (ascender..descender), not the ink, so the digits also sat 2.1 px low).
         // inkTop / inkBottom = glyph extents measured at the design size, relative to the window centre (y up); a single
         // line scales about that centre with the font size. scale (<= 1) shrinks the font until the ink height fits
-        // windowH; shift (y up, at the fitted size) moves the ink centre onto the window centre.
-        public static void ValueInkFit(float windowH, float inkTop, float inkBottom, out float scale, out float shift)
+        // windowH, but not under minScale (the readable floor's share of the design size; the ink then overhangs the
+        // window evenly); shift (y up, at the fitted size) moves the ink centre onto the window centre.
+        public static void ValueInkFit(float windowH, float inkTop, float inkBottom, float minScale, out float scale, out float shift)
         {
             scale = 1f;
             shift = 0f;
             var inkH = inkTop - inkBottom;
             if (!(inkH > 0f) || !(windowH > 0f)) return;
-            scale = Math.Min(1f, windowH / inkH);
+            scale = Math.Min(1f, Math.Max(windowH / inkH, Math.Max(0f, minScale)));
             shift = -(inkTop + inkBottom) / 2f * scale;
         }
 
