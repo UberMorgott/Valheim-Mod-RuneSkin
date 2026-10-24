@@ -148,13 +148,17 @@ namespace RuneSkin.PreWorld
             var joinDivider = join ? HeaderBand.FindDivider(join) : null;
             if (joinDivider && servers.m_serverListTabHandler)
             {
-                var filterTabs = new List<RectTransform>();
-                foreach (var tab in servers.m_serverListTabHandler.m_tabs)
-                    if (tab != null && tab.m_button) filterTabs.Add((RectTransform)tab.m_button.transform);
+                // The filter tabs are read live: ServerListGui re-creates them on every OnEnable (HeaderBand.Ensure).
+                var handler = servers.m_serverListTabHandler;
                 var shrink = new List<RectTransform>();
                 foreach (var n in new[] { "ServerList", "ServerListScroll" })
                     if (join.Find(n) is RectTransform s) shrink.Add(s);
-                if (filterTabs.Count > 0) HeaderBand.Ensure(join, joinDivider, filterTabs.ToArray(), null, null, shrink.ToArray());
+                HeaderBand.Ensure(join, joinDivider, list =>
+                {
+                    if (!handler) return;
+                    foreach (var tab in handler.m_tabs)
+                        if (tab != null && tab.m_button) list.Add((RectTransform)tab.m_button.transform);
+                }, null, null, shrink.ToArray());
             }
         }
 

@@ -166,15 +166,26 @@ namespace RuneSkin.PreWorld
     public sealed class HeaderBand : MonoBehaviour, IRevertible
     {
         private RectTransform _host, _divider;
-        private RectTransform[] _tabs;
+        private System.Action<List<RectTransform>> _tabSource;
+        private readonly List<RectTransform> _tabs = new List<RectTransform>(8);
         private TMP_Text[] _titles;
         private RectTransform[] _movers, _shrink;
         private readonly RectJournal _journal = new RectJournal();
-        private float _seen = float.NaN;
+        private int _seen;
+        private bool _hasSeen;
 
         // host: the panel whose children are tabs, divider and movers / shrink; titles: texts whose visual top is the
         // content top (else the movers' / shrink rects' tops).
         public static HeaderBand Ensure(RectTransform host, RectTransform divider, RectTransform[] tabs,
+            TMP_Text[] titles, RectTransform[] movers, RectTransform[] shrink) =>
+            tabs == null ? null : Ensure(host, divider, list => list.AddRange(tabs), titles, movers, shrink);
+
+        // tabs: fills the list with the tab row's current buttons, read every LateUpdate. The server filter tabs are not
+        // fixed objects: ServerListGui.RecreateTabs (OnEnable, ServerListGui.cs:156-170 / 313-371) destroys and
+        // re-instantiates them every time the join tab shows, and before the first show the list is empty (Bands runs
+        // at menu attach). A tab array captured then left the filter band without tabs: never laid out, the plates
+        // 3 units into JoinPanel's separator and the server list touching it (0.21.1 menufix run 20261024-194221).
+        public static HeaderBand Ensure(RectTransform host, RectTransform divider, System.Action<List<RectTransform>> tabs,
             TMP_Text[] titles, RectTransform[] movers, RectTransform[] shrink)
         {
             if (!host || !divider || tabs == null) return null;
@@ -185,11 +196,11 @@ namespace RuneSkin.PreWorld
             }
             b._host = host;
             b._divider = divider;
-            b._tabs = tabs;
+            b._tabSource = tabs;
             b._titles = titles ?? new TMP_Text[0];
             b._movers = movers ?? new RectTransform[0];
             b._shrink = shrink ?? new RectTransform[0];
-            b._seen = float.NaN;
+            b._hasSeen = false;
             return b;
         }
 
@@ -209,17 +220,29 @@ namespace RuneSkin.PreWorld
 
         private void LateUpdate()
         {
-            // Signature: the tab row bottom + the content's measured top (tab plates / title sizes may change late).
-            var sig = 0f;
-            foreach (var t in _tabs) if (t && t.gameObject.activeInHierarchy) sig = sig * 31f + t.rect.height;
-            foreach (var t in _titles) if (t && t.gameObject.activeInHierarchy) sig = sig * 31f + t.fontSize + (t.text?.Length ?? 0);
-            if (sig == _seen) return;
+            // Signature: which tabs, their heights + the content's measured top (tab plates / title sizes may change late,
+            // the filter tabs are re-instantiated on every join-tab show).
+            ReadTabs();
+            var sig = _tabs.Count;
+            foreach (var t in _tabs)
+                if (t && t.gameObject.activeInHierarchy) sig = unchecked(sig * 31 + t.GetInstanceID() * 7 + Mathf.RoundToInt(t.rect.height * 100f));
+            foreach (var t in _titles)
+                if (t && t.gameObject.activeInHierarchy) sig = unchecked(sig * 31 + Mathf.RoundToInt(t.fontSize * 100f) + (t.text?.Length ?? 0));
+            if (_hasSeen && sig == _seen) return;
+            _hasSeen = true;
             _seen = sig;
             Layout();
         }
 
+        private void ReadTabs()
+        {
+            _tabs.Clear();
+            _tabSource?.Invoke(_tabs);
+        }
+
         public void Layout()
         {
+            ReadTabs();
             _journal.Restore();
             var host = _host;
             var gap = ThemeTokens.GetFloat("size.menu.row.gap", 8f);
@@ -254,11 +277,10 @@ namespace RuneSkin.PreWorld
             }
             foreach (var s in _shrink)
             {
-                if (!s || !Mathf.Approximately(s.anchorMin.y, s.anchorMax.y)) continue;
+                if (!s) continue;
                 _journal.Keep(s);
-                // Top edge down by b, bottom edge kept.
-                s.sizeDelta -= new Vector2(0f, b);
-                s.anchoredPosition -= new Vector2(0f, b * (1f - s.pivot.y));
+                // Top edge down by b, bottom edge kept (offsetMin untouched), fixed or stretched vertical anchors alike.
+                s.offsetMax -= new Vector2(0f, b);
             }
         }
 
