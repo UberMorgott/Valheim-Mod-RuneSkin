@@ -69,7 +69,17 @@ namespace RuneSkin.WorldHud
                 // Solid, sprite-less: the band sprite is mostly transparent under the glyphs (run 20261023-012017:
                 // contrast 3.7 on white with the tinted sprite). Offline estimate with #0B1419 at 0.9 over white:
                 // lum 0.024 vs the warm face 0.86 -> ratio ~12.
-                if (_centerBand) { _centerBand.sprite = null; _centerBand.type = Image.Type.Simple; }
+                // Since 2026-10-24: a soft-edged plate (opaque core under the glyphs + pad, alpha ramp outside it),
+                // sized from the rendered glyphs every time they change (Center).
+                if (_centerBand)
+                {
+                    var refPpu = canvas ? canvas.rootCanvas.referencePixelsPerUnit : 100f;
+                    _centerBand.sprite = SoftPlate(refPpu);
+                    _centerBand.type = Image.Type.Sliced;
+                    _centerBand.fillCenter = true;
+                    _centerBand.pixelsPerUnitMultiplier = SoftRamp / Mathf.Max(1f, ThemeTokens.GetFloat("size.message.center.fade", 16f));
+                    _centerBand.raycastTarget = false;
+                }
             }
             var top = hud.m_messageText;
             if (top)
@@ -129,14 +139,88 @@ namespace RuneSkin.WorldHud
         {
             var t = _hud.m_messageCenterText;
             if (!t || !_centerBand) return;
-            _centerBand.canvasRenderer.SetAlpha(Alpha(t));
-            if (t.text == _centerText) return;
-            _centerText = t.text;
-            if (string.IsNullOrEmpty(_centerText)) return;
-            var size = t.GetPreferredValues(_centerText, t.rectTransform.rect.width, 0f);
-            var pad = ThemeTokens.GetFloat("size.message.band.pad", 70f);
-            var vpad = ThemeTokens.GetFloat("size.message.band.vpad", 14f);
-            Around(_centerBand.rectTransform, t.rectTransform, new Vector2(Mathf.Min(size.x, t.rectTransform.rect.width) + 2f * pad, size.y + 2f * vpad), t.alignment);
+            var a = Alpha(t);
+            _centerBand.canvasRenderer.SetAlpha(a);
+            if (t.text != _centerText)
+            {
+                _centerText = t.text;
+                if (string.IsNullOrEmpty(_centerText)) return;
+                t.ForceMeshUpdate();
+            }
+            else if (a <= 0f) return;
+            // Every visible frame from the laid-out glyphs (cheap: one line of text): a font / size / rect change after
+            // the text arrived re-fits too. Before (user screenshot 2026-10-24) the band was sized once from
+            // GetPreferredValues and centred on the text rect, so the rune caps sat half outside it.
+            FitCenterPlate(t);
+        }
+
+        private float[] _quads = new float[256];
+
+        private void FitCenterPlate(TMP_Text t)
+        {
+            var info = t.textInfo;
+            if (info == null || info.characterCount == 0) return;
+            var n = 0;
+            if (_quads.Length < 4 * info.characterCount) _quads = new float[4 * info.characterCount];
+            for (var i = 0; i < info.characterCount && i < info.characterInfo.Length; i++)
+            {
+                var c = info.characterInfo[i];
+                if (!c.isVisible) continue;
+                // Glyph quad + the line box: rune caps overshoot the font's ascender, descenders the baseline.
+                _quads[4 * n] = c.bottomLeft.x;
+                _quads[4 * n + 1] = Mathf.Min(c.bottomLeft.y, c.descender);
+                _quads[4 * n + 2] = c.topRight.x;
+                _quads[4 * n + 3] = Mathf.Max(c.topRight.y, c.ascender);
+                n++;
+            }
+            if (!PlayHudMath.GlyphBox(_quads, n, out var x0, out var y0, out var x1, out var y1)) return;
+            var tr = t.rectTransform;
+            var parent = tr.parent;
+            var min = (Vector2)parent.InverseTransformPoint(tr.TransformPoint(new Vector3(x0, y0, 0f)));
+            var max = (Vector2)parent.InverseTransformPoint(tr.TransformPoint(new Vector3(x1, y1, 0f)));
+            var canvas = t.canvas ? t.canvas.rootCanvas : null;
+            var scale = canvas ? canvas.scaleFactor * (parent.lossyScale.x / Mathf.Max(1e-6f, canvas.transform.lossyScale.x)) : 1f;
+            var minPx = ThemeTokens.GetFloat("size.message.center.minpx", 10f);
+            var pad = PlayHudMath.PadUnits(ThemeTokens.GetFloat("size.message.center.pad", 54f), minPx, scale);
+            var vpad = PlayHudMath.PadUnits(ThemeTokens.GetFloat("size.message.center.vpad", 12f), minPx, scale);
+            var fade = SliceBorder(_centerBand).x;
+            var (cx, w) = PlayHudMath.CenterPlate(min.x, max.x, pad, fade);
+            var (cy, h) = PlayHudMath.CenterPlate(min.y, max.y, vpad, fade);
+            var rt = _centerBand.rectTransform;
+            var pos = new Vector3(cx, cy, 0f);
+            var size = new Vector2(w, h);
+            if ((rt.localPosition - pos).sqrMagnitude < 0.01f && (rt.sizeDelta - size).sqrMagnitude < 0.01f && rt.anchorMin == rt.anchorMax) return;
+            rt.anchorMin = rt.anchorMax = ((RectTransform)parent).pivot;
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = size;
+            rt.localPosition = pos;
+        }
+
+        // Soft plate sprite: white, alpha ramp over SoftRamp texels on every side (smoothstep per axis, so the corners
+        // round off), 9-sliced at the ramp; tinted by color.message.band. A mechanical alpha mask, not art.
+        private const int SoftSize = 64;
+        private const float SoftRamp = 24f;
+        private static Sprite _softPlate;
+
+        private static Sprite SoftPlate(float ppu)
+        {
+            if (_softPlate) return _softPlate;
+            var tex = new Texture2D(SoftSize, SoftSize, TextureFormat.RGBA32, false) { name = "RuneSkin_SoftPlate", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+            var px = new Color32[SoftSize * SoftSize];
+            for (var y = 0; y < SoftSize; y++)
+                for (var x = 0; x < SoftSize; x++)
+                {
+                    var dx = Mathf.Min(x + 0.5f, SoftSize - x - 0.5f);
+                    var dy = Mathf.Min(y + 0.5f, SoftSize - y - 0.5f);
+                    var al = PlayHudMath.EdgeFade(dx, SoftRamp) * PlayHudMath.EdgeFade(dy, SoftRamp);
+                    px[y * SoftSize + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(al * 255f));
+                }
+            tex.SetPixels32(px);
+            tex.Apply(false, true);
+            _softPlate = Sprite.Create(tex, new Rect(0, 0, SoftSize, SoftSize), new Vector2(0.5f, 0.5f), Mathf.Max(1f, ppu), 0, SpriteMeshType.FullRect,
+                new Vector4(SoftRamp, SoftRamp, SoftRamp, SoftRamp));
+            _softPlate.name = "RuneSkin_SoftPlate";
+            return _softPlate;
         }
 
         private void TopLeft()
@@ -212,18 +296,6 @@ namespace RuneSkin.WorldHud
 
         // Theme floor for small HUD texts (size.text.hud.min).
         internal static float HudReadable(float size) => PlayHudMath.Readable(size, ThemeTokens.GetFloat("size.text.hud.min", 18f));
-
-        // A band centred on the text's visible line (alignment-aware horizontally).
-        private static void Around(RectTransform band, RectTransform text, Vector2 size, TextAlignmentOptions align)
-        {
-            band.anchorMin = text.anchorMin;
-            band.anchorMax = text.anchorMax;
-            band.pivot = new Vector2(0.5f, 0.5f);
-            band.sizeDelta = size;
-            if (band.anchorMin != band.anchorMax) band.sizeDelta = size - (band.anchorMax - band.anchorMin) * ((RectTransform)text.parent).rect.size;
-            var r = text.rect;
-            band.localPosition = text.localPosition + new Vector3((0.5f - text.pivot.x) * r.width, (0.5f - text.pivot.y) * r.height, 0f);
-        }
 
         private void Banner()
         {

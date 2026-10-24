@@ -78,5 +78,43 @@ namespace RuneSkin.WorldHud
         // a plate grown past that spacing gets plate height + gap so neighbours never overlap.
         public static float UnlockSlotY(float baseY, int slot, float vanillaSpace, float plateHeight, float gap) =>
             baseY - Math.Max(0, slot) * Math.Max(vanillaSpace, plateHeight + Math.Max(0f, gap));
+
+        // Centre message plate pad along one axis, canvas units: the themed pad, raised so it is at least minPx screen
+        // pixels at the canvas scale (px per unit; at 720p the HUD canvas shrinks below 1).
+        public static float PadUnits(float pad, float minPx, float scale) =>
+            Math.Max(Math.Max(0f, pad), scale > 1e-4f ? Math.Max(0f, minPx) / scale : 0f);
+
+        // Centre message plate (user screenshot 2026-10-24: rune caps half outside the band, which was centred on the
+        // text rect and sized from preferred values): the rendered glyph box [min, max] grown by the pad (opaque core)
+        // plus the soft fade border on each side. Returns (centre, size) along one axis.
+        public static (float center, float size) CenterPlate(float min, float max, float pad, float fade) =>
+            PlateSpan(min, max, fade, pad);
+
+        // Union of glyph quads (x0, y0, x1, y1 per glyph) -> (minX, minY, maxX, maxY); false when no glyph has area.
+        public static bool GlyphBox(float[] quads, int count, out float minX, out float minY, out float maxX, out float maxY)
+        {
+            minX = minY = float.PositiveInfinity;
+            maxX = maxY = float.NegativeInfinity;
+            var any = false;
+            for (var i = 0; quads != null && i < count && 4 * i + 3 < quads.Length; i++)
+            {
+                float x0 = quads[4 * i], y0 = quads[4 * i + 1], x1 = quads[4 * i + 2], y1 = quads[4 * i + 3];
+                if (float.IsNaN(x0) || float.IsNaN(y0) || float.IsNaN(x1) || float.IsNaN(y1)) continue;
+                if (!(Math.Abs(x1 - x0) > 1e-4f) && !(Math.Abs(y1 - y0) > 1e-4f)) continue;
+                minX = Math.Min(minX, Math.Min(x0, x1)); maxX = Math.Max(maxX, Math.Max(x0, x1));
+                minY = Math.Min(minY, Math.Min(y0, y1)); maxY = Math.Max(maxY, Math.Max(y0, y1));
+                any = true;
+            }
+            return any;
+        }
+
+        // Soft plate edge alpha (0..1) at a distance from the outer edge over a ramp: smoothstep, 0 at the edge, 1 from
+        // the ramp's inner end on.
+        public static float EdgeFade(float distanceFromEdge, float ramp)
+        {
+            if (!(ramp > 0f)) return distanceFromEdge >= 0f ? 1f : 0f;
+            var t = Math.Max(0f, Math.Min(1f, distanceFromEdge / ramp));
+            return t * t * (3f - 2f * t);
+        }
     }
 }

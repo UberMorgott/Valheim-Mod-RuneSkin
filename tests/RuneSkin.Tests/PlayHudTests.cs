@@ -22,6 +22,47 @@ namespace RuneSkin.Tests
         public void ReadableRaisesSmallSizesToTheFloor(float size, float min, float expected) => Assert.Equal(expected, PlayHudMath.Readable(size, min));
 
         [Fact]
+        public void CenterPlateWrapsTheGlyphBoxNotTheTextRect()
+        {
+            // Two wrapped lines of rune caps overshooting the line box: glyphs -310..290 x, -40..36 y (text space).
+            var quads = new[] { -310f, -5f, -280f, 36f, 250f, -40f, 290f, -2f, 0f, 0f, 0f, 0f, float.NaN, 0f, 1f, 1f };
+            Assert.True(PlayHudMath.GlyphBox(quads, 4, out var x0, out var y0, out var x1, out var y1));
+            Assert.Equal((-310f, -40f, 290f, 36f), (x0, y0, x1, y1));
+            var (cx, w) = PlayHudMath.CenterPlate(x0, x1, 54f, 16f);
+            var (cy, h) = PlayHudMath.CenterPlate(y0, y1, 12f, 16f);
+            Assert.Equal(-10f, cx, 3);
+            Assert.Equal(600f + 2f * 70f, w, 3);
+            Assert.Equal(-2f, cy, 3);
+            Assert.Equal(76f + 2f * 28f, h, 3);
+            // Every glyph edge stays pad inside the opaque core (plate minus the fade) on all four sides.
+            Assert.Equal(54f, x0 - (cx - w * 0.5f + 16f), 3);
+            Assert.Equal(54f, (cx + w * 0.5f - 16f) - x1, 3);
+            Assert.Equal(12f, y0 - (cy - h * 0.5f + 16f), 3);
+            Assert.Equal(12f, (cy + h * 0.5f - 16f) - y1, 3);
+            Assert.False(PlayHudMath.GlyphBox(new float[] { 1f, 1f, 1f, 1f }, 1, out _, out _, out _, out _));
+            Assert.False(PlayHudMath.GlyphBox(null, 3, out _, out _, out _, out _));
+        }
+
+        [Theory]
+        [InlineData(12f, 10f, 1f, 12f)]      // 1080p: the theme pad already >= 10 px
+        [InlineData(12f, 10f, 0.6667f, 15f)] // 720p: canvas shrinks, pad raised to 10 px on screen
+        [InlineData(12f, 10f, 1.3333f, 12f)] // 1440p
+        [InlineData(-3f, 10f, 0f, 0f)]
+        public void PadUnitsKeepsTheScreenMinimum(float pad, float minPx, float scale, float expected) =>
+            Assert.Equal(expected, PlayHudMath.PadUnits(pad, minPx, scale), 2);
+
+        [Fact]
+        public void EdgeFadeRampsSmoothlyToOpaque()
+        {
+            Assert.Equal(0f, PlayHudMath.EdgeFade(0f, 24f));
+            Assert.Equal(0.5f, PlayHudMath.EdgeFade(12f, 24f), 4);
+            Assert.Equal(1f, PlayHudMath.EdgeFade(24f, 24f));
+            Assert.Equal(1f, PlayHudMath.EdgeFade(40f, 24f));
+            Assert.Equal(1f, PlayHudMath.EdgeFade(1f, 0f));
+            Assert.True(PlayHudMath.EdgeFade(6f, 24f) < PlayHudMath.EdgeFade(7f, 24f));
+        }
+
+        [Fact]
         public void PlateSpanKeepsBorderAndPadOnBothSides()
         {
             var (c, s) = PlayHudMath.PlateSpan(10f, 110f, 12f, 6f);
