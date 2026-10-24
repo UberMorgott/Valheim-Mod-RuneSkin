@@ -57,6 +57,8 @@ namespace RuneSkin.PlayerHud
         private readonly Image[] _wet = new Image[WetSpots.Length];
         private readonly Image[] _stripes = new Image[MaxStripes];
         private TMP_Text _number, _aux;
+        // Value font size from the theme; FitValue shrinks / shifts the drawn digits into the window from it.
+        private float _numberSize;
         private readonly HudArt _art;
         private readonly bool _rail;
         private readonly string _fillColor;
@@ -188,6 +190,7 @@ namespace RuneSkin.PlayerHud
                 TextAlignmentOptions.Center); // every bar: value centred in the window, both axes (user call 2026-10-22)
             WorldHud.TextLook.ApplyHudNumber(_number);
             _number.richText = mainValue;
+            _numberSize = _number.fontSize;
             _textColor = _number.color;
             _aux = art.Text("Aux", Root, "font.body", "color.hud.timer", ThemeTokens.GetFloat("size.hud.font.timer", 13f), TextAlignmentOptions.MidlineLeft);
             _aux.gameObject.SetActive(false);
@@ -378,6 +381,7 @@ namespace RuneSkin.PlayerHud
             var nr = _number.rectTransform;
             nr.anchoredPosition = new Vector2(_insetL, _insetB);
             nr.sizeDelta = new Vector2(l, _h);
+            FitValue();
             var ar = _aux.rectTransform;
             ar.anchoredPosition = new Vector2(_insetL + 4f, _insetB);
             ar.sizeDelta = new Vector2(Mathf.Max(0f, l - 8f), _h);
@@ -550,12 +554,45 @@ namespace RuneSkin.PlayerHud
                 if (_main) _number.text = HudMath.HealthLabel(cur, max, shieldShown, ColorUtility.ToHtmlStringRGB(ThemeTokens.GetColor("color.hud.shield.glow", new Color(0.36f, 0.91f, 0.95f))));
                 else if (showAvail) _number.SetText("{0}/{1}", Mathf.Ceil(cur), Mathf.Ceil(avail));
                 else _number.SetText("{0}", Mathf.Ceil(cur));
+                FitValue();
                 _shownExtra = extra;
                 _shownShield = shieldShown;
                 _shownMaxLabel = maxShown;
             }
+            else if (_fitPending) FitValue();
             _shownCur = cur;
             _shownAvail = avail;
+        }
+
+        // Value text fitted to the window by its drawn glyphs (HudMath.ValueInkFit): measured at the theme size with no
+        // margin, the font shrinks until the ink height fits the window and a top / bottom margin moves the ink centre
+        // onto the window centre (the rect stays the window, TMP centres the line box in the margin-reduced rect).
+        // Nothing drawn yet (hidden, no mesh) -> retried on the next Render.
+        private bool _fitPending;
+
+        private void FitValue()
+        {
+            _fitPending = true;
+            if (!_number || !(_numberSize > 0f)) return;
+            var nr = _number.rectTransform;
+            _number.fontSize = _numberSize;
+            _number.margin = Vector4.zero;
+            _number.ForceMeshUpdate();
+            var info = _number.textInfo;
+            float top = float.MinValue, bottom = float.MaxValue;
+            for (var i = 0; info != null && i < info.characterCount; i++)
+            {
+                var ch = info.characterInfo[i];
+                if (!ch.isVisible) continue;
+                top = Mathf.Max(top, ch.topRight.y);
+                bottom = Mathf.Min(bottom, ch.bottomLeft.y);
+            }
+            if (top < bottom) return;
+            var rect = nr.rect;
+            HudMath.ValueInkFit(rect.height, top - rect.center.y, bottom - rect.center.y, out var scale, out var shift);
+            _number.fontSize = _numberSize * scale;
+            _number.margin = shift >= 0f ? new Vector4(0f, 0f, 0f, 2f * shift) : new Vector4(0f, -2f * shift, 0f, 0f);
+            _fitPending = false;
         }
 
         // Frame overlay placement (art\sprites\sprites.json notes): overlay_frost = ice-crystal cluster at native size

@@ -422,6 +422,25 @@ namespace RuneSkin.Tests
             Assert.Equal(want, HudMath.HealthLabel(cur, max, shield, "5CE8F2"));
 
         [Theory]
+        [InlineData(21.41f, 11.29f, -15.47f, 0.8001f, 1.6722f)] // run 20261024-134656 HP "180/180 +90": 26.76 px ink, 2.1 px low
+        [InlineData(21.41f, 8f, -8f, 1f, 0f)]                  // fits and centred: untouched
+        [InlineData(21.41f, 6f, -10f, 1f, 2f)]                 // fits, low: shifted up only
+        [InlineData(0f, 6f, -10f, 1f, 0f)]                     // no window yet
+        public void ValueInkFitsWindow(float windowH, float top, float bottom, float wantScale, float wantShift)
+        {
+            HudMath.ValueInkFit(windowH, top, bottom, out var scale, out var shift);
+            Assert.Equal(wantScale, scale, 3);
+            Assert.Equal(wantShift, shift, 3);
+            if (windowH > 0f)
+            {
+                // fitted ink inside the window (+-0.01) and centred on it
+                Assert.True(top * scale + shift <= windowH / 2f + 0.01f);
+                Assert.True(bottom * scale + shift >= -windowH / 2f - 0.01f);
+                Assert.Equal(0f, (top + bottom) / 2f * scale + shift, 3);
+            }
+        }
+
+        [Theory]
         [InlineData(120f, 340f, 400f, 42f, 0.4f, 141.176f, 16.8f, 25.2f)] // band = top 40 %, HP visible below
         [InlineData(900f, 340f, 400f, 42f, 0.4f, 400f, 16.8f, 25.2f)]     // over max: clamped width
         [InlineData(0f, 340f, 400f, 42f, 0.4f, 0f, 0f, 42f)]              // no shield: nothing

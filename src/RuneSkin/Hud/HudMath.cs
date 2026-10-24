@@ -293,6 +293,22 @@ namespace RuneSkin.PlayerHud
         public static float ValueSpan(float windowWidth, float reserveStart, bool reserve) =>
             Math.Max(0f, reserve ? Math.Min(windowWidth, reserveStart) : windowWidth);
 
+        // Bar value fitted to its window by the drawn glyphs (run 20261024-134656 shield-text-inside: "180/180 +90" at
+        // size.hud.font.value 30 drew its ink 26.8 px tall over the 21.4 px HP window, the "/" and digits 4.8 px under the
+        // fill; TMP centres the line box (ascender..descender), not the ink, so the digits also sat 2.1 px low).
+        // inkTop / inkBottom = glyph extents measured at the design size, relative to the window centre (y up); a single
+        // line scales about that centre with the font size. scale (<= 1) shrinks the font until the ink height fits
+        // windowH; shift (y up, at the fitted size) moves the ink centre onto the window centre.
+        public static void ValueInkFit(float windowH, float inkTop, float inkBottom, out float scale, out float shift)
+        {
+            scale = 1f;
+            shift = 0f;
+            var inkH = inkTop - inkBottom;
+            if (!(inkH > 0f) || !(windowH > 0f)) return;
+            scale = Math.Min(1f, windowH / inkH);
+            shift = -(inkTop + inkBottom) / 2f * scale;
+        }
+
         // Icon in a square cell: side = cell x share, centred on the cell (offset from the cell centre is zero on both
         // axes whatever the timer text does).
         public static float IconSide(float cell, float share) => Math.Max(0f, cell) * Math.Max(0f, Math.Min(1f, share));
