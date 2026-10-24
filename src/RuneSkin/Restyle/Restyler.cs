@@ -109,6 +109,18 @@ namespace RuneSkin.Restyle
             return new Classification { Role = c.Role, Outcome = mark.Outcome, Reason = mark.Reason };
         }
 
+        // A styled text whose face another mod wrote after our pass (Epic Loot 0.15 VanillaFont on its first OnEnable, its
+        // Quick Configure restyle of row clones that copied our mark). Style keeps a same-role mark as it is, so the
+        // owner of the pass expires it first (ForeignUi); Apply then takes the mod's face as the new original.
+        public static bool FontOverwritten(Graphic g) =>
+            g is TMP_Text text && text.TryGetComponent<SkinMark>(out var mark) && !mark.Internal && mark.HasFont &&
+            mark.Outcome == Outcome.Styled && mark.SetFont && text.font != mark.SetFont;
+
+        public static void Expire(Graphic g)
+        {
+            if (g && g.TryGetComponent<SkinMark>(out var mark)) mark.ThemeRevision = ThemeTokens.Revision - 1;
+        }
+
         // Writes the role from the originals (never on top of an earlier write), so re-theming never accumulates.
         // Returns false when the role's art is missing (graphic left vanilla).
         public static bool Apply(Graphic g, SkinMark mark, ResolvedRole role)

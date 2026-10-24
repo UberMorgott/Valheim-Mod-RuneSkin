@@ -147,7 +147,11 @@ namespace RuneSkin.ModScreens
             for (var i = 0; i < Work.Count; i++)
             {
                 var g = Work[i];
-                if (!g || !Decided.Add(g)) continue;
+                if (!g) continue;
+                var fresh = Decided.Add(g);
+                // A text styled earlier (inactive tab, cloned row) whose face the mod wrote since: restyled once more.
+                var overwritten = Restyler.FontOverwritten(g);
+                if (!fresh && !overwritten) continue;
                 // Screen UI only: in-world canvases (signs, name plates, mod bars over creatures) stay theirs.
                 var canvas = g.canvas;
                 if (!canvas)
@@ -161,7 +165,9 @@ namespace RuneSkin.ModScreens
                 Retry.Remove(g);
                 if (canvas.rootCanvas.renderMode == RenderMode.WorldSpace) continue;
                 var e = Resolve(g.transform);
-                if (e.Unit) Dirty.Add(e.Unit);
+                if (!e.Unit) continue;
+                if (overwritten && Units.ContainsKey(e.Unit)) Restyler.Expire(g);
+                Dirty.Add(e.Unit);
             }
             Work.Clear();
             for (var i = 0; i < NewAnchors.Count; i++)

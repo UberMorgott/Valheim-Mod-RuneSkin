@@ -18,7 +18,8 @@ namespace RuneSkin.ModScreens
     // - EpicLootEnchanting (EpicLoot_UnityLib.EnchantingTableUI, Epic Loot's EnchantingUI prefab and its dialogs):
     //   TabHandler tabs = tab plates (craft.tab), one uniform cell each (ElTabCell: M7 glyph glyph_ench_* centred, caption
     //   under it on every tab, lock badge on the icon while Epic Loot shows the feature locked), column fit in its mask
-    //   (ElTabColumn).
+    //   (ElTabColumn). Since 0.15 its texts are TMP (VanillaFont sets Epic Loot's face on first enable; ForeignUi
+    //   restyles texts written after our pass), inputs / dropdowns TMP_InputField / TMP_Dropdown (classifier roles).
     // - EpicLootBoard (EpicLoot.Adventure.MerchantPanel under the StoreGui at Haldor) / EpicLootTemper (EpicLoot.TemperPanel
     //   at Hildir): list rows = recipe rows, board tabs with glyph_board_*.
     // - ModHud: other plugins' parts under the HUD root (Epic Loot AbilityBar / DebugText, level texts): texts in the
@@ -112,6 +113,14 @@ namespace RuneSkin.ModScreens
                             foreach (var t in tab.m_button.GetComponentsInChildren<Text>(true)) ctx.Role(t, "legacy.label", "tab label (legacy text)");
                         }
             }
+            if (family == OwnershipRegistry.EpicLootBoard || family == OwnershipRegistry.EpicLootTemper)
+                foreach (var img in root.GetComponentsInChildren<Image>(true))
+                {
+                    if (ctx.AdapterRoles.ContainsKey(img)) continue;
+                    // Drag parts (Epic Loot 0.15 TraderPanelDrag): the clear hit surface stays clear, the handle keeps its art.
+                    if (img.name == ModCompat.EpicLootDragSurface) ctx.Role(img, "skip", "trader panel drag surface (clear hit area)");
+                    else if (img.name == ModCompat.EpicLootDragHandle) ctx.Role(img, "content", "trader panel move handle (mod art kept)");
+                }
             if (family == OwnershipRegistry.ModHud)
             {
                 // HUD parts: no panel stack around HUD widgets; texts in the theme faces, frames kept as content.
