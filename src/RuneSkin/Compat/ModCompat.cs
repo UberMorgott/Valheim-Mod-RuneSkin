@@ -55,9 +55,9 @@ namespace RuneSkin.Compat
         public const string MtChainTree = "MT_ChainTree";
         public const string MtChainCraftButton = "MT_ChainCraftButton";
         public const string MtGuid = "morgott.valheim.tweaks";
-        // BossAwakening / Vaettir: rarity frame child per enemy HUD (its tier sprite), its plugin id.
+        // Vaettir (was BossAwakening before 0.14.0): rarity frame child per enemy HUD (its tier sprite), its plugin id.
         public const string VaettirFrame = "VT_Frame";
-        public const string BossAwakeningGuid = "morgott.valheim.bossawakening";
+        public const string VaettirGuid = "morgott.valheim.vaettir";
         public const string StarLevelSystemGuid = "MidnightsFX.StarLevelSystem";
     }
 }

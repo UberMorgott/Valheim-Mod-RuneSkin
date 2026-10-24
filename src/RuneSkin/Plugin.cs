@@ -135,8 +135,8 @@ namespace RuneSkin
                 "RuneSkin styles the feedback dialog. Read once at startup (restart to change).");
             _ownModUi = Own("ModUi",
                 "RuneSkin restyles every window no other family owns (other mods' canvases and panels, Jotunn windows, IMGUI fonts, other mods' main menu lines): theme panels, controls and fonts, the mod's own layout kept. Read once at startup (restart to change).");
-            _modUiOptOut = Config.Bind("Ownership", "ModUiOptOut", "BossAwakening,BA_WorldBossBar", new ConfigDescription(
-                "Comma-separated object or plugin assembly names the fallback restyler (ModUi) never touches, with everything below them (default: BossAwakening's boss / raid / target bars keep their own design, styled by the EnemyHud track). Read once at startup.",
+            _modUiOptOut = Config.Bind("Ownership", "ModUiOptOut", "Vaettir,BA_WorldBossBar", new ConfigDescription(
+                "Comma-separated object or plugin assembly names the fallback restyler (ModUi) never touches, with everything below them (default: Vaettir's boss / raid / target bars keep their own design, styled by the EnemyHud track; the pre-0.14.0 name BossAwakening also opts Vaettir out). Read once at startup.",
                 null, new ConfigurationManagerAttributes { IsAdvanced = true, Order = 1000 - _ownOrder++ }));
             _ownElEnchanting = Own("EpicLootEnchanting",
                 "RuneSkin styles Epic Loot's enchanting table window and its dialogs. Read once at startup (restart to change).");

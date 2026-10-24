@@ -24,6 +24,14 @@ namespace RuneSkin.Tests
         public void AssembliesAreClassified(string asm, AssemblyKind want) => Assert.Equal(want, Classify(asm));
 
         [Fact]
+        public void OldBossAwakeningOptOutAlsoOptsOutVaettir()
+        {
+            Assert.Contains("Vaettir", ParseOptOut("bossawakening, BA_WorldBossBar"));
+            Assert.DoesNotContain("Vaettir", ParseOptOut("OtherSkin"));
+            Assert.Contains("Vaettir", ParseOptOut("Vaettir,BA_WorldBossBar"));
+        }
+
+        [Fact]
         public void OptOutListIsCaseInsensitiveAndTrimmed()
         {
             var set = ParseList(" OtherSkin, BA_WorldBossBar ,,");
@@ -82,7 +90,7 @@ namespace RuneSkin.Tests
             Assert.True(Step(Root, new Node { WorldCanvas = true }, 1, true).Blocked);
         }
 
-        // An opted-out plugin's component blocks a would-be unit, never the vanilla boundary: BossAwakening's WorldBoss
+        // An opted-out plugin's component blocks a would-be unit, never the vanilla boundary: Vaettir's WorldBoss
         // on _GameMain (run 20261022-181305: no fallback unit under _GameMain at all) must not hide every screen below.
         [Fact]
         public void OptedOutPluginOnTheBoundaryPassesThrough()
