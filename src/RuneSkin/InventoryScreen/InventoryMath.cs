@@ -618,6 +618,12 @@ namespace RuneSkin.InventoryScreen
             if (max < min) max = min;
         }
 
+        // anchoredPosition of the same rect with the pivot moved to the centre, one axis (run 20261024-132030 m2/m3-layout:
+        // the empty EAQS cell glyph copied the icon's top-left pivot from GridCellLook and its 0.82 scale shrank it into the
+        // corner, margins 7/16). Valid for any anchors: the pivot shift moves the anchor reference by pivot x anchor span,
+        // the pivot point by pivot x rect size, so the offset changes by (0.5 - pivot) x sizeDelta.
+        public static float CentredPivotPos(float anchoredPos, float pivot, float sizeDelta) => anchoredPos + (0.5f - pivot) * sizeDelta;
+
         private static float Clamp(float v, float min, float max) => v < min ? min : (v > max ? max : v);
     }
 

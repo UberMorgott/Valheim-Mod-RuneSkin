@@ -28,6 +28,20 @@ namespace RuneSkin.Tests
         }
 
         [Fact]
+        public void GlyphCentredPivotKeepsTheIconRect()
+        {
+            // run 20261024-132030: icon placed top-left (pivot 0,1) at (7, -7), 50 x 50 -> centre at (32, -32)
+            Assert.Equal(32f, InventoryMath.CentredPivotPos(7f, 0f, 50f), 3);
+            Assert.Equal(-32f, InventoryMath.CentredPivotPos(-7f, 1f, 50f), 3);
+            // already centred: unchanged
+            Assert.Equal(5f, InventoryMath.CentredPivotPos(5f, 0.5f, 50f), 3);
+            // scaled 0.82 about that centre: equal margins in a 64 cell
+            var size = 50f * 0.82f;
+            var left = 32f - size / 2f;
+            Assert.Equal(left, 64f - (32f + size / 2f), 3);
+        }
+
+        [Fact]
         public void BlockTallerThanViewStartsAtTop()
         {
             Assert.Equal(0f, InventoryMath.BlockOffset(100f, 4, 78f, 9f));

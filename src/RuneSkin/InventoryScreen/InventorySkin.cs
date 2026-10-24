@@ -1362,11 +1362,6 @@ namespace RuneSkin.InventoryScreen
                 var icon = e.m_icon.rectTransform;
                 rt.SetParent(icon.parent, false);
                 rt.SetSiblingIndex(icon.GetSiblingIndex());
-                rt.anchorMin = icon.anchorMin;
-                rt.anchorMax = icon.anchorMax;
-                rt.pivot = icon.pivot;
-                rt.anchoredPosition = icon.anchoredPosition;
-                rt.sizeDelta = icon.sizeDelta;
                 // Engraving, not an icon: smaller than an item picture (Codex M2 review).
                 var gs = ThemeTokens.GetFloat("share.inv.glyph.scale", 0.82f);
                 rt.localScale = new Vector3(gs, gs, 1f);
@@ -1378,6 +1373,8 @@ namespace RuneSkin.InventoryScreen
                 t = rt;
             }
             else image = t.GetComponent<Image>();
+            // the icon's rect, centre pivot (GridCellLook anchors the icon top-left; it re-centres the glyph on relayout)
+            GridCellLook.CentreOn((RectTransform)t, e.m_icon.rectTransform);
             var on = !e.m_used && image.sprite;
             if (image.enabled != on) image.enabled = on;
         }

@@ -67,6 +67,8 @@ namespace RuneSkin.InventoryScreen
             {
                 e.m_icon.preserveAspect = true;
                 Place(e.m_icon.rectTransform, parts.Icon);
+                var glyph = e.m_icon.rectTransform.parent ? e.m_icon.rectTransform.parent.Find("RuneSkinGlyph") as RectTransform : null;
+                if (glyph) CentreOn(glyph, e.m_icon.rectTransform);
             }
             var floor = ThemeTokens.GetFloat("floor.text.count.px", 12f);
             Number(e.m_amount, parts.Count, parts.CountFont, floor, px, TextAlignmentOptions.BottomRight);
@@ -104,6 +106,20 @@ namespace RuneSkin.InventoryScreen
             t.fontSizeMin = min;
             t.fontSizeMax = max;
             t.fontSize = max;
+        }
+
+        // The icon's rect on `rt` with a centre pivot, so a scale on `rt` (the empty EAQS slot glyph, share.inv.glyph.scale)
+        // shrinks it about the icon centre, not into the icon's top-left pivot corner (run 20261024-132030 icon-off 7/16).
+        internal static void CentreOn(RectTransform rt, RectTransform icon)
+        {
+            if (rt.anchorMin != icon.anchorMin) rt.anchorMin = icon.anchorMin;
+            if (rt.anchorMax != icon.anchorMax) rt.anchorMax = icon.anchorMax;
+            var centre = new Vector2(0.5f, 0.5f);
+            if (rt.pivot != centre) rt.pivot = centre;
+            if (rt.sizeDelta != icon.sizeDelta) rt.sizeDelta = icon.sizeDelta;
+            var pos = new Vector2(InventoryMath.CentredPivotPos(icon.anchoredPosition.x, icon.pivot.x, icon.sizeDelta.x),
+                InventoryMath.CentredPivotPos(icon.anchoredPosition.y, icon.pivot.y, icon.sizeDelta.y));
+            if (rt.anchoredPosition != pos) rt.anchoredPosition = pos;
         }
 
         // Cell-local box (origin top-left, y down) on a child rect: anchored to the cell's top-left corner.
