@@ -50,30 +50,54 @@ namespace RuneSkin.Tests
             Assert.True(f.StubR.Right >= f.WingR.X + 30f - 0.01f, $"stub R {f.StubR.Right} vs wing start {f.WingR.X}");
         }
 
-        // User crops 0.20.0 (wing tips): the rail's opaque rows (sprite minus its transparent padding) fill exactly the band
-        // of the rail stubs baked into the wing tips (left 17..72, right 19..74 strip units), no step at the joint.
+        // Rail rows (runs 20261024-134656 / -143631, jointdiff + stripsim): the rail art is a target crop at 2 sprite px
+        // per unit, so the box is the sprite at native height on the target's rows - the 0.20.1 band fit (x 1.21) moved
+        // the outer bright rows 2.8 target px out. Stubs / caps share their run's rows (no step at the joints).
         [Fact]
-        public void RailOpaqueBand_MatchesTheWingStubs()
+        public void Rails_NativeHeight_StubsAndCapsOnTheRunRows()
         {
             var f = StripMath.TargetFrame(Layout(2330f), 2330f, T7);
-            Assert.Equal(17f, f.RailL.Y + f.RailL.H * 12f / 121f, 2);
-            Assert.Equal(72f, f.RailL.Y + f.RailL.H * (1f - 18f / 121f), 2);
-            Assert.Equal(19f, f.RailR.Y + f.RailR.H * 11f / 132f, 2);
-            Assert.Equal(74f, f.RailR.Y + f.RailR.H * (1f - 14f / 132f), 2);
+            Assert.Equal(15.8f, f.RailL.Y, 3);
+            Assert.Equal(60.6f, f.RailL.H, 3); // fallback = the left tile's own 121 px / 2
+            Assert.Equal(f.RailL.Y, f.RailR.Y, 3);
             foreach (var b in new[] { f.StubL, f.CapL }) { Assert.Equal(f.RailL.Y, b.Y, 3); Assert.Equal(f.RailL.H, b.H, 3); }
             foreach (var b in new[] { f.StubR, f.CapR }) { Assert.Equal(f.RailR.Y, b.Y, 3); Assert.Equal(f.RailR.H, b.H, 3); }
         }
 
+        // The shipped theme: both runs from the right rail's exact crop (132 px = 66 units) on the target's rows 13..79.3
+        // (target 148..194 px), no band stretch (<= 0.5 % off the sprite's native height).
         [Fact]
-        public void RailBand_FallsBackWithoutABand()
+        public void Theme_RailsAtTheRightCropsNativeHeight()
         {
-            StripMath.RailBand(0f, 0f, 0.1f, 0.1f, 15.8f, 60.6f, out var y, out var h);
-            Assert.Equal(15.8f, y, 3);
-            Assert.Equal(60.6f, h, 3);
-            StripMath.RailBand(10f, 50f, 0.5f, 0.5f, 1f, 2f, out y, out h); // all padding: fallback
-            Assert.Equal(1f, y, 3);
+            using var s = typeof(RuneSkin.Theme.ThemeSchema).Assembly.GetManifestResourceStream("RuneSkin.default-theme.json");
+            using var r = new System.IO.StreamReader(s!);
+            var json = r.ReadToEnd();
+            float Tok(string name, float fb)
+            {
+                var m = System.Text.RegularExpressions.Regex.Match(json, "\"size\\.hud\\.strip7\\." + System.Text.RegularExpressions.Regex.Escape(name) + "\",\\s*\"value\":\\s*(-?[0-9.]+)");
+                return m.Success ? float.Parse(m.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture) : fb;
+            }
+            Assert.Contains("\"sprite.hud.strip7.rail\", \"asset\": \"strip7_rail_r\"", json);
+            var f = StripMath.TargetFrame(Layout(2330f), 2330f, Tok);
+            foreach (var b in new[] { f.RailL, f.RailR, f.StubL, f.StubR, f.CapL, f.CapR })
+            {
+                Assert.Equal(13f, b.Y, 2);
+                Assert.InRange(b.H / (132f / 2f), 0.995f, 1.005f);
+            }
+            // block-tip caps on their target boxes (bar block tips at target x 438 / 1190, 1 unit = 59 / 85 target px)
+            Assert.Equal(-14.4f, f.TipL.X - 625f, 2);
+            Assert.Equal(-17.3f, f.TipR.X - 1705f, 2);
+            Assert.Equal(31.7f, f.TipR.W, 2);
+            Assert.Equal(f.RailR.Y, f.TipR.Y, 2);
         }
 
+        [Fact]
+        public void TipCaps_HiddenWithoutWidth()
+        {
+            var f = StripMath.TargetFrame(Layout(2330f), 2330f, T7);
+            Assert.Equal(0f, f.TipL.W);
+            Assert.Equal(0f, f.TipR.W);
+        }
         // User crops 0.20.0: a hard step and see-through gaps between the rail ends and the bar block tips. The rail runs
         // on (same y / height) into the block, under its tip, on both sides.
         [Fact]

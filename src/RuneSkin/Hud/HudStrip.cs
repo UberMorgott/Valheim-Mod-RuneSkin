@@ -26,7 +26,7 @@ namespace RuneSkin.PlayerHud
         private readonly RectTransform _root, _back;
         private RectTransform _front;
         private readonly Image _wingL, _wingR, _bars, _block, _divider, _railL, _railR, _knotL, _knotR, _endL, _endR, _iconHp, _iconSt, _iconEi, _knot2L, _knot2R;
-        private readonly Image _field, _stubL, _stubR, _capL, _capR;
+        private readonly Image _field, _stubL, _stubR, _capL, _capR, _tipL, _tipR;
 
         // Target panel layout (mode.hud.strip.target, user screenshot 2026-10-23, strip-target/spec.md).
         public static bool Target => ThemeTokens.GetFloat("mode.hud.strip.target", 0f) > 0.5f;
@@ -95,6 +95,9 @@ namespace RuneSkin.PlayerHud
             _stubR = Piece("RailStubRight", _back, Own("sprite.hud.strip7.rail"), Image.Type.Tiled);
             _railL = Piece("RailLeft", _back, "sprite.hud.strip7.rail", Image.Type.Sliced);
             _railR = Piece("RailRight", _back, Own("sprite.hud.strip7.rail"), Image.Type.Sliced);
+            // block-tip caps (target crops: rail glint + bead) over the rail ends, under the inner diamonds and the block tips
+            _tipL = Piece("TipCapLeft", _back, "sprite.hud.strip7.tipcap", Image.Type.Simple);
+            _tipR = Piece("TipCapRight", _back, Own("sprite.hud.strip7.tipcap"), Image.Type.Simple);
             _wingL = Piece("WingLeft", _back, "sprite.hud.strip4.wing", Image.Type.Sliced);
             _wingR = Piece("WingRight", _back, ThemeTokens.GetSprite("sprite.hud.strip4.wing.r") ? "sprite.hud.strip4.wing.r" : "sprite.hud.strip4.wing", Image.Type.Sliced);
             _endL = Piece("EndLeft", _back, "sprite.hud.strip7.end", Image.Type.Simple);
@@ -105,7 +108,7 @@ namespace RuneSkin.PlayerHud
             // small diamonds at the bar-block end of each rail run (target: diamonds at both rail ends)
             _knot2L = Piece("Knot2Left", _back, "sprite.hud.strip7.knot2", Image.Type.Simple);
             _knot2R = Piece("Knot2Right", _back, Own("sprite.hud.strip7.knot2"), Image.Type.Simple);
-            foreach (var img in new[] { _capL, _capR, _stubL, _stubR, _railL, _railR, _knotL, _knotR, _endL, _endR, _knot2L, _knot2R }) img.gameObject.SetActive(Target);
+            foreach (var img in new[] { _capL, _capR, _stubL, _stubR, _railL, _railR, _tipL, _tipR, _knotL, _knotR, _endL, _endR, _knot2L, _knot2R }) img.gameObject.SetActive(Target);
             // always built like the other target pieces (run 20261023-191817: created only when the sprite resolved at
             // construction -> never built in game, the scene showed between the HP and stamina channels)
             // own tint token (color.hud.strip7.field): the 0.20.0 field art read ~27 % lighter than the target's metal (mean
@@ -368,6 +371,10 @@ namespace RuneSkin.PlayerHud
             Place(_capL, f.CapL, false);
             Place(_capR, f.CapR, true);
             foreach (var (img, h) in new[] { (_stubL, f.StubL.H), (_stubR, f.StubR.H), (_capL, f.CapL.H), (_capR, f.CapR.H) }) FitTile(img, h);
+            Place(_tipL, f.TipL, false);
+            Place(_tipR, f.TipR, !HasOwn("sprite.hud.strip7.tipcap"));
+            Show(_tipL, f.TipL.W > 0f);
+            Show(_tipR, f.TipR.W > 0f);
             Place(_knot2L, f.Knot2L, false);
             Place(_knot2R, f.Knot2R, !HasOwn("sprite.hud.strip7.knot2"));
             // a wing slot grown onto the rail run hides the wing-tip diamond under it (the round socket would leave its

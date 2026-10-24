@@ -180,7 +180,7 @@ namespace RuneSkin.PlayerHud
         // Bottom = the lowest piece edge (end medallion tips hang below the wing): the strip is placed so it is on screen.
         public struct Frame
         {
-            public Box EndL, EndR, WingL, WingR, KnotL, KnotR, RailL, RailR, StubL, StubR, CapL, CapR, Knot2L, Knot2R;
+            public Box EndL, EndR, WingL, WingR, KnotL, KnotR, RailL, RailR, StubL, StubR, CapL, CapR, TipL, TipR, Knot2L, Knot2R;
             public float Bottom;
         }
 
@@ -203,15 +203,15 @@ namespace RuneSkin.PlayerHud
             // a short stub of the same tileable rail under the whole wing-tip diamond up to the run's start: the
             // diamond's art ends short of its box, so without it a gap showed between diamond and rail (run
             // 20261023-175632; the run itself must not move or stretch: its wire pattern is pinned to the target).
-            // Rail band (user crops 0.20.0, wing-tip joints): the rail sprites carry transparent padding rows, so a box of
-            // the sprite's height drew the rail ~9 sprite px thinner than the rail stubs baked into both wing tips (and
-            // than the target's 37 px rail) -> a hard step at every wing-tip | rail joint. The OPAQUE rail is fitted onto
-            // the wing stub band instead (RailBand); rail.y / rail.h only apply without a band.
+            // Rail rows (jointdiff / stripsim, runs 20261024-134656 vs -143631): the rail art is a crop of the target at its
+            // own scale (2 sprite px per unit), so its wire rows only land on the target's at that scale. Fitting its
+            // opaque rows onto the wing stub band (0.20.1 RailBand, x 1.21) moved the outer bright rows 2.8 target px out
+            // (157.4 -> 154.6, 184.6 -> 187.5) and every joint got worse (A 9.43 -> 13.54 dE76). The box is the sprite at
+            // native height on the target's rows (rail.y / rail.h; the left run uses the right rail's exact crop, whose
+            // band is the target's full 37 px - the left tile's cut lost ~5 px of its dark edge rows).
             float railX = t7("rail.x", 486f), railRR = t7("rail.r.right", 474f), tuck = t7("rail.tuck", 6f);
-            RailBand(t7("rail.band.b", 17f), t7("rail.band.t", 72f), t7("rail.pad.b", 12f / 121f), t7("rail.pad.t", 18f / 121f),
-                t7("rail.y", 15.8f), t7("rail.h", 60.6f), out var railY, out var railH);
-            RailBand(t7("rail.r.band.b", 19f), t7("rail.r.band.t", 74f), t7("rail.r.pad.b", 11f / 132f), t7("rail.r.pad.t", 14f / 132f),
-                t7("rail.r.y", railY), t7("rail.r.h", railH), out var railRY, out var railRH);
+            float railY = t7("rail.y", 15.8f), railH = t7("rail.h", 60.6f);
+            float railRY = t7("rail.r.y", railY), railRH = t7("rail.r.h", railH);
             f.RailL = new Box(railX, railY, l.BarsX + t7("rail.tuck.l", tuck) - railX, railH);
             var rx = l.BarsX + l.BarsW - tuck;
             f.RailR = new Box(rx, railRY, w - railRR - rx, railRH);
@@ -235,26 +235,17 @@ namespace RuneSkin.PlayerHud
             var capRR = f.RailR.X;
             var capRX = l.BarsX + l.BarsW - under;
             f.CapR = new Box(capRX, f.RailR.Y, Math.Max(0f, capRR - capRX), f.RailR.H);
+            // block-tip caps: exact crops of the target at the bar block tips (target 428..450 / 1178..1200 x 148..194: the
+            // rail's glint and the bead under the inner diamond, which the plain rail lacks - joint C 10.87 -> 8.03 dE76
+            // predicted) on their target boxes, over the rail extensions and under the inner diamond and the block tip
+            float tipY = t7("tipcap.y", 13f), tipW = t7("tipcap.w", 0f), tipH = t7("tipcap.h", 66.3f);
+            f.TipL = new Box(l.BarsX + t7("tipcap.dx", -14.4f), tipY, tipW, tipH);
+            f.TipR = new Box(l.BarsX + l.BarsW + t7("tipcap.r.dx", -17.3f), tipY, tipW, tipH);
             float k2dx = t7("knot2.dx", -21.6f), k2y = t7("knot2.y", 47.5f), k2w = t7("knot2.w", 30.5f), k2h = t7("knot2.h", 32.6f);
             f.Knot2L = new Box(l.BarsX + k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h);
             f.Knot2R = new Box(l.BarsX + l.BarsW - k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h);
             f.Bottom = Math.Min(0f, Math.Min(Math.Min(endY, endRY), Math.Min(f.RailL.Y, f.RailR.Y)));
             return f;
-        }
-
-        // Sprite box (y, h) whose opaque rows [padB, 1 - padT] of the sprite height fill the band [bandB, bandT]; no band
-        // (bandT <= bandB) or padding >= the whole sprite: the fallback box.
-        public static void RailBand(float bandB, float bandT, float padB, float padT, float fallbackY, float fallbackH, out float y, out float h)
-        {
-            var opaque = 1f - padB - padT;
-            if (!(bandT > bandB) || !(opaque > 0.05f))
-            {
-                y = fallbackY;
-                h = fallbackH;
-                return;
-            }
-            h = (bandT - bandB) / opaque;
-            y = bandB - padB * h;
         }
 
         // A wing slot [x, x + w] covers a connector diamond when it spans the diamond's centre (the slot hides it).
