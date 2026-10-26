@@ -368,8 +368,16 @@ namespace RuneSkin.InventoryScreen
             GridFit chest = default, pack = default;
             // Grid width inside the window content inset (DockSide each side, ContainerGridView).
             var fitW = Math.Max(0f, dock.W - 2f * (DockSide(t, k) - pad));
-            if (hasChest) chest = Fit(i.ChestW, i.ChestH, fitW, dock.H, headerH, pad, t.ContainerCell * k, t.ContainerGap * k, o.MinCell, t.ScrollbarW * k);
-            if (hasPack) pack = Fit(i.BackpackW, i.BackpackH, fitW, dock.H, headerH, pad, t.ContainerCell * k, t.ContainerGap * k, o.MinCell, t.ScrollbarW * k);
+            // A grid that cannot fit inside the inset even at the cell floor takes the panel's own pad instead (its rows
+            // must stay inside the panel: run 20261026-182632, 8-column chest at 1280x720 ran 4 cells past the edge).
+            GridFit FitDock(int w, int h)
+            {
+                var f = Fit(w, h, fitW, dock.H, headerH, pad, t.ContainerCell * k, t.ContainerGap * k, o.MinCell, t.ScrollbarW * k);
+                return f.Columns * f.Pitch - t.ContainerGap * k <= fitW - 2f * pad + 0.5f ? f
+                    : Fit(w, h, dock.W, dock.H, headerH, pad, t.ContainerCell * k, t.ContainerGap * k, o.MinCell, t.ScrollbarW * k);
+            }
+            if (hasChest) chest = FitDock(i.ChestW, i.ChestH);
+            if (hasPack) pack = FitDock(i.BackpackW, i.BackpackH);
 
             float chestH = 0f, packH = 0f;
             if (hasChest && hasPack)
@@ -453,7 +461,8 @@ namespace RuneSkin.InventoryScreen
             var top = panel.Y + t.PanelHeaderH * k + pad;
             var maxH = Math.Max(0f, ActionRow(panel, t, k).Y - pad / 2f - top); // = Fit's inner height
             var h = fit.ScrollV || !(fit.Pitch > 0f) ? maxH : Math.Min(maxH, fit.VisibleRows * fit.Pitch);
-            var side = DockSide(t, k);
+            // Content inset, narrowed to the panel pad when the grid needs the room (FitDock).
+            var side = Math.Max(pad, Math.Min(DockSide(t, k), (panel.W - (fit.Columns * fit.Pitch - t.ContainerGap * k)) / 2f));
             return new Box(panel.X + side, top, Math.Max(0f, panel.W - 2f * side), h);
         }
 

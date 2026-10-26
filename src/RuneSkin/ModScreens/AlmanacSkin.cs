@@ -55,7 +55,10 @@ namespace RuneSkin.ModScreens
             // transparent mode deactivates bkg: then the stack goes with it and its own dim shows instead.
             var bkg = root.Find("bkg") as RectTransform;
             if (bkg && bkg.TryGetComponent<Image>(out var b)) b.enabled = false;
-            PanelDecor.Ensure(bkg ? bkg : root, "size.panel.glass.inset", glass: true, plaque: false);
+            // Almanac lays its own content out to the bkg edges: the stack reaches out by the full panel pad (like other mod
+            // windows, ForeignRoles) so its corner caps sit outside that content (window content inset ~0, run
+            // 20261026-182632: tabs / search fields under the caps with the glass-inset pad).
+            PanelDecor.Ensure(bkg ? bkg : root, "size.panel.pad", glass: true, plaque: false);
             // The window's one header (RuneWindowHeader) over the top band of bkg: Almanac's legacy "topic" title shown in
             // the rune face (mirrored), drag / double-click reset move the whole window (root).
             MovableWindow.Ensure(root, "almanac");

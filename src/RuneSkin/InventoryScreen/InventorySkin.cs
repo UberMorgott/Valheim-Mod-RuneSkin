@@ -728,7 +728,7 @@ namespace RuneSkin.InventoryScreen
                 if (nameText) head.Adopt(nameText, playerName);
                 else head.Fallback(playerName).Text(playerName);
                 var hh = Mathf.Min(WindowHeaderMath.HeaderHeight(ThemeTokens.GetFloat("size.win.header", 40f), k), nameH);
-                head.Place(_canvas, new Box(box.X, box.Y + (nameH - hh) / 2f, box.W, hh));
+                head.Place(_canvas, new Box(box.X, box.Y, box.W, hh)); // top-aligned: one top / baseline with the dock headers
             }
             // Index loops / cached names: this runs every frame while the inventory is open (foreach over a Transform
             // allocates an enumerator, .name a string; perf audit B2).
@@ -908,7 +908,7 @@ namespace RuneSkin.InventoryScreen
             else head.Fallback(fallback).Text(fallback);
             var hh = Mathf.Min(WindowHeaderMath.HeaderHeight(ThemeTokens.GetFloat("size.win.header", 40f), k), row.H);
             var auxW = weightPlate ? ThemeTokens.GetFloat("size.inv.plate.weight.dock", 110f) * k : 0f;
-            head.Place(_canvas, new Box(row.X, row.Y + (row.H - hh) / 2f, row.W, hh), glyph && glyph.enabled ? glyph : null, auxW);
+            head.Place(_canvas, new Box(row.X, row.Y, row.W, hh), glyph && glyph.enabled ? glyph : null, auxW); // top-aligned (name row too)
             // The footer's stat plate layout (glyph in the round socket, value beside it) in the aux slot.
             if (weightPlate) StatPlate(weightPlate, head.AuxBox);
         }

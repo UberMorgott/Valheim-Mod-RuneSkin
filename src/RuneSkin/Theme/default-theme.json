@@ -1118,7 +1118,6 @@
     { "token": "size.stats.title.w", "value": 522 },
     { "token": "size.stats.title.h", "value": 62 },
     { "token": "size.stats.title.spacing", "value": 6 },
-    { "token": "size.stats.strip.cut", "value": 124 },
     { "token": "size.stats.font.title", "value": 52 },
     { "token": "size.stats.close.x", "value": 1804 },
     { "token": "size.stats.close.y", "value": 44 },

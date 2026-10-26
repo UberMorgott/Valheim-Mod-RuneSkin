@@ -44,6 +44,10 @@ namespace RuneSkin.Restyle
         // The window's own panel stack (owners that know it set it): the header keeps inside THAT frame; null = the
         // drawn frame around the band overlapping the window most.
         public PanelDecor Frame;
+
+        // Painted window chrome the face must draw over (a sibling of the band, e.g. the stats window's chrome quarters):
+        // the face goes right after it instead of after the panel stack / scrim.
+        public Transform DrawAfter;
         private string _fallback = "", _fallbackKey, _static, _staticKey, _staticLang, _staticText;
         private int _styled = -1;
         private float _stretch, _iconShare, _auxShare;
@@ -321,14 +325,14 @@ namespace RuneSkin.Restyle
             Inside(Title.rectTransform, tl, tr, ft, 0f);
             if (Title.alignment != TextAlignmentOptions.Center) Title.alignment = TextAlignmentOptions.Center;
             if (Title.enableAutoSizing) Title.enableAutoSizing = false;
-            // One size on every header; only a title wider than its narrowed plate steps down (never below 75 %).
+            // One size on every header; only a title wider than its narrowed plate steps down (never below 60 %).
             var room = Mathf.Max(0f, r.width - tl - tr);
             var want = fontSize;
             if (room > 0f && !string.IsNullOrEmpty(Title.text))
             {
                 var at = Title.fontSize > 0.5f ? Title.fontSize : fontSize;
                 var natural = Title.GetPreferredValues(Title.text, 100000f, 100000f).x * fontSize / at;
-                want = WindowHeaderMath.FitFont(fontSize, natural, room, 0.75f);
+                want = WindowHeaderMath.FitFont(fontSize, natural, room, 0.6f); // long chest names (run 20261026-182632: "Сундук из че…" at 75 %)
             }
             if (Mathf.Abs(Title.fontSize - want) > 0.05f) Title.fontSize = want;
             _ = _iconShare;
@@ -345,7 +349,7 @@ namespace RuneSkin.Restyle
             if (_face.sizeDelta != rt.sizeDelta) _face.sizeDelta = rt.sizeDelta;
             if (_face.anchoredPosition != rt.anchoredPosition) _face.anchoredPosition = rt.anchoredPosition;
             if (_face.localScale != rt.localScale) _face.localScale = rt.localScale;
-            var stack = rt.parent ? Backdrop(rt.parent) : null;
+            var stack = DrawAfter && DrawAfter.parent == rt.parent ? DrawAfter : rt.parent ? Backdrop(rt.parent) : null;
             // Right after the backdrop (an index taken while the face sits before it already counts the face).
             var want = stack ? stack.GetSiblingIndex() + (_face.GetSiblingIndex() < stack.GetSiblingIndex() ? 0 : 1) : 0;
             if (_face.GetSiblingIndex() != want) _face.SetSiblingIndex(want);
