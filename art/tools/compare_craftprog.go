@@ -65,8 +65,8 @@ func (b cpBox) rect() image.Rectangle {
 // actionRow mirrors CraftingMath.ActionRow (stepShare 0.55, fieldShare 0.8, maxShare 0.4, cancelShare 0.3).
 func cpActionRow(c cpBox, gap float64) (minus, field, plus, button, bar, cancel cpBox) {
 	h := c.H
-	inner := gap * 0.5
-	step, fw, sh := h*0.55, h*0.75, h*0.95
+	inner := gap * 0.35
+	step, fw, sh := h*0.68, h*0.85, h*0.95
 	need := 2*step + fw + 2*inner
 	if mx := c.W * 0.4; need > mx {
 		k := mx / need
@@ -77,7 +77,7 @@ func cpActionRow(c cpBox, gap float64) (minus, field, plus, button, bar, cancel 
 	field = cpBox{minus.X + step + inner, y, fw, sh}
 	plus = cpBox{field.X + fw + inner, y, step, sh}
 	button = cpBox{plus.X + step + gap, c.Y, c.X + c.W - (plus.X + step + gap), h}
-	cw := math.Min(math.Max(c.W*0.26, h*1.2), h*2.6)
+	cw := math.Min(math.Max(c.W*0.27, h*1.2), h*2.6)
 	cw = math.Min(cw, c.W*0.45)
 	cancel = cpBox{c.X + c.W - cw, c.Y, cw, h}
 	bar = cpBox{c.X, c.Y, cancel.X - gap - c.X, h}
@@ -92,56 +92,66 @@ func cpRowBox(r image.Rectangle) cpBox {
 
 func cpIdle(p *image.NRGBA, r image.Rectangle) {
 	c := cpRowBox(r)
-	minus, field, plus, button, _, _ := cpActionRow(c, c.H*0.125)
+	minus, field, plus, button, _, _ := cpActionRow(c, c.H*0.1)
 	gold := hex("#F0C419")
-	draw9s(p, "button_icon_normal", minus.rect(), 1/1.8, color.NRGBA{}, false)
-	draw9s(p, "button_icon_normal", plus.rect(), 1/1.8, color.NRGBA{}, false)
-	draw9s(p, "field_search", field.rect(), 1, color.NRGBA{}, false)
+	draw9s(p, "craft_step_normal", minus.rect(), 0.5/0.78, color.NRGBA{}, false)
+	draw9s(p, "craft_step_normal", plus.rect(), 0.5/0.78, color.NRGBA{}, false)
+	draw9s(p, "craft_field", field.rect(), 0.5/0.78, color.NRGBA{}, false)
 	cpLabel(p, "\u2013", minus, minus.H*0.4, gold, false)
 	cpLabel(p, "+", plus, plus.H*0.4, gold, false)
 	cpLabel(p, "5", field, c.H*0.3, hex("#E3E6E8"), false)
-	draw9s(p, "button_normal", button.rect(), 1/4.2, color.NRGBA{}, false)
+	draw9s(p, "craft_plate_normal", button.rect(), 0.5/0.6, color.NRGBA{}, false)
 	text := "СОЗДАТЬ X 5"
-	// CraftGlyph: glyph left of the label, at least h * 0.3 in; PlateLabelFit centres the label in the span right of it.
+	// CraftGlyph: a g x g box (preserveAspect) left of the label, at least h * 0.3 in; PlateLabelFit centres the label
+	// in the span right of it.
 	g := c.H * 0.6
 	gl := button.X + c.H*0.3
-	if s, ok := sprites["glyph_act_craft"]; ok {
-		gr := cpBox{gl, button.Y + (button.H-g)/2, g, g}.rect()
-		over(p, resize(tinted(s.img, hex("#4FE0E6")), gr.Dx(), gr.Dy()), gr.Min)
+	if s, ok := sprites["craft_glyph_anvil"]; ok {
+		sw, sh := float64(s.img.Bounds().Dx()), float64(s.img.Bounds().Dy())
+		k := math.Min(g/sw, g/sh)
+		gr := cpBox{gl + (g-sw*k)/2, button.Y + (button.H-sh*k)/2, sw * k, sh * k}.rect()
+		over(p, resize(s.img, gr.Dx(), gr.Dy()), gr.Min)
 	}
-	span := cpBox{gl + g + 4, button.Y, button.X + button.W - c.H*0.3 - (gl + g + 4), button.H}
+	sx := gl + g + c.H*0.12
+	span := cpBox{sx, button.Y, button.X + button.W - c.H*0.3 - sx, button.H}
 	cpLabel(p, text, span, cpFit(text, c.H*0.42, span.W), hex("#E3E6E8"), false)
 }
 
 func cpProgress(p *image.NRGBA, r image.Rectangle) {
 	c := cpRowBox(r)
-	_, _, _, _, bar, cancel := cpActionRow(c, c.H*0.125)
-	frame := cpBox{bar.X, bar.Y + bar.H*0.025, bar.W, bar.H * 0.95}
-	iy := frame.H * 0.08
-	ix := math.Min(iy*42/9, frame.W*0.25)
+	_, _, _, _, bar, cancel := cpActionRow(c, c.H*0.1)
+	frame := cpBox{bar.X, bar.Y + bar.H*0.05, bar.W, bar.H * 0.9}
+	iy := frame.H * 0.19
+	ix := math.Min(frame.H*0.35, frame.W*0.3)
+	capW := math.Min(frame.H*42/66, frame.W*0.3)
 	trough := cpBox{frame.X + ix, frame.Y + iy, frame.W - 2*ix, frame.H - 2*iy}
-	draw9s(p, "bar_trough", trough.rect(), trough.H/47, hex("#323B42"), false)
-	fin := trough.H * 0.14
-	fillB := cpBox{trough.X + fin*0.5, trough.Y + fin, (trough.W - fin) * 0.42, trough.H - 2*fin}
-	draw9s(p, "bar_fill", fillB.rect(), fillB.H/47, hex("#12B9D0"), false)
-	ew := math.Max(2, math.Round(fillB.H*6/48))
-	er := cpBox{fillB.X + fillB.W - ew, fillB.Y, ew, fillB.H}.rect()
-	over(p, resize(tinted(sprites["bar_edge"].img, hex("#E8E2D6")), er.Dx(), er.Dy()), er.Min)
-	draw9s(p, "bar_frame_action", frame.rect(), iy/9, color.NRGBA{}, false)
+	draw9s(p, "craft_bar_trough", trough.rect(), 0.5, color.NRGBA{}, false)
+	fin := trough.H * 0.08
+	fillB := cpBox{trough.X + fin*0.5, trough.Y + fin, (trough.W - fin) * 0.33, trough.H - 2*fin}
+	draw9s(p, "craft_bar_fill", fillB.rect(), 0.5, hex("#C4DADE"), false)
+	draw9s(p, "craft_bar_frame", frame.rect(), frame.H/66, color.NRGBA{}, false)
 	text := "СОЗДАЕТСЯ X 5"
-	inner := cpBox{trough.X + trough.H*0.25, frame.Y, trough.W - trough.H*0.5, frame.H}
+	inner := cpBox{frame.X + capW, frame.Y, frame.W - 2*capW, frame.H}
 	cpLabel(p, text, inner, cpFit(text, bar.H*0.28, inner.W), hex("#E3E6E8"), true)
-	draw9s(p, "button_normal", cancel.rect(), 1/4.2, color.NRGBA{}, false)
+	draw9s(p, "craft_plate_normal", cancel.rect(), 0.5/0.6, color.NRGBA{}, false)
 	t := "ОТМЕНА"
 	cpLabel(p, t, cancel, cpFit(t, cancel.H*0.3, cancel.W*0.75), hex("#E3E6E8"), false)
 }
 
+// cpTrack: TMP characterSpacing size.craft.label.tracking (-1 em/100) per glyph; cpCondense: the labels' localScale.x
+// (share.craft.label.condense).
+const (
+	cpTrack    = -0.01
+	cpCondense = 0.88
+)
+
 func cpMeasure(s string, size float64) float64 {
 	d := &font.Drawer{Face: face(cpBold, size)}
-	return float64(d.MeasureString(s).Round())
+	n := float64(len([]rune(s)))
+	return (float64(d.MeasureString(s).Round()) + cpTrack*size*(n-1)) * cpCondense
 }
 
-// fitSize: TMP auto-size down from max until the text fits w.
+// cpFit: TMP auto-size down from max until the text fits w.
 func cpFit(s string, max, w float64) float64 {
 	size := max
 	for size > 10 && cpMeasure(s, size) > w {
@@ -150,22 +160,34 @@ func cpFit(s string, max, w float64) float64 {
 	return size
 }
 
-// label: centred in b, optional dark outline (theme size.text.outline on the SDF ~ 2 px at these sizes).
+// cpLabel: centred in b, tracked + condensed like the game labels, optional thin dark outline (size.text.outline).
 func cpLabel(p *image.NRGBA, s string, b cpBox, size float64, col color.NRGBA, outline bool) {
 	fc := face(cpBold, size)
-	d := &font.Drawer{Face: fc}
-	w := d.MeasureString(s).Round()
 	m := fc.Metrics()
 	asc, desc := float64(m.Ascent.Round()), float64(m.Descent.Round())
-	px := int(b.X + (b.W-float64(w))/2)
-	py := int(b.Y + (b.H+asc-desc)/2 - asc*0.1)
-	if outline {
-		dark := image.NewUniform(color.NRGBA{6, 9, 11, 240})
-		for _, dd := range [][2]int{{-2, 0}, {2, 0}, {0, -2}, {0, 2}, {-1, -1}, {1, -1}, {-1, 1}, {1, 1}} {
-			dr := &font.Drawer{Dst: p, Src: dark, Face: fc, Dot: fixed.P(px+dd[0], py+dd[1])}
-			dr.DrawString(s)
+	wide := int(math.Ceil(cpMeasure(s, size)/cpCondense)) + 4
+	hgt := int(asc+desc) + 4
+	tmp := image.NewNRGBA(image.Rect(0, 0, wide, hgt))
+	py := int(asc) + 2
+	draw := func(src image.Image, dx, dy int) {
+		x := 2.0
+		for _, r := range s {
+			d := &font.Drawer{Dst: tmp, Src: src, Face: fc, Dot: fixed.P(int(math.Round(x))+dx, py+dy)}
+			d.DrawString(string(r))
+			adv, _ := fc.GlyphAdvance(r)
+			x += float64(adv.Round()) + cpTrack*size
 		}
 	}
-	dr := &font.Drawer{Dst: p, Src: image.NewUniform(col), Face: fc, Dot: fixed.P(px, py)}
-	dr.DrawString(s)
+	if outline {
+		dark := image.NewUniform(color.NRGBA{6, 9, 11, 240})
+		for _, dd := range [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
+			draw(dark, dd[0], dd[1])
+		}
+	}
+	draw(image.NewUniform(col), 0, 0)
+	sw := int(math.Round(float64(wide) * cpCondense))
+	img := resize(tmp, sw, hgt)
+	x0 := int(b.X + (b.W-float64(sw))/2)
+	y0 := int(b.Y+(b.H+asc-desc)/2-asc*0.1) - py
+	over(p, img, image.Pt(x0, y0))
 }

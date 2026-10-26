@@ -1,0 +1,3 @@
+Use case: game UI icon (sprite source).
+Reference (read from disk): D:\tmp\cx-runeskin\work\ref\craftrow-idle-3x.png = 3x crop of the APPROVED mockup's craft button; reproduce ITS ANVIL glyph exactly: one solid, connected, dimensional blacksmith anvil silhouette (horn to the left, flat face, waist, wide footed base), rendered in glowing teal-cyan (#2FC9E0 body) with shaded faces: brighter top face and horn highlight, darker blue-teal sides and underside, a thin dark outline; no sparkles, no stars, no hammer, no extra parts.
+Output ONE 1024 x 1024 image, flat pure magenta #FF00FF background, the anvil centred, about 700 px wide, no shadow on the magenta, no text.

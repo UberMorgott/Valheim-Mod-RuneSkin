@@ -9221,6 +9221,270 @@
       "token": "hud.panel.potion.end",
       "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice (+2 sheet px overlap each side, size.hud.panel.lap) mirror of panel_food_end (x 24..257 flipped h, user 2026-10-26: the row's own right end x 2953.. had its strap inside potion seg3, under the last potion cell): medallion + strap + the 21 sheet px of the food wing's plate margin between its strap and its outermost socket, so the strap sits as far from the last potion cell as the left strap from the last food cell (StripMath.EndJoint); placed edge to edge by StripMath (size.hud.panel.*)",
       "atlas": "strip"
+    },
+    {
+      "name": "craft_plate_normal",
+      "file": "craft_plate_normal.png",
+      "size": [
+        82,
+        75
+      ],
+      "border": {
+        "left": 26,
+        "bottom": 37,
+        "right": 26,
+        "top": 37
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "craft.plate.normal",
+      "notes": "Craft row plate (approved mockup craft-progress.png, kit craftrow.png): blackened iron, copper corner brackets, teal rivets; T/B border = full height (centre row 1 px: the side rivets never stretch), plain 30 px stretch column between top rivets; drawn at its own height (role ppuMultiplier 0.6 at a 64 ref row)"
+    },
+    {
+      "name": "craft_plate_hover",
+      "file": "craft_plate_hover.png",
+      "size": [
+        82,
+        75
+      ],
+      "border": {
+        "left": 26,
+        "bottom": 37,
+        "right": 26,
+        "top": 37
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "craft.plate.hover",
+      "notes": "Craft row plate (approved mockup craft-progress.png, kit craftrow.png): blackened iron, copper corner brackets, teal rivets; T/B border = full height (centre row 1 px: the side rivets never stretch), plain 30 px stretch column between top rivets; drawn at its own height (role ppuMultiplier 0.6 at a 64 ref row); hover: faint teal inner rim"
+    },
+    {
+      "name": "craft_plate_pressed",
+      "file": "craft_plate_pressed.png",
+      "size": [
+        82,
+        75
+      ],
+      "border": {
+        "left": 26,
+        "bottom": 37,
+        "right": 26,
+        "top": 37
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "craft.plate.pressed",
+      "notes": "Craft row plate (approved mockup craft-progress.png, kit craftrow.png): blackened iron, copper corner brackets, teal rivets; T/B border = full height (centre row 1 px: the side rivets never stretch), plain 30 px stretch column between top rivets; drawn at its own height (role ppuMultiplier 0.6 at a 64 ref row); pressed: sunk interior"
+    },
+    {
+      "name": "craft_plate_disabled",
+      "file": "craft_plate_disabled.png",
+      "size": [
+        82,
+        75
+      ],
+      "border": {
+        "left": 26,
+        "bottom": 37,
+        "right": 26,
+        "top": 37
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "craft.plate.disabled",
+      "notes": "Craft row plate (approved mockup craft-progress.png, kit craftrow.png): blackened iron, copper corner brackets, teal rivets; T/B border = full height (centre row 1 px: the side rivets never stretch), plain 30 px stretch column between top rivets; drawn at its own height (role ppuMultiplier 0.6 at a 64 ref row); disabled: grey, no teal"
+    },
+    {
+      "name": "craft_step_normal",
+      "file": "craft_step_normal.png",
+      "size": [
+        68,
+        95
+      ],
+      "border": {
+        "left": 33,
+        "bottom": 47,
+        "right": 33,
+        "top": 47
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "craft.step.normal",
+      "notes": "Craft amount step plate (approved mockup): tall copper-cornered iron plate, glyph = text (- / +); fully bordered (rendered at its own height, role ppuMultiplier ~0.78 at 61 ref)"
+    },
+    {
+      "name": "craft_step_hover",
+      "file": "craft_step_hover.png",
+      "size": [
+        68,
+        95
+      ],
+      "border": {
+        "left": 33,
+        "bottom": 47,
+        "right": 33,
+        "top": 47
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "craft.step.hover",
+      "notes": "Craft amount step plate (approved mockup): tall copper-cornered iron plate, glyph = text (- / +); fully bordered (rendered at its own height, role ppuMultiplier ~0.78 at 61 ref); hover: teal inner rim"
+    },
+    {
+      "name": "craft_step_pressed",
+      "file": "craft_step_pressed.png",
+      "size": [
+        68,
+        95
+      ],
+      "border": {
+        "left": 33,
+        "bottom": 47,
+        "right": 33,
+        "top": 47
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "craft.step.pressed",
+      "notes": "Craft amount step plate (approved mockup): tall copper-cornered iron plate, glyph = text (- / +); fully bordered (rendered at its own height, role ppuMultiplier ~0.78 at 61 ref); pressed: sunk"
+    },
+    {
+      "name": "craft_field",
+      "file": "craft_field.png",
+      "size": [
+        68,
+        68
+      ],
+      "border": {
+        "left": 24,
+        "bottom": 24,
+        "right": 24,
+        "top": 24
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "craft.field",
+      "notes": "Craft amount field (approved mockup): recessed dark slate, thin steel rim, steel corner rivets, plain interior (amount text centred)"
+    },
+    {
+      "name": "craft_bar_frame",
+      "file": "craft_bar_frame.png",
+      "size": [
+        114,
+        66
+      ],
+      "border": {
+        "left": 42,
+        "bottom": 33,
+        "right": 42,
+        "top": 32
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": false,
+      "token": "craft.bar.frame",
+      "notes": "Craft progress frame (approved mockup craft-progress.png, kit craftbar2.png): one continuous beveled iron enclosure, compact diamond ornament at each end, window transparent; T/B border = full height (drawn at its own height: CraftingSkin.FrameInset sets the multiplier); window from 0.19 x height (top/bottom) and 0.49 x height (sides); end ornament = border.x"
+    },
+    {
+      "name": "craft_glyph_anvil",
+      "file": "craft_glyph_anvil.png",
+      "size": [
+        97,
+        76
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "craft.glyph.anvil",
+      "notes": "Craft button anvil (approved mockup craft-progress.png): solid dimensional teal anvil, colour baked (tint white), left of the craft label"
+    },
+    {
+      "name": "craft_bar_fill",
+      "file": "craft_bar_fill.png",
+      "size": [
+        48,
+        36
+      ],
+      "border": {
+        "left": 4,
+        "bottom": 0,
+        "right": 4,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "craft.bar.fill",
+      "notes": "Craft progress fill (approved mockup): opaque saturated teal strip, bright upper band, dark lower edge, crisp ends; colour baked (tint white)"
+    },
+    {
+      "name": "craft_bar_trough",
+      "file": "craft_bar_trough.png",
+      "size": [
+        52,
+        34
+      ],
+      "border": {
+        "left": 6,
+        "bottom": 6,
+        "right": 6,
+        "top": 6
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Sliced",
+      "fillCenter": true,
+      "token": "craft.bar.trough",
+      "notes": "Craft progress trough (approved mockup): very dark recessed groove with faint rune etching, opaque"
     }
   ]
 }

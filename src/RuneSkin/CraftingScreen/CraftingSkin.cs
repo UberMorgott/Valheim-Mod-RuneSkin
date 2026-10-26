@@ -31,7 +31,7 @@ namespace RuneSkin.CraftingScreen
         private InventoryGui _gui;
         private RectTransform _crafting, _canvas, _host;
         private Canvas _rootCanvas;
-        private Image _listWell, _detailWell, _craftGlyph, _progressFrame, _progressEdge;
+        private Image _listWell, _detailWell, _craftGlyph, _progressFrame;
         private Button _minus, _plus;
         private TMP_InputField _amountField;
         private TMP_Text _amountText;
@@ -230,8 +230,8 @@ namespace RuneSkin.CraftingScreen
 
         private TMP_Text CraftLabel() => _gui.m_craftButton ? _gui.m_craftButton.GetComponentInChildren<TMP_Text>(true) : null;
 
-        // Progress state: vanilla progressbar (GuiBar m_craftProgressBar: bkg trough + bar fill) restyled to the HUD bar
-        // art (bar_trough / bar_fill, roles craft.progress.*) inside the action-bar frame (bar_frame_action, own image).
+        // Progress state: vanilla progressbar (GuiBar m_craftProgressBar: bkg trough + bar fill) restyled to the craft row kit
+        // (craft_bar_trough / craft_bar_fill, roles craft.progress.*) inside craft_bar_frame (own image), approved mockup craft-progress.png.
         private void BuildProgress()
         {
             var panel = _gui.m_craftProgressPanel;
@@ -241,23 +241,9 @@ namespace RuneSkin.CraftingScreen
             _progressFrame.rectTransform.SetParent(panel, false);
             _progressFrame.rectTransform.SetSiblingIndex(bar.transform.GetSiblingIndex() + 1);
             _progressFrame.raycastTarget = false;
-            var mark = DollCell.Mark(_progressFrame, "craft.progress.frame", "craft progress frame (bar_frame_action)");
+            var mark = DollCell.Mark(_progressFrame, "craft.progress.frame", "craft progress frame (craft_bar_frame)");
             mark.Outcome = Restyler.Apply(_progressFrame, mark, ThemeTokens.Role(mark.Role)) ? Outcome.Styled : Outcome.Degraded;
             _progressFrame.enabled = mark.Outcome == Outcome.Styled;
-            // Crisp leading edge on the fill (bar_edge, the HUD bars' fill-end rim): a child anchored on the fill's right
-            // edge, so it rides GuiBar's width changes without per-frame code.
-            if (!bar.m_bar) return;
-            _progressEdge = new GameObject(Prefix + "ProgressEdge", typeof(RectTransform)).AddComponent<Image>();
-            var rt = _progressEdge.rectTransform;
-            rt.SetParent(bar.m_bar, false);
-            rt.anchorMin = new Vector2(1f, 0f);
-            rt.anchorMax = new Vector2(1f, 1f);
-            rt.pivot = new Vector2(1f, 0.5f);
-            rt.anchoredPosition = Vector2.zero;
-            _progressEdge.raycastTarget = false;
-            var em = DollCell.Mark(_progressEdge, "craft.progress.edge", "craft progress fill edge (bar_edge)");
-            em.Outcome = Restyler.Apply(_progressEdge, em, ThemeTokens.Role(em.Role)) ? Outcome.Styled : Outcome.Degraded;
-            _progressEdge.enabled = em.Outcome == Outcome.Styled;
         }
 
         private Image OwnImage(string name, string role, string reason, int sibling)
@@ -369,8 +355,8 @@ namespace RuneSkin.CraftingScreen
                 // so its own onClick -> OnCraftCancelPressed (:2008, wired in Awake :406) stays the only cancel logic.
                 else if (_gui.m_craftCancelButton && t == _gui.m_craftCancelButton.transform) ctx.Role(image, "craft.button", "craft cancel button (vanilla m_craftCancelButton beside the bar, craft button plate)");
                 else if (ButtonPanel() && t == ButtonPanel()) ctx.Role(image, "skip", "craft_button_panel black plate (hidden: the black box behind the bar)");
-                else if (_gui.m_craftProgressBar && t.parent == _gui.m_craftProgressBar.transform && t.name == "bkg") ctx.Role(image, "craft.progress.trough", "craft progress trough (HUD bar_trough)");
-                else if (_gui.m_craftProgressBar && _gui.m_craftProgressBar.m_bar && t == _gui.m_craftProgressBar.m_bar) ctx.Role(image, "craft.progress.fill", "craft progress fill (HUD bar_fill, teal)");
+                else if (_gui.m_craftProgressBar && t.parent == _gui.m_craftProgressBar.transform && t.name == "bkg") ctx.Role(image, "craft.progress.trough", "craft progress trough (craft_bar_trough)");
+                else if (_gui.m_craftProgressBar && _gui.m_craftProgressBar.m_bar && t == _gui.m_craftProgressBar.m_bar) ctx.Role(image, "craft.progress.fill", "craft progress fill (craft_bar_fill, teal)");
                 else if (_gui.m_craftButton && image == _gui.m_craftButton.targetGraphic) ctx.Role(image, "craft.button", "craft / upgrade button (button_craft_*, falls back to button_*)");
                 else if (t.name == DescView && t.parent && t.parent.name == "Decription") ctx.Role(image, "skip", "description scroll view hit area (RuneSkin, clear)");
                 else if (_gui.m_repairButton && image == _gui.m_repairButton.targetGraphic) ctx.Role(image, "craft.repair", "repair button (round)");
@@ -1376,7 +1362,7 @@ namespace RuneSkin.CraftingScreen
             {
                 var progress = _gui.m_craftProgressPanel && _gui.m_craftProgressPanel.gameObject.activeSelf;
                 var stepper = !progress && AmountShown();
-                var row = CraftingMath.ActionRow(o.Craft, stepper, o.Craft.H * 0.125f);
+                var row = CraftingMath.ActionRow(o.Craft, stepper, o.Craft.H * 0.1f);
                 Geo.Place(_canvas, panel, o.Craft);
                 Geo.Place(_canvas, (RectTransform)_gui.m_craftButton.transform, row.Button);
                 if (_gui.m_craftProgressPanel) Geo.Place(_canvas, (RectTransform)_gui.m_craftProgressPanel, o.Craft);
@@ -1385,6 +1371,7 @@ namespace RuneSkin.CraftingScreen
                 {
                     Geo.Place(_canvas, label.rectTransform, row.Button);
                     Label(label, TextAlignmentOptions.Center, o.Craft.H * 0.42f, 14f, upper: true);
+                    Condense(label);
                     CraftGlyph(label, row.Button);
                 }
                 Amount(row, stepper);
@@ -1423,7 +1410,7 @@ namespace RuneSkin.CraftingScreen
 
         // Craft progress state (approved mockup craft-progress.png, right). UpdateRecipe (InventoryGui.cs:1611-1625) swaps
         // m_craftButton for m_craftProgressPanel while m_craftTimer >= 0. Bar = the vanilla GuiBar m_craftProgressBar in the
-        // HUD bar art (bkg -> bar_trough, bar -> teal bar_fill) inside the action-bar frame, its width given back to GuiBar
+        // craft row kit (bkg -> craft_bar_trough, bar -> teal craft_bar_fill) inside craft_bar_frame, its width given back to GuiBar
         // through its own SetWidth (GuiBar.cs, m_width cached in Awake). State text centred on the bar: the panel's own text
         // (vanilla token from Localization.textMeshStrings, Localization.cs:303-311) + " x N" while m_multiCrafting (the
         // craft button's pattern, :1572-1575; DoCrafting makes all m_multiCraftAmount at once, :1787 / :1897), bold body face
@@ -1436,13 +1423,14 @@ namespace RuneSkin.CraftingScreen
             var panel = _gui.m_craftProgressPanel;
             if (!panel || !panel.gameObject.activeInHierarchy) return;
             var frameBox = r.Bar;
-            var share = Mathf.Clamp(ThemeTokens.GetFloat("share.craft.progress.bar", 0.95f), 0.3f, 1f);
+            var share = Mathf.Clamp(ThemeTokens.GetFloat("share.craft.progress.bar", 0.9f), 0.3f, 1f);
             frameBox = new Box(frameBox.X, frameBox.Y + frameBox.H * (1f - share) / 2f, frameBox.W, frameBox.H * share);
             var trough = frameBox;
+            var capW = 0f;
             if (_progressFrame && _progressFrame.enabled)
             {
                 Geo.Place(_canvas, _progressFrame.rectTransform, frameBox);
-                trough = FrameInset(frameBox);
+                trough = FrameInset(frameBox, out capW);
             }
             var bar = _gui.m_craftProgressBar;
             if (bar)
@@ -1458,14 +1446,9 @@ namespace RuneSkin.CraftingScreen
                     var fill = bar.m_bar;
                     fill.pivot = new Vector2(0f, 0.5f);
                     // A defined strip inside the trough (approved mockup): inset share.craft.progress.fill.inset of its height.
-                    var fin = trough.H * Mathf.Clamp(ThemeTokens.GetFloat("share.craft.progress.fill.inset", 0.14f), 0f, 0.4f);
+                    var fin = trough.H * Mathf.Clamp(ThemeTokens.GetFloat("share.craft.progress.fill.inset", 0.08f), 0f, 0.4f);
                     var strip = new Box(trough.X + fin * 0.5f, trough.Y + fin, Mathf.Max(0f, trough.W - fin), Mathf.Max(0f, trough.H - 2f * fin));
                     Geo.Place(_canvas, fill, strip);
-                    if (_progressEdge && _progressEdge.sprite)
-                    {
-                        var s = _progressEdge.sprite.rect;
-                        _progressEdge.rectTransform.sizeDelta = new Vector2(PlayerHud.HudMath.EdgeWidth(s.width, s.height, fill.rect.height), 0f);
-                    }
                     bar.SetWidth(fill.sizeDelta.x); // GuiBar scales this width by the progress in its LateUpdate
                     if (fill.TryGetComponent<Image>(out var fi)) bar.m_originalColor = fi.color;
                 }
@@ -1481,11 +1464,11 @@ namespace RuneSkin.CraftingScreen
                     state.color = ThemeTokens.GetColor("color.text.body", state.color);
                 }
                 if (state.raycastTarget) state.raycastTarget = false;
-                Geo.Place(_canvas, state.rectTransform, new Box(trough.X + trough.H * 0.25f, frameBox.Y, Mathf.Max(0f, trough.W - trough.H * 0.5f), frameBox.H));
+                Geo.Place(_canvas, state.rectTransform, new Box(frameBox.X + capW, frameBox.Y, Mathf.Max(0f, frameBox.W - 2f * capW), frameBox.H));
                 state.margin = Vector4.zero;
                 Label(state, TextAlignmentOptions.Center, r.Bar.H * 0.28f, 12f, upper: true);
-                var spacing = ThemeTokens.GetFloat("size.craft.progress.spacing", -2f);
-                if (!Mathf.Approximately(state.characterSpacing, spacing)) state.characterSpacing = spacing;
+                Condense(state);
+
                 if (Localization.instance.textMeshStrings.TryGetValue(state, out var token))
                 {
                     var want = Localization.instance.Localize(token) + (_gui.m_multiCrafting ? " x " + _gui.m_multiCraftAmount : "");
@@ -1508,29 +1491,40 @@ namespace RuneSkin.CraftingScreen
             Geo.Place(_canvas, cancelLabel.rectTransform, r.Cancel);
             cancelLabel.margin = Vector4.zero;
             Label(cancelLabel, TextAlignmentOptions.Center, r.Cancel.H * 0.3f, 11f, upper: true);
+            Condense(cancelLabel);
         }
 
-        // Trough box inside the frame: vertical inset share.craft.progress.inset of the frame height, horizontal by the
-        // frame sprite's own border ratio (its knot ends are wider); the frame's pixelsPerUnitMultiplier is set so its
-        // sliced border draws exactly that inset.
-        private Box FrameInset(Box frame)
+        // Trough box inside the frame (craft_bar_frame: T/B border = the full sprite height, so it is drawn at its own
+        // height; the pixelsPerUnitMultiplier makes the sprite exactly the frame's height). The trough fills the window
+        // (share.craft.progress.inset of the height from top / bottom) and runs on under the end ornaments to
+        // share.craft.progress.cap x height; capW = the ornament (border.x) for the text span.
+        private Box FrameInset(Box frame, out float capW)
         {
-            var insetY = frame.H * Mathf.Clamp(ThemeTokens.GetFloat("share.craft.progress.inset", 0.08f), 0.05f, 0.45f);
+            var insetY = frame.H * Mathf.Clamp(ThemeTokens.GetFloat("share.craft.progress.inset", 0.19f), 0.02f, 0.45f);
+            var insetX = Mathf.Min(frame.H * Mathf.Clamp(ThemeTokens.GetFloat("share.craft.progress.cap", 0.35f), 0f, 2f), frame.W * 0.3f);
             var sprite = _progressFrame.sprite;
-            var border = sprite ? sprite.border : Vector4.zero;
-            var by = Mathf.Max(border.y, border.w);
-            var insetX = by > 0f ? insetY * Mathf.Max(border.x, border.z) / by : insetY;
-            insetX = Mathf.Min(insetX, frame.W * 0.25f);
+            var spriteH = sprite ? sprite.rect.height : 0f;
+            capW = sprite && spriteH > 0f ? Mathf.Min(frame.H * Mathf.Max(sprite.border.x, sprite.border.z) / spriteH, frame.W * 0.3f) : insetX;
             var localH = _progressFrame.rectTransform.rect.height;
-            if (sprite && by > 0f && localH > 0f && frame.H > 0f && _rootCanvas)
+            if (sprite && spriteH > 0f && localH > 0f && _rootCanvas)
             {
-                var insetLocal = localH * insetY / frame.H;
-                var mult = by * _rootCanvas.referencePixelsPerUnit / (sprite.pixelsPerUnit * insetLocal);
+                var mult = spriteH * _rootCanvas.referencePixelsPerUnit / (sprite.pixelsPerUnit * localH);
                 if (Mathf.Abs(_progressFrame.pixelsPerUnitMultiplier - mult) > 0.001f) _progressFrame.pixelsPerUnitMultiplier = mult;
             }
             return CraftingMath.Inset(frame, insetX, insetY);
         }
-
+        // Craft-row labels condensed like the approved mockup's caps: tighter tracking (size.craft.label.tracking, TMP
+        // em/100) and a horizontal glyph scale (share.craft.label.condense on the label's own localScale.x; Geo.Place sizes
+        // the rect in that scale, so the box stays the same on screen).
+        private static void Condense(TMP_Text t)
+        {
+            if (!t) return;
+            var spacing = ThemeTokens.GetFloat("size.craft.label.tracking", -1f);
+            if (!Mathf.Approximately(t.characterSpacing, spacing)) t.characterSpacing = spacing;
+            var sx = Mathf.Clamp(ThemeTokens.GetFloat("share.craft.label.condense", 0.88f), 0.6f, 1f);
+            var s = t.rectTransform.localScale;
+            if (!Mathf.Approximately(s.x, sx)) t.rectTransform.localScale = new Vector3(sx, s.y, s.z);
+        }
         // The craft button label's face (font asset + material + style) on another label: one face for every craft-row text.
         private void SameFace(TMP_Text t)
         {
