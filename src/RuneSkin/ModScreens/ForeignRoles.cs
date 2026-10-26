@@ -49,6 +49,10 @@ namespace RuneSkin.ModScreens
 
         // ---------------------------------------------------------------- before the role pass
 
+        // Window art the mod switched off itself (Image disabled, not by RuneSkin's PanelSwap): the mod does not draw
+        // that window, so RuneSkin draws no panel stack for it (VNEI docked into crafting hides its own woodpanel).
+        public static bool OwnerHidden(Image img) => img && ForeignMath.IsOwnerHidden(img.enabled, img.TryGetComponent<PanelSwap>(out _));
+
         // Window art of the mod's own (a sprite the theme does not map) on the unit root or a child covering most of
         // it: the panel stack, like vanilla wood panels (PreWorldKit.Panels covers those).
         public static void Before(Transform unit, string family)
@@ -60,7 +64,7 @@ namespace RuneSkin.ModScreens
             {
                 if (!img || img.GetComponent<SkinMark>() is SkinMark m && m.Internal) continue;
                 var depth = img.transform == unit ? 0 : img.transform.parent == unit ? 1 : 2;
-                if (depth > 1 || !img.sprite || img.TryGetComponent<PanelSwap>(out _)) continue;
+                if (depth > 1 || !img.sprite || img.TryGetComponent<PanelSwap>(out _) || OwnerHidden(img)) continue;
                 if (img.GetComponentInParent<Selectable>(true) || img.GetComponent<Mask>() || img.GetComponent<ScrollRect>()) continue;
                 var sprite = img.sprite.name;
                 if (PreWorldKit.IsPanelSprite(sprite) || Classifier.BySprite(sprite, family) != null) continue;

@@ -324,8 +324,15 @@ namespace RuneSkin.ModScreens
             mark.ScreenId = id;
             mark.Owner = "RuneSkin.ModUi";
             var hud = family == OwnershipRegistry.ModHud;
-            if (!hud) ForeignRoles.Before(unit, family);
-            GameScreenKit.Form(unit, id, family, (ctx, r) => Roles(ctx, r, family), panels: !hud);
+            if (!hud)
+            {
+                ForeignRoles.Before(unit, family);
+                // Window art the mod itself switched off is not a window: a docked sub-panel (VNEI attached to
+                // crafting disables its dragHandler woodpanel, MainVneiHandler.CreateBaseUI) lives in its host's
+                // content area and gets no panel stack (corner caps, gems) and so no move band of its own.
+                PreWorldKit.Panels(unit, "size.panel.pad", ForeignRoles.OwnerHidden);
+            }
+            GameScreenKit.Form(unit, id, family, (ctx, r) => Roles(ctx, r, family), panels: false);
             ForeignRoles.After(unit, family);
             if (!hud) ForeignRoles.Movable(unit, id);
             SkinDiagnostics_Note(id, unit);
@@ -347,6 +354,9 @@ namespace RuneSkin.ModScreens
                 else if (_optOut.Contains(t.name)) ctx.Exclude(t, "opted out (Ownership.ModUiOptOut)");
                 else if (t.TryGetComponent<Canvas>(out var c) && c.renderMode == RenderMode.WorldSpace) ctx.Exclude(t, "world-space canvas");
             }
+            foreach (var img in root.GetComponentsInChildren<Image>(true))
+                if (ForeignRoles.OwnerHidden(img) && PreWorldKit.IsPanelSprite(img.sprite ? img.sprite.name : null))
+                    ctx.Role(img, "skip", "window art its mod switched off (docked sub-panel: no frame of its own)");
             ForeignRoles.Precise(ctx, root, family);
             ForeignRoles.Generic(ctx, root);
         }

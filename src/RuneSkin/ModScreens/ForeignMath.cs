@@ -103,6 +103,10 @@ namespace RuneSkin.ModScreens
         public static bool IsWindowPanel(int depthBelowUnit, float coverShare, float width, float height, float min, bool slicedOrTiled) =>
             slicedOrTiled && width >= min && height >= min * 0.5f && (depthBelowUnit == 0 || (depthBelowUnit == 1 && coverShare >= 0.6f));
 
+        // Window art its mod switched off (image disabled, and not by RuneSkin's own panel swap): no window of its own, a
+        // sub-panel docked in its host's content area (VNEI attached to crafting) - no panel stack, no move band.
+        public static bool IsOwnerHidden(bool imageEnabled, bool swappedByRuneSkin) => !imageEnabled && !swappedByRuneSkin;
+
         // Epic Loot enchanting table tab -> glyph role (art m7 ench-a: glyph left of the label).
         public static string EnchantGlyph(string tab)
         {

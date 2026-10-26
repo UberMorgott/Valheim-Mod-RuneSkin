@@ -131,6 +131,15 @@ namespace RuneSkin.Tests
         public void WindowPanelIsTheWindowOnly(int depth, float share, float w, float h, bool sliced, bool want) =>
             Assert.Equal(want, IsWindowPanel(depth, share, w, h, 120f, sliced));
 
+        // VNEI docked into crafting disables its own woodpanel: no frame. RuneSkin's own swap (image off, PanelSwap on)
+        // stays a window on every later pass.
+        [Theory]
+        [InlineData(false, false, true)]
+        [InlineData(false, true, false)]
+        [InlineData(true, false, false)]
+        public void OwnerHiddenArtIsNoWindow(bool enabled, bool swapped, bool want) =>
+            Assert.Equal(want, IsOwnerHidden(enabled, swapped));
+
         [Theory]
         [InlineData("Sacrifice", "glyph.ench.sacrifice")]
         [InlineData("ConvertMaterials", "glyph.ench.convert")]
