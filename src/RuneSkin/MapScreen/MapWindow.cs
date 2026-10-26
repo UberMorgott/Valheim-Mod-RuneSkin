@@ -76,6 +76,9 @@ namespace RuneSkin.MapScreen
                 if (mover) mover.enabled = true; // re-bases on the restored rect, adds the user offset again
             }
             if (_maxApplied) FitSafeArea();
+            // Maximized: no drag / double-click reset (they would rewrite the offset the restore returns to).
+            var drag = _header ? _header.Drag : null;
+            if (drag && drag.enabled == _maxApplied) drag.enabled = !_maxApplied && WindowMove.Enabled;
         }
 
         private void FitSafeArea()
@@ -95,6 +98,28 @@ namespace RuneSkin.MapScreen
             if (_large.anchorMax != Vector2.zero) _large.anchorMax = Vector2.zero;
             if ((_large.offsetMin - offMin).sqrMagnitude > 0.0001f) _large.offsetMin = offMin;
             if ((_large.offsetMax - offMax).sqrMagnitude > 0.0001f) _large.offsetMax = offMax;
+        }
+
+        private Vector2 _mapSize;
+
+        // The map image changed size (window moved between normal / maximized, content inset, hint band): vanilla re-fits
+        // the uv only in its next UpdateMap and re-places pins only when the centre / zoom changed (Minimap.UpdatedMap,
+        // Minimap.cs:1290), so pins would sit stale. Mirror UpdateMap's large-mode uv (Minimap.cs:1263-1270: width =
+        // LargeZoom x aspect, height = LargeZoom, same centre) and re-place the pins now (UpdatePins).
+        private void RefitMapView()
+        {
+            var img = _map.m_mapImageLarge;
+            if (!img) return;
+            var size = img.rectTransform.rect.size;
+            if ((size - _mapSize).sqrMagnitude < 0.01f || !(size.x > 0f) || !(size.y > 0f)) return;
+            _mapSize = size;
+            var uv = img.uvRect;
+            var centre = uv.center;
+            uv.width = _map.LargeZoom * (size.x / size.y);
+            uv.height = _map.LargeZoom;
+            uv.center = centre;
+            img.uvRect = uv;
+            _map.UpdatePins();
         }
 
         // The button in the header's aux slot (right end of the drawn plate), its glyph by state.

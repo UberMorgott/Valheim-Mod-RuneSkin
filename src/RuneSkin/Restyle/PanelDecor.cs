@@ -219,6 +219,9 @@ namespace RuneSkin.Restyle
         // (and below the header at the top), so no row, plate or button runs under a corner cap (user 2026-10-26:
         // footer plates and the craft button under the bottom corner straps). One rule for every window
         // (PanelMath.CapInset: a rect inset by the keep-out on both sides of a corner never touches the cap).
+        // The panel stack on `host` (null when none).
+        public static PanelDecor Of(Transform host) => host && host.Find(ChildName) is Transform s && s.TryGetComponent<PanelDecor>(out var d) ? d : null;
+
         public static float KeepOut(Transform host, RectTransform canvas)
         {
             var stack = host ? host.Find(ChildName) : null;

@@ -38,6 +38,12 @@ namespace RuneSkin.Restyle
         public Box IconBox, AuxBox, TitleBox;
 
         private Graphic _source;
+        private bool _sourceWasEnabled = true; // the adopted title's own enabled state, given back on release
+        private string _lastRaw, _lastFallback, _lastShown;
+
+        // The window's own panel stack (owners that know it set it): the header keeps inside THAT frame; null = the
+        // drawn frame around the band overlapping the window most.
+        public PanelDecor Frame;
         private string _fallback = "", _fallbackKey, _static, _staticKey, _staticLang, _staticText;
         private int _styled = -1;
         private float _stretch, _iconShare, _auxShare;
@@ -98,6 +104,13 @@ namespace RuneSkin.Restyle
             return this;
         }
 
+        // The adopted title draws itself again in the state it had (a title vanilla / a mod had switched off stays off).
+        private void Release()
+        {
+            if (_source) _source.enabled = _sourceWasEnabled;
+            _source = null;
+        }
+
         // A legacy uGUI title (mods built on UnityEngine.UI.Text, e.g. Almanac's "topic"), mirrored the same way.
         public RuneWindowHeader Mirror(Text legacy)
         {
@@ -108,8 +121,9 @@ namespace RuneSkin.Restyle
         private void Source(Graphic g)
         {
             if (!g || g == _source) return;
-            if (_source) _source.enabled = true;
+            Release();
             _source = g;
+            _sourceWasEnabled = g.enabled;
             _static = null;
             Refresh();
         }
@@ -118,7 +132,7 @@ namespace RuneSkin.Restyle
         public RuneWindowHeader Text(string text)
         {
             if (!_source && _static == text) return this;
-            if (_source) { _source.enabled = true; _source = null; }
+            if (_source) Release();
             _static = text;
             _staticKey = null;
             Refresh();
@@ -155,7 +169,14 @@ namespace RuneSkin.Restyle
                 }
                 raw = _staticText;
             }
-            var shown = WindowHeaderMath.Title(raw, _fallback);
+            // Sanitised once per raw text / fallback (this runs every frame).
+            if (!ReferenceEquals(raw, _lastRaw) || !ReferenceEquals(_fallback, _lastFallback) || _lastShown == null)
+            {
+                _lastRaw = raw;
+                _lastFallback = _fallback;
+                _lastShown = WindowHeaderMath.Title(raw, _fallback);
+            }
+            var shown = _lastShown;
             if (Title.text != shown) Title.text = shown;
             if (_source && _source.enabled) _source.enabled = false;
         }
@@ -171,7 +192,7 @@ namespace RuneSkin.Restyle
             // Icon / aux slots move in with the plate's frame keep-out (its own frame's top border and corner caps): an
             // icon or weight plate at the band edge lay under the top corner caps (user 2026-10-26). Own frame only, so
             // the slots never jump while the window is dragged over another one.
-            FrameInsets(rt, Window, WorldRect(rt), FrameMargin * Mathf.Abs(canvas.lossyScale.x), out var kl, out var kr, out _);
+            FrameInsets(rt, Window, WorldRect(rt), FrameMargin * Mathf.Abs(canvas.lossyScale.x), out var kl, out var kr, out _, Frame);
             var wpu = Mathf.Max(Geo.WorldPerUnit(canvas), 1e-6f);
             var shift = WindowHeaderMath.SlotShift(Mathf.Max(kl, kr) / wpu, band.H);
             var slots = new Box(band.X + shift, band.Y, Mathf.Max(0f, band.W - 2f * shift), band.H);
@@ -347,11 +368,11 @@ namespace RuneSkin.Restyle
         // the left edge, right of it the right edge. The window's frame = the frame overlapping the window rect most (the
         // smaller on a tie; the inventory windows' frames sit on hosts beside their panels), never another window's frame
         // the window was dragged over. Same root canvas only.
-        public static void FrameInsets(Transform self, Transform window, Rect band, float margin, out float left, out float right, out float top)
+        public static void FrameInsets(Transform self, Transform window, Rect band, float margin, out float left, out float right, out float top, PanelDecor own = null)
         {
             left = right = top = 0f;
-            var own = self ? self.GetComponentInParent<Canvas>() : null;
-            var root = own ? own.rootCanvas : null;
+            var canvas = self ? self.GetComponentInParent<Canvas>() : null;
+            var root = canvas ? canvas.rootCanvas : null;
             if (!root) return;
             var win = window is RectTransform wr ? WorldRect(wr) : band;
             PanelDecor bestDecor = null;
@@ -359,21 +380,30 @@ namespace RuneSkin.Restyle
             var bestRect = default(Rect);
             var bestOverlap = 0f;
             var centre = band.center;
-            foreach (var d in PanelDecor.All)
+            // The window's own stack when the owner bound it (or one sits on the window itself): never another window's.
+            if (!own && window) own = window.Find(PanelDecor.ChildName) is Transform st && st.TryGetComponent<PanelDecor>(out var onWindow) ? onWindow : null;
+            var ownFrame = own ? own.Frame : null;
+            if (ownFrame && ownFrame.enabled && ownFrame.sprite && ownFrame.isActiveAndEnabled && ownFrame.canvas != null && ownFrame.canvas.rootCanvas == root)
             {
-                var f = d ? d.Frame : null;
-                if (!f || !f.enabled || !f.sprite || !f.isActiveAndEnabled || f.canvas == null || f.canvas.rootCanvas != root) continue;
-                var fr = WorldRect(f.rectTransform);
-                if (!fr.Contains(centre)) continue;
-                var ow = Mathf.Min(fr.xMax, win.xMax) - Mathf.Max(fr.xMin, win.xMin);
-                var oh = Mathf.Min(fr.yMax, win.yMax) - Mathf.Max(fr.yMin, win.yMin);
-                var overlap = ow > 0f && oh > 0f ? ow * oh : 0f;
-                if (overlap < bestOverlap || overlap <= 0f || overlap == bestOverlap && best && fr.width * fr.height >= bestRect.width * bestRect.height) continue;
-                bestDecor = d;
-                best = f;
-                bestRect = fr;
-                bestOverlap = overlap;
+                bestDecor = own;
+                best = ownFrame;
+                bestRect = WorldRect(ownFrame.rectTransform);
             }
+            else foreach (var d in PanelDecor.All)
+                {
+                    var f = d ? d.Frame : null;
+                    if (!f || !f.enabled || !f.sprite || !f.isActiveAndEnabled || f.canvas == null || f.canvas.rootCanvas != root) continue;
+                    var fr = WorldRect(f.rectTransform);
+                    if (!fr.Contains(centre)) continue;
+                    var ow = Mathf.Min(fr.xMax, win.xMax) - Mathf.Max(fr.xMin, win.xMin);
+                    var oh = Mathf.Min(fr.yMax, win.yMax) - Mathf.Max(fr.yMin, win.yMin);
+                    var overlap = ow > 0f && oh > 0f ? ow * oh : 0f;
+                    if (overlap < bestOverlap || overlap <= 0f || overlap == bestOverlap && best && fr.width * fr.height >= bestRect.width * bestRect.height) continue;
+                    bestDecor = d;
+                    best = f;
+                    bestRect = fr;
+                    bestOverlap = overlap;
+                }
             if (!best) return;
             var b = best.sprite.border; // x left, y bottom, z right, w top (sprite px)
             var ppu = Mathf.Max(best.pixelsPerUnit * best.pixelsPerUnitMultiplier, 1e-4f); // Image.multipliedPixelsPerUnit (internal)
@@ -390,7 +420,7 @@ namespace RuneSkin.Restyle
                 if (!o.Owner && !r.Overlaps(bestRect)) continue; // a shared piece elsewhere
                 Ornaments.Add(new WindowHeaderMath.Span(r.xMin, r.yMin, r.xMax, r.yMax));
             }
-            WindowHeaderMath.FrameKeepOut(new WindowHeaderMath.Span(band.xMin, band.yMin, band.xMax, band.yMax), inner, Ornaments.ToArray(), margin, out left, out right, out top);
+            WindowHeaderMath.FrameKeepOut(new WindowHeaderMath.Span(band.xMin, band.yMin, band.xMax, band.yMax), inner, Ornaments, margin, out left, out right, out top);
         }
 
         private static readonly System.Collections.Generic.List<WindowHeaderMath.Span> Ornaments = new System.Collections.Generic.List<WindowHeaderMath.Span>();
@@ -418,7 +448,7 @@ namespace RuneSkin.Restyle
             if (Mathf.Abs(s.x) < 1e-6f || Mathf.Abs(s.y) < 1e-6f) return;
             var canvas = GetComponentInParent<Canvas>();
             var wpu = canvas ? Mathf.Abs(canvas.rootCanvas.transform.lossyScale.x) : Mathf.Abs(s.x);
-            FrameInsets(rt, Window, WorldRect(rt), FrameMargin * wpu, out left, out right, out top);
+            FrameInsets(rt, Window, WorldRect(rt), FrameMargin * wpu, out left, out right, out top, Frame);
             left /= Mathf.Abs(s.x);
             right /= Mathf.Abs(s.x);
             top = Mathf.Min(top / Mathf.Abs(s.y), rt.rect.height * 0.5f);
@@ -449,14 +479,14 @@ namespace RuneSkin.Restyle
         // RuneSkin reverted the window's root: the mirrored title draws again, the header goes.
         public void Revert()
         {
-            if (_source) _source.enabled = true;
+            Release();
             if (_face) Destroy(_face.gameObject);
             if (this) Destroy(gameObject);
         }
 
         private void OnDestroy()
         {
-            if (_source) _source.enabled = true;
+            Release();
             if (_face) Destroy(_face.gameObject);
         }
 

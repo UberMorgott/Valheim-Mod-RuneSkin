@@ -31,15 +31,16 @@ namespace RuneSkin.Restyle
         // runes): insets that keep it inside the frame's inner rect (the frame minus its 9-slice border) by `margin`, and
         // clear of every ornament (corner cap, junction piece) it still touches below that top inset - an ornament left of
         // the band centre pushes the left edge past its right side, one right of it the right edge.
-        public static void FrameKeepOut(Span band, Span inner, Span[] ornaments, float margin, out float left, out float right, out float top)
+        public static void FrameKeepOut(Span band, Span inner, System.Collections.Generic.IReadOnlyList<Span> ornaments, float margin, out float left, out float right, out float top)
         {
             top = Math.Max(0f, band.Y1 - (inner.Y1 - margin));
             left = Math.Max(0f, inner.X0 + margin - band.X0);
             right = Math.Max(0f, band.X1 - (inner.X1 - margin));
             var y1 = band.Y1 - top;
             if (ornaments == null) return;
-            foreach (var o in ornaments)
+            for (var n = 0; n < ornaments.Count; n++)
             {
+                var o = ornaments[n];
                 if (o.Y1 <= band.Y0 || o.Y0 >= y1 || o.X1 <= band.X0 || o.X0 >= band.X1) continue;
                 if (o.CentreX < band.CentreX) left = Math.Max(left, o.X1 + margin - band.X0);
                 else right = Math.Max(right, band.X1 - (o.X0 - margin));

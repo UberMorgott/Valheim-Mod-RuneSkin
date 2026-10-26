@@ -134,6 +134,7 @@ namespace RuneSkin.MapScreen
                 _legend.offsetMin = new Vector2(-(inset + legendW), inset);
                 _legend.offsetMax = new Vector2(-inset, -top);
             }
+            RefitMapView();
             PlaceMaxButton();
             LegendRows(inset);
             // Every frame while open: a label vanilla activates late (DelayActivation 1 s, Minimap.cs:883-890) or a zoom /

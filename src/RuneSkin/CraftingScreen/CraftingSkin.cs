@@ -739,6 +739,7 @@ namespace RuneSkin.CraftingScreen
         {
             var header = Restyle.RuneWindowHeader.Ensure(_crafting, Restyle.WindowMove.Crafting);
             if (!header) return;
+            header.Frame = PanelDecor.Of(_host);
             if (_gui.m_craftingStationName) header.Adopt(_gui.m_craftingStationName, "$runeskin_win_crafting");
             else header.Fallback("$runeskin_win_crafting").Text("$runeskin_win_crafting");
             var icon = _gui.m_craftingStationIcon && _gui.m_craftingStationIcon.gameObject.activeInHierarchy && _gui.m_craftingStationIcon.sprite ? _gui.m_craftingStationIcon : null;

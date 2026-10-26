@@ -723,6 +723,7 @@ namespace RuneSkin.InventoryScreen
             var head = RuneWindowHeader.Ensure(info, WindowMove.Inventory);
             if (head)
             {
+                head.Frame = PanelDecor.Of(_centerHost); // the centre column's frame, never an overlapping window's
                 var playerName = Player.m_localPlayer ? Player.m_localPlayer.GetPlayerName() : "$runeskin_win_character";
                 if (nameText) head.Adopt(nameText, playerName);
                 else head.Fallback(playerName).Text(playerName);
@@ -901,6 +902,7 @@ namespace RuneSkin.InventoryScreen
             var weightPlate = DirectChild(panel, weight);
             var head = RuneWindowHeader.Ensure(panel, WindowMove.Inventory);
             if (!head) return;
+            head.Frame = PanelDecor.Of(backpack ? _packHost : _chestHost);
             var fallback = backpack ? "$runeskin_win_backpack" : "$runeskin_win_chest";
             if (name) head.Adopt(name, fallback);
             else head.Fallback(fallback).Text(fallback);
