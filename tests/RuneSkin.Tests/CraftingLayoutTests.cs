@@ -159,5 +159,58 @@ namespace RuneSkin.Tests
             Assert.Empty(o.RequirementCells);
             AllInside(o, i.Panel);
         }
+
+        [Theory]
+        [InlineData(316f, 64f)]
+        [InlineData(244f, 64f)]
+        [InlineData(180f, 48f)]
+        public void ActionRowPartsInsideCraftRowNoOverlap(float w, float h)
+        {
+            var craft = new Box(1290f, 780f, w, h);
+            var r = CraftingMath.ActionRow(craft, true, 8f);
+            foreach (var b in new[] { r.Minus, r.Field, r.Plus, r.Button, r.Bar, r.Cancel })
+            {
+                Assert.False(b.IsEmpty);
+                Assert.True(b.Inside(craft), $"{b} outside {craft}");
+            }
+            Assert.False(r.Minus.Overlaps(r.Field));
+            Assert.False(r.Field.Overlaps(r.Plus));
+            Assert.False(r.Plus.Overlaps(r.Button));
+            Assert.False(r.Bar.Overlaps(r.Cancel));
+            Assert.True(r.Plus.Right - craft.X <= w * 0.4f + 0.01f, "stepper wider than its share");
+            Assert.True(r.Button.W >= w * 0.55f);
+            Assert.True(r.Bar.W > r.Cancel.W);
+        }
+
+        [Fact]
+        public void ActionRowWithoutStepperButtonTakesTheRow()
+        {
+            var craft = new Box(10f, 20f, 316f, 64f);
+            var r = CraftingMath.ActionRow(craft, false, 8f);
+            Assert.Equal(craft.X, r.Button.X);
+            Assert.Equal(craft.W, r.Button.W);
+            Assert.True(r.Minus.IsEmpty && r.Plus.IsEmpty && r.Field.IsEmpty);
+        }
+
+        [Theory]
+        [InlineData("7", 1, 20, 7)]
+        [InlineData(" 12 ", 1, 20, 12)]
+        [InlineData("250", 1, 20, 20)]
+        [InlineData("0", 3, 20, 1)]
+        [InlineData("", 3, 20, 3)]
+        [InlineData("x5", 4, 20, 4)]
+        [InlineData("-3", 4, 20, 4)]
+        [InlineData("9", 1, 0, 1)]
+        public void ParseAmountClampsToOneAndMax(string text, int fallback, int max, int want) =>
+            Assert.Equal(want, CraftingMath.ParseAmount(text, fallback, max));
+
+        [Theory]
+        [InlineData(0, 0)]
+        [InlineData(1, 1)]
+        [InlineData(17, 17)]
+        [InlineData(99, 99)]
+        [InlineData(150, 99)]
+        public void LargestOkFindsTheLimit(int limit, int want) =>
+            Assert.Equal(want, CraftingMath.LargestOk(99, n => n <= limit));
     }
 }

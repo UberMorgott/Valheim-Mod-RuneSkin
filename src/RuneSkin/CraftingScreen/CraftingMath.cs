@@ -60,6 +60,12 @@ namespace RuneSkin.CraftingScreen
             $"list {List} detail {Detail} req {Requirements} {RequirementColumns}x{RequirementRows} buttons {ButtonRow}";
     }
 
+    // Craft row parts (canvas boxes): idle = Minus | Field | Plus | Button, progress = Bar | Cancel.
+    public struct CraftRow
+    {
+        public Box Minus, Field, Plus, Button, Bar, Cancel;
+    }
+
     public static class CraftingMath
     {
         public static CraftingLayout Compute(CraftingInput i, CraftingTokens t)
@@ -257,6 +263,69 @@ namespace RuneSkin.CraftingScreen
         {
             var cap = Math.Max(min, Math.Min(max, bottom - top));
             return Math.Min(height, cap);
+        }
+
+        // The craft row (o.Craft) split for its two states (approved mockup craft-progress.png). Idle: amount stepper
+        // [-][N][+] at the left (step buttons stepShare * h wide, field fieldShare * h wide, all stepH * h tall, centred;
+        // the whole stepper at most maxShare of the row, shrunk evenly below that), the craft button takes the rest.
+        // Progress: framed bar | cancel button (cancelShare of the row, clamped to [h * 1.2, h * 2.6]). Everything inside
+        // `craft`; stepper == false -> the button gets the whole row.
+        public static CraftRow ActionRow(Box craft, bool stepper, float gap, float stepShare = 0.55f, float fieldShare = 0.75f,
+            float maxShare = 0.4f, float cancelShare = 0.26f, float stepH = 0.95f)
+        {
+            var r = new CraftRow { Button = craft };
+            if (craft.IsEmpty) return r;
+            var h = craft.H;
+            var inner = gap * 0.5f;
+            if (stepper)
+            {
+                var step = h * stepShare;
+                var field = h * fieldShare;
+                var sh = h * Clamp(stepH, 0.3f, 1f);
+                var need = 2f * step + field + 2f * inner;
+                var max = craft.W * Clamp(maxShare, 0.1f, 0.6f);
+                if (need > max)
+                {
+                    var k = max / need;
+                    step *= k;
+                    field *= k;
+                    inner *= k;
+                }
+                var y = craft.Y + (h - sh) / 2f;
+                r.Minus = new Box(craft.X, y, step, sh);
+                r.Field = new Box(r.Minus.Right + inner, y, field, sh);
+                r.Plus = new Box(r.Field.Right + inner, y, step, sh);
+                r.Button = new Box(r.Plus.Right + gap, craft.Y, Math.Max(0f, craft.Right - r.Plus.Right - gap), h);
+            }
+            var cw = Clamp(craft.W * cancelShare, h * 1.2f, h * 2.6f);
+            cw = Math.Min(cw, craft.W * 0.45f);
+            r.Cancel = new Box(craft.Right - cw, craft.Y, cw, h);
+            r.Bar = new Box(craft.X, craft.Y, Math.Max(0f, r.Cancel.X - gap - craft.X), h);
+            return r;
+        }
+
+        // Craft amount: clamp to [1, max] (max < 1 -> 1); typed text parsed as digits only (empty / junk -> fallback).
+        public static int ClampAmount(int n, int max) => Math.Max(1, Math.Min(n, Math.Max(1, max)));
+
+        public static int ParseAmount(string s, int fallback, int max)
+        {
+            var i = 0;
+            if (string.IsNullOrEmpty(s) || !Number(s, ref i, out var n) || !End(s, i)) return ClampAmount(fallback, max);
+            return ClampAmount(n, max);
+        }
+
+        // Largest n in [1, cap] with ok(n) true, ok monotonic (true up to some n, false above); 0 when ok(1) is false.
+        public static int LargestOk(int cap, Func<int, bool> ok)
+        {
+            if (cap < 1 || !ok(1)) return 0;
+            int lo = 1, hi = cap;
+            while (lo < hi)
+            {
+                var mid = lo + (hi - lo + 1) / 2;
+                if (ok(mid)) lo = mid;
+                else hi = mid - 1;
+            }
+            return lo;
         }
 
         private static int Columns(float width, float cell, float gap) => cell <= 0f ? 1 : Math.Max(1, (int)Math.Floor((width + gap) / (cell + gap)));

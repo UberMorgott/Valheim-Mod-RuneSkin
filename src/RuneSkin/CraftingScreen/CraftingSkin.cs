@@ -31,7 +31,17 @@ namespace RuneSkin.CraftingScreen
         private InventoryGui _gui;
         private RectTransform _crafting, _canvas, _host;
         private Canvas _rootCanvas;
-        private Image _listWell, _detailWell, _craftGlyph;
+        private Image _listWell, _detailWell, _craftGlyph, _progressFrame, _progressEdge;
+        private Button _minus, _plus;
+        private TMP_InputField _amountField;
+        private TMP_Text _amountText;
+        // Stepper amount (1 = single craft, vanilla Shift still multi-crafts), its max for the selected recipe (cached
+        // 0.25 s: HaveRequirements also counts ValheimPlus CraftFromChest chests), vanilla's m_multiCraftAmount to restore.
+        private int _amount = 1, _max = 1, _vanillaMulti;
+        private bool _amountOwned;
+        private Recipe _maxRecipe;
+        private float _maxAt;
+        private Box _troughBox;
         private RowArrows _tabArrows, _catArrows, _subArrows;
         private readonly CraftingTokens _t = new CraftingTokens();
         private readonly CraftingInput _in = new CraftingInput();
@@ -99,7 +109,12 @@ namespace RuneSkin.CraftingScreen
             if (view && view.TryGetComponent<Image>(out var vi)) vi.color = Color.clear;
             var repairText = _gui.m_repairButton ? _gui.m_repairButton.transform.Find("Text") : null;
             if (repairText) repairText.gameObject.SetActive(false);
+            // craft_button_panel's own black plate (alpha 0.56, prefab) = the black box behind the progress bar.
+            if (ButtonPanel() is RectTransform bp && bp.TryGetComponent<Image>(out var bpi)) bpi.enabled = false;
         }
+
+        // Vanilla craft_button_panel: parent of m_craftButton and m_craftProgressPanel.
+        private RectTransform ButtonPanel() => _gui.m_craftButton ? _gui.m_craftButton.transform.parent as RectTransform : null;
 
         private static bool IsVanillaBackground(Transform t) =>
             t.name == "Bkg" || t.name == "Darken" || t.name == "selected_frame" || t.name == "TitlePanel" ||
@@ -128,9 +143,121 @@ namespace RuneSkin.CraftingScreen
                 mark.Outcome = Restyler.Apply(_craftGlyph, mark, ThemeTokens.Role(mark.Role)) ? Outcome.Styled : Outcome.Degraded;
                 _craftGlyph.enabled = mark.Outcome == Outcome.Styled;
             }
+            BuildAmount();
+            BuildProgress();
             _tabArrows = new RowArrows(_crafting, Prefix + "Tab", () => _tabOffset--, () => _tabOffset++);
             _catArrows = new RowArrows(_crafting, Prefix + "Category", () => _catOffset--, () => _catOffset++);
             _subArrows = new RowArrows(_crafting, Prefix + "SubCategory", () => _subOffset--, () => _subOffset++);
+        }
+
+        // Amount stepper [-][N][+] left of the craft button (craft tab only). It drives vanilla's own multi-craft path:
+        // m_multiCraftAmount (InventoryGui.cs:97) + the touch arm m_touchMultiCrafting (read by UpdateRecipe :1498 for the
+        // label / requirement check and by OnCraftPressed :2059 for the craft), set in their prefixes (Arm). Vanilla has
+        // no amount control on desktop (the touch path is a long press, :2041-2047), so the stepper is ours; Shift
+        // (AltPlace) stays vanilla.
+        private void BuildAmount()
+        {
+            var panel = ButtonPanel();
+            if (!panel) return;
+            _minus = StepButton(panel, Prefix + "AmountMinus", "–", () => SetAmount(_amount - 1));
+            _plus = StepButton(panel, Prefix + "AmountPlus", "+", () => SetAmount(_amount + 1));
+            var field = new GameObject(Prefix + "AmountField", typeof(RectTransform)).AddComponent<Image>();
+            field.rectTransform.SetParent(panel, false);
+            var mark = DollCell.Mark(field, "craft.amount.field", "craft amount field (recessed well)");
+            mark.Outcome = Restyler.Apply(field, mark, ThemeTokens.Role(mark.Role)) ? Outcome.Styled : Outcome.Degraded;
+            var area = new GameObject("Text Area", typeof(RectTransform), typeof(RectMask2D)).GetComponent<RectTransform>();
+            area.SetParent(field.rectTransform, false);
+            Stretch(area);
+            var text = NewText("Text", area, "1");
+            _amountField = field.gameObject.AddComponent<TMP_InputField>();
+            _amountField.textViewport = area;
+            _amountField.textComponent = text;
+            _amountField.targetGraphic = field;
+            _amountField.transition = Selectable.Transition.None;
+            _amountField.navigation = new Navigation { mode = Navigation.Mode.None };
+            _amountField.contentType = TMP_InputField.ContentType.IntegerNumber;
+            _amountField.characterLimit = 3;
+            _amountField.SetTextWithoutNotify("1");
+            _amountField.onEndEdit.AddListener(s => SetAmount(CraftingMath.ParseAmount(s, _amount, MaxAmount())));
+            _amountText = text;
+            _vanillaMulti = _gui.m_multiCraftAmount;
+            ShowAmount(false);
+        }
+
+        private Button StepButton(RectTransform parent, string name, string glyph, Action click)
+        {
+            var image = new GameObject(name, typeof(RectTransform)).AddComponent<Image>();
+            image.rectTransform.SetParent(parent, false);
+            var button = image.gameObject.AddComponent<Button>();
+            button.targetGraphic = image;
+            button.navigation = new Navigation { mode = Navigation.Mode.None };
+            // Styled after the Button exists: the role's sprite states go on its targetGraphic.
+            var mark = DollCell.Mark(image, "craft.amount.step", "craft amount step button (square glyph plate)");
+            mark.Outcome = Restyler.Apply(image, mark, ThemeTokens.Role(mark.Role)) ? Outcome.Styled : Outcome.Degraded;
+            button.onClick.AddListener(() => click());
+            var label = NewText("Text", image.rectTransform, glyph);
+            Stretch(label.rectTransform);
+            label.color = ThemeTokens.GetColor("color.text.item.title", label.color);
+            return button;
+        }
+
+        private TMP_Text NewText(string name, RectTransform parent, string value)
+        {
+            var t = new GameObject(name, typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
+            t.rectTransform.SetParent(parent, false);
+            Stretch(t.rectTransform);
+            var src = CraftLabel();
+            if (src)
+            {
+                t.font = src.font;
+                t.fontSharedMaterial = src.fontSharedMaterial;
+                t.fontStyle = src.fontStyle;
+            }
+            t.alignment = TextAlignmentOptions.Center;
+            t.textWrappingMode = TextWrappingModes.NoWrap;
+            t.raycastTarget = false;
+            t.color = ThemeTokens.GetColor("color.text.body", Color.white);
+            t.text = value;
+            return t;
+        }
+
+        private static void Stretch(RectTransform rt)
+        {
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
+        }
+
+        private TMP_Text CraftLabel() => _gui.m_craftButton ? _gui.m_craftButton.GetComponentInChildren<TMP_Text>(true) : null;
+
+        // Progress state: vanilla progressbar (GuiBar m_craftProgressBar: bkg trough + bar fill) restyled to the HUD bar
+        // art (bar_trough / bar_fill, roles craft.progress.*) inside the action-bar frame (bar_frame_action, own image).
+        private void BuildProgress()
+        {
+            var panel = _gui.m_craftProgressPanel;
+            var bar = _gui.m_craftProgressBar;
+            if (!panel || !bar) return;
+            _progressFrame = new GameObject(Prefix + "ProgressFrame", typeof(RectTransform)).AddComponent<Image>();
+            _progressFrame.rectTransform.SetParent(panel, false);
+            _progressFrame.rectTransform.SetSiblingIndex(bar.transform.GetSiblingIndex() + 1);
+            _progressFrame.raycastTarget = false;
+            var mark = DollCell.Mark(_progressFrame, "craft.progress.frame", "craft progress frame (bar_frame_action)");
+            mark.Outcome = Restyler.Apply(_progressFrame, mark, ThemeTokens.Role(mark.Role)) ? Outcome.Styled : Outcome.Degraded;
+            _progressFrame.enabled = mark.Outcome == Outcome.Styled;
+            // Crisp leading edge on the fill (bar_edge, the HUD bars' fill-end rim): a child anchored on the fill's right
+            // edge, so it rides GuiBar's width changes without per-frame code.
+            if (!bar.m_bar) return;
+            _progressEdge = new GameObject(Prefix + "ProgressEdge", typeof(RectTransform)).AddComponent<Image>();
+            var rt = _progressEdge.rectTransform;
+            rt.SetParent(bar.m_bar, false);
+            rt.anchorMin = new Vector2(1f, 0f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(1f, 0.5f);
+            rt.anchoredPosition = Vector2.zero;
+            _progressEdge.raycastTarget = false;
+            var em = DollCell.Mark(_progressEdge, "craft.progress.edge", "craft progress fill edge (bar_edge)");
+            em.Outcome = Restyler.Apply(_progressEdge, em, ThemeTokens.Role(em.Role)) ? Outcome.Styled : Outcome.Degraded;
+            _progressEdge.enabled = em.Outcome == Outcome.Styled;
         }
 
         private Image OwnImage(string name, string role, string reason, int sibling)
@@ -237,12 +364,13 @@ namespace RuneSkin.CraftingScreen
                 else if (image.GetComponent<ScrollRect>()) ctx.Role(image, "skip", "recipe scroll view hit area (drawn clear, list well behind)");
                 else if (_gui.m_craftingStationLevelRoot && t == _gui.m_craftingStationLevelRoot) ctx.Role(image, "craft.badge", "station level badge (InventoryGui.m_craftingStationLevelRoot)");
                 else if (_gui.m_craftingStationIcon && image == _gui.m_craftingStationIcon) ctx.Role(image, "content", "station icon (CraftingStation.m_icon)");
-                // Vanilla m_craftCancelButton (craft_button_panel/Progress/CraftCancelButton) is a sprite-less alpha-0
-                // ColorTint hit area stretched over the progress bar: UpdateRecipe (InventoryGui.cs:1611-1625) hides
-                // m_craftButton and shows m_craftProgressPanel while m_craftTimer >= 0, the click cancels
-                // (OnCraftCancelPressed, :2008). Plating it as a button covered the bar and its "crafting" text.
-                // Its cue is its own label (ProgressCue), which also becomes the ColorTint target.
-                else if (_gui.m_craftCancelButton && t == _gui.m_craftCancelButton.transform) ctx.Role(image, "skip", "craft cancel hit area over the progress bar (vanilla, transparent; a button sprite would hide the bar)");
+                // Vanilla m_craftCancelButton (craft_button_panel/Progress/CraftCancelButton, a sprite-less alpha-0 hit area
+                // stretched over the bar in the prefab): moved beside the bar (ProgressCue) and plated as the craft button,
+                // so its own onClick -> OnCraftCancelPressed (:2008, wired in Awake :406) stays the only cancel logic.
+                else if (_gui.m_craftCancelButton && t == _gui.m_craftCancelButton.transform) ctx.Role(image, "craft.button", "craft cancel button (vanilla m_craftCancelButton beside the bar, craft button plate)");
+                else if (ButtonPanel() && t == ButtonPanel()) ctx.Role(image, "skip", "craft_button_panel black plate (hidden: the black box behind the bar)");
+                else if (_gui.m_craftProgressBar && t.parent == _gui.m_craftProgressBar.transform && t.name == "bkg") ctx.Role(image, "craft.progress.trough", "craft progress trough (HUD bar_trough)");
+                else if (_gui.m_craftProgressBar && _gui.m_craftProgressBar.m_bar && t == _gui.m_craftProgressBar.m_bar) ctx.Role(image, "craft.progress.fill", "craft progress fill (HUD bar_fill, teal)");
                 else if (_gui.m_craftButton && image == _gui.m_craftButton.targetGraphic) ctx.Role(image, "craft.button", "craft / upgrade button (button_craft_*, falls back to button_*)");
                 else if (t.name == DescView && t.parent && t.parent.name == "Decription") ctx.Role(image, "skip", "description scroll view hit area (RuneSkin, clear)");
                 else if (_gui.m_repairButton && image == _gui.m_repairButton.targetGraphic) ctx.Role(image, "craft.repair", "repair button (round)");
@@ -276,11 +404,16 @@ namespace RuneSkin.CraftingScreen
                 else if (_gui.m_craftingStationLevel && text == _gui.m_craftingStationLevel) ctx.Role(text, "craft.level", "station level digit on the star badge (text_active)");
                 else if (IsTab(t, out _)) ctx.Role(text, "craft.tab.label", "tab label");
                 else if (Row(t, out _)) ctx.Role(text, "text.body", "recipe row name / quality (body sans, mockup-1)");
-                else if (CancelLabel() == text) ctx.Role(text, "text.body", "craft cancel cue: the cancel button's own label, set to $menu_cancel (ProgressCue)");
+                else if (CancelLabel() == text) ctx.Role(text, "skip", "craft cancel label: the craft label's face (ProgressCue)");
                 else if (_gui.m_craftCancelButton && t.IsChildOf(_gui.m_craftCancelButton.transform)) ctx.Role(text, "skip", "craft cancel gamepad hint (vanilla, kept as is)");
+                else if (_gui.m_craftProgressPanel && t.parent == _gui.m_craftProgressPanel) ctx.Role(text, "skip", "craft progress state text: craft label face + outline (ProgressCue)");
+                else if (IsAmountPart(t)) ctx.Role(text, "skip", "craft amount stepper text: craft label face (BuildAmount)");
             }
             return ctx;
         }
+
+        private bool IsAmountPart(Transform t) =>
+            _minus && t.IsChildOf(_minus.transform) || _plus && t.IsChildOf(_plus.transform) || _amountField && t.IsChildOf(_amountField.transform);
 
         // t is (inside) a direct child of m_crafting that passes `test`.
         private bool IsUnder(Transform t, Func<Transform, bool> test)
@@ -537,6 +670,13 @@ namespace RuneSkin.CraftingScreen
             List(o);
             Detail(o);
             Buttons(o);
+            // VNEI's tab hides Crafting/RecipeList and Crafting/Decription while its browser is up (MainVneiHandler
+            // SetTabActive / SetTabInactive): the wells behind them follow, so neither well nor their column seam shows
+            // under VNEI's grid.
+            var recipeList = RecipeList();
+            var detailRoot = _crafting.Find("Decription");
+            WellShown(_listWell, !recipeList || recipeList.gameObject.activeSelf);
+            WellShown(_detailWell, !detailRoot || detailRoot.gameObject.activeSelf);
             var vnei = _crafting.Find(ModCompat.VneiPanel) as RectTransform;
             if (vnei && vnei.gameObject.activeSelf)
             {
@@ -545,6 +685,13 @@ namespace RuneSkin.CraftingScreen
                 Geo.Place(_canvas, vnei, area);
                 VneiFit(vnei, area);
             }
+        }
+
+        private static void WellShown(Image well, bool on)
+        {
+            if (!well) return;
+            var want = on && well.GetComponent<SkinMark>() is SkinMark m && m.Outcome == Outcome.Styled;
+            if (well.enabled != want) well.enabled = want;
         }
 
         // VNEI's item browser (VNEI.UI.BaseUI) sizes its grid in whole 50-unit cells: root = X*50+10 by Y*50+100
@@ -1227,17 +1374,21 @@ namespace RuneSkin.CraftingScreen
             var panel = _gui.m_craftButton ? _gui.m_craftButton.transform.parent as RectTransform : null;
             if (panel && panel != _crafting)
             {
+                var progress = _gui.m_craftProgressPanel && _gui.m_craftProgressPanel.gameObject.activeSelf;
+                var stepper = !progress && AmountShown();
+                var row = CraftingMath.ActionRow(o.Craft, stepper, o.Craft.H * 0.125f);
                 Geo.Place(_canvas, panel, o.Craft);
-                Geo.Place(_canvas, (RectTransform)_gui.m_craftButton.transform, o.Craft);
+                Geo.Place(_canvas, (RectTransform)_gui.m_craftButton.transform, row.Button);
                 if (_gui.m_craftProgressPanel) Geo.Place(_canvas, (RectTransform)_gui.m_craftProgressPanel, o.Craft);
-                var label = _gui.m_craftButton.GetComponentInChildren<TMP_Text>(true);
+                var label = CraftLabel();
                 if (label)
                 {
-                    Geo.Place(_canvas, label.rectTransform, o.Craft);
+                    Geo.Place(_canvas, label.rectTransform, row.Button);
                     Label(label, TextAlignmentOptions.Center, o.Craft.H * 0.42f, 14f, upper: true);
-                    CraftGlyph(label, o.Craft);
+                    CraftGlyph(label, row.Button);
                 }
-                ProgressCue(o.Craft);
+                Amount(row, stepper);
+                ProgressCue(row);
             }
             var repair = _gui.m_repairButton;
             if (repair && repair.gameObject.activeSelf) Geo.SetScale(repair.transform, o.Repair.IsEmpty ? 0f : 1f);
@@ -1270,52 +1421,216 @@ namespace RuneSkin.CraftingScreen
             return t ? t.GetComponent<TMP_Text>() : null;
         }
 
-        // Craft progress state. UpdateRecipe (InventoryGui.cs:1611-1625) swaps m_craftButton for m_craftProgressPanel while
-        // m_craftTimer >= 0 (bar = m_craftProgressBar); the alpha-0 m_craftCancelButton hit area stays stretched over the bar.
-        // State: the panel's own text (its vanilla token from Localization.textMeshStrings, Localization.cs:303-311) + " x N"
-        // while m_multiCrafting, the craft button's pattern (:1572-1575). DoCrafting makes all m_multiCraftAmount at once
-        // (:1787 / :1897), so N is the batch size; vanilla tracks no i/N. Cancel cue: the cancel button's own label = $menu_cancel
-        // at the bar's right end, ColorTint target (accent on hover / gamepad select), nothing drawn over the bar's centre.
-        private void ProgressCue(Box b)
+        // Craft progress state (approved mockup craft-progress.png, right). UpdateRecipe (InventoryGui.cs:1611-1625) swaps
+        // m_craftButton for m_craftProgressPanel while m_craftTimer >= 0. Bar = the vanilla GuiBar m_craftProgressBar in the
+        // HUD bar art (bkg -> bar_trough, bar -> teal bar_fill) inside the action-bar frame, its width given back to GuiBar
+        // through its own SetWidth (GuiBar.cs, m_width cached in Awake). State text centred on the bar: the panel's own text
+        // (vanilla token from Localization.textMeshStrings, Localization.cs:303-311) + " x N" while m_multiCrafting (the
+        // craft button's pattern, :1572-1575; DoCrafting makes all m_multiCraftAmount at once, :1787 / :1897), bold body face
+        // with the theme outline. Cancel: the vanilla m_craftCancelButton itself, moved beside the bar and plated like the
+        // craft button (role craft.button); its onClick stays vanilla's OnCraftCancelPressed (:2008).
+        private int _stateRevision = -1;
+
+        private void ProgressCue(CraftRow r)
         {
             var panel = _gui.m_craftProgressPanel;
             if (!panel || !panel.gameObject.activeInHierarchy) return;
-            var pad = b.H * 0.2f;
-            var cancel = _gui.m_craftCancelButton;
-            var cancelLabel = CancelLabel();
-            var cw = cancelLabel ? Mathf.Min(b.W * 0.3f, b.H * 2.2f) : 0f;
+            var frameBox = r.Bar;
+            var share = Mathf.Clamp(ThemeTokens.GetFloat("share.craft.progress.bar", 0.95f), 0.3f, 1f);
+            frameBox = new Box(frameBox.X, frameBox.Y + frameBox.H * (1f - share) / 2f, frameBox.W, frameBox.H * share);
+            var trough = frameBox;
+            if (_progressFrame && _progressFrame.enabled)
+            {
+                Geo.Place(_canvas, _progressFrame.rectTransform, frameBox);
+                trough = FrameInset(frameBox);
+            }
+            var bar = _gui.m_craftProgressBar;
+            if (bar)
+            {
+                var root = (RectTransform)bar.transform;
+                Geo.Place(_canvas, root, trough);
+                var bkg = root.Find("bkg") as RectTransform;
+                if (bkg) Geo.Place(_canvas, bkg, trough);
+                if (bar.m_bar && (Mathf.Abs(trough.X - _troughBox.X) > 0.05f || Mathf.Abs(trough.W - _troughBox.W) > 0.05f ||
+                                  Mathf.Abs(trough.Y - _troughBox.Y) > 0.05f || Mathf.Abs(trough.H - _troughBox.H) > 0.05f))
+                {
+                    _troughBox = trough;
+                    var fill = bar.m_bar;
+                    fill.pivot = new Vector2(0f, 0.5f);
+                    // A defined strip inside the trough (approved mockup): inset share.craft.progress.fill.inset of its height.
+                    var fin = trough.H * Mathf.Clamp(ThemeTokens.GetFloat("share.craft.progress.fill.inset", 0.14f), 0f, 0.4f);
+                    var strip = new Box(trough.X + fin * 0.5f, trough.Y + fin, Mathf.Max(0f, trough.W - fin), Mathf.Max(0f, trough.H - 2f * fin));
+                    Geo.Place(_canvas, fill, strip);
+                    if (_progressEdge && _progressEdge.sprite)
+                    {
+                        var s = _progressEdge.sprite.rect;
+                        _progressEdge.rectTransform.sizeDelta = new Vector2(PlayerHud.HudMath.EdgeWidth(s.width, s.height, fill.rect.height), 0f);
+                    }
+                    bar.SetWidth(fill.sizeDelta.x); // GuiBar scales this width by the progress in its LateUpdate
+                    if (fill.TryGetComponent<Image>(out var fi)) bar.m_originalColor = fi.color;
+                }
+            }
             TMP_Text state = null;
-            foreach (Transform c in panel)
-                if (c.TryGetComponent<TMP_Text>(out var s)) { state = s; break; }
+            for (var n = 0; n < panel.childCount; n++)
+                if (panel.GetChild(n).TryGetComponent<TMP_Text>(out var s)) { state = s; break; }
             if (state)
             {
-                Geo.Place(_canvas, state.rectTransform, new Box(b.X + pad + cw, b.Y, Mathf.Max(0f, b.W - 2f * (pad + cw)), b.H));
-                Label(state, TextAlignmentOptions.Center, b.H * 0.38f, 12f, upper: true);
+                if (_stateRevision != ThemeTokens.Revision && WorldHud.TextLook.Apply(state, "font.body.bold", "craftstate"))
+                {
+                    _stateRevision = ThemeTokens.Revision;
+                    state.color = ThemeTokens.GetColor("color.text.body", state.color);
+                }
+                if (state.raycastTarget) state.raycastTarget = false;
+                Geo.Place(_canvas, state.rectTransform, new Box(trough.X + trough.H * 0.25f, frameBox.Y, Mathf.Max(0f, trough.W - trough.H * 0.5f), frameBox.H));
+                state.margin = Vector4.zero;
+                Label(state, TextAlignmentOptions.Center, r.Bar.H * 0.28f, 12f, upper: true);
+                var spacing = ThemeTokens.GetFloat("size.craft.progress.spacing", -2f);
+                if (!Mathf.Approximately(state.characterSpacing, spacing)) state.characterSpacing = spacing;
                 if (Localization.instance.textMeshStrings.TryGetValue(state, out var token))
                 {
                     var want = Localization.instance.Localize(token) + (_gui.m_multiCrafting ? " x " + _gui.m_multiCraftAmount : "");
                     if (state.text != want) state.text = want;
                 }
             }
+            var cancel = _gui.m_craftCancelButton;
+            if (!cancel) return;
+            Geo.Place(_canvas, (RectTransform)cancel.transform, r.Cancel);
+            var cancelLabel = CancelLabel();
             if (!cancelLabel) return;
             if (!cancelLabel.gameObject.activeSelf) cancelLabel.gameObject.SetActive(true);
             if (!cancelLabel.enabled) cancelLabel.enabled = true;
             var cancelText = Localization.instance.Localize("$menu_cancel");
             if (cancelLabel.text != cancelText) cancelLabel.text = cancelText;
             if (cancelLabel.raycastTarget) cancelLabel.raycastTarget = false;
-            Geo.Place(_canvas, cancelLabel.rectTransform, new Box(b.Right - pad - cw, b.Y, cw, b.H));
-            Label(cancelLabel, TextAlignmentOptions.Right, b.H * 0.3f, 11f, upper: true);
-            if (cancel.targetGraphic != cancelLabel)
+            SameFace(cancelLabel);
+            var body = ThemeTokens.GetColor("color.text.body", cancelLabel.color);
+            if (cancelLabel.color != body) cancelLabel.color = body;
+            Geo.Place(_canvas, cancelLabel.rectTransform, r.Cancel);
+            cancelLabel.margin = Vector4.zero;
+            Label(cancelLabel, TextAlignmentOptions.Center, r.Cancel.H * 0.3f, 11f, upper: true);
+        }
+
+        // Trough box inside the frame: vertical inset share.craft.progress.inset of the frame height, horizontal by the
+        // frame sprite's own border ratio (its knot ends are wider); the frame's pixelsPerUnitMultiplier is set so its
+        // sliced border draws exactly that inset.
+        private Box FrameInset(Box frame)
+        {
+            var insetY = frame.H * Mathf.Clamp(ThemeTokens.GetFloat("share.craft.progress.inset", 0.08f), 0.05f, 0.45f);
+            var sprite = _progressFrame.sprite;
+            var border = sprite ? sprite.border : Vector4.zero;
+            var by = Mathf.Max(border.y, border.w);
+            var insetX = by > 0f ? insetY * Mathf.Max(border.x, border.z) / by : insetY;
+            insetX = Mathf.Min(insetX, frame.W * 0.25f);
+            var localH = _progressFrame.rectTransform.rect.height;
+            if (sprite && by > 0f && localH > 0f && frame.H > 0f && _rootCanvas)
             {
-                var accent = ThemeTokens.GetColor("color.text.accent", Color.cyan);
-                var colors = ColorBlock.defaultColorBlock;
-                colors.normalColor = new Color(1f, 1f, 1f, 0.85f);
-                colors.highlightedColor = accent;
-                colors.selectedColor = accent;
-                colors.pressedColor = accent * 0.8f;
-                cancel.targetGraphic = cancelLabel;
-                cancel.transition = Selectable.Transition.ColorTint;
-                cancel.colors = colors;
+                var insetLocal = localH * insetY / frame.H;
+                var mult = by * _rootCanvas.referencePixelsPerUnit / (sprite.pixelsPerUnit * insetLocal);
+                if (Mathf.Abs(_progressFrame.pixelsPerUnitMultiplier - mult) > 0.001f) _progressFrame.pixelsPerUnitMultiplier = mult;
+            }
+            return CraftingMath.Inset(frame, insetX, insetY);
+        }
+
+        // The craft button label's face (font asset + material + style) on another label: one face for every craft-row text.
+        private void SameFace(TMP_Text t)
+        {
+            var src = CraftLabel();
+            if (!src || !t) return;
+            if (t.font != src.font) t.font = src.font;
+            if (t.fontSharedMaterial != src.fontSharedMaterial) t.fontSharedMaterial = src.fontSharedMaterial;
+            if (t.fontStyle != src.fontStyle) t.fontStyle = src.fontStyle;
+        }
+
+        // ---------------------------------------------------------------- craft amount
+
+        private bool AmountShown() =>
+            _minus && _gui.m_selectedRecipe.Recipe && _gui.m_selectedRecipe.ItemData == null && _gui.InCraftTab();
+
+        private void ShowAmount(bool on)
+        {
+            foreach (var go in new[] { _minus ? _minus.gameObject : null, _plus ? _plus.gameObject : null, _amountField ? _amountField.gameObject : null })
+                if (go && go.activeSelf != on) go.SetActive(on);
+        }
+
+        private void Amount(CraftRow r, bool shown)
+        {
+            if (!_minus || !_plus || !_amountField) return;
+            ShowAmount(shown);
+            if (!shown) return;
+            var max = MaxAmount();
+            _amount = CraftingMath.ClampAmount(_amount, max);
+            Geo.Place(_canvas, (RectTransform)_minus.transform, r.Minus);
+            Geo.Place(_canvas, (RectTransform)_plus.transform, r.Plus);
+            Geo.Place(_canvas, (RectTransform)_amountField.transform, r.Field);
+            if (_minus.interactable != _amount > 1) _minus.interactable = _amount > 1;
+            if (_plus.interactable != _amount < max) _plus.interactable = _amount < max;
+            foreach (var b in new[] { _minus, _plus })
+            {
+                var g = b.GetComponentInChildren<TMP_Text>(true);
+                if (!g) continue;
+                SameFace(g);
+                var gold = ThemeTokens.GetColor("color.text.item.title", g.color);
+                var want = b.interactable ? gold : new Color(gold.r, gold.g, gold.b, 0.35f);
+                if (g.color != want) g.color = want;
+                Label(g, TextAlignmentOptions.Center, r.Minus.H * 0.4f, 10f);
+            }
+            if (_amountText)
+            {
+                SameFace(_amountText);
+                Label(_amountText, TextAlignmentOptions.Center, r.Button.H * 0.3f, 10f);
+            }
+            if (!_amountField.isFocused)
+            {
+                var s = _amount.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                if (_amountField.text != s) _amountField.SetTextWithoutNotify(s);
+            }
+        }
+
+        private void SetAmount(int n)
+        {
+            _amount = CraftingMath.ClampAmount(n, MaxAmount());
+            if (_amountField) _amountField.SetTextWithoutNotify(_amount.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            Arm();
+        }
+
+        // Most the player can craft of the selected recipe now: requirements (Player.HaveRequirements with the batch
+        // multiplier, InventoryGui.cs:1556; ValheimPlus CraftFromChest patches it to count chests) and room for the
+        // result (OnCraftPressed :2062-2064: Recipe.GetAmount + Inventory.CanAddItem), at most size.craft.amount.max.
+        // Free crafting (NoCostCheat / NoCraftCost, :1559) skips the requirement half.
+        public int MaxAmount()
+        {
+            var recipe = _gui.m_selectedRecipe.Recipe;
+            var player = Player.m_localPlayer;
+            if (!recipe || !player) return 1;
+            if (recipe == _maxRecipe && Time.unscaledTime < _maxAt) return _max;
+            _maxRecipe = recipe;
+            _maxAt = Time.unscaledTime + 0.25f;
+            var cap = Mathf.Max(1, Mathf.RoundToInt(ThemeTokens.GetFloat("size.craft.amount.max", 99f)));
+            var free = player.NoCostCheat() || ZoneSystem.instance && ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoCraftCost);
+            var inv = player.GetInventory();
+            var prefab = recipe.m_item ? recipe.m_item.gameObject : null;
+            _max = CraftingMath.LargestOk(cap, n =>
+                (free || player.HaveRequirements(recipe, false, 1, n)) &&
+                (!prefab || inv == null || inv.CanAddItem(prefab, recipe.GetAmount(1, out _, out _, n))));
+            return _max;
+        }
+
+        // UpdateRecipe / OnCraftPressed prefix: a stepper amount > 1 arms vanilla's own multi-craft (m_multiCraftAmount +
+        // m_touchMultiCrafting, the touch long-press arm, :2045), so the label, the requirement check and the craft all take
+        // N through vanilla code. Amount 1 / upgrade / other tabs: vanilla's own m_multiCraftAmount back (Shift = vanilla).
+        public void Arm()
+        {
+            if (_amount > 1 && AmountShown())
+            {
+                if (_gui.m_multiCraftAmount != _amount) _gui.m_multiCraftAmount = _amount;
+                _gui.m_touchMultiCrafting = true;
+                _amountOwned = true;
+            }
+            else if (_amountOwned)
+            {
+                _amountOwned = false;
+                if (_vanillaMulti > 0) _gui.m_multiCraftAmount = _vanillaMulti;
+                _gui.m_touchMultiCrafting = false;
             }
         }
 
@@ -1332,7 +1647,7 @@ namespace RuneSkin.CraftingScreen
                 _craftGlyph.enabled = mark.Outcome == Outcome.Styled;
             }
             if (!_craftGlyph.enabled) return;
-            var g = b.H * 0.5f;
+            var g = b.H * 0.6f;
             var textW = Mathf.Min(b.W * 0.7f, label.preferredWidth);
             var x = b.X + (b.W - textW) / 2f - g - b.H * 0.15f;
             Geo.Place(_canvas, _craftGlyph.rectTransform, new Box(Mathf.Max(b.X + b.H * 0.3f, x), b.Y + (b.H - g) / 2f, g, g));

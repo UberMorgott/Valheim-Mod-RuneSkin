@@ -48,6 +48,8 @@ func main() {
 		cmdCompareM3()
 	case "compare-m3s":
 		cmdCompareM3S()
+	case "compare-craft-progress":
+		cmdCompareCraftProgress(os.Args[2:])
 	case "compare-m4":
 		cmdCompareM4()
 	case "compare-m5":

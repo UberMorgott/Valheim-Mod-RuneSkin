@@ -51,6 +51,24 @@ namespace RuneSkin.CraftingScreen
             catch (System.Exception e) { Fault(e); }
         }
 
+        // Craft amount stepper: arms vanilla's multi-craft (m_multiCraftAmount + m_touchMultiCrafting) right before the two
+        // vanilla readers, UpdateRecipe (InventoryGui.cs:1498, label :1572-1575, requirements :1556) and OnCraftPressed (:2059).
+        [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.UpdateRecipe))]
+        [HarmonyPrefix]
+        private static void UpdateRecipe_Prefix() => Arm();
+
+        [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnCraftPressed))]
+        [HarmonyPrefix]
+        private static void OnCraftPressed_Prefix() => Arm();
+
+        private static void Arm()
+        {
+            var skin = CraftingSkin.Instance;
+            if (!skin) return;
+            try { skin.Arm(); }
+            catch (System.Exception e) { Fault(e); }
+        }
+
         private static int _faults;
 
         private static void Fault(System.Exception e)
