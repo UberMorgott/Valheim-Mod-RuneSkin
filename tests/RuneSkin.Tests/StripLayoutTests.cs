@@ -257,7 +257,7 @@ namespace RuneSkin.Tests
             void Is(string token, float w)
             {
                 var asset = Sprites["sprite.hud.panel." + token];
-                Assert.Equal(w * 2f, size[asset].Item1, 1);
+                Assert.Equal((w + 2f * P("lap")) * 2f, size[asset].Item1, 1); // + the overlap into both neighbours
                 Assert.Equal(P("h") * 2f, size[asset].Item2, 1);
             }
             Is("block.l", P("block.l.w"));

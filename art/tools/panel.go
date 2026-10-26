@@ -23,6 +23,7 @@ const (
 	panelSheetY0 = 22 // slices start at sheet row 22 (2x)
 	panelBlockL  = 774
 	panelBlockR  = 2388
+	panelLap     = 2 // sheet px each slice reaches into its neighbours
 )
 
 func panelSegArt(k, n, arts int) int {
@@ -46,8 +47,8 @@ func panelCompose(f, p int, sprites string, row2x, mask *image.NRGBA) (*image.NR
 	ovl := image.NewNRGBA(image.Rect(0, 0, W, H))
 	put := func(name string, x int) int {
 		s := loadPNG(filepath.Join(sprites, name+".png"))
-		over(out, s, image.Pt(x, panelSheetY0))
-		return s.Bounds().Dx()
+		over(out, s, image.Pt(x-panelLap, panelSheetY0)) // slices overlap their neighbours (size.hud.panel.lap)
+		return s.Bounds().Dx() - 2*panelLap
 	}
 	// centre: one ability slice (the F cell)
 	x := panelBlockL
@@ -101,7 +102,7 @@ func panelCompose(f, p int, sprites string, row2x, mask *image.NRGBA) (*image.NR
 }
 
 func put0(sprites, name string) int {
-	return loadPNG(filepath.Join(sprites, name+".png")).Bounds().Dx()
+	return loadPNG(filepath.Join(sprites, name+".png")).Bounds().Dx() - 2*panelLap
 }
 
 // panelRowY finds the mockup row crop top whose hotbar block matches row 3's best (rows share x, mockup prompt).
@@ -163,6 +164,7 @@ func cmdComparePanel(args []string) {
 		over(sbs, ref, image.Point{})
 		over(sbs, withBg, image.Pt(0, H1+6))
 		savePNG(filepath.Join(outDir, fmt.Sprintf("sbs-f%dp%d.png", c.f, c.p)), sbs)
+		savePNG(filepath.Join(outDir, fmt.Sprintf("frame2x-f%dp%d.png", c.f, c.p)), frame)
 		// diff over our opaque frame pixels (overlay cells excluded)
 		diff := image.NewNRGBA(image.Rect(0, 0, W1, H1))
 		var sum float64

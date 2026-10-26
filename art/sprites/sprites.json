@@ -8881,7 +8881,7 @@
       "name": "panel_food_end",
       "file": "panel_food_end.png",
       "size": [
-        212,
+        216,
         324
       ],
       "border": {
@@ -8897,14 +8897,14 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.panel.food.end",
-      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 24..236 - left wing end: round triquetra medallion + its strap; placed edge to edge by StripMath (size.hud.panel.*)",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice (+2 sheet px overlap each side, size.hud.panel.lap) x 24..236 - left wing end: round triquetra medallion + its strap; placed edge to edge by StripMath (size.hud.panel.*)",
       "atlas": "strip"
     },
     {
       "name": "panel_food_seg2",
       "file": "panel_food_seg2.png",
       "size": [
-        165,
+        169,
         324
       ],
       "border": {
@@ -8920,14 +8920,14 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.panel.food.seg2",
-      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 236..401 - left wing segment, outermost food socket of the row (meets the end medallion); placed edge to edge by StripMath (size.hud.panel.*)",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice (+2 sheet px overlap each side, size.hud.panel.lap) x 236..401 - left wing segment, outermost food socket of the row (meets the end medallion); placed edge to edge by StripMath (size.hud.panel.*)",
       "atlas": "strip"
     },
     {
       "name": "panel_food_seg1",
       "file": "panel_food_seg1.png",
       "size": [
-        165,
+        169,
         324
       ],
       "border": {
@@ -8943,14 +8943,14 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.panel.food.seg1",
-      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 401..566 - left wing segment, middle food socket; placed edge to edge by StripMath (size.hud.panel.*)",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice (+2 sheet px overlap each side, size.hud.panel.lap) x 401..566 - left wing segment, middle food socket; placed edge to edge by StripMath (size.hud.panel.*)",
       "atlas": "strip"
     },
     {
       "name": "panel_food_seg0",
       "file": "panel_food_seg0.png",
       "size": [
-        165,
+        169,
         324
       ],
       "border": {
@@ -8966,14 +8966,14 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.panel.food.seg0",
-      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 566..731 - left wing segment, innermost food socket; placed edge to edge by StripMath (size.hud.panel.*)",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice (+2 sheet px overlap each side, size.hud.panel.lap) x 566..731 - left wing segment, innermost food socket; placed edge to edge by StripMath (size.hud.panel.*)",
       "atlas": "strip"
     },
     {
       "name": "panel_food_in",
       "file": "panel_food_in.png",
       "size": [
-        43,
+        47,
         324
       ],
       "border": {
@@ -8989,14 +8989,14 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.panel.food.in",
-      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 731..774 - left wing inner cap: strap + nub against the bar block diamond; placed edge to edge by StripMath (size.hud.panel.*)",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice (+2 sheet px overlap each side, size.hud.panel.lap) x 731..774 - left wing inner cap: strap + nub against the bar block diamond; placed edge to edge by StripMath (size.hud.panel.*)",
       "atlas": "strip"
     },
     {
       "name": "panel_block_l",
       "file": "panel_block_l.png",
       "size": [
-        94,
+        98,
         324
       ],
       "border": {
@@ -9012,14 +9012,14 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.panel.block.l",
-      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 774..868 - centre left end: inner diamond, bar block end, hotbar block left crest; placed edge to edge by StripMath (size.hud.panel.*)",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice (+2 sheet px overlap each side, size.hud.panel.lap) x 774..868 - centre left end: inner diamond, bar block end, hotbar block left crest; placed edge to edge by StripMath (size.hud.panel.*)",
       "atlas": "strip"
     },
     {
       "name": "panel_hotbar",
       "file": "panel_hotbar.png",
       "size": [
-        1246,
+        1250,
         324
       ],
       "border": {
@@ -9035,14 +9035,14 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.panel.hotbar",
-      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 868..2114 - centre: the 8 hotbar wells over the HP / resource troughs; placed edge to edge by StripMath (size.hud.panel.*)",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice (+2 sheet px overlap each side, size.hud.panel.lap) x 868..2114 - centre: the 8 hotbar wells over the HP / resource troughs; placed edge to edge by StripMath (size.hud.panel.*)",
       "atlas": "strip"
     },
     {
       "name": "panel_ability",
       "file": "panel_ability.png",
       "size": [
-        170,
+        174,
         324
       ],
       "border": {
@@ -9058,14 +9058,14 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.panel.ability",
-      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 2114..2284 - centre: one ability well (F) over the troughs, one slice per ability cell; placed edge to edge by StripMath (size.hud.panel.*)",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice (+2 sheet px overlap each side, size.hud.panel.lap) x 2114..2284 - centre: one ability well (F) over the troughs, one slice per ability cell; placed edge to edge by StripMath (size.hud.panel.*)",
       "atlas": "strip"
     },
     {
       "name": "panel_block_r",
       "file": "panel_block_r.png",
       "size": [
-        104,
+        108,
         324
       ],
       "border": {
@@ -9081,14 +9081,14 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.panel.block.r",
-      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 2284..2388 - centre right end: hotbar block right crest, bar block end, inner diamond; placed edge to edge by StripMath (size.hud.panel.*)",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice (+2 sheet px overlap each side, size.hud.panel.lap) x 2284..2388 - centre right end: hotbar block right crest, bar block end, inner diamond; placed edge to edge by StripMath (size.hud.panel.*)",
       "atlas": "strip"
     },
     {
       "name": "panel_potion_in",
       "file": "panel_potion_in.png",
       "size": [
-        59,
+        63,
         324
       ],
       "border": {
@@ -9104,14 +9104,14 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.panel.potion.in",
-      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 2388..2447 - right wing inner cap: nub + strap against the bar block diamond; placed edge to edge by StripMath (size.hud.panel.*)",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice (+2 sheet px overlap each side, size.hud.panel.lap) x 2388..2447 - right wing inner cap: nub + strap against the bar block diamond; placed edge to edge by StripMath (size.hud.panel.*)",
       "atlas": "strip"
     },
     {
       "name": "panel_potion_seg0",
       "file": "panel_potion_seg0.png",
       "size": [
-        127,
+        131,
         324
       ],
       "border": {
@@ -9127,14 +9127,14 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.panel.potion.seg0",
-      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 2447..2574 - right wing segment, innermost potion well; placed edge to edge by StripMath (size.hud.panel.*)",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice (+2 sheet px overlap each side, size.hud.panel.lap) x 2447..2574 - right wing segment, innermost potion well; placed edge to edge by StripMath (size.hud.panel.*)",
       "atlas": "strip"
     },
     {
       "name": "panel_potion_seg1",
       "file": "panel_potion_seg1.png",
       "size": [
-        127,
+        131,
         324
       ],
       "border": {
@@ -9150,14 +9150,14 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.panel.potion.seg1",
-      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 2574..2701 - right wing segment, 2nd potion well; placed edge to edge by StripMath (size.hud.panel.*)",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice (+2 sheet px overlap each side, size.hud.panel.lap) x 2574..2701 - right wing segment, 2nd potion well; placed edge to edge by StripMath (size.hud.panel.*)",
       "atlas": "strip"
     },
     {
       "name": "panel_potion_seg2",
       "file": "panel_potion_seg2.png",
       "size": [
-        127,
+        131,
         324
       ],
       "border": {
@@ -9173,14 +9173,14 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.panel.potion.seg2",
-      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 2701..2828 - right wing segment, 3rd potion well; placed edge to edge by StripMath (size.hud.panel.*)",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice (+2 sheet px overlap each side, size.hud.panel.lap) x 2701..2828 - right wing segment, 3rd potion well; placed edge to edge by StripMath (size.hud.panel.*)",
       "atlas": "strip"
     },
     {
       "name": "panel_potion_seg3",
       "file": "panel_potion_seg3.png",
       "size": [
-        127,
+        131,
         324
       ],
       "border": {
@@ -9196,14 +9196,14 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.panel.potion.seg3",
-      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 2828..2955 - right wing segment, outermost potion well (meets the end medallion strap); placed edge to edge by StripMath (size.hud.panel.*)",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice (+2 sheet px overlap each side, size.hud.panel.lap) x 2828..2955 - right wing segment, outermost potion well (meets the end medallion strap); placed edge to edge by StripMath (size.hud.panel.*)",
       "atlas": "strip"
     },
     {
       "name": "panel_potion_end",
       "file": "panel_potion_end.png",
       "size": [
-        181,
+        185,
         324
       ],
       "border": {
@@ -9219,7 +9219,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.panel.potion.end",
-      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 2955..3136 - right wing end: round triquetra medallion + its strap; placed edge to edge by StripMath (size.hud.panel.*)",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice (+2 sheet px overlap each side, size.hud.panel.lap) x 2955..3136 - right wing end: round triquetra medallion + its strap; placed edge to edge by StripMath (size.hud.panel.*)",
       "atlas": "strip"
     }
   ]

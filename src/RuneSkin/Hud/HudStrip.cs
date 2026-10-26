@@ -234,6 +234,7 @@ namespace RuneSkin.PlayerHud
         // Frame slices on their StripMath boxes; a wing without slots is not drawn at all.
         private void Frame(in StripMath.Layout l, in StripMath.Input i)
         {
+            _lap = P("lap", 0f) * l.Unit;
             Box(_centre, l.CenterX, 0f, l.CenterW, l.Height);
             Place(_blockL, Local(l.EndL, l.CenterX));
             Place(_hotbarArt, Local(l.Hotbar, l.CenterX));
@@ -282,7 +283,12 @@ namespace RuneSkin.PlayerHud
 
         private static StripMath.Box Local(in StripMath.Box b, float x0) => new StripMath.Box(b.X - x0, b.Y, b.W, b.H);
 
-        private static void Place(Image img, in StripMath.Box b) => Box(img.rectTransform, b.X, b.Y, b.W, b.H);
+        // Each slice carries size.hud.panel.lap art px of its neighbours on both sides (cuts.json panel_*): drawn that much
+        // wider, so the bilinear edge texel of one slice lies over the next one's opaque art (run 20261026-145708: 1 px
+        // background seams at every slice joint).
+        private float _lap;
+
+        private void Place(Image img, in StripMath.Box b) => Box(img.rectTransform, b.X - _lap, b.Y, b.W + 2f * _lap, b.H);
 
         private static void Show(Image img, bool on)
         {
