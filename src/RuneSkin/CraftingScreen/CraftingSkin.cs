@@ -237,6 +237,11 @@ namespace RuneSkin.CraftingScreen
                 else if (image.GetComponent<ScrollRect>()) ctx.Role(image, "skip", "recipe scroll view hit area (drawn clear, list well behind)");
                 else if (_gui.m_craftingStationLevelRoot && t == _gui.m_craftingStationLevelRoot) ctx.Role(image, "craft.badge", "station level badge (InventoryGui.m_craftingStationLevelRoot)");
                 else if (_gui.m_craftingStationIcon && image == _gui.m_craftingStationIcon) ctx.Role(image, "content", "station icon (CraftingStation.m_icon)");
+                // Vanilla m_craftCancelButton (craft_button_panel/Progress/CraftCancelButton) is a sprite-less alpha-0
+                // ColorTint hit area stretched over the progress bar: UpdateRecipe (InventoryGui.cs:1611-1625) hides
+                // m_craftButton and shows m_craftProgressPanel while m_craftTimer >= 0, the click cancels
+                // (OnCraftCancelPressed, :2008). Plating it as a button covered the bar and its "crafting" text.
+                else if (_gui.m_craftCancelButton && image == _gui.m_craftCancelButton.targetGraphic) ctx.Role(image, "skip", "craft cancel hit area over the progress bar (vanilla, transparent; a button sprite would hide the bar)");
                 else if (_gui.m_craftButton && image == _gui.m_craftButton.targetGraphic) ctx.Role(image, "craft.button", "craft / upgrade button (button_craft_*, falls back to button_*)");
                 else if (t.name == DescView && t.parent && t.parent.name == "Decription") ctx.Role(image, "skip", "description scroll view hit area (RuneSkin, clear)");
                 else if (_gui.m_repairButton && image == _gui.m_repairButton.targetGraphic) ctx.Role(image, "craft.repair", "repair button (round)");
@@ -270,6 +275,7 @@ namespace RuneSkin.CraftingScreen
                 else if (_gui.m_craftingStationLevel && text == _gui.m_craftingStationLevel) ctx.Role(text, "craft.level", "station level digit on the star badge (text_active)");
                 else if (IsTab(t, out _)) ctx.Role(text, "craft.tab.label", "tab label");
                 else if (Row(t, out _)) ctx.Role(text, "text.body", "recipe row name / quality (body sans, mockup-1)");
+                else if (_gui.m_craftCancelButton && t.IsChildOf(_gui.m_craftCancelButton.transform)) ctx.Role(text, "skip", "craft cancel hit area label / hint (vanilla, kept as is)");
             }
             return ctx;
         }
