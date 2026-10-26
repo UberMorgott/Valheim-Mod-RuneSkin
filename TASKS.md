@@ -27,7 +27,12 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 - [ ] Unity packer crash (open, 2026-10-26, 0.25.1 worktree): `Unity.exe -batchmode -quit [-nographics] -projectPath unity
   -executeMethod BuildBundles.Build` exits -1073741676, native crash in SpriteAtlas PackAtlasOnJob (BuildBundles.cs:237
   BuildAtlas), also with Library copied from D:\tmp\runeskin-unity-library-good (2 tries). 0.25.1 (art unchanged vs
-  v0.25.0, `git diff v0.25.0 --stat -- art unity` empty) shipped the 0.25.0 bundle AAA86A96.
+  v0.25.0, `git diff v0.25.0 --stat -- art unity` empty) staged the 0.25.0 bundle AAA86A96.
+- [ ] ui-runeskin-m3 FAILs in runs 20261026-221912 / -222320 (craft-anvil branch on v0.25.0), no m3 run on v0.25.0 itself:
+  overdraw-crafting 1920/2560 covered=9 (panel Backing of Inventory_Doll / Inventory / Crafting; 190758 / 184538 / 182632
+  had covered=1), names-1920x1080/2560x1440 'Кожаные обрывки' / 'Шкура оленя' 9.5 < 10 (cells 60 wide; 190758 PASS with
+  66-wide cells), m3-layout truncated recipe rows 'Метательный кремневый то...' / 'Стрела с кремневым нако…'. Likely from
+  0.25.0 windowed inventory / window headers (cf11dc3..5a0a76f); needs a v0.25.0 baseline m3 run to confirm.
 
 ## M0 completion (2026-10-21)
 
