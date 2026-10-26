@@ -905,11 +905,17 @@ namespace RuneSkin.InfoScreens
             }
             if (r.Sub)
             {
-                // An empty sub-line takes no space (its row has the one-line shape, Shape).
-                var sy = shape == Kind.TallSub ? b.Y + b.H * 0.56f : shape == Kind.PairSub ? b.Y + lineH - 6f : b.Bottom;
-                var sh = shape == Kind.TallSub ? b.H * 0.32f : shape == Kind.PairSub ? b.Bottom - sy : 0f;
-                Place(r.Sub.rectTransform, D(textX, sy, right - textX, sh));
-                Font(r.Sub, sub);
+                // An empty sub-line takes no space: its row has the one-line shape (Shape) and the sub-line object is off
+                // (a zero-height box is not placed, Geo.Place, so it kept its two-line rect; run 20261026-171058).
+                var shown = shape == Kind.PairSub || shape == Kind.TallSub;
+                if (r.Sub.gameObject.activeSelf != shown) r.Sub.gameObject.SetActive(shown);
+                if (shown)
+                {
+                    var sy = shape == Kind.TallSub ? b.Y + b.H * 0.56f : b.Y + lineH - 6f;
+                    var sh = shape == Kind.TallSub ? b.H * 0.32f : b.Bottom - sy;
+                    Place(r.Sub.rectTransform, D(textX, sy, right - textX, sh));
+                    Font(r.Sub, sub);
+                }
             }
         }
 
