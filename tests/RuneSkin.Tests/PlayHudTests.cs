@@ -1,3 +1,4 @@
+using System;
 using RuneSkin.WorldHud;
 using Xunit;
 
@@ -120,6 +121,106 @@ namespace RuneSkin.Tests
         [InlineData(3f, -60f)]
         [InlineData(float.NaN, 0f)]
         public void RudderAngleClamps(float value, float deg) => Assert.Equal(deg, PlayHudMath.RudderAngle(value, 60f), 3);
+
+        [Fact]
+        public void LadderTokensFollowLadderIndex()
+        {
+            Assert.Equal(PlayHudMath.LadderCells, PlayHudMath.LadderTokens.Length);
+            Assert.Equal("$radial_speed_fast", PlayHudMath.LadderTokens[PlayHudMath.LadderIndex(4)]);   // Full
+            Assert.Equal("$radial_speed_medium", PlayHudMath.LadderTokens[PlayHudMath.LadderIndex(3)]); // Half
+            Assert.Equal("$radial_speed_slow", PlayHudMath.LadderTokens[PlayHudMath.LadderIndex(2)]);   // Slow
+            Assert.Equal("$radial_speed_off", PlayHudMath.LadderTokens[PlayHudMath.LadderIndex(0)]);    // Stop
+            Assert.Equal("$settings_backward", PlayHudMath.LadderTokens[PlayHudMath.LadderIndex(1)]);   // Back
+        }
+
+        // Rudder side arrows: right (+1) lights for a positive rudder value, left (-1) for a negative one; dead zone 0.02.
+        [Theory]
+        [InlineData(0f, 1, 0.3f)]
+        [InlineData(0.01f, 1, 0.3f)]   // inside the dead zone
+        [InlineData(0.5f, -1, 0.3f)]   // the other side stays idle
+        [InlineData(-0.5f, 1, 0.3f)]
+        [InlineData(1f, 1, 1f)]
+        [InlineData(-1f, -1, 1f)]
+        [InlineData(5f, 1, 1f)]
+        [InlineData(float.NaN, 1, 0.3f)]
+        public void RudderSideAlphaFollowsTheTurnedSide(float value, int side, float alpha) =>
+            Assert.Equal(alpha, PlayHudMath.RudderSideAlpha(value, side, 0.3f, 0.6f), 3);
+
+        [Fact]
+        public void RudderSideLightsAtOnceAndGrows()
+        {
+            var justPast = PlayHudMath.RudderSideAlpha(0.03f, 1, 0.3f, 0.6f);
+            Assert.True(justPast >= 0.6f && justPast < 0.62f, $"{justPast}");
+            Assert.True(PlayHudMath.RudderSideAlpha(0.5f, 1, 0.3f, 0.6f) > justPast);
+            Assert.True(PlayHudMath.RudderSideAlpha(-0.5f, -1, 0.3f, 0.6f) > justPast);
+        }
+
+        [Fact]
+        public void ShipBlockFitsLadderAndRudderRow()
+        {
+            var (w, h) = PlayHudMath.ShipBlock(46f, 6f, 12f, 90f, 8f, 64f, 28f);
+            Assert.Equal(12f + 90f + 8f + 46f + 12f, w, 3);
+            Assert.Equal(PlayHudMath.LadderHeight(46f, 6f, 12f) + 6f + 64f, h, 3);
+            var (w2, _) = PlayHudMath.ShipBlock(46f, 6f, 12f, 0f, 8f, 120f, 40f);
+            Assert.Equal(120f + 2f * 46f, w2, 3); // rudder row wider than a label-less ladder
+        }
+
+        // The ship HUD never overlaps the RuneSkin minimap footprint (MinimapSkin.Layout: ring = min(320, 0.26 * safe
+        // height / scale) units at the HUD-box top-right corner minus the 24-unit margin, biome plaque 32 * box / 220
+        // units starting 0.02 box above the ring bottom, key tip line under it), stays above the strip and on screen at
+        // 16:9, 21:9, 32:9 and 16:10 (canvas scale = ResponsiveContext.GuiFactor).
+        [Theory]
+        [InlineData(1920, 1080)]
+        [InlineData(2560, 1440)]
+        [InlineData(1280, 720)]
+        [InlineData(3840, 2160)]
+        [InlineData(2560, 1080)]
+        [InlineData(3440, 1440)]
+        [InlineData(5120, 1440)]
+        [InlineData(1920, 1200)]
+        [InlineData(1680, 1050)]
+        [InlineData(2560, 1600)]
+        public void ShipHudClearsTheMinimap(int sw, int sh)
+        {
+            foreach (var minimapScale in new[] { 1f, 1.5f })
+                foreach (var stripShare in new[] { 0.2f, 0.32f })
+                {
+                    var scale = Math.Min(sw / 1920f, sh / 1080f); // ResponsiveContext.GuiFactor at GUI scale 1
+                    var box = Math.Min(320f * minimapScale, 0.26f * minimapScale * sh / scale);
+                    var boxW = (float)sw / sh >= 2.2f ? sh * 16f / 9f : sw;
+                    var boxX = (sw - boxW) / 2f;
+                    var margin = 24f * scale;
+                    float fpRight = boxX + boxW - margin, fpTop = sh - margin;
+                    var plaqueTop = fpTop - box * scale + 0.02f * box * scale;
+                    var fpBottom = plaqueTop - (32f * box / 220f + 2f + 24f) * scale;
+                    var fpLeft = fpRight - box * scale;
+                    var floor = sh * stripShare + 12f * scale;
+                    var (bw, bh) = PlayHudMath.ShipBlock(46f, 6f, 12f, 110f, 8f, 64f, 28f);
+                    bw *= scale;
+                    bh *= scale;
+                    var (right, top, beside) = PlayHudMath.ShipPlacement(fpLeft, fpRight, fpBottom, fpTop, 0f, floor, bw, bh, 12f * scale);
+                    float left = right - bw, bottom = top - bh;
+                    var overlaps = left < fpRight && right > fpLeft && bottom < fpTop && top > fpBottom;
+                    Assert.False(overlaps, $"{sw}x{sh} map x{minimapScale} strip {stripShare}: block [{left:0},{bottom:0}]-[{right:0},{top:0}] footprint [{fpLeft:0},{fpBottom:0}]-[{fpRight:0},{fpTop:0}] beside={beside}");
+                    Assert.True(bottom >= floor - 0.01f, $"{sw}x{sh}: bottom {bottom} under floor {floor}");
+                    Assert.True(left >= 0f && right <= sw && top <= sh, $"{sw}x{sh}: off screen");
+                    if (minimapScale == 1f && stripShare == 0.2f) Assert.False(beside, $"{sw}x{sh}: default layout should fit under the minimap");
+                }
+        }
+
+        [Fact]
+        public void ShipPlacementFallsBesideWhenTheStripIsTooHigh()
+        {
+            // footprint 1600..1880 x 700..1056, strip floor at 500: 400-tall block cannot fit under it.
+            var (right, top, beside) = PlayHudMath.ShipPlacement(1600f, 1880f, 700f, 1056f, 0f, 500f, 170f, 400f, 12f);
+            Assert.True(beside);
+            Assert.Equal(1588f, right, 3);
+            Assert.Equal(1056f, top, 3);
+            var under = PlayHudMath.ShipPlacement(1600f, 1880f, 700f, 1056f, 0f, 200f, 170f, 400f, 12f);
+            Assert.False(under.beside);
+            Assert.Equal(1880f, under.right, 3);
+            Assert.Equal(688f, under.top, 3);
+        }
 
         // Growing a rect by insets keeps it centred on the target for any pivot.
         [Theory]

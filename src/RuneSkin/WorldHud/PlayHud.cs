@@ -387,9 +387,14 @@ namespace RuneSkin.WorldHud
     // ---- Ship HUD ------------------------------------------------------------------------------------------------
 
     // Ship HUD (mockup m6-ship-b): a vertical popup column, top-down sail full / sail half / oar / stop / reverse,
-    // the active speed in slot_cell_selected with its glyph in the rune glow; the rudder in a button_round socket
-    // under it, glyph turned by Ship.GetRudderValue. Wind stays on the minimap ring (M4). Vanilla's icons (PowerIcon,
-    // Controls following the tiller, WindIndicator) stay alive for Hud.UpdateShipHud but are drawn at alpha 0.
+    // the active speed in slot_cell_selected with its glyph in the rune glow and its label lit; each row carries a
+    // vanilla-token label (PlayHudMath.LadderTokens) left of its cell. Under it the rudder row: arrow_left | rudder in a
+    // button_round socket (glyph turned by Ship.GetRudderValue) | arrow_right, the turned side lit
+    // (PlayHudMath.RudderSideAlpha). Wind stays on the minimap ring (M4). Vanilla's icons (PowerIcon, Controls
+    // following the tiller, WindIndicator) stay alive for Hud.UpdateShipHud but are drawn at alpha 0.
+    // Placement (tester 2026-10-26: the ladder sat on the vanilla PowerIcon spot, under the RuneSkin minimap ring):
+    // screen px from the minimap footprint (Minimap.m_smallRoot + its plaque / key tip children, reserved whether the
+    // small map shows or not) and the HUD strip top, PlayHudMath.ShipPlacement; hidden while the large map is open.
     public sealed class ShipHudSkin : MonoBehaviour
     {
         public static ShipHudSkin Instance { get; private set; }
@@ -397,11 +402,21 @@ namespace RuneSkin.WorldHud
         private static readonly string[] Glyphs = { "sprite.glyph.ship.sail.full", "sprite.glyph.ship.sail.half", "sprite.glyph.ship.oar", "sprite.glyph.stop", "sprite.glyph.chevron.down" };
         private Hud _hud;
         private RectTransform _column;
+        private CanvasGroup _group;
         private readonly Image[] _cells = new Image[PlayHudMath.LadderCells];
         private readonly Image[] _glyphs = new Image[PlayHudMath.LadderCells];
+        private readonly TMP_Text[] _labels = new TMP_Text[PlayHudMath.LadderCells];
+        private Image _left, _right;
         private RectTransform _rudder;
         private int _shown = -1;
+        private float _rudderShown = float.NaN;
+        private bool _hiddenForMap;
+        private Vector2 _blockUnits, _placedAt = new Vector2(float.NaN, float.NaN);
+        private readonly Vector3[] _corners = new Vector3[4];
         public int ActiveIndex => _shown;
+        // Harness read side: the last placement (screen px top-right corner) and whether it went beside the minimap.
+        public Vector2 PlacedTopRight => _placedAt;
+        public bool PlacedBeside { get; private set; }
 
         public static void Attach(Hud hud)
         {
@@ -427,51 +442,71 @@ namespace RuneSkin.WorldHud
             var cell = ThemeTokens.GetFloat("size.ship.cell", 46f);
             var gap = ThemeTokens.GetFloat("size.ship.gap", 6f);
             var pad = ThemeTokens.GetFloat("size.ship.pad", 12f);
-            var width = cell + 2f * pad;
-            var height = PlayHudMath.LadderHeight(cell, gap, pad);
+            var labelGap = ThemeTokens.GetFloat("size.ship.label.gap", 8f);
+            var rs = ThemeTokens.GetFloat("size.ship.rudder", 64f);
+            var arrow = ThemeTokens.GetFloat("size.ship.arrow", 28f);
+            var ladderH = PlayHudMath.LadderHeight(cell, gap, pad);
             _column = HudArt.Rect("RuneSkin_ShipLadder", root);
-            var anchorRef = hud.m_fullSail ? hud.m_fullSail.transform.parent?.parent as RectTransform : null;
-            if (anchorRef)
-            {
-                // Column top on the vanilla power icon's top edge (top-right under the minimap), growing down
-                // (run 20261022-102309: centred on it, the upper cells left the screen).
-                _column.anchorMin = _column.anchorMax = anchorRef.anchorMin;
-                var size = anchorRef.rect.size;
-                _column.anchoredPosition = anchorRef.anchoredPosition + new Vector2((0.5f - anchorRef.pivot.x) * size.x, (1f - anchorRef.pivot.y) * size.y);
-            }
-            else
-            {
-                _column.anchorMin = _column.anchorMax = new Vector2(0.5f, 0f);
-                _column.anchoredPosition = new Vector2(0f, 240f);
-            }
-            _column.pivot = new Vector2(0.5f, 1f);
-            _column.sizeDelta = new Vector2(width, height);
+            _column.anchorMin = _column.anchorMax = new Vector2(1f, 1f);
+            _column.pivot = new Vector2(1f, 1f);
+            _group = _column.gameObject.AddComponent<CanvasGroup>();
+            _group.blocksRaycasts = false;
             var popup = _art.Image("Popup", _column, "sprite.frame.tooltip", "color.frame", Image.Type.Sliced);
-            Stretch(popup.rectTransform);
+
+            // Row labels first (their widest one sizes the column).
+            var labelSize = MessageSkin.HudReadable(ThemeTokens.GetFloat("size.ship.label", 18f));
+            var labelW = 0f;
             for (var i = 0; i < PlayHudMath.LadderCells; i++)
             {
+                var token = PlayHudMath.LadderTokens[i];
+                var text = Localization.instance != null ? Localization.instance.Localize(token) : token;
+                var label = _art.Text("Label" + i, _column, "font.body", "color.text.body", labelSize, TextAlignmentOptions.MidlineRight);
+                label.textWrappingMode = TextWrappingModes.NoWrap;
+                label.text = text;
+                labelW = Mathf.Max(labelW, label.GetPreferredValues(text).x);
+                _labels[i] = label;
+            }
+            labelW = Mathf.Ceil(labelW);
+            var block = PlayHudMath.ShipBlock(cell, gap, pad, labelW, labelGap, rs, arrow);
+            _blockUnits = new Vector2(block.width, block.height);
+            _column.sizeDelta = _blockUnits;
+            var ladderW = 2f * pad + labelW + (labelW > 0f ? labelGap : 0f) + cell;
+            var pr = popup.rectTransform;
+            pr.anchorMin = pr.anchorMax = pr.pivot = new Vector2(1f, 1f);
+            pr.anchoredPosition = Vector2.zero;
+            pr.sizeDelta = new Vector2(ladderW, ladderH);
+
+            for (var i = 0; i < PlayHudMath.LadderCells; i++)
+            {
+                var top = PlayHudMath.LadderCellTop(i, cell, gap, pad);
                 var c = _art.Image("Cell" + i, _column, "sprite.slot.cell.selected", "color.frame", Image.Type.Sliced);
                 var cr = c.rectTransform;
-                cr.anchorMin = cr.anchorMax = cr.pivot = new Vector2(0.5f, 1f);
-                cr.anchoredPosition = new Vector2(0f, -PlayHudMath.LadderCellTop(i, cell, gap, pad));
+                cr.anchorMin = cr.anchorMax = cr.pivot = new Vector2(1f, 1f);
+                cr.anchoredPosition = new Vector2(-pad, -top);
                 cr.sizeDelta = new Vector2(cell, cell);
                 c.gameObject.SetActive(false);
                 _cells[i] = c;
                 var g = _art.Image("Glyph" + i, _column, Glyphs[i], "color.text.body", Image.Type.Simple);
                 g.preserveAspect = true;
                 var gr = g.rectTransform;
-                gr.anchorMin = gr.anchorMax = gr.pivot = new Vector2(0.5f, 1f);
+                gr.anchorMin = gr.anchorMax = gr.pivot = new Vector2(1f, 1f);
                 var inset = cell * ThemeTokens.GetFloat("share.ship.glyph.inset", 0.18f);
-                gr.anchoredPosition = new Vector2(0f, -PlayHudMath.LadderCellTop(i, cell, gap, pad) - inset);
+                gr.anchoredPosition = new Vector2(-pad - inset, -top - inset);
                 gr.sizeDelta = new Vector2(cell - 2f * inset, cell - 2f * inset);
                 _glyphs[i] = g;
+                var lr = _labels[i].rectTransform;
+                lr.anchorMin = lr.anchorMax = lr.pivot = new Vector2(1f, 1f);
+                lr.anchoredPosition = new Vector2(-pad - cell - labelGap, -top);
+                lr.sizeDelta = new Vector2(labelW, cell);
             }
-            var rs = ThemeTokens.GetFloat("size.ship.rudder", 64f);
+
+            // Rudder row, centred under the block: arrow_left | socket + rudder glyph | arrow_right.
+            var rowY = -ladderH - gap;
             var socket = _art.Image("RudderSocket", _column, "sprite.button.round", "color.frame", Image.Type.Simple);
             socket.preserveAspect = true;
             var sr = socket.rectTransform;
             sr.anchorMin = sr.anchorMax = sr.pivot = new Vector2(0.5f, 1f);
-            sr.anchoredPosition = new Vector2(0f, -height - gap);
+            sr.anchoredPosition = new Vector2(0f, rowY);
             sr.sizeDelta = new Vector2(rs, rs);
             var rudder = _art.Image("Rudder", socket.rectTransform, "sprite.glyph.rudder", "color.text.active", Image.Type.Simple);
             rudder.preserveAspect = true;
@@ -479,15 +514,21 @@ namespace RuneSkin.WorldHud
             _rudder.anchorMin = _rudder.anchorMax = _rudder.pivot = new Vector2(0.5f, 0.5f);
             _rudder.anchoredPosition = Vector2.zero;
             _rudder.sizeDelta = new Vector2(rs, rs) * ThemeTokens.GetFloat("share.ship.rudder.glyph", 0.72f);
-            Plugin.Log.LogInfo("[RuneSkin] ship HUD attached");
+            _left = Arrow("RudderLeft", "sprite.glyph.arrow.left", -(rs * 0.5f + gap + arrow * 0.5f), rowY - (rs - arrow) * 0.5f, arrow);
+            _right = Arrow("RudderRight", "sprite.glyph.arrow.right", rs * 0.5f + gap + arrow * 0.5f, rowY - (rs - arrow) * 0.5f, arrow);
+            Plugin.Log.LogInfo($"[RuneSkin] ship HUD attached (block {block.width:0}x{block.height:0} units, labels {labelW:0} units)");
             PlayHud.Reports.Add(() => Instance && root ? _art.Report(root) : null);
         }
 
-        private static void Stretch(RectTransform rt)
+        private Image Arrow(string name, string sprite, float x, float y, float size)
         {
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.one;
-            rt.offsetMin = rt.offsetMax = Vector2.zero;
+            var a = _art.Image(name, _column, sprite, "color.text.body", Image.Type.Simple);
+            a.preserveAspect = true;
+            var r = a.rectTransform;
+            r.anchorMin = r.anchorMax = r.pivot = new Vector2(0.5f, 1f);
+            r.anchoredPosition = new Vector2(x, y);
+            r.sizeDelta = new Vector2(size, size);
+            return a;
         }
 
         private void OnDestroy()
@@ -500,6 +541,8 @@ namespace RuneSkin.WorldHud
             var player = Player.m_localPlayer;
             var ship = player ? player.GetControlledShip() : null;
             if (!ship || !_column) return;
+            HideForLargeMap();
+            Place();
             var index = PlayHudMath.LadderIndex((int)ship.GetSpeedSetting());
             if (index != _shown)
             {
@@ -507,14 +550,108 @@ namespace RuneSkin.WorldHud
                 var on = ThemeTokens.GetColor("color.hud.glyph", Color.cyan);
                 var off = ThemeTokens.GetColor("color.text.body", Color.white);
                 off.a = ThemeTokens.GetFloat("share.ship.idle.alpha", 0.55f);
+                var labelOff = ThemeTokens.GetColor("color.text.body", Color.white);
+                labelOff.a = ThemeTokens.GetFloat("share.ship.label.idle.alpha", 0.75f);
                 for (var i = 0; i < PlayHudMath.LadderCells; i++)
                 {
                     if (_cells[i].gameObject.activeSelf != (i == index)) _cells[i].gameObject.SetActive(i == index);
                     _glyphs[i].color = i == index ? on : off;
+                    if (_labels[i]) _labels[i].color = i == index ? on : labelOff;
                 }
             }
-            var angle = PlayHudMath.RudderAngle(ship.GetRudderValue(), ThemeTokens.GetFloat("size.ship.rudder.deg", 60f));
+            var value = ship.GetRudderValue();
+            var angle = PlayHudMath.RudderAngle(value, ThemeTokens.GetFloat("size.ship.rudder.deg", 60f));
             if (Mathf.Abs(_rudder.localEulerAngles.z - Mathf.Repeat(angle, 360f)) > 0.1f) _rudder.localRotation = Quaternion.Euler(0f, 0f, angle);
+            if (!(Mathf.Abs(value - _rudderShown) < 0.005f))
+            {
+                _rudderShown = value;
+                var idle = ThemeTokens.GetFloat("share.ship.idle.alpha", 0.55f) * 0.6f;
+                var minLit = ThemeTokens.GetFloat("share.ship.rudder.lit.min", 0.65f);
+                Side(_left, PlayHudMath.RudderSideAlpha(value, -1, idle, minLit), idle);
+                Side(_right, PlayHudMath.RudderSideAlpha(value, 1, idle, minLit), idle);
+            }
+        }
+
+        private static void Side(Image arrow, float alpha, float idle)
+        {
+            if (!arrow) return;
+            var c = alpha > idle ? ThemeTokens.GetColor("color.hud.glyph", Color.cyan) : ThemeTokens.GetColor("color.text.body", Color.white);
+            c.a = alpha;
+            arrow.color = c;
+        }
+
+        // The large map covers the screen (the HUD cluster hides with it, LargeMap.HideHudCluster): the ladder too.
+        private void HideForLargeMap()
+        {
+            var map = Minimap.instance;
+            var hide = map && map.m_largeRoot && map.m_largeRoot.activeInHierarchy;
+            if (hide == _hiddenForMap) return;
+            _hiddenForMap = hide;
+            _group.alpha = hide ? 0f : 1f;
+            RuneSkin.Restyle.RenderGate.Set(_column, "shiphud-map", hide);
+        }
+
+        // Screen placement (PlayHudMath.ShipPlacement) from the live minimap footprint and strip top; moved only when
+        // the result changes by half a pixel or more (StripClear re-homes an element its owner moves).
+        private void Place()
+        {
+            var parent = _column.parent as RectTransform;
+            var canvas = parent ? parent.GetComponentInParent<Canvas>() : null;
+            if (!canvas) return;
+            var cam = canvas.rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.rootCanvas.worldCamera;
+            var origin = RectTransformUtility.WorldToScreenPoint(cam, parent.position);
+            var unit = RectTransformUtility.WorldToScreenPoint(cam, parent.position + parent.TransformVector(Vector3.up)).y - origin.y;
+            if (!(unit > 0f)) return;
+            var safe = Responsive.ResponsiveContext.SafeArea;
+            HudMath.HudBox(safe.x, safe.width, safe.height, Plugin.UltrawideBox?.Value ?? true, ThemeTokens.GetFloat("ratio.hud.ultrawide", 2.2f), out var boxX, out var boxW);
+            var s = Responsive.ResponsiveContext.GuiFactor;
+            var margin = ThemeTokens.GetFloat("size.hud.margin", 24f) * s;
+            if (!Footprint(out var fp)) fp = new Rect(boxX + boxW - margin, safe.yMax - margin, 0f, 0f);
+            var strip = HudCluster.Instance ? HudCluster.Instance.StripTopPx : 0f;
+            var floor = strip > 0f ? strip + ThemeTokens.GetFloat("size.hud.strip.clear.gap", 12f) * s : safe.y + margin;
+            var gapPx = ThemeTokens.GetFloat("size.ship.screen.gap", 12f) * s;
+            var p = PlayHudMath.ShipPlacement(fp.xMin, fp.xMax, fp.yMin, fp.yMax, boxX + margin, floor, _blockUnits.x * unit, _blockUnits.y * unit, gapPx);
+            var want = new Vector2(p.right, p.top);
+            if (Mathf.Abs(want.x - _placedAt.x) < 0.5f && Mathf.Abs(want.y - _placedAt.y) < 0.5f) return;
+            if (!RectTransformUtility.ScreenPointToWorldPointInRectangle(parent, want, cam, out var world)) return;
+            _column.position = world;
+            _placedAt = want;
+            PlacedBeside = p.beside;
+            Plugin.Log.LogInfo($"[RuneSkin] ship HUD placed top-right ({want.x:0},{want.y:0}) px {(p.beside ? "beside" : "under")} the minimap footprint [{fp.xMin:0},{fp.yMin:0}]-[{fp.xMax:0},{fp.yMax:0}] (floor {floor:0} px)");
+        }
+
+        // Minimap footprint, screen px: the small root plus its direct children (ring art, biome plaque, key tip; the
+        // RuneSkin ones always, others while active), from their rects - valid while the small map is hidden too.
+        private bool Footprint(out Rect r)
+        {
+            r = default;
+            var map = Minimap.instance;
+            var small = map && map.m_smallRoot ? map.m_smallRoot.transform as RectTransform : null;
+            if (!small) return false;
+            var canvas = small.GetComponentInParent<Canvas>(true);
+            var cam = canvas && canvas.rootCanvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.rootCanvas.worldCamera : null;
+            float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
+            void Add(RectTransform rt)
+            {
+                if (rt.rect.width < 1f || rt.rect.height < 1f) return;
+                rt.GetWorldCorners(_corners);
+                for (var k = 0; k < 4; k++)
+                {
+                    var sp = RectTransformUtility.WorldToScreenPoint(cam, _corners[k]);
+                    x0 = Mathf.Min(x0, sp.x); x1 = Mathf.Max(x1, sp.x);
+                    y0 = Mathf.Min(y0, sp.y); y1 = Mathf.Max(y1, sp.y);
+                }
+            }
+            Add(small);
+            for (var i = 0; i < small.childCount; i++)
+            {
+                var c = small.GetChild(i) as RectTransform;
+                if (!c) continue;
+                if (c.gameObject.activeSelf || c.name.StartsWith("RuneSkin_", StringComparison.Ordinal) || c.name == "Key tip") Add(c);
+            }
+            if (x0 == float.MaxValue) return false;
+            r = Rect.MinMaxRect(x0, y0, x1, y1);
+            return true;
         }
     }
 

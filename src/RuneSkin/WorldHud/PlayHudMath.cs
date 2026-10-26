@@ -34,6 +34,56 @@ namespace RuneSkin.WorldHud
             return -Math.Max(-1f, Math.Min(1f, rudderValue)) * maxDeg;
         }
 
+        // Vanilla has no ship speed strings (Hud.UpdateShipHud shows icons only); the ladder rows reuse the closest vanilla
+        // tokens, top-down like LadderIndex: Full, Half, Slow, Stop, Back.
+        public static readonly string[] LadderTokens = { "$radial_speed_fast", "$radial_speed_medium", "$radial_speed_slow", "$radial_speed_off", "$settings_backward" };
+
+        // Rudder side arrow alpha (side -1 = left, +1 = right) from Ship.GetRudderValue (-1 .. 1, > 0 = turning right:
+        // Ship.cs:426 pushes the stern along -right * value). Inside vanilla's 0.02 dead zone (Hud.cs:751) both sides are
+        // idle; past it the turned side starts at minLit (visible at once) and reaches 1 at full lock.
+        public static float RudderSideAlpha(float rudderValue, int side, float idle, float minLit)
+        {
+            if (float.IsNaN(rudderValue) || side == 0) return idle;
+            var v = Math.Max(-1f, Math.Min(1f, rudderValue)) * Math.Sign(side);
+            const float dead = 0.02f;
+            if (!(v > dead)) return idle;
+            var lit = Math.Max(0f, Math.Min(1f, minLit));
+            return lit + (1f - lit) * (v - dead) / (1f - dead);
+        }
+
+        // Ship HUD block placement, screen px, y up. The minimap footprint (ring + plaque + key tip, reserved whether the
+        // small map shows or not) owns the top-right corner (tester 2026-10-26: the ladder sat under it). Preferred: under
+        // the footprint, right edges flush, gap below it. When the block would reach below floorY (bottom HUD strip top +
+        // gap, else the safe-area bottom) it goes left of the footprint, tops flush. Both clamp into the safe area
+        // (left / bottom) last. Returns the block's top-right corner and whether the beside fallback was taken.
+        public static (float right, float top, bool beside) ShipPlacement(float fpLeft, float fpRight, float fpBottom, float fpTop,
+            float safeLeft, float floorY, float width, float height, float gap)
+        {
+            gap = Math.Max(0f, gap);
+            width = Math.Max(0f, width);
+            height = Math.Max(0f, height);
+            var right = fpRight;
+            var top = fpBottom - gap;
+            var beside = top - height < floorY;
+            if (beside)
+            {
+                right = fpLeft - gap;
+                top = fpTop;
+            }
+            if (right - width < safeLeft) right = safeLeft + width;
+            if (top - height < floorY) top = floorY + height;
+            return (right, top, beside);
+        }
+
+        // Ship HUD block size (canvas units): ladder column = pad | label | labelGap | cell | pad; rudder row under it =
+        // arrow | gap | socket | gap | arrow. Width = the wider of both, height = ladder + gap + socket.
+        public static (float width, float height) ShipBlock(float cell, float gap, float pad, float labelW, float labelGap, float socket, float arrow)
+        {
+            var ladderW = 2f * pad + Math.Max(0f, labelW) + (labelW > 0f ? labelGap : 0f) + cell;
+            var rudderW = socket + 2f * (arrow + gap);
+            return (Math.Max(ladderW, rudderW), LadderHeight(cell, gap, pad) + gap + socket);
+        }
+
         // A frame drawn around a target rect, inset per side (frame window inside its border): new anchoredPosition
         // along one axis so the grown rect stays centred on the target whatever its pivot. Size grows by both insets.
         public static float GrowPosition(float position, float pivot, float insetMin, float insetMax) =>
