@@ -392,6 +392,7 @@ namespace RuneSkin.InventoryScreen
             foreach (var pair in _grids)
             {
                 var s = pair.Value;
+                if (pair.Key && pair.Key != _gui.m_playerGrid && ScrollView(pair.Key)) s.NeedsReposition = true;
                 if (!pair.Key || !s.NeedsReposition) continue;
                 s.NeedsReposition = false;
                 Reposition(pair.Key, s.Visible, s.Scale, s.WantPitch > 0f ? Mathf.Clamp01((s.WantPitch - s.WantCell) / s.WantPitch) : 0f);
@@ -962,9 +963,9 @@ namespace RuneSkin.InventoryScreen
         }
 
         // Chest / backpack window: the window's one header (RuneWindowHeader: glyph in the icon slot, the container name
-        // centred in the rune face (mirrored), the weight plate in the aux slot; drag moves this window), grid top-aligned
-        // under it (view = visible rows; columns past the room scroll sideways), glyph actions in their own row at the
-        // bottom, right-aligned, clear of the bottom-right corner cap (InventoryMath.ActionRow).
+        // centred in the rune face (mirrored) over the plate's whole width; drag moves this window), grid top-aligned under
+        // it (view = visible rows; columns past the room scroll sideways), the action row at the bottom: weight plate left,
+        // glyph actions right-aligned, clear of the bottom corner caps (InventoryMath.ActionRow).
         private void ArrangeContainer(RectTransform panel, InventoryGrid grid, Box box, WindowGrid g, PanelKind kind, Inventory inventory,
             TMP_Text name, Transform weight, Button takeAll, Button stackAll)
         {
@@ -985,10 +986,20 @@ namespace RuneSkin.InventoryScreen
                 if (g.ScrollH) _colViews.Add((grid, view, g));
                 ColumnBar(panel, view, g, s.ColScroll);
             }
-            Bar(panel, kind, inventory, takeAll, stackAll, InventoryMath.ActionRow(box, _tokens, k));
+            var actions = InventoryMath.ActionRow(box, _tokens, k);
+            var actionsW = Bar(panel, kind, inventory, takeAll, stackAll, actions);
             var backpack = kind == PanelKind.Backpack;
             var glyph = HeaderGlyph(panel, backpack ? "glyph.panel.backpack" : "glyph.panel.chest");
+            // The weight plate sits at the left of the action row (glyph actions right-aligned): the header keeps only the
+            // glyph, so the title gets the plate's whole width and truncates only when it really does not fit (user
+            // 2026-10-26: "Сундук из…" cut while the header had room - the aux slot narrowed both title sides).
             var weightPlate = DirectChild(panel, weight);
+            if (weightPlate)
+            {
+                var pw = Mathf.Min(ThemeTokens.GetFloat("size.inv.plate.weight.dock", 110f) * k, Mathf.Max(0f, actions.W - actionsW - _tokens.Gap * k));
+                var ph = Mathf.Min(actions.H, ThemeTokens.GetFloat("size.win.header", 40f) * k * WindowHeaderMath.IconShare);
+                StatPlate(weightPlate, new Box(actions.X, actions.Y + (actions.H - ph) / 2f, pw, ph));
+            }
             var head = RuneWindowHeader.Ensure(panel, backpack ? WindowMove.Backpack : WindowMove.Chest);
             if (!head) return;
             head.Frame = PanelDecor.Of(backpack ? _packHost : _chestHost);
@@ -996,10 +1007,7 @@ namespace RuneSkin.InventoryScreen
             if (name) head.Adopt(name, fallback);
             else head.Fallback(fallback).Text(fallback);
             var hh = Mathf.Min(WindowHeaderMath.HeaderHeight(ThemeTokens.GetFloat("size.win.header", 40f), k), row.H);
-            var auxW = weightPlate ? ThemeTokens.GetFloat("size.inv.plate.weight.dock", 110f) * k : 0f;
-            head.Place(_canvas, new Box(row.X, row.Y + (row.H - hh) / 2f, row.W, hh), glyph && glyph.enabled ? glyph : null, auxW);
-            // The stat plate layout (glyph in the round socket, value beside it) in the aux slot.
-            if (weightPlate) StatPlate(weightPlate, head.AuxBox);
+            head.Place(_canvas, new Box(row.X, row.Y + (row.H - hh) / 2f, row.W, hh), glyph && glyph.enabled ? glyph : null);
         }
 
         // Panel header glyph (chest / backpack), one per panel, role swapped when the panel changes kind.
@@ -1161,6 +1169,20 @@ namespace RuneSkin.InventoryScreen
                 s.ThemeRevision = ThemeTokens.Revision;
                 Overlays(grid, inv, grid.m_elements.Count); // EAQS cells hold real inventory coordinates too
             }
+        }
+
+        // Vanilla's scroll view rule (InventoryGrid.ResetView, run once on the first container update): a root taller than
+        // the view scrolls from its top (pivot y 1), a shorter one is centred (pivot 0.5), anchoredPosition 0. That first
+        // run sees the prefab view and the vanilla pitch; once this layout resizes the view / pitch the decision went stale
+        // (user 2026-10-26: 4th chest row cut by the viewport, empty frame below). Re-applied whenever it differs.
+        private static bool ScrollView(InventoryGrid grid)
+        {
+            if (!grid.m_gridRoot) return false;
+            var view = ((RectTransform)grid.transform).rect.height;
+            var want = grid.m_gridRoot.rect.height > view + 0.5f ? 1f : 0.5f;
+            if (Mathf.Abs(grid.m_gridRoot.pivot.y - want) < 0.001f) return false;
+            grid.ResetView();
+            return true;
         }
 
         // Rows of a grid that live elsewhere: the player grid's row 0 is the HUD strip's hotbar.

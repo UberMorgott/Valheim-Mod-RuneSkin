@@ -21,6 +21,13 @@ namespace RuneSkin.Restyle
             return new Box(0f, 0f, Math.Max(0f, canvasW), Math.Max(0f, bottom));
         }
 
+        // Bounds shrunk by a frame overhang on the left, top and right (and the bottom unless a strip top already counts it).
+        public static Box Inset(Box b, float overhang, bool bottomCounted)
+        {
+            var o = Math.Max(0f, overhang);
+            return new Box(b.X + o, b.Y + o, Math.Max(0f, b.W - 2f * o), Math.Max(0f, b.H - o - (bottomCounted ? 0f : o)));
+        }
+
         // The offset (dx, dy) clamped per axis so window + offset stays inside bounds; the range always includes 0.
         public static void Clamp(Box window, Box bounds, ref float dx, ref float dy)
         {

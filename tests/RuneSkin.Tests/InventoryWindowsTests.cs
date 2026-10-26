@@ -401,6 +401,64 @@ namespace RuneSkin.Tests
             System.IO.File.WriteAllText(path, json);
         }
 
+        // Every window's whole frame (the panel stack reaches size.panel.glass.inset beyond the box) on the canvas and above
+        // the strip; container windows exactly their rows tall (no clipped row, no dead band).
+        [Theory]
+        [MemberData(nameof(Screens))]
+        public void FramesOnScreenAndContainersFitTheirRows(float w, float h, float gui)
+        {
+            var sc = At(w, h, gui);
+            var t = Theme();
+            var over = F("size.panel.glass.inset");
+            var cw = sc.W / sc.S;
+            foreach (var (cW, cH) in new[] { (5, 2), (6, 4), (8, 4) })
+            {
+                var o = Run(sc, cW, cH, 6, 3, t: t);
+                foreach (var b in o.Windows)
+                {
+                    if (b.IsEmpty) continue;
+                    Assert.True(b.X - over >= -0.01f && b.Right + over <= cw + 0.01f && b.Y - over >= -0.01f, $"{w}x{h}@{gui} frame of {b} off the canvas");
+                    Assert.True(b.Bottom <= o.Hotbar.Top + 0.01f);
+                }
+                foreach (var (box, g) in new[] { (o.Chest, o.ChestGrid), (o.Backpack, o.BackpackGrid) })
+                {
+                    if (box.IsEmpty) continue;
+                    var view = InventoryMath.ContainerGridView(box, g.Fit, t, 1f);
+                    Assert.Equal(g.VisibleRows * g.Pitch, view.H, 2);
+                    Assert.Equal(InventoryWindowsMath.ContainerH(g.VisibleRows, g.Pitch, t, 1f), box.H, 2);
+                }
+            }
+        }
+
+        // The 16:9 numbers behind 6-of-8 chest columns (canvas units, 1920x1080 and 2560x1440 share the 1920x1080 canvas):
+        // the left column has 527.5, an 8-column chest at the slot pitch needs 678.5 (614.5 cells + 2 x 32 cap keep-out);
+        // even with no gap, no margin and no keep-out the 8 cells (614.5) exceed the 575.5 left of the grid window frame.
+        [Fact]
+        public void EightColumnsCannotFitAtSixteenNine()
+        {
+            var t = Theme();
+            foreach (var (w, h) in new[] { (1920f, 1080f), (2560f, 1440f) })
+            {
+                var o = Run(At(w, h), 8, 4, t: t);
+                var room = o.Inventory.X - t.Gap - t.Margin;
+                var need = InventoryWindowsMath.ContainerW(8, o.Player.Pitch, o.Player.Pitch - o.Player.Cell, false, t, 1f);
+                Assert.Equal(527.5f, room, 1);
+                Assert.Equal(678.5f, need, 1);
+                Assert.True(8 * o.Player.Pitch - (o.Player.Pitch - o.Player.Cell) > o.Inventory.X); // cells alone > all room
+            }
+        }
+
+        [Fact]
+        public void BoundsInsetKeepsTheFrame()
+        {
+            var b = Restyle.WindowMoveMath.Inset(new Box(0f, 0f, 1920f, 900f), 11.5f, true);
+            Assert.Equal(11.5f, b.X, 3);
+            Assert.Equal(11.5f, b.Y, 3);
+            Assert.Equal(1920f - 23f, b.W, 3);
+            Assert.Equal(900f - 11.5f, b.H, 3);
+            Assert.Equal(1080f - 23f, Restyle.WindowMoveMath.Inset(new Box(0f, 0f, 1920f, 1080f), 11.5f, false).H, 3);
+        }
+
         [Fact]
         public void ScrollHelpers()
         {

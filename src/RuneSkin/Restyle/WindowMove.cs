@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using RuneSkin.InventoryScreen;
+using RuneSkin.Theme;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -96,7 +97,9 @@ namespace RuneSkin.Restyle
             var cluster = PlayerHud.HudCluster.Instance;
             var top = cluster ? cluster.ReservedScreenTop : 0f;
             var strip = top > 0f && Screen.height > 0 ? r.height * (1f - top / Screen.height) : 0f;
-            return WindowMoveMath.Bounds(r.width, r.height, strip);
+            // The panel stacks reach size.panel.glass.inset beyond their window box (PanelDecor): the whole frame - edges and
+            // corner caps - stays on screen (user 2026-10-26: a window's bottom edge was cut). The strip top already counts it.
+            return WindowMoveMath.Inset(WindowMoveMath.Bounds(r.width, r.height, strip), ThemeTokens.GetFloat("size.panel.glass.inset", 0f), strip > 0f);
         }
 
         // A drag result: the wanted offset, clamped against the window's last default, stored (saved on Save) and
