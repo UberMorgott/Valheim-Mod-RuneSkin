@@ -55,7 +55,7 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 - [x] EAQS quick-slot placement not verified: bar empty in the test save (harness check reports n/a, tools commit). Superseded by the strip: EAQS quick cells sit on the strip potion cells (382b0d7, d0560cf); run tools\out\20261024-214207 hud2 hit-align-1280x720 / -1920x1080 / -2560x1440 + potion-carry / potion-dragdrop PASS
 - [x] Hotbar slot art (socket.hotbar, plate.number) and quick-slot art: M2 with doll slots (2026-10-26: socket_hotbar / plate_number / plate_hotbar_number in the bundle and themed; HUD hotbar + quick cells = strip7_cell of the target panel)
 - [ ] Reserve tooltip (auras / summons) on hover: needs inventory-open hit area (M2). Blocked (2026-10-26): the strip bars are Plain (hud-3 / hud-4M3 mockups, HudCluster sets BarView.Plain) and draw no reserve hatch, so there is no hover target; needs a design call on where reservations show (ResourceState.ReservedAuras / ReservedSummons are still read)
-- [x] Bar-cap pool glyph sockets are empty in the art (no HP/stamina/eitr glyphs yet) (2026-10-26: strip7_socket_hp / _st / _ei = whole round sockets with heart / lightning / eitr glyphs, 57ea8e1 + steel/teal 12b1deb; tokens sprite.hud.strip7.icon.*)
+- [x] Bar-cap pool glyph sockets are empty in the art (no HP/stamina/eitr glyphs yet) (2026-10-26: strip7_socket_hp / _st / _ei = whole round sockets with heart / lightning / eitr glyphs, 57ea8e1 + steel/teal 12b1deb; tokens sprite.hud.strip7.icon.*). Removed in 0.23.0 (user 2026-10-26: no HP / stamina / eitr icons in the panel; sprites, cuts, tokens gone, bars start at the block's inner end)
 
 ## M2 (code, 2026-10-21) - inventory layout A
 
@@ -764,7 +764,7 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
       EAQS quick cells (EaqsBridge.ReadQuick), count = capacity list "potions" (MorgottTweaks PotionSlotCount); abilities
       via API v10 Skin.RegisterAbilitySlot (AbilitySlotDescriptor / AbilitySlotState): guardian power (round, key from the
       "GP" binding path, Latin), Epic Loot AbilityController slots 0-2 (cooldown sweep + timer, click = TryActivate).
-- [x] Vanilla hotbar, EAQS quick bar, Epic Loot AbilityBar hidden (alpha 0, code runs); summon frames ride above the food
+- [x] Vanilla hotbar, EAQS quick bar, Epic Loot AbilityBar hidden (alpha 0, code runs); (audit 0.23.0: summon frames moved to the top-left party frame in 553afbe, the strip placement HudCluster.PlaceSummons was dead and is removed) summon frames ride above the food
       wing; strip relayout only on a key change (counts, screen, canvas scale, config, theme), change-only writes.
 - [x] Drop target: StripInput routes presses on a strip hotbar cell to the player grid's m_onSelected / m_onRightClick at
       (i, 0) while the inventory is open; the strip canvas sorts above the GUI canvas then (root/dropButton took the press).
@@ -825,14 +825,14 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
 - [x] One slot token `size.slot` (70 canvas units, was size.inv.cell) drives the inventory grid cell AND the strip hotbar
       cell: strip px per unit = size.slot x Layout.SkinScale x GUI canvas scale / size.hud.strip.cell (StripMath.SlotPx /
       UnitPx); every other strip piece keeps its hud-4M3 proportion to that cell, height follows (238 px at 1080p, 22 %).
-- [x] Width = HudStrip.Span (default 0.96; new key, the old HudStrip.Width was a cap and users kept 0.99) of the safe /
+- [x] (audit 0.23.0: superseded by the centre wings - the panel is content-sized and centred, Span is only the space budget; harness strip-width checks that) Width = HudStrip.Span (default 0.96; new key, the old HudStrip.Width was a cap and users kept 0.99) of the safe /
       16:9 box; only the wings' tiled rails stretch. HudStrip.Height
       (the 12 % compact default) removed; Hud.Scale no longer scales the strip (minimap + margins only).
 - [x] Readable minimum in strip units (StripMath.FontFloor, TextFloor.Apply: relayout, new status cells, summon frames); status rows
       end before the medallion (StripMath.StatusPerRow); vanilla chat box (bottom right) lifted above the strip top, measured from its drawn graphics while shown (ChatTick).
-- [x] Square slot cells (user screenshot: wide food plates): hotbar / ability / food / potion = the same square slot, wings
+- [x] (audit 0.23.0: the square rule holds - harness slots: every cell square; the equal side was superseded by the 0.20 target panel, strip-target/spec.md "slot sizes stay as in the target": food 75 / potion 77.1 / ability 90.8 / hotbar 85 units) Square slot cells (user screenshot: wide food plates): hotbar / ability / food / potion = the same square slot, wings
       spread gaps, never cells; food timer in a band under the socket disc (share.hud.strip.timer.band, auto-sized).
-- [x] Wing 9-slice: left border 335 holds the knot incl. its tail (the tiled centre repeated the tail = plate segments),
+- [x] (audit 0.23.0: superseded - the target wings are pre-cut pieces composed per slot count, StripMath.Wing) Wing 9-slice: left border 335 holds the knot incl. its tail (the tiled centre repeated the tail = plate segments),
       straight run stretched (Sliced).
 - [x] Bars on the RuneSkin/UI Bar shader (art/shaders, bundle): glossy cylinder, capsule window, straight-cut end with
       end glow + seam, dark hollow missing part, lag ghost, well shadow, shield sheen + perimeter glow (second quad); colours
@@ -842,3 +842,15 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
       1440: slot-equal, slots (square, = inventory cell, icon centred, food timer under the disc, no overlap, inside the
       frame; live counts + food 4 / potions 5), overlap (chat / minimap), text-min, dock, shader shield + PNG files.
 - [x] User: enemy overhead name barely readable (faint grey, vanished on sky / foliage, run 20261023-125858). 0.18.2: PT Sans Bold, color.enemy.name = color.hud.text, outline + size.enemy.name.dilate 0.25 (as the player bar values) + soft dark underlay, size.enemy.name.font 14 -> 16. Position / alert stacking unchanged.
+
+## 0.23.0 Centre wings + panel v2 (2026-10-26, user rejected 0.22.0: mockups D:\tmp\cx-runeskin\mockups\bottom-hud-center.png / -v2.png)
+
+- [x] Food / potion wings against the bar block, grown outward per slot (StripMath.Wing / CentreLayout: tip + strap segments + outer end pre-cut from the wing art at the strap edges, cuts.json strip7_wing_*_tip / _seg / _outer, theme size.hud.strip7.wing*.cut / slot / join); end medallions cap the outer ends; 0 slots = no wing / medallion / diamond / rail; counts clip to the strip and count.hud.strip.wing.max; tests StripLayoutTests CentreWings_* (counts 0..4, 16:9 / 21:9 / 16:10), TargetFrameTests.
+- [x] Food cells = eaten foods (vanilla Hud.UpdateFood), potions = capacity list "potions"; reading order left -> right (last food / first potion innermost).
+- [x] HP / stamina / eitr pool sockets removed (code, theme, cuts, sprites); bars.pad.x 171.4 -> 129.6, stamina | eitr gap 57.2 -> 12.
+- [x] Status / buff rows hug the hotbar block's sides (centre wings); StripClear / chat keep-out = drawn panel extent (HudStrip.DrawnLeft / DrawnRight).
+- [x] Art v2 (Codex image gen, prompts appended to art\src\kit\strip7_*.prompt.txt): every strip7 piece repainted in dark blackened rune-metal, teal rune lines, leather straps with rivets; alpha footprint identical, luminance 0.56-0.68x.
+- [x] One connector per side (mockup v2): wing tips under the bar block's inner diamonds, separate wing-tip diamond / rail run / stubs removed (strip7_knot_s / _r gone), a 4th food fits the 16:9 strip.
+- [ ] In-game run ui-runeskin-hud2: run 20261026-132135 117/12 (old 3-diamond joint, 4th food clipped, stale rail-row check - fixed) -> run 20261026-133815 123/6: open = harness only: panel-inside-<res> still requires >= 8 frame parts (its list names the removed RailLeft / RailRight / KnotLeft / KnotRight -> 6 found, bad=[] otherwise), wing-count-<res>-f4p2 injects a 4th m_foods entry beyond the player's 3-food capacity (the game keeps 3; RuneSkin logs "wing fits 4"; needs MorgottTweaks 4th food slot capacity in the setup). Release held (user: release only on PASS).
+- [ ] Visual vs mockup v2: Codex 7/10 (D:\tmp\cx-runeskin\review\codex-score.md) - wings joined by long narrow necks vs the mockup's tight joint, end medallions read as lozenges, metal texture busier, straps narrower / darker, wing frames thinner. Needs an art + joint pass (>= 8 before release).
+
