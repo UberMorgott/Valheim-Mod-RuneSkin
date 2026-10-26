@@ -52,9 +52,9 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 - [x] 0.2.4 layout (user + lead calls): gap 0, slim x1.1, value centred in the fill, debuff-only strip with count-length frame (hidden at 0, one row reserved), buff row above the food, food zigzag in a frame_small group, own guardian-power socket (cooldown / active ring, click = StartGuardianPower, vanilla m_gpRoot suppressed); Codex HUD bars 8/10 (run 20261021-193600)
 - [x] Frame overlays per art notes (wet drips from frame bottom, since 0.2.3 three clusters, frost cluster native at top-left), trough/glass alpha 1.0, cluster width fit measures food row + EAQS/GP (0.2.2)
 - [x] 0.2.5: panel content inset from corner-cap keep-out (theme clear.<cap> = alpha-measured min(dx,dy) 85-87 sprite px -> 43.5 ref; PanelMath.CapInset; tooltip ContentInset all sides + column controls child width, menu FitToChildren pad), opaque panel backing (decor.backing color.panel.backing #101C22FF under the glass; single 0.9 glass let the world through), HUD frames rail to rail (theme edge.<frame>.top/bottom, HudMath.StackStep, pixel-snapped), food checkerboard (HudMath.DiamondStep, equal diagonal steps, AugaSkin geometry); runs tools\out\20261021-204453 (m0+m1 12/12 PASS) + 20261021-205505 (m0 recheck 4/4 PASS)
-- [ ] EAQS quick-slot placement not verified: bar empty in the test save (harness check reports n/a, tools commit)
+- [x] EAQS quick-slot placement not verified: bar empty in the test save (harness check reports n/a, tools commit). Superseded by the strip: EAQS quick cells sit on the strip potion cells (382b0d7, d0560cf); run tools\out\20261024-214207 hud2 hit-align-1280x720 / -1920x1080 / -2560x1440 + potion-carry / potion-dragdrop PASS
 - [ ] Hotbar slot art (socket.hotbar, plate.number) and quick-slot art: M2 with doll slots
-- [ ] Reserve tooltip (auras / summons) on hover: needs inventory-open hit area (M2)
+- [ ] Reserve tooltip (auras / summons) on hover: needs inventory-open hit area (M2). Blocked (2026-10-26): the strip bars are Plain (hud-3 / hud-4M3 mockups, HudCluster sets BarView.Plain) and draw no reserve hatch, so there is no hover target; needs a design call on where reservations show (ResourceState.ReservedAuras / ReservedSummons are still read)
 - [ ] Bar-cap pool glyph sockets are empty in the art (no HP/stamina/eitr glyphs yet)
 
 ## M2 (code, 2026-10-21) - inventory layout A
@@ -68,7 +68,7 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 - [x] AugaSkin 2.2.11 yields Inventory (EaqsSlotPanel, TrashPlate_Skin, slot templates/marks, owned subtrees)
 - [x] Harness shot ui-runeskin-m2
 - [x] Gamepad: EAQS spatial DPad navigation reaches the doll cells from our placement, hidden doll rows scroll into view; vanilla m_uiGroups + per-grid selection kept (focus memory = per grid)
-- [ ] Gamepad focus on hand mirrors / API-registered doll cells (X on the source grid cell toggles equip meanwhile)
+- [ ] Gamepad focus on hand mirrors / API-registered doll cells (X on the source grid cell toggles equip meanwhile). Hand mirrors gone (0.10.0); no Skin.RegisterSlot consumer in any workspace repo (grep 2026-10-26), so API doll cells never appear in game: implement with the first consumer (EAQS spatial nav hook, Codex M2 review: no m_uiGroups insert)
 - [x] Placement runs in LateUpdate (InventoryGui Animator writes panel positions after Update), world-measured cell placement
 - [x] Art f907652 pickup (recess cells, glyphs, mirrors + link badge + occupied hand, hotbar header digits, icon buttons, stat plates, header glyphs, wet drip variants)
 - [x] In-game ui-runeskin-m2 run tools\out\20261021-222046: 9/9 PASS (2560x1440 inventory, small chest, large chest, backpack alone, chest + backpack; 1920x1080 large chest + backpack), Inventory dumps unknown=0 degraded=0
@@ -80,7 +80,7 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 - [x] 0.3.2 runs tools\out\20261021-234304, -235153, 20261022-000221: 9/9 PASS each (harness now deploys RuneSkin + API + bundle, deploy=PASS hash=PASS); band in one panel housing (glass + frame + caps, content clear of caps), header 150 (reclaim floor 136, bigger tabs); compare D:\tmp\cx-augaskin\compare-ingame-inventory.png (+ -a3), Codex 6.5 -> 7.5 -> 8/10
 - [x] Band values (stamina / eitr numbers) small on the long slim bars (Codex 0.3.2 #3): 0.3.3 slim bars x1.4 (window ~15 ref px) + value font 19, normal stacked HUD too (user approved)
 - [x] 0.3.3 compact band (user call 2026-10-22): band = content height; left block one straight row of size.hud.band.cell 76 sockets (food diamonds side by side, GP, Z/V/B quick sockets = HudCluster.BandQuickCell boxes the inventory quick cells sit on), status row = one cell + pads; run tools\out\20261022-010617 (m1+m2 17/17 checks PASS)
-- [ ] HUD-side: EAQS quick cells placed over the HUD quick block (empty bar in the test save; verify with items)
+- [x] HUD-side: EAQS quick cells placed over the HUD quick block (empty bar in the test save; verify with items). Strip potion cells, run tools\out\20261024-214207 (hud2 hit-align-* / potion-carry / potion-dragdrop PASS, items in the cells)
 
 ## M3 art (2026-10-22) - crafting kit + skills/trophies pick
 
@@ -99,7 +99,7 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 - [x] Almanac (pack mod) replaces the trophies window: family "Almanac" (ModScreens\AlmanacSkin, restyle only: panel stack on its bkg rect, tabs craft.tab + selected overlay, grid cells slot.recess / slot.focus, list rows craft.row, wells, buttons, dividers, legacy Text colours via Restyler legacy branch; refresh hooks on AlmanacPanel Show/On*Tab + nested Create*); AugaSkin 2.2.14 yields Compat.Almanac. RuneSkin trophies show only without Almanac
 - [x] Skills / trophies: in-panel info tab row (InfoTabs: mirrors InventoryGui.m_info buttons, own tab selected, click = close; tab_strip ledge), title knots, close buttons hidden; skills summary well (death glyph + skill loss, sort toggles level / name, InfoMath.SkillOrder), full-screen closer + ListRoot no longer painted (button / scrim roles were filling the screen)
 - [x] Crafting polish: craft button role craft.button (redrawn button_*), round repair only while repairable (else craft spans the row), long descriptions scroll (own clipped ScrollRect view), RecipeChains box capped (size.craft.chain.max / .min) with a scrolling tree, VNEI grid sized to the body (BaseUI.SetSize by reflection, CraftingMath.VneiCells), rows 40 / font 15, Ranged / Magic category glyphs
-- [ ] Final small fixes after the last run unverified in game: skills title backdrop + total text, trophy count / boss label prefix / boss icon fill / one-row strip, level-requirement socket station icon, 2-line ingredient labels
+- [ ] Final small fixes after the last run unverified in game: skills title backdrop + total text, trophy count / boss label prefix / boss icon fill / one-row strip, level-requirement socket station icon, 2-line ingredient labels. Verified: skills (run 20261024-180235 info skills-* PASS), requirement labels (run 20261024-184003 m3 reqs-* / reqs-longnames-* PASS). Trophy parts await a run with Almanac parked (Almanac replaces the trophies window): ui-runeskin-info -DisablePlugin Almanac
 
 ## M4 art (2026-10-22) - minimap, enemy HUD, messages, damage text
 
@@ -144,8 +144,8 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 - [x] Harness flakiness root cause (harness, not RuneSkin): 27h death left the inventory in a TombStone and respawned at the world spawn facing elsewhere -> m0 found no item to hover, m4 spawned Greydwarfs "ahead" of the body but behind the camera (EnemyHud hides HUDs behind the camera). 27h now restores the stand (teleport back, SetLookDir, TombStone.Interact, re-equip), m4 spawns along the look direction; m1 pins midday Clear (world Wet / cold broke the debuff strip widths); 28zb-reenter-world added
 - [x] Codex final (run -072233): menu 8, delete 8, settings 8, controller 8, unlock 8; characters 7.5, worlds 7.5, servers 7.5, connecting 7.5, large map 7.5
 - [x] 0.6.2 Below-8 fixes (run tools\out\20261022-094642, ui-runeskin-m5 17/17 PASS): CharacterFraming moves m_cameraMarkerCharacter so the preview stands large in the free area right of the list (PreWorldMath.FrameMarker + test), start-game tabs grown via Grow (any anchors / layout, 44 high, width capped by sibling gap), password / server filter / add-server fields = field_search 40 high with inset text area, connecting spinner centred on the rendered text bounds; gui_framework referenced (GuiInputField)
-- [ ] Large map: Epic Loot filter rows showed "Задание: $1" for both -> keys $mod_epicloot_merchant_bounties / treasuremaps + exact button match in 0.6.1 (unverified)
-- [ ] Harness: ui-runeskin-m1 debuffs failed in rain (Wet re-applied); Seasonality Summer pin added in tools 64091ec, unverified
+- [x] Large map: Epic Loot filter rows showed "Задание: $1" for both -> keys $mod_epicloot_merchant_bounties / treasuremaps + exact button match in 0.6.1 (verified run 20261023-161531 m4-map-legend: rows "Задания", "Карты сокровищ")
+- [x] Harness: ui-runeskin-m1 debuffs failed in rain (Wet re-applied); Seasonality Summer pin added in tools 64091ec (verified run 20261023-132956 m1 debuffs PASS, wet=False)
 
 ## M6 art (2026-10-22) - vanilla in-game screens
 
@@ -218,33 +218,40 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
 
 ### Batch M7a - Epic Loot panels (families EpicLootEnchanting / EpicLootBoard / EpicLootTemper, AugaSkin yields)
 
-- [ ] Enchanting table: `EnchantingUI` prefab (EnchantingTableUI.Start), MultiSelectItemList ElementPrefab rows,
+- [x] Enchanting table: `EnchantingUI` prefab (EnchantingTableUI.Start), MultiSelectItemList ElementPrefab rows,
       CraftSuccessDialog (AugaSkin Compat\EpicLootEnchanting.Init). Art m7 kit (glyph_ench_*, gem_rarity/setting).
-- [ ] Adventure board (MerchantPanel under StoreGui) + Hildir TemperPanel (AugaSkin Store_Setup Store_EpicLootPanels;
-      RuneSkin TradeScreens excludes them today).
-- [ ] AugaSkin side: gate EpicLootEnchanting.Init + Store_EpicLootPanels on the new families (Skips).
+      Done in 0.11.0 M7 (family EpicLootEnchanting, ForeignUi unit pass; run 20261022-174728 enchant 7 tabs, unstyled 0).
+- [x] Adventure board (MerchantPanel under StoreGui) + Hildir TemperPanel (AugaSkin Store_Setup Store_EpicLootPanels;
+      RuneSkin TradeScreens excludes them today). Done in 0.11.0 M7 (families EpicLootBoard / EpicLootTemper).
+- [x] AugaSkin side: gate EpicLootEnchanting.Init + Store_EpicLootPanels on the new families (Skips). AugaSkin 2.2.22.
 
 ### Batch M7b - mod HUD
 
-- [ ] hudroot mod parts AugaSkin restyles in Hud_Awake_ModParts: Epic Loot AbilityBar + DebugText, StarLevelSystem
+- [x] hudroot mod parts AugaSkin restyles in Hud_Awake_ModParts: Epic Loot AbilityBar + DebugText, StarLevelSystem
       NoMapLevelIndicator (any non-RuneSkin child except the Vaettir world boss bar); remaining hudroot children of owned clusters (GP root etc.).
+      Done in 0.11.0 M7 (family ModHud: ForeignRoles hints AbilityBar / DebugText, any other plugin's hudroot child = unit;
+      AbilityBar hidden under the strip since 0.15.0; run 20261022-181305 m7-world hudroot = HUD tracks only).
 - [ ] Vaettir target panel + raid timer (BossAwakening UI\HudModes.cs copies the boss HUD template "after AugaSkin's
       EnemyHud swap" - re-check its template with AugaSkin absent), Hamingja bleed-out + ally markers (art m7 modhud).
 - [ ] HudParts.Bars: GuiBar fills AugaSkin still reskins outside owned parts (mount bars if ActionHud off etc.); confirm none left.
+      Moot once Batch X removes AugaSkin (its GuiBar_Patch was not ported, see Batch P "Drop with AugaSkin").
 
 ### Batch M7c - generic mod UI
 
-- [ ] Jotunn GUIManager role pass (AugaSkin Compat\JotunnGui: Create*/Apply*Style, colour/gradient pickers): StarLevelSystem
+- [x] Jotunn GUIManager role pass (AugaSkin Compat\JotunnGui: Create*/Apply*Style, colour/gradient pickers): StarLevelSystem
       config UI + startup popups, VNEI BaseUI parts outside the crafting grid, Epic Loot CreateButton / CreateScrollView,
-      Jotunn ModCompatibility window.
-- [ ] IMGUI fonts (AugaSkin Compat\Imgui): ValheimBuildCamera DismantlePreview badge (shipped), DisplayBepInExInfo
-      (shipped); ConfigurationManager = dev only (skip).
-- [ ] Leftover vanilla bits AugaSkin restyles: InventoryGui achievements panel + m_achievementsElementPrefab, variant
+      Jotunn ModCompatibility window. Done in 0.11.0 M7 (ModScreens\JotunnHook anchors + ForeignUi; vnei unstyled 0, run
+      20261022-174728); ModCompatibility window not shot (open item below).
+- [x] IMGUI fonts (AugaSkin Compat\Imgui): ValheimBuildCamera DismantlePreview badge (shipped), DisplayBepInExInfo
+      (shipped); ConfigurationManager = dev only (skip). Done: ModScreens\ImguiFonts + legacy faces 0.13.0 (p-legacy-fonts PASS).
+- [x] Leftover vanilla bits AugaSkin restyles: InventoryGui achievements panel + m_achievementsElementPrefab, variant
       dialog, m_dragItemPrefab; VanillaPanels RadialBase (radial menus: owned by the icons-in-radial-menus session),
       EndCredits / ManageSavesMenu only when MainMenu is off; PotalMap portal list (kit, large-map rules); Chatter toggles
-      (only if installed).
-- [ ] Main menu foreign texts (AugaSkin FejdStartup_Awake_Patch features): DisplayBepInExInfo / V+ version lines,
+      (only if installed). Done in 0.11.0 M7 (ModScreens\VanillaExtras: achievements, variant dialog, drag icon, radial;
+      other mods' panels via the ForeignUi fallback; achievements 83 -> 0 / radial 23 -> 0 unstyled, run 20261022-174728).
+- [x] Main menu foreign texts (AugaSkin FejdStartup_Awake_Patch features): DisplayBepInExInfo / V+ version lines,
       StarLevelSystem "Mod Config" corner button overlap; cinematics button hidden; game font fallbacks linked.
+      Done in 0.11.0 M7 (ModScreens\MainMenuMods) + 0.13.0 legacy faces.
 
 ### Batch P - port AugaSkin features (non-style, still live with RuneSkin)
 
@@ -462,15 +469,17 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
       RT / controller / clip counts flat.
 - [x] +17 MB (run 181305) is mostly not the preview: control batch (10 open / close, preview disabled) +12.8 MB managed;
       preview batch B minus control +2.7 MB.
-- [ ] Open: residual +9 GameObjects / +45 Components per 10 builds (batch A +8 / +32, control -5 / -23) - preview-leak
-      FAIL on it; harness preview-objects (tools 77f4e2d) names them on the next run.
+- [x] Open: residual +9 GameObjects / +45 Components per 10 builds (batch A +8 / +32, control -5 / -23) - preview-leak
+      FAIL on it; harness preview-objects (tools 77f4e2d) names them on the next run. Closed: run 20261023-160807
+      preview-leak PASS (3x10 cycles, liveAfterClose 0; residuals = vanilla sfx clones in flight, see 0.14.1 "Relog").
 - [x] ui-runeskin-m0 tooltip PASS in run 20261022-184353 (harness: UITooltip reads the Input System pointer, which did
       not follow OS cursor warps; driver now queues the Mouse position too, tools a7131c2).
 
 ## Full-coverage directive (user, 2026-10-22; into M7 after B1-B5, not started)
 
-- [ ] 100 % of the UI on RuneSkin: all fonts, buttons, menus, incl. ALL current and future mods (Epic Loot etc.) -> a
+- [x] 100 % of the UI on RuneSkin: all fonts, buttons, menus, incl. ALL current and future mods (Epic Loot etc.) -> a
       generic fallback restyler for unknown mod UIs (role pass on any foreign canvas), not only per-mod families.
+      Done in 0.11.0 M7 (family ModUi = ModScreens\ForeignUi fallback restyler, Diagnostics\Coverage).
 - [x] Text starts exactly where it should everywhere (no left / right skew, alignment / padding; batch G).
 - [x] Every icon with equal margins in its cell, counts / numbers below it always fitting (batch G).
 - (Global layout rules part = batch G, before B1.)
@@ -513,8 +522,8 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
       blocking every screen below. Fix: a plugin opt-out blocks only a would-be unit, never the vanilla boundary / family roots
       (ForeignMath.Node.OptedOutPlugin, test OptedOutPluginOnTheBoundaryPassesThrough). Not re-run (one-launch limit).
 - [ ] Open: Jotunn ModCompatibility window not shot (only on a version mismatch); Vaettir target / raid / Hamingja (other track).
-- [ ] Open: legacy uGUI body texts and IMGUI keep their own face (needs a legacy Font / dynamic body face in the art bundle);
-      Jotunn ModCompatibility window not shot (only on a version mismatch); Vaettir target / raid / Hamingja (other track).
+- [x] Open: legacy uGUI body texts and IMGUI keep their own face (needs a legacy Font / dynamic body face in the art bundle);
+      done by "Legacy faces (0.13.0)" above; rest duplicates the open item before. Jotunn ModCompatibility window not shot (only on a version mismatch); Vaettir target / raid / Hamingja (other track).
 ## 0.14.0 enemy bars E1-E4 (2026-10-22, user picks enemy-b + boss-c, spec hud-design\spec.md 1-5)
 
 - [x] E1 visibility (Hud.EnemyBars = Smart | Vanilla): per-HUD score (aimed + 1.5 s linger 1000, engaged 8 s 500+, alerted threat
@@ -729,10 +738,10 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
 - [x] Two-font theme: font.body = PT Sans Regular + real Bold cut, font.display = Valheim-Norsebold; Cormorant removed from theme and bundle.
 - [x] Centre message contrast on white: solid sprite-less dark backing (0.16.1, run 20261023-032312 m5-center-contrast PASS).
 - [x] Settings stepper value: the one-shot floor never saw the per-tab panel; ReadableSweep measures in screen px every 30 frames (0.16.1, run 20261023-032312 PASS).
-- [ ] Character creation sex toggle labels (SexPanel/FemaleToggle|MaleToggle/Label) still 15.5 px (run 20261023-032312): most likely plate labels (PlateLabelFit shrinks them to the plate, the floor exempts plate labels); fix = wider plates for that pair, not a floor on plate labels (a floor truncated other plates).
-- [ ] Centre message contrast on white 3.7 (needs 4.5): band sprite tint does not darken under the glyphs; use a solid sprite-less backing or material outline (m5-center-contrast).
-- [ ] Settings stepper value (CommonSettings/InputLayout/GUIStepper/Value/Text) renders 14.9 px despite the readable floor; diagnose (plate-label exemption / later scaling / autosize max).
-- [ ] Character creation sex toggle labels (SexPanel/FemaleToggle|MaleToggle/Label) render 15.5 px; same diagnosis.
+- [x] Character creation sex toggle labels (SexPanel/FemaleToggle|MaleToggle/Label) still 15.5 px (run 20261023-032312): most likely plate labels (PlateLabelFit shrinks them to the plate, the floor exempts plate labels); fix = wider plates for that pair, not a floor on plate labels (a floor truncated other plates). Verified fixed: m5-text-min state chars offenders=0 in runs 20261023-041107 .. -160807.
+- [x] Centre message contrast on white 3.7 (needs 4.5): duplicate of the done item above (0.16.1, m5-center-contrast PASS).
+- [x] Settings stepper value (CommonSettings/InputLayout/GUIStepper/Value/Text) renders 14.9 px: duplicate of the done item above (0.16.1 ReadableSweep).
+- [x] Character creation sex toggle labels render 15.5 px: duplicate, verified fixed (m5-text-min chars offenders=0 since run 20261023-041107).
 ## 0.15.0 Track H - HUD strip (2026-10-22, mockup hud-2-final, decisions.md)
 
 - [x] HudCluster = one bottom strip (HudStrip + pure StripMath, StripLayoutTests): wings food | potions with knot ends and
@@ -756,12 +765,13 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
 - [x] Harness ui-runeskin-hud2 (tools): strip-width (+0.80 live), cells, rarity-rims, durability, counts-live, drop; m1 /
       m4 bar-caps / P adapted to the strip. Runs tools\out\20261022-194038 (95/100: stale canvas scale after a resolution
       change -> StripKey has the canvas scale; harness glow / parsed-text / free-slot fixes), -194551 (97/100).
-- [ ] Unverified in game (after run -194551): drop over the inventory (canvas sorting), counts-live via BaseSlots +1, halo /
-      caption / frame tint polish; in-game Codex fidelity 6.5 (wing silhouette, frame material, halo, food bowl language,
+- [ ] Unverified in game (after run -194551): drop over the inventory (canvas sorting), counts-live via BaseSlots +1 (both
+      verified: run 20261024-214207 hud2 drop / counts-live PASS), halo / caption / frame tint polish (art); in-game Codex fidelity 6.5 (wing silhouette, frame material, halo, food bowl language,
       caption weight) - needs one run + art pass.
 - [ ] Epic Loot belt with PotionSlots 1 equipped did not raise PotionSlotCount.Max (3 -> 3, belt equipped=True): MorgottTweaks
       side (45r count-live), the strip follows the API in every state.
-- [ ] Harness m2 no-mirrors reads RuneSkinDollFigure, inactive since the 0.13.0 live preview (figure rect 0): pre-existing.
+- [x] Harness m2 no-mirrors reads RuneSkinDollFigure, inactive since the 0.13.0 live preview (figure rect 0): pre-existing.
+      Fixed in the harness (c5ed073: measured in the docked character panel); run 20261024-213803 m2 no-mirrors PASS.
 
 ## 0.18.0 Track H - HUD strip hud-4M3 + centre gauges (2026-10-23, mockups hud-4M3, rs-C1 / rs-C2; API 12)
 
