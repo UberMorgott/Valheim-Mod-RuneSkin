@@ -895,3 +895,17 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
 - [x] Window art its mod switched off (VNEI attach-to-crafting hides its dragHandler woodpanel) is no window: ForeignUi draws no panel stack / move band for it, image role skip; controls stay skinned (eeb3318).
 - [x] Run 20261026-164635 ui-runeskin-vnei PASS 4/0 (vnei-inside, vnei-tabs, vnei-noframe, vnei-skinned; harness tools 95e9043).
 - [ ] Visual follow-up: the crafting body's list / detail wells (CraftingSkin) still draw behind VNEI, their column seam runs through the VNEI grid.
+
+## windows-v2 (2026-10-26) - runs 20261026-182632, 20261026-184538 (not released)
+Open, ours (windows-v2):
+- window-headers-almanac: Almanac's own Closebutton sits under its bkg (Almanac layout, y 234 vs window bottom 266 at 1920x1080); decide: lay it out inside the window or exempt mod-laid close buttons in the check.
+- corner-clear-<res> / -info-*: one label, an InventoryElement "binding" key label inside RuneSkinInventory_Center's bottom-right cap reach (dx 39 / dy 8 / C 43.5 at 1080p).
+- winmove-inventory-chest-2560x1440-handle: PASS in 182632, FAIL in 184538 after the dock header was top-aligned (raycast at the header centre lands on dropButton) - find what blocks the band.
+- m2-layout truncated chest header title ('Сундук из че…' at the 12 px floor): the corner keep-out narrows the dock header plate; needs a title room rule (smaller slot shift or two-line).
+- stats-back-esc / stats-back-key (then winmove-compendium-handle hit ChromeTR, stats-compendium-restored): Escape leaves the stats window open in both runs; main passed them in 20261026-171856. The 41d theory is refuted (41d restored: timer -1 in 182632). Not yet explained.
+Pre-existing / foreign (not windows-v2):
+- craft row field-align / button-skew (m2 / m3 / info layout, 0.23.5 row): the amount field is ActionRow-scaled (k = 0.4 W / need = 0.82 at craft W ~ 300; on main W ~ 328 -> k 0.90, field 48.9 -> gap 19 > want 12: fails wider); the CRAFT glyph is clamped at b.X + 0.3 H on both (free x = (W - textW)/2 - 0.75 H = 2 here, 10 on main) so the label group stays off-centre. Route to the craft-row owner.
+- icon-alpha-* VT_Fox_head (opaque edge 0,44): Vaettir icon art. Route to Vaettir.
+- tips-wheel / tips-bottom-player: FAIL identically in 20261024-134656 / -143631 / -162507 / -175034 / -205429 / -213803 (top=Recipes, box 0).
+- grid-cells-chest-large-1280x720 (container cells past the right edge at the cell floor): FAIL in 20261024-134656 / -143631 / -162507 / -175034 (layout A, before windows-v2).
+- m4-bar-caps, m4-maphint-inset, overdraw-*: known.
