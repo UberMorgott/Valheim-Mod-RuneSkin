@@ -3,9 +3,9 @@ using Xunit;
 
 namespace RuneSkin.Tests
 {
-    // StripMath.TargetFrame, centre wings (user 2026-10-26, mockup bottom-hud-center): every wing-side piece hangs off
-    // the wing's inner end - end medallion past the outer end, wing-tip diamond and rail run between the wing and the bar
-    // block, the rail continuous under the diamonds; no wing on a side = no medallion / diamond / rail there.
+    // StripMath.TargetFrame, centre wings (user 2026-10-26, mockups bottom-hud-center / -v2): each wing tip sits against
+    // the bar block's inner diamond (one connector), the end medallion past the outer end, one rail from inside the wing
+    // tip under the block tip; no wing on a side = no medallion there and the rail starts under the inner diamond.
     public class TargetFrameTests
     {
         private static float T7(string name, float fallback) => fallback;
@@ -13,8 +13,8 @@ namespace RuneSkin.Tests
         private static StripMath.Layout Layout(int food, int potions, float width = 2330f)
         {
             var l = new StripMath.Layout { BarsX = width / 2f - 540f, BarsW = 1080f, BarsY = 0f, BarsH = 92f };
-            l.WingL = StripMath.Wing(StripLayoutTests.CutL, food, l.BarsX - 76f, 95f);
-            l.WingR = StripMath.Wing(StripLayoutTests.CutR, potions, l.BarsX + l.BarsW + 78f, 95f);
+            l.WingL = StripMath.Wing(StripLayoutTests.CutL, food, l.BarsX - 36f, 95f);
+            l.WingR = StripMath.Wing(StripLayoutTests.CutR, potions, l.BarsX + l.BarsW + 36f, 95f);
             return l;
         }
 
@@ -37,34 +37,31 @@ namespace RuneSkin.Tests
         {
             var l = Layout(0, 0);
             var f = StripMath.TargetFrame(l, T7);
-            foreach (var b in new[] { f.EndL, f.EndR, f.WingL, f.WingR, f.KnotL, f.KnotR, f.RailL, f.RailR, f.StubL, f.StubR })
+            foreach (var b in new[] { f.EndL, f.EndR, f.WingL, f.WingR })
                 Assert.Equal(0f, b.W);
-            // the block's own tip extensions start under its inner diamonds, never out in the scene
+            // the block's own rail extensions start under its inner diamonds, never out in the scene
             Assert.Equal(f.Knot2L.X, f.CapL.X, 3);
             Assert.Equal(f.Knot2R.Right, f.CapR.Right, 3);
         }
 
+        // One connector (mockup v2): the wing tip reaches under the block's inner diamond, the rail runs from inside the
+        // wing tip (its see-through chevron notches) under the diamond into the block, at one height on both sides.
         [Fact]
-        public void Rails_ContinuousFromTheWingTipToTheBlock()
+        public void WingTipsMeetTheInnerDiamonds_RailUnderTheJoint()
         {
             var l = Layout(3, 3);
             var f = StripMath.TargetFrame(l, T7);
-            Assert.True(f.StubL.X <= f.KnotL.X + 0.01f);           // under the whole left diamond
-            Assert.Equal(f.RailL.X, f.StubL.Right, 3);             // abuts the run's start (tiling starts at the joint)
-            Assert.Equal(f.RailR.Right, f.StubR.X, 3);             // abuts the right run's end
-            Assert.True(f.StubR.Right >= f.KnotR.Right - 0.01f);   // under the whole right diamond
-            Assert.True(f.StubL.X <= l.WingL.Inner - 30f + 0.01f); // stubs start inside the wing tips (see-through notches)
-            Assert.True(f.StubR.Right >= l.WingR.Inner + 30f - 0.01f);
-            Assert.Equal(f.RailL.Right, f.CapL.X, 3);
-            Assert.Equal(f.RailR.X, f.CapR.Right, 3);
-            Assert.True(f.CapL.Right >= l.BarsX + 20f && f.CapR.X <= l.BarsX + l.BarsW - 20f);
-            foreach (var b in new[] { f.StubL, f.CapL }) { Assert.Equal(f.RailL.Y, b.Y, 3); Assert.Equal(f.RailL.H, b.H, 3); }
-            foreach (var b in new[] { f.StubR, f.CapR }) { Assert.Equal(f.RailR.Y, b.Y, 3); Assert.Equal(f.RailR.H, b.H, 3); }
+            Assert.True(l.WingL.Inner > f.Knot2L.X && l.WingL.Inner < f.Knot2L.Right, $"left tip {l.WingL.Inner} vs diamond {f.Knot2L.X}..{f.Knot2L.Right}");
+            Assert.True(l.WingR.Inner > f.Knot2R.X && l.WingR.Inner < f.Knot2R.Right, $"right tip {l.WingR.Inner} vs diamond {f.Knot2R.X}..{f.Knot2R.Right}");
+            Assert.True(f.CapL.X <= l.WingL.Inner - 30f + 0.01f && f.CapL.Right >= l.BarsX + 20f);
+            Assert.True(f.CapR.Right >= l.WingR.Inner + 30f - 0.01f && f.CapR.X <= l.BarsX + l.BarsW - 20f);
+            Assert.Equal(f.CapL.Y, f.CapR.Y, 3);
+            Assert.Equal(f.CapL.H, f.CapR.H, 3);
         }
 
-        // The shipped theme: wing-tip diamond against the block's inner diamond (mockup: the two diamonds meet), both sides.
+        // The shipped theme: both wing tips land on the block's inner diamonds; the rails at the rail sprite's rows.
         [Fact]
-        public void Theme_DiamondsAShortRailApart()
+        public void Theme_WingTipsOnTheInnerDiamonds()
         {
             using var s = typeof(RuneSkin.Theme.ThemeSchema).Assembly.GetManifestResourceStream("RuneSkin.default-theme.json");
             using var r = new System.IO.StreamReader(s!);
@@ -78,10 +75,12 @@ namespace RuneSkin.Tests
             l.WingL = StripMath.Wing(StripLayoutTests.CutL, 3, l.BarsX - Tok("wing.join", 0f), 95f);
             l.WingR = StripMath.Wing(StripLayoutTests.CutR, 4, l.BarsX + l.BarsW + Tok("wing.r.join", 0f), 95f);
             var f = StripMath.TargetFrame(l, Tok);
-            Assert.InRange(f.Knot2L.X - f.KnotL.Right, -1f, 3f);
-            Assert.InRange(f.KnotR.X - f.Knot2R.Right, -1f, 3f);
+            Assert.InRange(l.WingL.Inner, f.Knot2L.X, f.Knot2L.Right);
+            Assert.InRange(l.WingR.Inner, f.Knot2R.X, f.Knot2R.Right);
             Assert.DoesNotContain("strip7.icon", json); // pool icon sockets removed (user 2026-10-26)
-            foreach (var b in new[] { f.RailL, f.RailR, f.StubL, f.StubR, f.CapL, f.CapR }) Assert.Equal(13f, b.Y, 2);
+            Assert.DoesNotContain("\"sprite.hud.strip7.knot\"", json); // no separate wing-tip diamond (mockup v2: one connector)
+            Assert.Equal(13f, f.CapL.Y, 2);
+            Assert.Equal(13f, f.CapR.Y, 2);
         }
 
         [Fact]

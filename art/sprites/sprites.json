@@ -8878,29 +8878,6 @@
       "atlas": "strip"
     },
     {
-      "name": "strip7_knot_s",
-      "file": "strip7_knot_s.png",
-      "size": [
-        81,
-        86
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.knot_s",
-      "notes": "Target panel (user screenshot 2026-10-23, strip-target/spec.md): 4x piece knot-small by the mockup agent, 0.72 = 2.88 sprite px per target px (85 strip units per 59 px cell, 2 px per unit)",
-      "atlas": "strip"
-    },
-    {
       "name": "strip7_medallion",
       "file": "strip7_medallion.png",
       "size": [
@@ -9082,29 +9059,6 @@
       "fillCenter": true,
       "token": "hud.strip7.rail_r",
       "notes": "Target panel: 4x piece rail-tile-r by the mockup agent (exact crop of the user's screenshot), 0.72 = 2.88 sprite px per target px",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_knot_s_r",
-      "file": "strip7_knot_s_r.png",
-      "size": [
-        86,
-        98
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.knot_s_r",
-      "notes": "Target panel: 4x piece knot-small-r by the mockup agent (exact crop of the user's screenshot), 0.72 = 2.88 sprite px per target px",
       "atlas": "strip"
     },
     {

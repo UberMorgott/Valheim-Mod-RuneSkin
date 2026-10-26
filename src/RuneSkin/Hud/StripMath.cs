@@ -273,17 +273,17 @@ namespace RuneSkin.PlayerHud
         // Bottom = the lowest piece edge (end medallion tips hang below the wing): the strip is placed so it is on screen.
         public struct Frame
         {
-            public Box EndL, EndR, WingL, WingR, KnotL, KnotR, RailL, RailR, StubL, StubR, CapL, CapR, TipL, TipR, Knot2L, Knot2R;
+            public Box EndL, EndR, WingL, WingR, CapL, CapR, TipL, TipR, Knot2L, Knot2R;
             public float Bottom;
         }
 
         public static Frame TargetFrame(in Layout l, Func<string, float, float> t7)
         {
             var f = new Frame();
-            // Centre wings (user 2026-10-26): every wing-side piece hangs off the wing's inner end (StripMath.Wing) - the
-            // end medallion past its outer end (wing.x / wing.r.right = how far the medallion reaches beyond it), the
-            // wing-tip diamond at knot.dx / knot.r.dx from the inner end, the rail run from rail.dx / rail.r.dx to the bar
-            // block. No slots on a side = no wing, medallion, diamond or rail there (the block keeps its own tip art).
+            // Centre wings (user 2026-10-26, mockup bottom-hud-center-v2): each wing's pointed tip (its own diamond gem and
+            // rail stubs) sits right against the bar block's inner diamond - one connector, no separate wing-tip diamond or
+            // rail run; the end medallion past the outer end (wing.x / wing.r.right = how far it reaches beyond it). No
+            // slots on a side = no wing or medallion there (the block keeps its own tip art).
             float wingH = t7("wing.h", 95f);
             var wl = l.WingL;
             var wr = l.WingR;
@@ -295,57 +295,31 @@ namespace RuneSkin.PlayerHud
             f.EndR = onR ? new Box(wr.Right + endPadR - endRW, endRY, endRW, endRH) : new Box(wr.Inner, endRY, 0f, endRH);
             f.WingL = new Box(wl.X, 0f, wl.Right - wl.X, wingH);
             f.WingR = new Box(wr.X, 0f, wr.Right - wr.X, wingH);
-            float knotW = t7("knot.w", 40.3f), knotY = t7("knot.y", 26f), knotH = t7("knot.h", 43.2f);
-            float knotRW = t7("knot.r.w", knotW), knotRH = t7("knot.r.h", knotH), knotRY = t7("knot.r.y", knotY);
-            f.KnotL = new Box(wl.Inner + t7("knot.dx", -8.7f), knotY, onL ? knotW : 0f, knotH);
-            f.KnotR = new Box(wr.Inner + t7("knot.r.dx", -34.6f), knotRY, onR ? knotRW : 0f, knotRH);
-            // Rail rows (jointdiff / stripsim, runs 20261024-134656 vs -143631): the rail art is a crop of the target at its
-            // own scale (2 sprite px per unit), so its wire rows only land on the target's at that scale; the box is the
-            // sprite at native height on the target's rows (rail.y / rail.h). The run starts past the wing-tip diamond and
-            // ends tucked under the bar block.
-            float tuck = t7("rail.tuck", 6f);
-            float railY = t7("rail.y", 15.8f), railH = t7("rail.h", 60.6f);
-            float railRY = t7("rail.r.y", railY), railRH = t7("rail.r.h", railH);
-            var railX = wl.Inner + t7("rail.dx", 29.3f);
-            f.RailL = new Box(railX, railY, onL ? l.BarsX + t7("rail.tuck.l", tuck) - railX : 0f, railH);
-            var rx = l.BarsX + l.BarsW - tuck;
-            f.RailR = new Box(rx, railRY, onR ? wr.Inner + t7("rail.r.dx", -26f) - rx : 0f, railRH);
-            // Stubs: the same tileable rail from INSIDE the wing tip (rail.stub.wing under the tip's chevron, whose notches
-            // are see-through - user crop 0.20.0: scene showing under the left tip) to the run. Tile phase: a stub / cap
-            // abuts its run (no overlap) and starts its tiling at that joint (StubL / CapR are drawn mirrored, HudStrip),
-            // so the wire pattern meets the run's first / last column instead of an arbitrary column (seam next to the
-            // diamonds and the bar block tips).
-            var inWing = t7("rail.stub.wing", 30f);
-            var stubL = Math.Min(f.KnotL.X, wl.Inner - inWing);
-            f.StubL = new Box(stubL, railY, onL ? railX - stubL : 0f, railH);
-            var stubR = f.RailR.Right;
-            f.StubR = new Box(stubR, f.RailR.Y, onR ? Math.Max(f.KnotR.Right, wr.Inner + inWing) - stubR : 0f, f.RailR.H);
-            // rail extensions under the bar block's pointed ends: the same rail (its own y / height, tiled) runs on from the
-            // rail end to rail.under units INSIDE the block, so the block tip and the inner diamond are drawn over a
-            // continuous rail (user crops 0.20.0: separate tip caps of another height left a hard rectangular step and
-            // see-through gaps next to the tip)
-            var under = t7("rail.under", 24f);
             float k2dx = t7("knot2.dx", -21.6f), k2y = t7("knot2.y", 47.5f), k2w = t7("knot2.w", 30.5f), k2h = t7("knot2.h", 32.6f);
             f.Knot2L = new Box(l.BarsX + k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h);
             f.Knot2R = new Box(l.BarsX + l.BarsW - k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h);
-            // no wing on a side: the extension starts under the block's own inner diamond (no rail into the scene)
-            var capLX = onL ? f.RailL.Right : f.Knot2L.X;
-            f.CapL = new Box(capLX, f.RailL.Y, Math.Max(0f, l.BarsX + under - capLX), f.RailL.H);
-            var capRR = onR ? f.RailR.X : f.Knot2R.Right;
+            // Rail under the joint (user crops 0.20.0: separate tip caps of another height left a hard step and see-through
+            // gaps): one tiled rail from INSIDE the wing tip (rail.stub.wing units under its chevron, whose notches are
+            // see-through) under the inner diamond to rail.under units inside the bar block, at the rail's native height
+            // on the target's rows (rail.y / rail.h; runs 20261024-134656 / -143631: stretched rows drifted). No wing: it
+            // starts under the block's own inner diamond (no rail into the scene).
+            float railY = t7("rail.y", 15.8f), railH = t7("rail.h", 60.6f);
+            float railRY = t7("rail.r.y", railY), railRH = t7("rail.r.h", railH);
+            var inWing = t7("rail.stub.wing", 30f);
+            var under = t7("rail.under", 24f);
+            var capLX = onL ? Math.Min(wl.Inner - inWing, f.Knot2L.X) : f.Knot2L.X;
+            f.CapL = new Box(capLX, railY, Math.Max(0f, l.BarsX + under - capLX), railH);
+            var capRR = onR ? Math.Max(wr.Inner + inWing, f.Knot2R.Right) : f.Knot2R.Right;
             var capRX = l.BarsX + l.BarsW - under;
-            f.CapR = new Box(capRX, f.RailR.Y, Math.Max(0f, capRR - capRX), f.RailR.H);
-            // block-tip caps: exact crops of the target at the bar block tips (target 428..450 / 1178..1200 x 148..194: the
+            f.CapR = new Box(capRX, railRY, Math.Max(0f, capRR - capRX), railRH);            // block-tip caps: exact crops of the target at the bar block tips (target 428..450 / 1178..1200 x 148..194: the
             // rail's glint and the bead under the inner diamond, which the plain rail lacks - joint C 10.87 -> 8.03 dE76
             // predicted) on their target boxes, over the rail extensions and under the inner diamond and the block tip
             float tipY = t7("tipcap.y", 13f), tipW = t7("tipcap.w", 0f), tipH = t7("tipcap.h", 66.3f);
             f.TipL = new Box(l.BarsX + t7("tipcap.dx", -14.4f), tipY, tipW, tipH);
             f.TipR = new Box(l.BarsX + l.BarsW + t7("tipcap.r.dx", -17.3f), tipY, tipW, tipH);
-            f.Bottom = Math.Min(0f, Math.Min(Math.Min(endY, endRY), Math.Min(f.RailL.Y, f.RailR.Y)));
+            f.Bottom = Math.Min(0f, Math.Min(Math.Min(endY, endRY), Math.Min(f.CapL.Y, f.CapR.Y)));
             return f;
         }
-
-        // A wing slot [x, x + w] covers a connector diamond when it spans the diamond's centre (the slot hides it).
-        public static bool Covers(float x, float w, in Box knot) => w > 0f && x <= knot.CenterX && x + w >= knot.CenterX;
 
         // n slots over span, space-evenly (n + 1 equal gaps: margins = gaps). Too narrow: gaps shrink to minGap, then the
         // slots scale down together, never below minCell (then they overflow, centred). n = 0: nothing.

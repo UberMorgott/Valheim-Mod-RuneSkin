@@ -173,8 +173,8 @@ namespace RuneSkin.Tests
             i.CutL = CutL;
             i.CutR = CutR;
             i.WingH = 95f;
-            i.JoinL = 76f;
-            i.JoinR = 78f;
+            i.JoinL = 36f;
+            i.JoinR = 36f;
             i.EndPadL = 85f;
             i.EndPadR = 60.5f;
             i.BarsExtra = 57.7f;
@@ -199,8 +199,8 @@ namespace RuneSkin.Tests
                 var l = StripMath.Compute(i);
                 Assert.Equal(n, l.FoodShown);
                 Assert.Equal(n, l.PotionShown);
-                Assert.Equal(l.BarsX - 76f, l.WingL.Inner, 2);
-                Assert.Equal(l.BarsX + l.BarsW + 78f, l.WingR.Inner, 2);
+                Assert.Equal(l.BarsX - 36f, l.WingL.Inner, 2);
+                Assert.Equal(l.BarsX + l.BarsW + 36f, l.WingR.Inner, 2);
                 if (n == 0)
                 {
                     Assert.Equal(0f, l.WingL.Right - l.WingL.X);
@@ -278,7 +278,7 @@ namespace RuneSkin.Tests
             Assert.True(l.PotionShown == 0 || l.WingR.Right + 60.5f <= 1300f);
         }
 
-        // 16:9 / 21:9 / 16:10 at the default GUI scale: food 0..3 and potions 0..4 fit the default strip (no clipping); a larger GUI scale grows the slot and the strip and may clip the outer slots (CentreWings_ClipToTheStrip).
+        // 16:9 / 21:9 / 16:10 at the default GUI scale: food 0..4 (MorgottTweaks 4th food slot) and potions 0..4 fit the default strip (no clipping); a larger GUI scale grows the slot and the strip and may clip the outer slots (CentreWings_ClipToTheStrip).
         [Theory]
         [InlineData(1920, 1080, 1f)]
         [InlineData(1280, 720, 1f)]
@@ -291,7 +291,7 @@ namespace RuneSkin.Tests
             var canvas = System.Math.Min(w / 1920f, h / 1080f) * gui;
             var unit = StripMath.UnitPx(StripMath.SlotPx(70f, 1f, canvas), 85f);
             var box = w / (float)h >= 2.2f ? System.Math.Min(w, h * 16f / 9f) : w;
-            for (var f = 0; f <= 3; f++)
+            for (var f = 0; f <= 4; f++)
                 for (var p = 0; p <= 4; p++)
                 {
                     // the shipped centre column: 8 hotbar cells + the guardian power cell (theme size.hud.strip.*)

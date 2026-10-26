@@ -25,12 +25,12 @@ namespace RuneSkin.PlayerHud
         private readonly HudArt _art;
         private readonly RectTransform _root, _back;
         private RectTransform _front;
-        private readonly Image _wingL, _wingR, _bars, _block, _divider, _railL, _railR, _knotL, _knotR, _endL, _endR, _knot2L, _knot2R;
+        private readonly Image _wingL, _wingR, _bars, _block, _divider, _endL, _endR, _knot2L, _knot2R;
         // centre wings (target panel): tip / segments / outer end pieces per side (pre-cut wing art, StripMath.Wing)
         private Image _tipPieceL, _tipPieceR, _outerPieceL, _outerPieceR;
         private readonly RectTransform _wingBoxL, _wingBoxR;
         private readonly List<Image> _segL = new List<Image>(4), _segR = new List<Image>(4);
-        private readonly Image _field, _stubL, _stubR, _capL, _capR, _tipL, _tipR;
+        private readonly Image _field, _capL, _capR, _tipL, _tipR;
 
         // Target panel layout (mode.hud.strip.target, user screenshot 2026-10-23, strip-target/spec.md).
         public static bool Target => ThemeTokens.GetFloat("mode.hud.strip.target", 0f) > 0.5f;
@@ -71,16 +71,12 @@ namespace RuneSkin.PlayerHud
             _back = HudArt.Rect("StripBack", root);
             // Draw order: wings (tucked under the centre) -> bar block -> hotbar block -> divider; the bars follow (HudCluster),
             // then the medallions and the cells (BuildFront).
-            // Target panel extras (user screenshot 2026-10-23): rail runs and small diamond knots between the wings and the
-            // bar block, the wings themselves (fixed pieces, the right one its own art), end medallions over the wing ends.
+            // Target panel extras: the composed centre wings (pre-cut pieces), end medallions over their outer ends, the bar
+            // block's inner diamonds as the one connector to each wing tip (user 2026-10-26, mockup bottom-hud-center-v2).
             // block-tip rail caps: first = under the inner diamonds (Knot2) and the bar block's tips (composite gate of the pieces)
             // rail extensions under the bar block tips (StripMath.TargetFrame CapL / CapR): the rail itself, tiled
             _capL = Piece("RailCapLeft", _back, "sprite.hud.strip7.rail", Image.Type.Tiled);
             _capR = Piece("RailCapRight", _back, Own("sprite.hud.strip7.rail"), Image.Type.Tiled);
-            _stubL = Piece("RailStubLeft", _back, "sprite.hud.strip7.rail", Image.Type.Tiled);
-            _stubR = Piece("RailStubRight", _back, Own("sprite.hud.strip7.rail"), Image.Type.Tiled);
-            _railL = Piece("RailLeft", _back, "sprite.hud.strip7.rail", Image.Type.Sliced);
-            _railR = Piece("RailRight", _back, Own("sprite.hud.strip7.rail"), Image.Type.Sliced);
             // block-tip caps (target crops: rail glint + bead) over the rail ends, under the inner diamonds and the block tips
             _tipL = Piece("TipCapLeft", _back, "sprite.hud.strip7.tipcap", Image.Type.Simple);
             _tipR = Piece("TipCapRight", _back, Own("sprite.hud.strip7.tipcap"), Image.Type.Simple);
@@ -98,13 +94,10 @@ namespace RuneSkin.PlayerHud
             _wingBoxR.gameObject.SetActive(Target);
             _endL = Piece("EndLeft", _back, "sprite.hud.strip7.end", Image.Type.Simple);
             _endR = Piece("EndRight", _back, Own("sprite.hud.strip7.end"), Image.Type.Simple);
-            // the wing-tip diamonds over the rail run and the wing's tip stub (target: the diamond sits on top)
-            _knotL = Piece("KnotLeft", _back, "sprite.hud.strip7.knot", Image.Type.Simple);
-            _knotR = Piece("KnotRight", _back, Own("sprite.hud.strip7.knot"), Image.Type.Simple);
             // small diamonds at the bar-block end of each rail run (target: diamonds at both rail ends)
             _knot2L = Piece("Knot2Left", _back, "sprite.hud.strip7.knot2", Image.Type.Simple);
             _knot2R = Piece("Knot2Right", _back, Own("sprite.hud.strip7.knot2"), Image.Type.Simple);
-            foreach (var img in new[] { _capL, _capR, _stubL, _stubR, _railL, _railR, _tipL, _tipR, _knotL, _knotR, _endL, _endR, _knot2L, _knot2R }) img.gameObject.SetActive(Target);
+            foreach (var img in new[] { _capL, _capR, _tipL, _tipR, _endL, _endR, _knot2L, _knot2R }) img.gameObject.SetActive(Target);
             // always built like the other target pieces (run 20261023-191817: created only when the sprite resolved at
             // construction -> never built in game, the scene showed between the HP and stamina channels)
             // own tint token (color.hud.strip7.field): the 0.20.0 field art read ~27 % lighter than the target's metal (mean
@@ -243,8 +236,8 @@ namespace RuneSkin.PlayerHud
                 CentreWings = Target,
                 CutL = Cut("wing.", true),
                 CutR = Cut("wing.r.", false),
-                JoinL = T7("wing.join", 76f),
-                JoinR = T7("wing.r.join", 78f),
+                JoinL = T7("wing.join", 36f),
+                JoinR = T7("wing.r.join", 36f),
                 EndPadL = T7("wing.x", 85f),
                 EndPadR = T7("wing.r.right", 60.5f),
                 CenterDX = ThemeTokens.GetFloat("size.hud.strip.center.dx", 0f),
@@ -332,8 +325,8 @@ namespace RuneSkin.PlayerHud
             }
         }
 
-        // Target panel frame (strip-target/spec.md, units = target px x 85 / 59): fixed wing pieces from the outer ends,
-        // end medallions over them, a small diamond knot and a stretched rail run from each wing to the bar block.
+        // Target panel frame (units = target px x 85 / 59, StripMath.TargetFrame): centre wings against the bar block's
+        // inner diamonds, end medallions over their outer ends, a rail from inside each wing tip under the block tip.
         private static float T7(string name, float fallback) => ThemeTokens.GetFloat("size.hud.strip7." + name, fallback);
 
         // Lowest frame edge in strip units (<= 0: the end medallion tips hang below the wings); HudCluster places the
@@ -397,29 +390,17 @@ namespace RuneSkin.PlayerHud
             Show(_wingR, false);
             WingPieces(l.WingL, _wingBoxL, _tipPieceL, _outerPieceL, _segL, "sprite.hud.strip7.wing.seg");
             WingPieces(l.WingR, _wingBoxR, _tipPieceR, _outerPieceR, _segR, "sprite.hud.strip7.wing.r.seg");
-            Place(_knotL, f.KnotL, false);
-            Place(_knotR, f.KnotR, !HasOwn("sprite.hud.strip7.knot"));
-            Place(_railL, f.RailL, false);
-            Place(_railR, f.RailR, !HasOwn("sprite.hud.strip7.rail"));
-            Show(_railL, f.RailL.W > 0f);
-            Show(_railR, f.RailR.W > 0f);
-            Show(_stubL, f.StubL.W > 0f);
-            Show(_stubR, f.StubR.W > 0f);
-            // tile phase: every stub / cap starts its tiling at the joint with its run (StripMath.TargetFrame); a tiled image
-            // tiles from its local left, so the pieces left of a run (StubL, CapR) are drawn mirrored
-            Place(_stubL, f.StubL, true);
-            Place(_stubR, f.StubR, false);
+            // tile phase: a tiled image tiles from its local left; the right rail is drawn mirrored so both tile outward
+            // from the block tips
             Place(_capL, f.CapL, false);
             Place(_capR, f.CapR, true);
-            foreach (var (img, h) in new[] { (_stubL, f.StubL.H), (_stubR, f.StubR.H), (_capL, f.CapL.H), (_capR, f.CapR.H) }) FitTile(img, h);
+            foreach (var (img, h) in new[] { (_capL, f.CapL.H), (_capR, f.CapR.H) }) FitTile(img, h);
             Place(_tipL, f.TipL, false);
             Place(_tipR, f.TipR, !HasOwn("sprite.hud.strip7.tipcap"));
             Show(_tipL, f.TipL.W > 0f);
             Show(_tipR, f.TipR.W > 0f);
             Place(_knot2L, f.Knot2L, false);
             Place(_knot2R, f.Knot2R, !HasOwn("sprite.hud.strip7.knot2"));
-            Show(_knotL, f.KnotL.W > 0f);
-            Show(_knotR, f.KnotR.W > 0f);
             Field(l);
         }
 
