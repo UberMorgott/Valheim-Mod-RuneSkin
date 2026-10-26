@@ -1195,6 +1195,11 @@ namespace RuneSkin.InventoryScreen
                 if (Mathf.Abs(sd.x - want) > 0.01f) grid.m_gridRoot.sizeDelta = new Vector2(want, sd.y);
             }
             for (var i = 0; i < grid.m_elements.Count; i++) CellMarks(grid.m_elements[i]);
+            // EAQS cells right after EAQS put them back on its own panel spots (its UpdateGui postfix, every frame): placed
+            // only in LateUpdate they sat over the crafting window for the rest of the Update phase, where the input module
+            // and InventoryGrid.GetHoveredElement raycast (run 20261026-230323 tips-eaqs-utility: Megingjord's Utility
+            // cell measured under Recipes, no tooltip). LateUpdate places them again after a relayout.
+            if (isPlayer) PlaceEaqsCells(grid, s.Scale, cellsOnly: true);
             var inv = grid.GetInventory();
             if (rebuilt || s.OverlayRevision != InventoryRegistry.OverlayRevision || !ReferenceEquals(s.Inventory, inv) || s.ThemeRevision != ThemeTokens.Revision)
             {
@@ -1453,7 +1458,7 @@ namespace RuneSkin.InventoryScreen
         // After EAQS placed its cells this frame: storage cells in the doll window's two columns (body left, jewellery /
         // light / mods right, rows scrolling together past the room), the alcove and the live preview between them; quick
         // cells over the HUD strip's potion cells.
-        private void PlaceEaqsCells(InventoryGrid grid, float gridScale)
+        private void PlaceEaqsCells(InventoryGrid grid, float gridScale, bool cellsOnly = false)
         {
             RefreshEaqs();
             if (_entriesRevision != InventoryRegistry.Revision || _entries.Count != CountDollSources()) RebuildEntries();
@@ -1494,6 +1499,11 @@ namespace RuneSkin.InventoryScreen
                 {
                     PlaceOwnCell(entry.Cell, cx, cy, d.Cell, shown);
                 }
+            }
+            if (cellsOnly)
+            {
+                PlaceQuickCells(grid);
+                return;
             }
             var figure = Move(o.DollFigure, _dollOff);
             var fits = figure.W >= d.Cell;
