@@ -279,17 +279,18 @@ namespace RuneSkin.CraftingScreen
         }
 
         // The craft row (o.Craft) split for its two states (approved mockup craft-progress.png). Idle: amount stepper
-        // [-][N][+] at the left (step buttons stepShare * h wide, field fieldShare * h wide, all stepH * h tall, centred;
+        // [-][N][+] at the left (step buttons stepShare * h wide, field fieldShare * h wide, all stepH * h tall, centred,
+        // innerShare * gap apart;
         // the whole stepper at most maxShare of the row, shrunk evenly below that), the craft button takes the rest.
         // Progress: framed bar | cancel button (cancelShare of the row, clamped to [h * 1.2, h * 2.6]). Everything inside
         // `craft`; stepper == false -> the button gets the whole row.
         public static CraftRow ActionRow(Box craft, bool stepper, float gap, float stepShare = 0.68f, float fieldShare = 0.85f,
-            float maxShare = 0.4f, float cancelShare = 0.27f, float stepH = 0.95f)
+            float maxShare = 0.4f, float cancelShare = 0.27f, float stepH = 0.95f, float innerShare = 0.35f)
         {
             var r = new CraftRow { Button = craft };
             if (craft.IsEmpty) return r;
             var h = craft.H;
-            var inner = gap * 0.35f;
+            var inner = gap * Clamp(innerShare, 0f, 2f);
             if (stepper)
             {
                 var step = h * stepShare;
@@ -315,6 +316,14 @@ namespace RuneSkin.CraftingScreen
             r.Cancel = new Box(craft.Right - cw, craft.Y, cw, h);
             r.Bar = new Box(craft.X, craft.Y, Math.Max(0f, r.Cancel.X - gap - craft.X), h);
             return r;
+        }
+
+        // Craft button lead glyph (anvil / upgrade): a square of size x h, pad x h after the button's left edge, centred
+        // vertically. Depends on the button only, never on the label (the label's span is laid out after it).
+        public static Box LeadGlyph(Box button, float pad, float size)
+        {
+            var g = button.H * Clamp(size, 0.1f, 1f);
+            return new Box(button.X + button.H * Clamp(pad, 0f, 1f), button.Y + (button.H - g) / 2f, g, g);
         }
 
         // Craft amount: clamp to [1, max] (max < 1 -> 1); typed text parsed as digits only (empty / junk -> fallback).

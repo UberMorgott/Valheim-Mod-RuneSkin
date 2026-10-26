@@ -182,6 +182,37 @@ namespace RuneSkin.Tests
             Assert.True(r.Bar.W > r.Cancel.W);
         }
 
+        [Theory]
+        [InlineData(316f, 64f)]
+        [InlineData(180f, 48f)]
+        public void ActionRowStepGapFollowsInnerShare(float w, float h)
+        {
+            var craft = new Box(0f, 0f, w, h);
+            var r = CraftingMath.ActionRow(craft, true, 8f, innerShare: 0.8f);
+            var tight = CraftingMath.ActionRow(craft, true, 8f);
+            Assert.True(r.Field.X - r.Minus.Right > tight.Field.X - tight.Minus.Right);
+            Assert.True(r.Plus.Right - craft.X <= w * 0.4f + 0.01f, "stepper wider than its share");
+            Assert.False(r.Plus.Overlaps(r.Button));
+        }
+
+        // Anvil box from the button alone (mockup idle: pad 0.18 h, side 0.58 h) and the label span after it never
+        // reaches back over it, whatever the label width.
+        [Theory]
+        [InlineData(178f, 62f)]
+        [InlineData(140f, 40f)]
+        [InlineData(320f, 64f)]
+        public void LeadGlyphFixedByButtonAndLabelStartsAfterIt(float w, float h)
+        {
+            var b = new Box(500f, 800f, w, h);
+            var g = CraftingMath.LeadGlyph(b, 0.18f, 0.58f);
+            Assert.Equal(b.X + h * 0.18f, g.X, 3);
+            Assert.Equal(h * 0.58f, g.W, 3);
+            Assert.Equal(b.Y + (h - g.H) / 2f, g.Y, 3);
+            Assert.True(g.Inside(b));
+            var start = RuneSkin.Restyle.LabelFit.LeadStart(g.Right, 0.16f * h, b.X);
+            Assert.True(start >= g.Right + 0.16f * h - 0.001f);
+        }
+
         [Fact]
         public void ActionRowWithoutStepperButtonTakesTheRow()
         {

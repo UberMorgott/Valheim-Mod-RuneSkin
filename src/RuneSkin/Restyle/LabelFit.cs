@@ -55,6 +55,9 @@ namespace RuneSkin.Restyle
 
         // The cap inset of a plate scales down on small buttons (a 40 px arrow button keeps its "<"): at most share of
         // the button width per side.
+        // Start of the text area after a lead glyph (craft button anvil): its drawn right edge + gap, never before the box.
+        public static float LeadStart(float glyphRight, float gap, float boxMin) => Math.Max(boxMin, glyphRight + Math.Max(0f, gap));
+
         public static float Inset(float inset, float buttonWidth, float share) =>
             Math.Max(0f, Math.Min(inset, Math.Max(0f, buttonWidth) * Math.Max(0f, share)));
     }

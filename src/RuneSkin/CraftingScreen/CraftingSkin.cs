@@ -159,8 +159,8 @@ namespace RuneSkin.CraftingScreen
         {
             var panel = ButtonPanel();
             if (!panel) return;
-            _minus = StepButton(panel, Prefix + "AmountMinus", "–", () => SetAmount(_amount - 1));
-            _plus = StepButton(panel, Prefix + "AmountPlus", "+", () => SetAmount(_amount + 1));
+            _minus = StepButton(panel, Prefix + "AmountMinus", "craft.amount.glyph.minus", () => SetAmount(_amount - 1));
+            _plus = StepButton(panel, Prefix + "AmountPlus", "craft.amount.glyph.plus", () => SetAmount(_amount + 1));
             var field = new GameObject(Prefix + "AmountField", typeof(RectTransform)).AddComponent<Image>();
             field.rectTransform.SetParent(panel, false);
             var mark = DollCell.Mark(field, "craft.amount.field", "craft amount field (recessed well)");
@@ -184,7 +184,10 @@ namespace RuneSkin.CraftingScreen
             ShowAmount(false);
         }
 
-        private Button StepButton(RectTransform parent, string name, string glyph, Action click)
+        // Step glyph = one sprite pair of the same stroke (glyph_minus / glyph_plus, 48 px, 12 px bars) in one colour
+        // (roles craft.amount.glyph.*): the old TMP en dash "–" drew a hairline beside the bold "+" and was dimmed to
+        // alpha 0.35 at amount 1 (0.25.0 user report: [-] barely visible). The disabled step keeps its plate only.
+        private Button StepButton(RectTransform parent, string name, string glyphRole, Action click)
         {
             var image = new GameObject(name, typeof(RectTransform)).AddComponent<Image>();
             image.rectTransform.SetParent(parent, false);
@@ -195,9 +198,13 @@ namespace RuneSkin.CraftingScreen
             var mark = DollCell.Mark(image, "craft.amount.step", "craft amount step button (square glyph plate)");
             mark.Outcome = Restyler.Apply(image, mark, ThemeTokens.Role(mark.Role)) ? Outcome.Styled : Outcome.Degraded;
             button.onClick.AddListener(() => click());
-            var label = NewText("Text", image.rectTransform, glyph);
-            Stretch(label.rectTransform);
-            label.color = ThemeTokens.GetColor("color.text.item.title", label.color);
+            var glyph = new GameObject("Glyph", typeof(RectTransform)).AddComponent<Image>();
+            glyph.rectTransform.SetParent(image.rectTransform, false);
+            glyph.raycastTarget = false;
+            glyph.preserveAspect = true;
+            var gm = DollCell.Mark(glyph, glyphRole, "craft amount step glyph (" + glyphRole + ")");
+            gm.Outcome = Restyler.Apply(glyph, gm, ThemeTokens.Role(glyphRole)) ? Outcome.Styled : Outcome.Degraded;
+            glyph.enabled = gm.Outcome == Outcome.Styled;
             return button;
         }
 
@@ -1360,7 +1367,8 @@ namespace RuneSkin.CraftingScreen
             {
                 var progress = _gui.m_craftProgressPanel && _gui.m_craftProgressPanel.gameObject.activeSelf;
                 var stepper = !progress && AmountShown();
-                var row = CraftingMath.ActionRow(o.Craft, stepper, o.Craft.H * 0.1f);
+                var row = CraftingMath.ActionRow(o.Craft, stepper, o.Craft.H * 0.1f,
+                    innerShare: ThemeTokens.GetFloat("share.craft.step.gap", 0.8f));
                 Geo.Place(_canvas, panel, o.Craft);
                 Geo.Place(_canvas, (RectTransform)_gui.m_craftButton.transform, row.Button);
                 if (_gui.m_craftProgressPanel) Geo.Place(_canvas, (RectTransform)_gui.m_craftProgressPanel, o.Craft);
@@ -1368,8 +1376,8 @@ namespace RuneSkin.CraftingScreen
                 if (label)
                 {
                     Geo.Place(_canvas, label.rectTransform, row.Button);
-                    Label(label, TextAlignmentOptions.Center, o.Craft.H * 0.42f, 14f, upper: true);
-                    Condense(label, squeeze: false); // PlateLabelFit sets its margins in the label's local units: no x-scale
+                    Label(label, TextAlignmentOptions.Center, o.Craft.H * 0.42f, ThemeTokens.GetFloat("size.craft.button.font.min", 11f), upper: true);
+                    Condense(label, squeeze: false); // PlateLabelFit sets its margins in the label's local units: no x-scale; fit = font step-down
                     CraftGlyph(label, row.Button);
                 }
                 Amount(row, stepper);
@@ -1546,6 +1554,13 @@ namespace RuneSkin.CraftingScreen
                 if (go && go.activeSelf != on) go.SetActive(on);
         }
 
+        private void StepGlyph(Button b, Box box, float side)
+        {
+            var t = b.transform.Find("Glyph");
+            if (!t || !t.TryGetComponent<Image>(out var glyph) || !glyph.enabled) return;
+            Geo.Place(_canvas, glyph.rectTransform, new Box(box.X + (box.W - side) / 2f, box.Y + (box.H - side) / 2f, side, side));
+        }
+
         private void Amount(CraftRow r, bool shown)
         {
             if (!_minus || !_plus || !_amountField) return;
@@ -1558,16 +1573,10 @@ namespace RuneSkin.CraftingScreen
             Geo.Place(_canvas, (RectTransform)_amountField.transform, r.Field);
             if (_minus.interactable != _amount > 1) _minus.interactable = _amount > 1;
             if (_plus.interactable != _amount < max) _plus.interactable = _amount < max;
-            foreach (var b in new[] { _minus, _plus })
-            {
-                var g = b.GetComponentInChildren<TMP_Text>(true);
-                if (!g) continue;
-                SameFace(g);
-                var gold = ThemeTokens.GetColor("color.text.item.title", g.color);
-                var want = b.interactable ? gold : new Color(gold.r, gold.g, gold.b, 0.35f);
-                if (g.color != want) g.color = want;
-                Label(g, TextAlignmentOptions.Center, r.Minus.H * 0.4f, 10f);
-            }
+            // Step glyphs: one side (share.craft.step.glyph of the step height, mockup: the bars ~0.28 h), centred.
+            var side = r.Minus.H * Mathf.Clamp(ThemeTokens.GetFloat("share.craft.step.glyph", 0.4f), 0.1f, 0.9f);
+            StepGlyph(_minus, r.Minus, side);
+            StepGlyph(_plus, r.Plus, side);
             if (_amountText)
             {
                 SameFace(_amountText);
@@ -1628,7 +1637,14 @@ namespace RuneSkin.CraftingScreen
             }
         }
 
-        // Glyph left of the centred label: craft in the craft tab, upgrade otherwise.
+        // Glyph at the button's left (craft in the craft tab, upgrade otherwise) and the label in the span right of it
+        // (approved mockup craft-progress.png, idle: pad 0.18 h | anvil 0.58 h | gap 0.16 h | text centred | 0.26 h).
+        // Root cause of 0.24.0 / 0.25.0 "anvil over the first letter": the glyph was placed from the label's
+        // preferredWidth (clamped to the left edge for a wide label) while PlateLabelFit decided the glyph's side from
+        // the drawn text bounds; a text already drawn under the glyph's centre made it no obstacle, so the label kept
+        // centring over the whole plate (a stable overlap once d8a8cfc dropped the 0.88 condense). Now the glyph box is
+        // fixed by the button alone and handed to PlateLabelFit as its lead: the text area starts gap after the glyph,
+        // one line, auto-size steps the font down to fit (no x-scale: margins stay in the label's local units).
         private void CraftGlyph(TMP_Text label, Box b)
         {
             if (!_craftGlyph) return;
@@ -1640,11 +1656,11 @@ namespace RuneSkin.CraftingScreen
                 mark.Outcome = Restyler.Apply(_craftGlyph, mark, ThemeTokens.Role(role)) ? Outcome.Styled : Outcome.Degraded;
                 _craftGlyph.enabled = mark.Outcome == Outcome.Styled;
             }
-            if (!_craftGlyph.enabled) return;
-            var g = b.H * 0.6f;
-            var textW = Mathf.Min(b.W * 0.7f, label.preferredWidth);
-            var x = b.X + (b.W - textW) / 2f - g - b.H * 0.15f;
-            Geo.Place(_canvas, _craftGlyph.rectTransform, new Box(Mathf.Max(b.X + b.H * 0.3f, x), b.Y + (b.H - g) / 2f, g, g));
+            var lead = CraftingMath.LeadGlyph(b, ThemeTokens.GetFloat("share.craft.glyph.pad", 0.18f), ThemeTokens.GetFloat("share.craft.glyph.size", 0.58f));
+            if (_craftGlyph.enabled) Geo.Place(_canvas, _craftGlyph.rectTransform, lead);
+            if (label.TryGetComponent<PlateLabelFit>(out var fit) && !fit.Reverted)
+                fit.Lead(_craftGlyph.enabled ? _craftGlyph : null, ThemeTokens.GetFloat("share.craft.glyph.gap", 0.16f),
+                    ThemeTokens.GetFloat("share.craft.label.inset", 0.26f), singleLine: true);
         }
 
         // Places a graphic keeping its aspect (icons).

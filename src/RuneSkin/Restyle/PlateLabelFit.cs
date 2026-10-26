@@ -20,6 +20,14 @@ namespace RuneSkin.Restyle
         private TMP_Text _text;
         private string _measured;
         private int _next;
+        // Lead glyph (craft button anvil, 0.25.1): an icon the screen places at a fixed spot left of the label. The
+        // text area starts _leadGap x button height after its drawn right edge (no cap inset on that side) and it is no
+        // obstacle of the generic scan, which reads an icon's side from the drawn text bounds (a text already under the
+        // icon's centre never moved off it). _edge (x height, >= 0) replaces the cap inset at the plate's right end;
+        // _single keeps one line (auto-size steps the font down instead of wrapping).
+        private Image _lead;
+        private float _leadGap, _edge = -1f;
+        private bool _single;
 
         public void Init(RectTransform button, float inset)
         {
@@ -31,6 +39,18 @@ namespace RuneSkin.Restyle
             // Sibling plated buttons of one size share one label size (TextSizeGroup).
             if (_text && button && button.parent) TextSizeGroup.Join(_text, button.parent, button);
             Apply();
+        }
+
+        // Screen-owned lead glyph + right inset + one-line mode (CraftingSkin.CraftGlyph); gap / edge in shares of the
+        // button height. Null glyph = no lead (generic span), edge < 0 = the role's cap inset.
+        public void Lead(Image glyph, float gap, float edge, bool singleLine)
+        {
+            if (_lead == glyph && Mathf.Approximately(_leadGap, gap) && Mathf.Approximately(_edge, edge) && _single == singleLine) return;
+            _lead = glyph;
+            _leadGap = Mathf.Max(0f, gap);
+            _edge = edge;
+            _single = singleLine;
+            _dirty = true;
         }
 
         private void OnEnable() => _dirty = true;
@@ -63,14 +83,31 @@ namespace RuneSkin.Restyle
             var lmax = _button.InverseTransformPoint(l.TransformPoint(l.rect.max));
             var inset = LabelFit.Inset(Inset, br.width, ThemeTokens.GetFloat("share.text.fit.inset", 0.12f));
             var v = ThemeTokens.GetFloat("size.text.fit.vinset", 4f);
-            // Free span (batch G): a glyph beside the label inside the plate (craft button anvil) narrows it; the label
-            // is centred in what is left, the cap inset kept on both sides of that span.
-            var span = Span(br, lmin, lmax);
-            var m = new Vector4(LabelFit.Margin(inset, lmin.x - span.Min), LabelFit.Margin(v, br.yMax - lmax.y),
-                LabelFit.Margin(inset, span.Max - lmax.x), LabelFit.Margin(v, lmin.y - br.yMin));
+            // Free span (batch G): a glyph beside the label inside the plate narrows it; the label is centred in what
+            // is left, the cap inset kept on both sides of that span. A lead glyph bounds the left side by itself + gap.
+            var lead = LeadActive();
+            var span = Span(br, lmin, lmax, lead);
+            var right = _edge >= 0f ? _edge * br.height : inset;
+            var leftPad = inset;
+            if (lead)
+            {
+                var start = Mathf.Max(span.Min, LabelFit.LeadStart(TextInset.Drawn(_lead, _button).xMax, _leadGap * br.height, br.xMin));
+                span = new LayoutMath.Span(start, Mathf.Max(start, span.Max));
+                leftPad = 0f;
+            }
+            var m = new Vector4(LabelFit.Margin(leftPad, lmin.x - span.Min), LabelFit.Margin(v, br.yMax - lmax.y),
+                LabelFit.Margin(right, span.Max - lmax.x), LabelFit.Margin(v, lmin.y - br.yMin));
+            if (_single)
+            {
+                _measured = _text.text;
+                if (_text.textWrappingMode != TextWrappingModes.NoWrap) _text.textWrappingMode = TextWrappingModes.NoWrap;
+                if (m == _text.margin) return;
+                _text.margin = _set = m;
+                return;
+            }
             // One line while it still reads at >= share.text.fit.oneline of the full size, else two lines (a short label
             // never breaks just because wrapping lets it stay larger).
-            var areaW = span.Size - Mathf.Max(0f, inset) * 2f;
+            var areaW = span.Size - Mathf.Max(0f, leftPad) - Mathf.Max(0f, right);
             // Screen code may reset the label to a fixed size after the restyle (settings tab column): that size becomes
             // the auto-size maximum again.
             if (!_text.enableAutoSizing)
@@ -104,7 +141,9 @@ namespace RuneSkin.Restyle
         private static readonly List<LayoutMath.Span> Obstacles = new List<LayoutMath.Span>(4);
 
         // Plate minus the glyphs beside the drawn label (images inside the button, not the plate, not the label's own).
-        private LayoutMath.Span Span(Rect br, Vector3 lmin, Vector3 lmax)
+        private bool LeadActive() => _lead && _lead.enabled && _lead.sprite && _lead.gameObject.activeInHierarchy && _lead.transform.IsChildOf(_button);
+
+        private LayoutMath.Span Span(Rect br, Vector3 lmin, Vector3 lmax, bool lead)
         {
             var tmin = lmin.x;
             var tmax = lmax.x;
@@ -123,6 +162,7 @@ namespace RuneSkin.Restyle
             {
                 if (!img || img == plate || !img.enabled || !img.sprite || img.type == Image.Type.Filled) continue;
                 if (img.transform.IsChildOf(transform) || transform.IsChildOf(img.transform)) continue;
+                if (lead && img == _lead) continue;
                 if (Ornament(img)) continue;
                 var r = TextInset.Drawn(img, _button);
                 if (r.width >= br.width * 0.6f || r.yMax < lmin.y || r.yMin > lmax.y) continue;
