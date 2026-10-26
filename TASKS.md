@@ -909,3 +909,7 @@ Pre-existing / foreign (not windows-v2):
 - tips-wheel / tips-bottom-player: FAIL identically in 20261024-134656 / -143631 / -162507 / -175034 / -205429 / -213803 (top=Recipes, box 0).
 - grid-cells-chest-large-1280x720 (container cells past the right edge at the cell floor): FAIL in 20261024-134656 / -143631 / -162507 / -175034 (layout A, before windows-v2).
 - m4-bar-caps, m4-maphint-inset, overdraw-*: known.
+
+## 0.24.0 (2026-10-26) - windows-v2 released
+- One RuneWindowHeader on every window (v2 rune-metal plate, Codex 8/10), per-window positions (inventory block as one), corner-cap content inset on every window, large map as one window (fixed side panel, maximize / restore, fitted map image), stats header on the painted plaque, mod-window close buttons in the header, stats Escape read first (HarmonyPriority.First).
+- Run 20261026-190758 (ui-runeskin-windows, m2, m3, stats, info, m4, 41d): every windows / header / corner / map / stats-back check PASS; corner-clear-info-CharacterStats caps=0 waived (harness n/a fix tools ba8e9ff). Pre-existing / foreign FAILs as listed in the windows-v2 section above (grid-cells-chest-large-1280x720 identical in 20261024-175034, tips-*, icon-alpha VT_Fox_head (Vaettir), m4-bar-caps, m4-maphint-inset, overdraw-*). Bundle 016DBA6F.
