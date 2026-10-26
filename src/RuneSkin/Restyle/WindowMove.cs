@@ -8,18 +8,24 @@ using UnityEngine.UI;
 
 namespace RuneSkin.Restyle
 {
-    // Movable windows (user call 2026-10-23): every RuneSkin window with a title band can be dragged by that band
-    // (WindowDrag, never the whole window: item drag in the grids stays vanilla). A window's place = its layout default
-    // + a user offset (canvas units, y down), clamped fully on screen and above the bottom HUD strip
-    // (WindowMoveMath.Clamp: a default already past the bounds is never moved, so no saved offset = today's docking).
-    // Docked groups move as one (the inventory column block: dock, centre, crafting, the skills / trophies panels
-    // docked over it). Offsets persist per window id + screen resolution in BepInEx\cache\RuneSkin\window-positions.txt;
-    // a double-click on the band resets that window, the Layout.ResetLayout action in ConfigurationManager resets all.
-    // Owners apply the offset in their own layout pass (WindowMove.Place on the default box); windows vanilla or another
-    // mod positions (compendium, map legend, mod panels) get a MovableWindow that adds it after their writes.
+    // Movable windows (user call 2026-10-23): every RuneSkin window carries one RuneWindowHeader and is dragged by it
+    // (WindowDrag, never the whole window: item drag in the grids stays vanilla). A window's place = its layout default +
+    // a user offset (canvas units, y down), clamped fully on screen above the bottom HUD strip (WindowMoveMath.Clamp: a
+    // default already past the bounds is never moved, so no saved offset = the default layout). The docked inventory
+    // block (character name row, player grid, chest / backpack dock) moves as one ("inventory": its windows share their
+    // edges until the new inventory layout); every other window moves on its own - crafting, skills, trophies and
+    // achievements on top of the block offset, stats / compendium / map legend / Almanac / mod windows alone. Offsets
+    // persist per window id + screen resolution in BepInEx\cache\RuneSkin\window-positions.txt; a double-click on the
+    // header resets that window, the Layout.ResetLayout action in ConfigurationManager resets all. Owners apply the
+    // offset in their own layout pass (WindowMove.Place / Applied on the default box); windows vanilla or another mod
+    // positions (compendium, map legend, mod panels) get a MovableWindow that adds it after their writes.
     public static class WindowMove
     {
         public const string Inventory = "inventory";
+        public const string Crafting = "crafting";
+        public const string Skills = "skills";
+        public const string Trophies = "trophies";
+        public const string Achievements = "achievements";
         public const string Stats = "stats";
         public const string Compendium = "compendium";
         public const string MapLegend = "map.legend";
@@ -210,20 +216,6 @@ namespace RuneSkin.Restyle
             return drag;
         }
 
-        // Handle stretched over the top band of `window` (height in the window's local units): for windows RuneSkin does
-        // not lay out (vanilla / mod panels).
-        public static WindowDrag TopBand(RectTransform window, string id, float height, Transform moved = null)
-        {
-            var drag = Handle(window, id, moved ? moved : window);
-            if (!drag) return null;
-            var rt = drag.rectTransform;
-            rt.anchorMin = new Vector2(0f, 1f);
-            rt.anchorMax = Vector2.one;
-            rt.pivot = new Vector2(0.5f, 1f);
-            rt.offsetMin = new Vector2(0f, -height);
-            rt.offsetMax = Vector2.zero;
-            return drag;
-        }
     }
 
     // The drag band: draws nothing (empty mesh), takes the pointer. Drag = move the window by the pointer travel (screen
@@ -261,8 +253,8 @@ namespace RuneSkin.Restyle
         public void OnDrag(PointerEventData eventData)
         {
             if (!_dragging) return;
-            var d = (eventData.position - _start) / Scale();
-            WindowMove.Set(Id, _startOffset + new Vector2(d.x, -d.y));
+            WindowHeaderMath.DragOffset(_startOffset.x, _startOffset.y, _start.x, _start.y, eventData.position.x, eventData.position.y, Scale(), out var dx, out var dy);
+            WindowMove.Set(Id, new Vector2(dx, dy));
         }
 
         public void OnEndDrag(PointerEventData eventData)
@@ -275,7 +267,7 @@ namespace RuneSkin.Restyle
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (eventData.button == PointerEventData.InputButton.Left && eventData.clickCount >= 2 && !string.IsNullOrEmpty(Id)) WindowMove.Reset(Id);
+            if (WindowHeaderMath.IsReset(eventData.clickCount, eventData.button == PointerEventData.InputButton.Left) && !string.IsNullOrEmpty(Id)) WindowMove.Reset(Id);
         }
 
         // A button / toggle / field of the window under the band keeps its clicks.

@@ -267,31 +267,33 @@ namespace RuneSkin.InfoScreens
             var inv = InventorySkin.Instance;
             if (!inv || !_canvas) return;
             var k = inv.SkinScaleValue;
-            var box = InfoArt.RightPanel(inv, ThemeTokens.GetFloat("size.info.trophies.w", 1000f) * k);
+            var box = InfoArt.Panel(inv, WindowMove.Trophies, ThemeTokens.GetFloat("size.info.trophies.w", 1000f) * k, _canvas);
             if (box.IsEmpty) return;
             Geo.SetScale(_frame, 1f);
             Geo.Place(_canvas, _frame, box);
             var pad = ThemeTokens.GetFloat("size.info.pad", 22f) * k;
             var inner = new Box(box.X + pad, box.Y + pad, box.W - 2f * pad, box.H - 2f * pad);
-            var headerH = ThemeTokens.GetFloat("size.info.header", 64f) * k;
             var gap = ThemeTokens.GetFloat("size.info.trophy.gap", 8f) * k;
-            // Title band = a drag band of the docked inventory group (this panel docks over its columns).
-            var band = WindowMove.Handle(_frame, WindowMove.Inventory);
-            if (band) Geo.Place(_canvas, band.rectTransform, new Box(inner.X, inner.Y, inner.W, headerH));
+            // The window's one header (RuneWindowHeader): band at the window top, title "topic" centred in the rune face
+            // (mirrored), the unlocked / total count in the aux slot; same plate / height as every window, no knots.
+            var headerH = WindowHeaderMath.HeaderHeight(ThemeTokens.GetFloat("size.win.header", 40f), k);
+            var header = RuneWindowHeader.Ensure(_frame, WindowMove.Trophies);
             foreach (var c in Children.Of(_frame))
             {
                 if (!(c is RectTransform rt) || !c.gameObject.activeSelf) continue;
-                if (c.name == "topic" && c.TryGetComponent<TMP_Text>(out var title))
-                {
-                    Geo.Place(_canvas, rt, new Box(inner.X, inner.Y, inner.W, headerH));
-                    InfoArt.Label(title, TextAlignmentOptions.Center, headerH * 0.55f, 16f, true);
-                    InfoArt.TitleKnots(_canvas, title, new Box(inner.X, inner.Y, inner.W, headerH), _knotL, _knotR);
-                }
+                if (c.name == "topic" && c.TryGetComponent<TMP_Text>(out var title)) { if (header) header.Adopt(title, "$runeskin_win_trophies"); }
                 else if (c.name == "Closebutton") Geo.SetScale(rt, 0f); // the selected tab closes (mockup: no close button)
             }
-            Geo.Place(_canvas, _count.rectTransform, new Box(inner.Right - inner.W * 0.26f - 8f * k, inner.Y, inner.W * 0.26f, headerH));
-            InfoArt.Label(_count, TextAlignmentOptions.MidlineRight, headerH * 0.34f, 13f);
-            var y = inner.Y + headerH;
+            var countW = ThemeTokens.GetFloat("size.info.count.w", 150f) * k;
+            if (header)
+            {
+                header.Place(_canvas, new Box(box.X, box.Y, box.W, headerH), null, countW);
+                Geo.Place(_canvas, _count.rectTransform, header.AuxBox);
+                InfoArt.Label(_count, TextAlignmentOptions.MidlineRight, header.AuxBox.H * 0.5f, 13f);
+            }
+            if (_knotL) Geo.SetScale(_knotL.rectTransform, 0f);
+            if (_knotR) Geo.SetScale(_knotR.rectTransform, 0f);
+            var y = box.Y + headerH + gap;
             var tabsH = ThemeTokens.GetFloat("size.info.tabs", 70f) * k;
             _tabs.Layout(_canvas, new Box(inner.X, y, inner.W, tabsH), k);
             y += tabsH + gap;

@@ -186,5 +186,27 @@ namespace RuneSkin.ModScreens
             if (t.Contains("bounty") || t.Contains("bounties")) return "glyph.board.bounty";
             return null;
         }
+
+        // Header title of a mod window without a title text of its own: its object name made readable ("(Clone)" and
+        // namespace dots dropped, CamelCase / '_' split: "EnchantingUI(Clone)" -> "Enchanting UI"), else the window id.
+        public static string WindowTitle(string unitName, string id)
+        {
+            if (string.IsNullOrEmpty(unitName)) return id ?? "";
+            var s = unitName;
+            if (s.EndsWith("(Clone)", StringComparison.Ordinal)) s = s.Substring(0, s.Length - 7);
+            var dot = s.LastIndexOf('.');
+            if (dot >= 0 && dot < s.Length - 1) s = s.Substring(dot + 1);
+            var sb = new System.Text.StringBuilder(s.Length + 8);
+            for (var i = 0; i < s.Length; i++)
+            {
+                var c = s[i];
+                if (c == '_' || c == '-') { if (sb.Length > 0 && sb[sb.Length - 1] != ' ') sb.Append(' '); continue; }
+                var split = i > 0 && char.IsUpper(c) && (char.IsLower(s[i - 1]) || i + 1 < s.Length && char.IsLower(s[i + 1]) && char.IsUpper(s[i - 1]));
+                if (split && sb.Length > 0 && sb[sb.Length - 1] != ' ') sb.Append(' ');
+                sb.Append(c);
+            }
+            var r = sb.ToString().Trim();
+            return r.Length > 0 ? r : id ?? "";
+        }
     }
 }

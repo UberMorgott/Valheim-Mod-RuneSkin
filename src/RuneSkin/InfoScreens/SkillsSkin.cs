@@ -222,32 +222,29 @@ namespace RuneSkin.InfoScreens
             var inv = InventorySkin.Instance;
             if (!inv || !_canvas) return;
             var k = inv.SkinScaleValue;
-            var box = InfoArt.RightPanel(inv, ThemeTokens.GetFloat("size.info.skills.w", 780f) * k);
+            var box = InfoArt.Panel(inv, WindowMove.Skills, ThemeTokens.GetFloat("size.info.skills.w", 780f) * k, _canvas);
             if (box.IsEmpty) return;
             Geo.SetScale(_frame, 1f);
             Geo.Place(_canvas, _frame, box);
             var pad = ThemeTokens.GetFloat("size.info.pad", 22f) * k;
             var inner = new Box(box.X + pad, box.Y + pad, box.W - 2f * pad, box.H - 2f * pad);
-            var headerH = ThemeTokens.GetFloat("size.info.header", 64f) * k;
             var tabsH = ThemeTokens.GetFloat("size.info.tabs", 70f) * k;
             var summaryH = ThemeTokens.GetFloat("size.info.summary", 48f) * k;
             var gap = 8f * k;
-            var y = inner.Y;
-            // Title band = a drag band of the docked inventory group (this panel docks over its columns).
-            var band = WindowMove.Handle(_frame, WindowMove.Inventory);
-            if (band) Geo.Place(_canvas, band.rectTransform, new Box(inner.X, y, inner.W, headerH));
+            // The window's one header (RuneWindowHeader): band at the window top, title "topic" centred in the rune face
+            // (mirrored), same plate / height as every window; the knots of the old title row are not drawn.
+            var headerH = WindowHeaderMath.HeaderHeight(ThemeTokens.GetFloat("size.win.header", 40f), k);
+            var header = RuneWindowHeader.Ensure(_frame, WindowMove.Skills);
             foreach (var c in Children.Of(_frame))
             {
                 if (!(c is RectTransform rt) || !c.gameObject.activeSelf) continue;
-                if (c.name == "topic" && c.TryGetComponent<TMP_Text>(out var title))
-                {
-                    Geo.Place(_canvas, rt, new Box(inner.X, y, inner.W, headerH));
-                    InfoArt.Label(title, TextAlignmentOptions.Center, headerH * 0.55f, 16f, true);
-                    InfoArt.TitleKnots(_canvas, title, new Box(inner.X, y, inner.W, headerH), _knotL, _knotR);
-                }
+                if (c.name == "topic" && c.TryGetComponent<TMP_Text>(out var title)) { if (header) header.Adopt(title, "$runeskin_win_skills"); }
                 else if (c.name == "Closebutton") Geo.SetScale(rt, 0f); // the selected tab closes (mockup: no close button)
             }
-            y += headerH;
+            if (header) header.Place(_canvas, new Box(box.X, box.Y, box.W, headerH));
+            if (_knotL) Geo.SetScale(_knotL.rectTransform, 0f);
+            if (_knotR) Geo.SetScale(_knotR.rectTransform, 0f);
+            var y = box.Y + headerH + gap;
             _tabs.Layout(_canvas, new Box(inner.X, y, inner.W, tabsH), k);
             y += tabsH + gap;
             // Summary well: death glyph + loss, total skill level, sort toggles on the right.

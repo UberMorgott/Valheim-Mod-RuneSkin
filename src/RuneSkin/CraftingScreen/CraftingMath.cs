@@ -34,6 +34,9 @@ namespace RuneSkin.CraftingScreen
         public bool Search, Repair, CraftType, Quality;
         // First visible tab / category of a scrolled row (row arrows).
         public int TabOffset, CategoryOffset, SubCategoryOffset;
+        // The shared window header band height (RuneWindowHeader, canvas units): > 0 = the header row is that band at the
+        // panel's top edge (full width, like every window), the content starts under it; 0 = the padded header row.
+        public float WindowHeaderH;
     }
 
     // A row of equal cells that scrolls when the count does not fit: Cells[i] empty = scrolled out.
@@ -86,11 +89,20 @@ namespace RuneSkin.CraftingScreen
             var hh = Math.Min(S(t.HeaderH), c.H * 0.14f);
             var capX = Math.Max(0f, i.CapInset - pad);
             o.Header = new Box(c.X + capX, y, Math.Max(0f, c.W - 2f * capX), hh);
+            if (i.WindowHeaderH > 0f)
+            {
+                // The one window header (RuneWindowHeader): the band at the panel top, content under it.
+                hh = i.WindowHeaderH;
+                y = i.Panel.Y;
+                o.Header = new Box(i.Panel.X, y, i.Panel.W, hh);
+                c = new Box(c.X, i.Panel.Y + hh + gap, c.W, Math.Max(0f, c.Bottom - (i.Panel.Y + hh + gap)));
+                o.Content = c;
+            }
             var badge = hh * 0.8f;
             o.StationIcon = new Box(o.Header.X, y, hh, hh);
             o.Level = new Box(o.Header.Right - badge, y + (hh - badge) / 2f, badge, badge);
             o.Title = new Box(o.StationIcon.Right + gap, y, Math.Max(0f, o.Level.X - gap - o.StationIcon.Right - gap), hh);
-            y += hh + gap;
+            y = i.WindowHeaderH > 0f ? c.Y : y + hh + gap;
 
             // Mode tabs (craft / upgrade / mod tabs): centred row, shrinks to TabMinW, then scrolls.
             if (i.Tabs > 0)

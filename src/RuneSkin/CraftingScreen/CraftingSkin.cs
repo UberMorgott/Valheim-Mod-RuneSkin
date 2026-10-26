@@ -521,14 +521,17 @@ namespace RuneSkin.CraftingScreen
             _frameReady = false;
             var inv = InventorySkin.Instance;
             if (!inv || !_canvas || !InventoryGui.IsVisible()) return;
+            // The docked crafting column (follows the inventory block) plus the window's own offset (its RuneWindowHeader).
             var box = inv.CraftingBox;
             if (box.IsEmpty) return;
+            box = Restyle.WindowMove.Place(Restyle.WindowMove.Crafting, box, _canvas);
             Collect();
             ReadTokens();
             var i = _in;
             i.Panel = box;
             i.Scale = inv.SkinScaleValue;
             i.CapInset = CapInset();
+            i.WindowHeaderH = Restyle.WindowHeaderMath.HeaderHeight(ThemeTokens.GetFloat("size.win.header", 40f), inv.SkinScaleValue);
             var hash = Hash(i);
             if (_layout == null || hash != _hash)
             {
@@ -602,6 +605,7 @@ namespace RuneSkin.CraftingScreen
                 h = h * 31 + i.Panel.H.GetHashCode();
                 h = h * 31 + i.Scale.GetHashCode();
                 h = h * 31 + i.CapInset.GetHashCode();
+                h = h * 31 + i.WindowHeaderH.GetHashCode();
                 h = h * 31 + i.Tabs;
                 h = h * 31 + i.Categories * 7 + i.Requirements * 101;
                 h = h * 31 + (i.Search ? 1 : 0) + (i.Repair ? 2 : 0) + (i.CraftType ? 4 : 0) + (i.Quality ? 8 : 0);
@@ -648,9 +652,6 @@ namespace RuneSkin.CraftingScreen
             Geo.Place(_canvas, _crafting, box);
 
             Header(o);
-            // Station title row = a drag band of the docked inventory group (the column moves with it).
-            var band = Restyle.WindowMove.Handle(_crafting, Restyle.WindowMove.Inventory);
-            if (band) Geo.Place(_canvas, band.rectTransform, new Box(box.X, o.Title.Y, box.W, o.Title.H));
             Tabs(o);
             Categories(o);
             List(o);
@@ -664,13 +665,11 @@ namespace RuneSkin.CraftingScreen
             WellShown(_listWell, !recipeList || recipeList.gameObject.activeSelf);
             WellShown(_detailWell, !detailRoot || detailRoot.gameObject.activeSelf);
             var vnei = _crafting.Find(ModCompat.VneiPanel) as RectTransform;
-            if (vnei && vnei.gameObject.activeSelf)
-            {
-                var top = o.Search.IsEmpty ? o.List.Y : o.Search.Y;
-                var area = new Box(o.List.X, top, o.Detail.Right - o.List.X, o.ButtonRow.Bottom - top);
-                Geo.Place(_canvas, vnei, area);
-                VneiFit(vnei, area);
-            }
+            if (!vnei || !vnei.gameObject.activeSelf) return;
+            var top = o.Search.IsEmpty ? o.List.Y : o.Search.Y;
+            var area = new Box(o.List.X, top, o.Detail.Right - o.List.X, o.ButtonRow.Bottom - top);
+            Geo.Place(_canvas, vnei, area);
+            VneiFit(vnei, area);
         }
 
         private static void WellShown(Image well, bool on)
@@ -738,29 +737,32 @@ namespace RuneSkin.CraftingScreen
             }
         }
 
+        // The window's one header (RuneWindowHeader: drag / double-click reset, position persisted): station icon in the
+        // icon slot, the station name centred (rune face, mirrored from m_craftingStationName), the level star in the aux
+        // slot - the same band, plate and title as every other window.
         private void Header(CraftingLayout o)
         {
-            if (_gui.m_craftingStationIcon) PlaceKeep(_gui.m_craftingStationIcon.rectTransform, o.StationIcon, true);
-            if (_gui.m_craftingStationName)
-            {
-                // Station title: plain serif capitals centred between icon and badge (art README: no plaque).
-                var station = _gui.m_craftingStationName;
-                Geo.Place(_canvas, station.rectTransform, o.Title);
-                Label(station, TextAlignmentOptions.Center, o.Title.H * 0.46f, 14f, upper: true);
-            }
+            var header = Restyle.RuneWindowHeader.Ensure(_crafting, Restyle.WindowMove.Crafting);
+            if (!header) return;
+            if (_gui.m_craftingStationName) header.Adopt(_gui.m_craftingStationName, "$runeskin_win_crafting");
+            else header.Fallback("$runeskin_win_crafting").Text("$runeskin_win_crafting");
+            var icon = _gui.m_craftingStationIcon && _gui.m_craftingStationIcon.gameObject.activeInHierarchy && _gui.m_craftingStationIcon.sprite ? _gui.m_craftingStationIcon : null;
             var level = _gui.m_craftingStationLevelRoot;
-            if (level)
+            var levelOn = level && level.gameObject.activeInHierarchy;
+            header.Place(_canvas, o.Header, icon, levelOn ? o.Header.H * Restyle.WindowHeaderMath.IconShare : 0f);
+            if (icon) icon.preserveAspect = true;
+            if (levelOn)
             {
-                Geo.Place(_canvas, level, o.Level);
+                var b = header.AuxBox;
+                Geo.Place(_canvas, level, b);
                 if (_gui.m_craftingStationLevel)
                 {
                     // Digit in the star's round recess (badge_level_star: centre (76,75) of 150x144 = the middle).
-                    Geo.Place(_canvas, _gui.m_craftingStationLevel.rectTransform, CraftingMath.Inset(o.Level, o.Level.W * 0.27f, o.Level.H * 0.27f));
-                    Label(_gui.m_craftingStationLevel, TextAlignmentOptions.Center, o.Level.H * 0.42f, 12f);
+                    Geo.Place(_canvas, _gui.m_craftingStationLevel.rectTransform, CraftingMath.Inset(b, b.W * 0.27f, b.H * 0.27f));
+                    Label(_gui.m_craftingStationLevel, TextAlignmentOptions.Center, b.H * 0.42f, 12f);
                 }
             }
         }
-
         private void Tabs(CraftingLayout o)
         {
             var root = TabsRoot();

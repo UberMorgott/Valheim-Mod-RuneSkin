@@ -12,7 +12,7 @@ namespace RuneSkin.InfoScreens
     internal static class InfoArt
     {
         // Panel on the right of layout A: right edge = the crafting column's, same top / bottom, `width` wide (never
-        // past the centre column's left edge).
+        // past the centre column's left edge). Both boxes already carry the inventory block offset.
         public static Box RightPanel(InventorySkin inv, float width)
         {
             var craft = inv.CraftingBox;
@@ -21,6 +21,14 @@ namespace RuneSkin.InfoScreens
             var left = centre.IsEmpty ? craft.X : centre.X;
             var w = Mathf.Min(width, craft.Right - left);
             return new Box(craft.Right - w, craft.Y, w, craft.H);
+        }
+
+        // Info window box: the docked right panel (RightPanel, follows the inventory block) moved by the window's own
+        // user offset (its RuneWindowHeader, WindowMove id).
+        public static Box Panel(InventorySkin inv, string id, float width, RectTransform canvas)
+        {
+            var def = RightPanel(inv, width);
+            return def.IsEmpty ? default : WindowMove.Place(id, def, canvas);
         }
 
         public static Image OwnImage(Transform parent, string name, string role, string reason)

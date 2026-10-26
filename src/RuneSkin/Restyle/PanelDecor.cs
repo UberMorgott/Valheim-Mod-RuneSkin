@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using RuneSkin.Theme;
 using UnityEngine;
 using UnityEngine.UI;
@@ -59,6 +60,8 @@ namespace RuneSkin.Restyle
                 Add(decor._caps, "CornerTL", "decor.corner.tl"), Add(decor._caps, "CornerTR", "decor.corner.tr"),
                 Add(decor._caps, "CornerBL", "decor.corner.bl"), Add(decor._caps, "CornerBR", "decor.corner.br")
             };
+            foreach (var corner in decor._corners) corner.gameObject.AddComponent<FrameOrnament>().Owner = decor;
+            decor._frame = rect.Find("Frame")?.GetComponent<Image>();
             decor.RaiseCaps();
             decor.Layout();
             return decor;
@@ -68,6 +71,18 @@ namespace RuneSkin.Restyle
 
         public string PadToken;
         public int Revision = -1;
+        private Image _frame;
+
+        // Every live panel stack (window headers keep inside their frame: RuneWindowHeader.FrameInsets).
+        public static readonly HashSet<PanelDecor> All = new HashSet<PanelDecor>();
+
+        // The frame layer (9-slice border art) of this stack.
+        public Image Frame => _frame;
+
+        private void OnEnable() => All.Add(this);
+
+        private void OnDisable() => All.Remove(this);
+
         private RectTransform _backing, _glass, _plaque, _caps;
         private RectTransform[] _corners;
         private bool _fitted;
@@ -310,6 +325,21 @@ namespace RuneSkin.Restyle
             rect.anchoredPosition = Vector2.zero;
             if (rect.TryGetComponent<Image>(out var image)) Restyler.SetReferenceSize(image);
         }
+    }
+
+    // A frame ornament a window header must stay clear of (PanelDecor corner caps, the inventory's shared junction pieces):
+    // a live registry, no scene search.
+    [DisallowMultipleComponent]
+    public sealed class FrameOrnament : MonoBehaviour
+    {
+        public static readonly HashSet<FrameOrnament> All = new HashSet<FrameOrnament>();
+
+        // The stack whose corner this is (null: a piece shared by several windows, e.g. a junction).
+        public PanelDecor Owner;
+
+        private void OnEnable() => All.Add(this);
+
+        private void OnDisable() => All.Remove(this);
     }
 
     // Marks the corner-cap container of a PanelDecor (a host sibling drawn above the host content).

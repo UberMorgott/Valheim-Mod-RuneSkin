@@ -96,7 +96,13 @@ namespace RuneSkin.ModScreens
         private static void Achievements_Postfix(InventoryGui __instance)
         {
             if (OwnershipRegistry.IsOwned(OwnershipRegistry.InventoryExtras) && __instance.m_achievementsPanel)
-                Try("achievements", () => GameScreenKit.Restyle(__instance.m_achievementsPanel));
+                Try("achievements", () =>
+                {
+                    GameScreenKit.Restyle(__instance.m_achievementsPanel);
+                    // An info window like skills / trophies (AchievementsWindow: the docked right panel, its one header with drag /
+                    // double-click reset), not the vanilla full-screen-centred frame.
+                    InfoScreens.AchievementsWindow.Ensure(__instance);
+                });
         }
 
         [HarmonyPatch(typeof(Hud), nameof(Hud.Awake))]

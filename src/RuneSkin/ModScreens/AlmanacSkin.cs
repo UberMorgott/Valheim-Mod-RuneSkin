@@ -6,6 +6,7 @@ using RuneSkin.Api;
 using RuneSkin.Classify;
 using RuneSkin.Ownership;
 using RuneSkin.Restyle;
+using RuneSkin.Theme;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -55,6 +56,18 @@ namespace RuneSkin.ModScreens
             var bkg = root.Find("bkg") as RectTransform;
             if (bkg && bkg.TryGetComponent<Image>(out var b)) b.enabled = false;
             PanelDecor.Ensure(bkg ? bkg : root, "size.panel.glass.inset", glass: true, plaque: false);
+            // The window's one header (RuneWindowHeader) over the top band of bkg: Almanac's legacy "topic" title shown in
+            // the rune face (mirrored), drag / double-click reset move the whole window (root).
+            MovableWindow.Ensure(root, "almanac");
+            var header = RuneWindowHeader.Ensure(bkg ? bkg : root, "almanac", root);
+            if (header)
+            {
+                header.Fallback("Almanac");
+                var topic = root.Find("topic") ? root.Find("topic").GetComponent<Text>() : null;
+                if (topic) header.Mirror(topic);
+                else header.Text("Almanac");
+                header.Stretch();
+            }
             ScreenRegistry.Register(root, () => Context(_root, ScreenId));
             ScreenRegistry.Restyle(root);
             Plugin.Log.LogInfo("[RuneSkin] Almanac window attached");

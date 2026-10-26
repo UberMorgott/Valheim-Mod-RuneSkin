@@ -678,13 +678,13 @@ namespace RuneSkin.InventoryScreen
                 var box = backpackInContainer ? o.Backpack : o.Chest;
                 var fit = backpackInContainer ? o.BackpackGrid : o.ChestGrid;
                 ArrangeContainer(_gui.m_container, _gui.m_containerGrid, box, fit, backpackInContainer ? PanelKind.Backpack : PanelKind.Container,
-                    ContainerInventory(), _gui.m_containerName ? _gui.m_containerName.rectTransform : null,
+                    ContainerInventory(), _gui.m_containerName,
                     _gui.m_containerWeight ? _gui.m_containerWeight.transform : null, _gui.m_takeAllButton, _gui.m_stackAllButton);
             }
             if (_packPanel && _packGrid)
             {
                 ArrangeContainer(_packPanel, _packGrid, o.Backpack, o.BackpackGrid, PanelKind.Backpack, _packInventory,
-                    Twin(_gui.m_containerName ? _gui.m_containerName.transform : null) as RectTransform,
+                    Twin(_gui.m_containerName ? _gui.m_containerName.transform : null)?.GetComponent<TMP_Text>(),
                     Twin(_gui.m_containerWeight ? _gui.m_containerWeight.transform : null),
                     Twin(_gui.m_takeAllButton ? _gui.m_takeAllButton.transform : null)?.GetComponent<Button>(),
                     Twin(_gui.m_stackAllButton ? _gui.m_stackAllButton.transform : null)?.GetComponent<Button>());
@@ -708,14 +708,30 @@ namespace RuneSkin.InventoryScreen
             Geo.Place(_canvas, info, box);
             var k = _input.SkinScale;
             var nameH = Mathf.Min(ThemeTokens.GetFloat("size.inv.name.h", 52f) * k, box.H * 0.42f);
-            // Name row = the group's drag band (moves the whole docked block).
-            var band = WindowMove.Handle(info, WindowMove.Inventory);
-            if (band) Geo.Place(_canvas, band.rectTransform, new Box(box.X, box.Y, box.W, nameH));
+            // Name row = the window's one header (RuneWindowHeader: same height / plate / centred rune title as every
+            // window; drag moves the whole docked block, double-click resets it): the character name (TitlePanel's text,
+            // mirrored), centred in the name row.
             var title = info.Find("TitlePanel") as RectTransform;
+            TMP_Text nameText = null;
             if (title)
             {
                 Geo.Place(_canvas, title, new Box(box.X, box.Y, box.W, nameH));
-                NamePlaque(title, new Box(box.X, box.Y, box.W, nameH));
+                for (var n = 0; n < title.childCount; n++)
+                {
+                    var child = title.GetChild(n);
+                    // The vanilla braid halves under the name: the header plate replaces them.
+                    if (NameCache.Of(child).StartsWith("BraidLine", StringComparison.Ordinal) && child.TryGetComponent<Image>(out var braid) && braid.enabled) braid.enabled = false;
+                    if (!nameText && child.TryGetComponent<TMP_Text>(out var label)) nameText = label;
+                }
+            }
+            var head = RuneWindowHeader.Ensure(info, WindowMove.Inventory);
+            if (head)
+            {
+                var playerName = Player.m_localPlayer ? Player.m_localPlayer.GetPlayerName() : "$runeskin_win_character";
+                if (nameText) head.Adopt(nameText, playerName);
+                else head.Fallback(playerName).Text(playerName);
+                var hh = Mathf.Min(WindowHeaderMath.HeaderHeight(ThemeTokens.GetFloat("size.win.header", 40f), k), nameH);
+                head.Place(_canvas, new Box(box.X, box.Y + (nameH - hh) / 2f, box.W, hh));
             }
             // Index loops / cached names: this runs every frame while the inventory is open (foreach over a Transform
             // allocates an enumerator, .name a string; perf audit B2).
@@ -868,102 +884,35 @@ namespace RuneSkin.InventoryScreen
             }
         }
 
-        private Image _namePlaque;
-
-        // Character name on the carved header plaque (layout-a2.png "AUTOTESTCHAR"): plaque centred in the name row,
-        // name in capitals between its two knot ends, auto-sized down to the floor, never clipped mid-word.
-        private void NamePlaque(RectTransform title, Box box)
-        {
-            var k = _input.SkinScale;
-            if (!_namePlaque)
-            {
-                _namePlaque = new GameObject("RuneSkinNamePlaque", typeof(RectTransform)).AddComponent<Image>();
-                _namePlaque.rectTransform.SetParent(title, false);
-                _namePlaque.rectTransform.SetAsFirstSibling();
-                _namePlaque.raycastTarget = false;
-                var mark = DollCell.Mark(_namePlaque, "decor.plaque", "character name plaque (header_plaque)");
-                mark.Outcome = Restyler.Apply(_namePlaque, mark, ThemeTokens.Role("decor.plaque")) ? Outcome.Styled : Outcome.Degraded;
-                _namePlaque.enabled = mark.Outcome == Outcome.Styled;
-            }
-            var width = Mathf.Min(box.W, ThemeTokens.GetFloat("size.inv.name.plaque", 560f) * k);
-            var plaque = new Box(box.X + (box.W - width) / 2f, box.Y, width, box.H);
-            Geo.Place(_canvas, _namePlaque.rectTransform, plaque);
-            for (var n = 0; n < title.childCount; n++)
-            {
-                var child = title.GetChild(n);
-                // The vanilla braid halves would run through the plaque: hidden while it is shown.
-                if (NameCache.Of(child).StartsWith("BraidLine", StringComparison.Ordinal) && child.TryGetComponent<Image>(out var braid) && braid.enabled == _namePlaque.enabled)
-                    braid.enabled = !_namePlaque.enabled;
-                if (!(child is RectTransform rt) || !child.TryGetComponent<TMP_Text>(out var label)) continue;
-                // Text between the knot ends (share of the plaque width each side, sprite border 230 of 620 px).
-                var side = width * ThemeTokens.GetFloat("share.inv.name.knot", 0.2f);
-                Geo.Place(_canvas, rt, new Box(plaque.X + side, plaque.Y, Mathf.Max(1f, width - 2f * side), plaque.H));
-                if (label.alignment != TextAlignmentOptions.Center) label.alignment = TextAlignmentOptions.Center;
-                if (label.textWrappingMode != TextWrappingModes.NoWrap) label.textWrappingMode = TextWrappingModes.NoWrap;
-                if (label.overflowMode != TextOverflowModes.Ellipsis) label.overflowMode = TextOverflowModes.Ellipsis;
-                if ((label.fontStyle & FontStyles.UpperCase) != FontStyles.UpperCase) label.fontStyle |= FontStyles.UpperCase;
-                var max = rt.rect.height * 0.62f;
-                var min = Mathf.Min(max, ThemeTokens.GetFloat("floor.text.body.px", 16f) / Mathf.Max(0.01f, _rootCanvas.scaleFactor));
-                if (!label.enableAutoSizing || Mathf.Abs(label.fontSizeMax - max) > 0.1f || Mathf.Abs(label.fontSizeMin - min) > 0.1f)
-                {
-                    label.fontSizeMax = max;
-                    label.fontSizeMin = min;
-                    label.enableAutoSizing = true;
-                }
-            }
-        }
-
+        // Chest / backpack panel of the dock: the window's one header (RuneWindowHeader: glyph in the icon slot, the
+        // container name centred in the rune face (mirrored), the weight plate in the aux slot; drag moves the docked
+        // block), grid top-aligned under it (view = visible rows), glyph actions in their own row at the bottom,
+        // right-aligned, clear of the bottom-right corner cap (InventoryMath.ActionRow).
         private void ArrangeContainer(RectTransform panel, InventoryGrid grid, Box box, GridFit fit, PanelKind kind, Inventory inventory,
-            RectTransform name, Transform weight, Button takeAll, Button stackAll)
+            TMP_Text name, Transform weight, Button takeAll, Button stackAll)
         {
             if (!panel || box.IsEmpty) return;
             var k = _input.SkinScale;
             var pad = _tokens.PanelPad * k;
             var headerH = _tokens.PanelHeaderH * k;
             Geo.Place(_canvas, panel, box);
-            var header = new Box(box.X + pad, box.Y + pad / 2f, box.W - 2f * pad, headerH - pad / 2f);
-            // Panel header = a drag band of the docked group (chest and backpack move with the inventory).
-            var band = WindowMove.Handle(panel, WindowMove.Inventory);
-            if (band) Geo.Place(_canvas, band.rectTransform, header);
-            // Grid top-aligned under the title (view = visible rows), glyph actions in their own row at the bottom,
-            // right-aligned, clear of the bottom-right corner cap (InventoryMath.ActionRow); the title keeps the header width.
+            var row = new Box(box.X + pad, box.Y + pad / 2f, box.W - 2f * pad, headerH - pad / 2f);
             if (grid) Geo.Place(_canvas, (RectTransform)grid.transform, InventoryMath.ContainerGridView(box, fit, _tokens, k));
             if (grid) Want(grid, fit.Pitch, fit.Cell);
             Bar(panel, kind, inventory, takeAll, stackAll, InventoryMath.ActionRow(box, _tokens, k));
+            var backpack = kind == PanelKind.Backpack;
+            var glyph = HeaderGlyph(panel, backpack ? "glyph.panel.backpack" : "glyph.panel.chest");
             var weightPlate = DirectChild(panel, weight);
-            var right = header.Right;
-            if (weightPlate)
-            {
-                // The footer's stat plate layout (glyph in the round socket, value beside it): the vanilla box layout
-                // put the weight glyph above the plate_stat strip, half outside it (batch G cell rule).
-                var w = ThemeTokens.GetFloat("size.inv.plate.weight.dock", 110f) * k;
-                StatPlate(weightPlate, new Box(right - w - _tokens.Gap, header.Y, w, header.H));
-                right -= w + _tokens.Gap;
-            }
-            var glyph = HeaderGlyph(panel, kind == PanelKind.Backpack ? "glyph.panel.backpack" : "glyph.panel.chest");
-            var nameX = header.X;
-            if (glyph && glyph.enabled)
-            {
-                Geo.Place(_canvas, glyph.rectTransform, new Box(header.X, header.Y, header.H, header.H));
-                nameX += header.H + _tokens.Gap / 2f;
-            }
-            if (name)
-            {
-                Geo.Place(_canvas, name, new Box(nameX, header.Y, Mathf.Max(1f, right - nameX - _tokens.Gap), header.H));
-                if (name.TryGetComponent<TMP_Text>(out var label))
-                {
-                    if (label.alignment != TextAlignmentOptions.MidlineLeft) label.alignment = TextAlignmentOptions.MidlineLeft;
-                    if (label.overflowMode != TextOverflowModes.Ellipsis) label.overflowMode = TextOverflowModes.Ellipsis;
-                    // Long names (Russian chests): up to two lines, auto-size down to the body floor, then ellipsis.
-                    if (label.textWrappingMode != TextWrappingModes.Normal) label.textWrappingMode = TextWrappingModes.Normal;
-                    if (!label.enableAutoSizing)
-                    {
-                        label.fontSizeMax = label.fontSize;
-                        label.fontSizeMin = Mathf.Min(label.fontSize, ThemeTokens.GetFloat("floor.text.body.px", 16f) / Mathf.Max(0.01f, _rootCanvas.scaleFactor));
-                        label.enableAutoSizing = true;
-                    }
-                }
-            }
+            var head = RuneWindowHeader.Ensure(panel, WindowMove.Inventory);
+            if (!head) return;
+            var fallback = backpack ? "$runeskin_win_backpack" : "$runeskin_win_chest";
+            if (name) head.Adopt(name, fallback);
+            else head.Fallback(fallback).Text(fallback);
+            var hh = Mathf.Min(WindowHeaderMath.HeaderHeight(ThemeTokens.GetFloat("size.win.header", 40f), k), row.H);
+            var auxW = weightPlate ? ThemeTokens.GetFloat("size.inv.plate.weight.dock", 110f) * k : 0f;
+            head.Place(_canvas, new Box(row.X, row.Y + (row.H - hh) / 2f, row.W, hh), glyph && glyph.enabled ? glyph : null, auxW);
+            // The footer's stat plate layout (glyph in the round socket, value beside it) in the aux slot.
+            if (weightPlate) StatPlate(weightPlate, head.AuxBox);
         }
 
         // Panel header glyph (chest / backpack), one per panel, role swapped when the panel changes kind.

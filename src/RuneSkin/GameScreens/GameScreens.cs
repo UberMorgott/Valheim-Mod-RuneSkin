@@ -636,11 +636,12 @@ namespace RuneSkin.GameScreens
                 ctx.Role(d.m_totalSkillText, "text.muted", "compendium footer text");
                 PopupSkin.Backdrops(ctx, r);
             });
-            // Movable by its title band (Texts/Texts_frame, topic on top; vanilla places the frame, the offset rides on it).
+            // One window header (RuneWindowHeader) over its title band (Texts/Texts_frame, topic on top; vanilla places the
+            // frame, the user offset rides on it).
             if (d.transform.Find("Texts_frame") is RectTransform frame)
             {
                 MovableWindow.Ensure(frame, WindowMove.Compendium);
-                WindowMove.TopBand(frame, WindowMove.Compendium, ThemeTokens.GetFloat("size.window.band", 64f));
+                RuneWindowHeader.TopBand(frame, WindowMove.Compendium, frame, "$runeskin_win_texts");
             }
         }
     }

@@ -40,6 +40,16 @@ namespace RuneSkin.Theme
             { "runeskin_pin_boss", new[] { "Boss", "Босс" } },
             { "runeskin_pin_ping", new[] { "Ping", "Сигнал" } },
             { "runeskin_pin_mod", new[] { "Mod pins", "Метки модов" } },
+            // Window header titles (RuneWindowHeader) of windows without a title of their own.
+            { "runeskin_win_crafting", new[] { "Crafting", "Ремесло" } },
+            { "runeskin_win_chest", new[] { "Chest", "Сундук" } },
+            { "runeskin_win_backpack", new[] { "Backpack", "Рюкзак" } },
+            { "runeskin_win_character", new[] { "Character", "Персонаж" } },
+            { "runeskin_win_legend", new[] { "Map legend", "Легенда карты" } },
+            { "runeskin_win_texts", new[] { "Compendium", "Компендиум" } },
+            { "runeskin_win_achievements", new[] { "Achievements", "Достижения" } },
+            { "runeskin_win_skills", new[] { "Skills", "Навыки" } },
+            { "runeskin_win_trophies", new[] { "Trophies", "Трофеи" } },
             // Pre-world (M5).
             { "runeskin_characters", new[] { "Characters", "Персонажи" } },
             // Summon frames (batch P): status line under the creature icon; {0} = seconds.

@@ -80,22 +80,31 @@ namespace RuneSkin.InfoScreens
 
         // Frame and title plaque pieces (Codex 4x redraws of the stats-full-b parts): bands / rails / plaque field tile,
         // knot corners and plaque ends sit at their design rects (size.stats.piece.<name>.x/y/w/h).
+        // The top quarters carry the painted title strip; under the window's one RuneWindowHeader it is clipped away
+        // (RectMask2D parent): Body = the quarter below the strip, left of the close cap; Cap = the close button end
+        // (right of the header band, full height). Without a header the clips cover the whole quarter.
+        private enum StripClip { None, Body, Cap }
+
         private sealed class Piece
         {
             public string Name;
             public Image Image;
+            public RectTransform Clip;
+            public StripClip Strip;
             public float X, Y, W, H;
         }
 
-        private static readonly (string name, string role, float x, float y, float w, float h)[] PieceDefs =
+        private static readonly (string name, string role, StripClip strip, float x, float y, float w, float h)[] PieceDefs =
         {
-            ("ChromeTL", "stats.chrome.tl", 0f, 0f, 960f, 540f),
-            ("ChromeTR", "stats.chrome.tr", 960f, 0f, 960f, 540f),
-            ("ChromeBL", "stats.chrome.bl", 0f, 540f, 960f, 540f),
-            ("ChromeBR", "stats.chrome.br", 960f, 540f, 960f, 540f),
+            ("ChromeTL", "stats.chrome.tl", StripClip.Body, 0f, 0f, 960f, 540f),
+            ("ChromeTR", "stats.chrome.tr", StripClip.Body, 960f, 0f, 960f, 540f),
+            ("ChromeTRCap", "stats.chrome.tr", StripClip.Cap, 960f, 0f, 960f, 540f),
+            ("ChromeBL", "stats.chrome.bl", StripClip.None, 0f, 540f, 960f, 540f),
+            ("ChromeBR", "stats.chrome.br", StripClip.None, 960f, 540f, 960f, 540f),
         };
 
         private readonly List<Piece> _pieces = new List<Piece>(12);
+        private float _stripCut; // design y the painted title strip is clipped at (0 = drawn: no window header)
         private TMP_Text _title;
         private Button _close, _button;
         private readonly Card[] _cards = new Card[8];
@@ -195,9 +204,15 @@ namespace RuneSkin.InfoScreens
             // catch clicks inside the window so they do not reach the scrim.
             foreach (var d in PieceDefs)
             {
-                var img = Img(_root, d.name, d.role, "painted window chrome quarter (user-approved Codex edit of stats-full-b)");
+                RectTransform clip = null;
+                if (d.strip != StripClip.None)
+                {
+                    clip = (RectTransform)new GameObject(d.name + "Clip", typeof(RectTransform), typeof(RectMask2D)).transform;
+                    clip.SetParent(_root, false);
+                }
+                var img = Img(clip ? clip : _root, d.name, d.role, "painted window chrome quarter (user-approved Codex edit of stats-full-b)");
                 img.raycastTarget = true;
-                _pieces.Add(new Piece { Name = d.name, Image = img, X = d.x, Y = d.y, W = d.w, H = d.h });
+                _pieces.Add(new Piece { Name = d.name, Image = img, Clip = clip, Strip = d.strip, X = d.x, Y = d.y, W = d.w, H = d.h });
             }
             for (var i = 0; i < _cards.Length; i++) _cards[i] = MakeCard(i);
             _title = Txt(_root, "Title", "stats.title", TextAlignmentOptions.Center);
@@ -471,7 +486,7 @@ namespace RuneSkin.InfoScreens
                 }
             }
             RuneSkin.Restyle.RenderGateMath.Interior(x0, y0, x1, y1, 1920f, 1080f,
-                T("size.stats.opaque.left", 48f), T("size.stats.opaque.top", 56f), T("size.stats.opaque.right", 48f), T("size.stats.opaque.bottom", 32f),
+                T("size.stats.opaque.left", 48f), Mathf.Max(T("size.stats.opaque.top", 56f), _stripCut + 4f), T("size.stats.opaque.right", 48f), T("size.stats.opaque.bottom", 32f),
                 out var innerLeft, out var innerBottom, out var innerRight, out var innerTop);
             return Rect.MinMaxRect(innerLeft, innerBottom, innerRight, innerTop);
         }
@@ -668,13 +683,35 @@ namespace RuneSkin.InfoScreens
             Place(_scrim.rectTransform, new Box(0f, 0f, rect.width, rect.height));
             _moved = Vector2.zero;
             _moved = WindowMove.Applied(WindowMove.Stats, D(0f, 0f, StatsMath.DesignW, StatsMath.DesignH), _canvas);
-            // Title band of the chrome = the drag band (the close button keeps its clicks).
-            _drag = WindowMove.Handle(_root, WindowMove.Stats);
-            if (_drag) Place(_drag.rectTransform, D(T("size.stats.drag.x", 48f), T("size.stats.drag.y", 16f), T("size.stats.drag.w", 1740f), T("size.stats.drag.h", 110f)));
+            // Title band of the chrome = the window's one header (RuneWindowHeader: drag, double-click reset; the close
+            // button keeps its clicks); its title = the window title text (rune face), placed by the chrome below.
+            // The standard header (same height / plate / centred rune title as every window) on the chrome's title row,
+            // across the drag area; the chrome's own title text is mirrored into it.
+            var header = RuneWindowHeader.Ensure(_root, WindowMove.Stats);
+            if (header)
+            {
+                header.Adopt(_title, Words.Get("$runeskin_stats_title"));
+                _drag = header.Drag;
+                var area = D(T("size.stats.drag.x", 48f), T("size.stats.drag.y", 16f), T("size.stats.drag.w", 1740f), T("size.stats.drag.h", 110f));
+                var row = D(T("size.stats.title.x", 760f), T("size.stats.title.y", 34f), T("size.stats.title.w", 522f), T("size.stats.title.h", 62f));
+                var hh = WindowHeaderMath.HeaderHeight(ThemeTokens.GetFloat("size.win.header", 40f), Responsive.ResponsiveContext.SkinScale);
+                header.Place(_canvas, new Box(area.X, row.Y + (row.H - hh) / 2f, area.W, hh));
+            }
+            _stripCut = header ? T("size.stats.strip.cut", 124f) : 0f;
+            var capX = T("size.stats.drag.x", 48f) + T("size.stats.drag.w", 1740f);
             foreach (var p in _pieces)
             {
                 var k = "size.stats.piece." + p.Name;
-                Place(p.Image.rectTransform, D(T(k + ".x", p.X), T(k + ".y", p.Y), T(k + ".w", p.W), T(k + ".h", p.H)));
+                float x = T(k + ".x", p.X), y = T(k + ".y", p.Y), w = T(k + ".w", p.W), h = T(k + ".h", p.H);
+                if (p.Clip)
+                {
+                    // The painted title strip (design y < size.stats.strip.cut) only where the header band runs.
+                    var cx0 = x; var cx1 = x + w; var cy0 = y;
+                    if (header && p.Strip == StripClip.Body) { cx1 = Mathf.Min(cx1, capX); cy0 = Mathf.Max(y, _stripCut); }
+                    if (p.Strip == StripClip.Cap) cx0 = header ? Mathf.Max(x, capX) : cx1; // no header: the Body clip draws it all
+                    Place(p.Clip, D(cx0, cy0, Mathf.Max(0f, cx1 - cx0), Mathf.Max(0f, y + h - cy0)));
+                }
+                Place(p.Image.rectTransform, D(x, y, w, h));
             }
             Place(_title.rectTransform, D(T("size.stats.title.x", 760f), T("size.stats.title.y", 34f), T("size.stats.title.w", 522f), T("size.stats.title.h", 62f)));
             Font(_title, T("size.stats.font.title", 52f));

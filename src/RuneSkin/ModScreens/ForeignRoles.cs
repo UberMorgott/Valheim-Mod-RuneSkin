@@ -47,6 +47,14 @@ namespace RuneSkin.ModScreens
 
         public static string HintFor(Type t) => t != null && t.FullName != null && Hints.TryGetValue(t.FullName, out var f) ? f : null;
 
+        // A mod panel docked inside the crafting window (VNEI's browser fills its body on the VNEI tab) is part of that
+        // window: no panel frame, header or offset of its own (its frame would climb over the crafting tabs).
+        public static bool InCrafting(Transform unit)
+        {
+            var gui = InventoryGui.instance;
+            return gui && gui.m_crafting && unit.IsChildOf(gui.m_crafting);
+        }
+
         // ---------------------------------------------------------------- before the role pass
 
         // Window art the mod switched off itself (Image disabled, not by RuneSkin's PanelSwap): the mod does not draw
@@ -76,18 +84,19 @@ namespace RuneSkin.ModScreens
             }
         }
 
-        // A mod window (its panel stack on the unit root or a direct child, PanelSwap) moves by the top band of that panel;
-        // the mod keeps placing the unit, the user offset rides on top (MovableWindow, WindowMove).
+        // A mod window (its panel stack on the unit root or a direct child, PanelSwap) gets the one window header
+        // (RuneWindowHeader) over the top band of that panel: title = the mod's own title text there (rune face), else the
+        // unit's name; the mod keeps placing the unit, the user offset rides on top (MovableWindow, WindowMove).
         public static void Movable(Transform unit, string id)
         {
-            if (!(unit is RectTransform ur)) return;
+            if (!(unit is RectTransform ur) || InCrafting(unit)) return;
             foreach (var swap in unit.GetComponentsInChildren<PanelSwap>(true))
             {
                 var t = swap.transform;
                 if ((t != unit && t.parent != unit) || !(t is RectTransform panel)) continue;
                 var key = "mod." + id;
                 MovableWindow.Ensure(ur, key);
-                WindowMove.TopBand(panel, key, ThemeTokens.GetFloat("size.window.band", 64f), ur);
+                RuneWindowHeader.TopBand(panel, key, ur, ForeignMath.WindowTitle(unit.name, id));
                 return;
             }
         }
