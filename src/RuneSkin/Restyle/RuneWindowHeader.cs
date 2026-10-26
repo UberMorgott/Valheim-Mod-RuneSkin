@@ -234,13 +234,22 @@ namespace RuneSkin.Restyle
         }
 
         // Band stretched over the top of the parent, the standard header height converted into the parent's units.
-        public void Stretch()
+        public void Stretch() => Stretch(0f);
+
+        // Stretched band with an aux slot `auxShare` header heights wide on the right (the owner places its control in
+        // AuxLocal): the title stays centred and clear of it.
+        public void Stretch(float auxShare)
         {
             _stretch = 1f;
             _hasIcon = false;
-            _iconShare = _auxShare = 0f;
+            _iconShare = 0f;
+            _auxShare = Mathf.Max(0f, auxShare);
             StretchLayout();
         }
+
+        // Aux slot of a stretched band in the header's own units (right end of the drawn plate, vertically centred,
+        // IconShare of the height tall): empty before the first layout or without an aux slot.
+        public Rect AuxLocal { get; private set; }
 
         private void StretchLayout()
         {
@@ -278,6 +287,14 @@ namespace RuneSkin.Restyle
             FrameLocal(rt, out var fl, out var fr, out var ft);
             WindowHeaderMath.PlateInFrame(plateInset, titleLeft, titleRight, fl, fr, out var pl, out var pr, out var tl, out var tr);
             if (Plate) Inside(Plate.rectTransform, pl, pr, ft, 0f);
+            if (_auxShare > 0f)
+            {
+                var s = r.height * WindowHeaderMath.IconShare;
+                var auxW = _auxShare * r.height;
+                var x = r.xMax - pr - r.height * WindowHeaderMath.InsetShare + r.height * WindowHeaderMath.PlateInsetShare - auxW;
+                AuxLocal = new Rect(x, r.yMin + (r.height - ft - s) / 2f, auxW, s);
+            }
+            else AuxLocal = default;
             if (!Title) return;
             Inside(Title.rectTransform, tl, tr, ft, 0f);
             if (Title.alignment != TextAlignmentOptions.Center) Title.alignment = TextAlignmentOptions.Center;

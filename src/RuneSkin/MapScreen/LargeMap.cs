@@ -23,12 +23,13 @@ namespace RuneSkin.MapScreen
         private static readonly string[] LegendPanels = { "IconPanel", "IconPanel2", "IconPingPanel" };
         private static readonly string[] TogglePanels = { "PublicPanel", "SharedPanel" };
 
-        private RectTransform _large, _legend, _title;
+        private RectTransform _large, _legend;
 
-        private Image _legendImage, _titleImage;
+        private Image _legendImage;
+        private RuneWindowHeader _header;
         private PanelDecor _decor;
         private bool _largeDirty = true;
-        private float _inset = -1f, _hintBand = -1f;
+        private float _inset = -1f, _hintBand = -1f, _top = -1f;
 
         public void MarkLargeDirty() => _largeDirty = true;
 
@@ -49,21 +50,20 @@ namespace RuneSkin.MapScreen
             foreach (var panel in LegendPanels) Adopt(panel);
             foreach (var panel in TogglePanels) Adopt(panel);
             BuildLegendRows();
-            // Side panel: movable by its title band (offset added after LargeLateUpdate's anchoring, WindowMove).
-            MovableWindow.Ensure(_legend, WindowMove.MapLegend);
 
-            _title = HudArtRect("RuneSkin_MapTitle", _large);
-            _titleImage = _title.gameObject.AddComponent<Image>();
-            _titleImage.raycastTarget = false;
-            var biome = _map.m_biomeNameLarge;
-            if (biome)
+            // The map window's one header (RuneWindowHeader, user 2026-10-26): title = the cursor / player biome text
+            // (m_biomeNameLarge, rewritten by vanilla each frame, Minimap.cs:2646, mirrored); dragging it moves the whole
+            // window (MovableWindow on m_largeRoot: the side panel is part of the window, fixed in place), a double-click
+            // resets it; the maximize / restore button sits in its aux slot (MapWindowButton, LargeMap.Maximize).
+            MovableWindow.Ensure(_large, WindowMove.Map);
+            _header = RuneWindowHeader.Ensure(_large, WindowMove.Map, _large);
+            if (_header)
             {
-                biome.rectTransform.SetParent(_title, false);
-                Stretch(biome.rectTransform);
-                biome.alignment = TextAlignmentOptions.Center;
-                biome.textWrappingMode = TextWrappingModes.NoWrap;
-                biome.enableAutoSizing = false;
+                if (_map.m_biomeNameLarge) _header.Adopt(_map.m_biomeNameLarge, "$runeskin_win_map");
+                else _header.Fallback("$runeskin_win_map").Text("$runeskin_win_map");
+                _header.Stretch(MaxButtonShare);
             }
+            BuildMaxButton();
             // Above the gameplay HUD (hotbar / resource cluster drew over the map frame, Codex r1): own sorting.
             var canvas = _large.gameObject.AddComponent<Canvas>();
             canvas.overrideSorting = true;
@@ -106,37 +106,35 @@ namespace RuneSkin.MapScreen
                 ScreenRegistry.Restyle(_large);
                 _inset = -1f;
             }
+            Maximize();
             var inset = _decor ? _decor.ContentInset() : 0f;
             var legendW = ThemeTokens.GetFloat("size.map.legend", 300f);
             var gap = ThemeTokens.GetFloat("size.map.gap", 12f);
             var band = HintBand();
-            if (!Mathf.Approximately(inset, _inset) || !Mathf.Approximately(band, _hintBand))
+            // Content rect (user 2026-10-26: the map texture ran under the side panel, an empty strip right of it): the
+            // window content inset on every side, under the header at the top; the side panel docked right, the map image
+            // exactly the rest left of it (vanilla UpdateMap / ScreenToWorldPoint read m_mapImageLarge's rect every
+            // frame - uv aspect = rect aspect, pins at MapPointToLocalGuiPos - so pins, clicks and pings follow any size).
+            var headerH = _header ? ((RectTransform)_header.transform).rect.height : 0f;
+            var top = Mathf.Max(inset, headerH + gap * 0.5f);
+            if (!Mathf.Approximately(inset, _inset) || !Mathf.Approximately(band, _hintBand) || !Mathf.Approximately(top, _top))
             {
                 _inset = inset;
                 _hintBand = band;
+                _top = top;
                 var map = _map.m_mapImageLarge.rectTransform;
                 map.anchorMin = Vector2.zero;
                 map.anchorMax = Vector2.one;
                 map.pivot = new Vector2(0.5f, 0.5f);
-                map.offsetMin = new Vector2(inset, inset + HintBand());
-                map.offsetMax = new Vector2(-(inset + legendW + gap), -inset);
+                map.offsetMin = new Vector2(inset, inset + band);
+                map.offsetMax = new Vector2(-(inset + legendW + gap), -top);
                 _legend.anchorMin = new Vector2(1f, 0f);
                 _legend.anchorMax = Vector2.one;
                 _legend.pivot = new Vector2(1f, 0.5f);
                 _legend.offsetMin = new Vector2(-(inset + legendW), inset);
-                _legend.offsetMax = new Vector2(-inset, -inset);
-                _title.anchorMin = _title.anchorMax = new Vector2(0.5f, 1f);
-                _title.pivot = new Vector2(0.5f, 0.5f);
-                _title.anchoredPosition = new Vector2(-(legendW + gap) * 0.5f, 0f);
-                _title.sizeDelta = new Vector2(ThemeTokens.GetFloat("size.map.plaque.w", 380f), ThemeTokens.GetFloat("size.map.plaque.h", 50f));
-                if (_map.m_biomeNameLarge)
-                {
-                    _map.m_biomeNameLarge.fontSize = ThemeTokens.GetFloat("size.map.font.title", 26f);
-                    var font = ThemeTokens.GetFont("font.display");
-                    if (font) _map.m_biomeNameLarge.font = font;
-                    _map.m_biomeNameLarge.color = ThemeTokens.GetColor("color.text.header", Color.white);
-                }
+                _legend.offsetMax = new Vector2(-inset, -top);
             }
+            PlaceMaxButton();
             LegendRows(inset);
             // Every frame while open: a label vanilla activates late (DelayActivation 1 s, Minimap.cs:883-890) or a zoom /
             // pan re-place (UpdatePins) is hung under its pin and decluttered before the canvas draws (PinLabels.cs).
@@ -191,7 +189,7 @@ namespace RuneSkin.MapScreen
             if (_rows) ctx.Exclude(_rows, "RuneSkin legend rows (own sockets, names, checkboxes, players, zoom)");
             if (_footer) ctx.Exclude(_footer, "RuneSkin map key hint line");
             if (_legendImage) ctx.Role(_legendImage, "craft.well", "map legend column");
-            if (_titleImage) ctx.Role(_titleImage, "decor.plaque", "map title plaque (cursor biome)");
+            if (_maxButton) ctx.Exclude(_maxButton.transform, "RuneSkin map window maximize / restore button (own art)");
             var mapImage = _map.m_mapImageLarge ? _map.m_mapImageLarge.transform : null;
             foreach (var g in root.GetComponentsInChildren<Graphic>(true))
             {

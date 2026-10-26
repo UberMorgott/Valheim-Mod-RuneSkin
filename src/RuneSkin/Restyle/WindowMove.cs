@@ -28,7 +28,7 @@ namespace RuneSkin.Restyle
         public const string Achievements = "achievements";
         public const string Stats = "stats";
         public const string Compendium = "compendium";
-        public const string MapLegend = "map.legend";
+        public const string Map = "map";
 
         private static Dictionary<string, (float X, float Y)> _store;
         private static readonly Dictionary<string, Box> Defaults = new Dictionary<string, Box>();
@@ -106,6 +106,21 @@ namespace RuneSkin.Restyle
             if (Mathf.Abs(dx) < 0.01f && Mathf.Abs(dy) < 0.01f) Store.Remove(key);
             else Store[key] = (dx, dy);
             Changed(id);
+        }
+
+        // A per-window state flag at this resolution (e.g. the map window maximized), stored with the positions
+        // ("<id>#<flag>@WxH=1,0"); Layout.ResetLayout clears it with the offsets.
+        public static bool Flag(string id, string flag) => Enabled && Store.ContainsKey(Key(id + "#" + flag));
+
+        public static void SetFlag(string id, string flag, bool on)
+        {
+            if (!Enabled) return;
+            var key = Key(id + "#" + flag);
+            if (on == Store.ContainsKey(key)) return;
+            if (on) Store[key] = (1f, 0f);
+            else Store.Remove(key);
+            Changed(id);
+            Save();
         }
 
         public static void Reset(string id)

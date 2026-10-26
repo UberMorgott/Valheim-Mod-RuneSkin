@@ -45,7 +45,7 @@ namespace RuneSkin.Theme
             { "runeskin_win_chest", new[] { "Chest", "Сундук" } },
             { "runeskin_win_backpack", new[] { "Backpack", "Рюкзак" } },
             { "runeskin_win_character", new[] { "Character", "Персонаж" } },
-            { "runeskin_win_legend", new[] { "Map legend", "Легенда карты" } },
+            { "runeskin_win_map", new[] { "Map", "Карта" } },
             { "runeskin_win_texts", new[] { "Compendium", "Компендиум" } },
             { "runeskin_win_achievements", new[] { "Achievements", "Достижения" } },
             { "runeskin_win_skills", new[] { "Skills", "Навыки" } },

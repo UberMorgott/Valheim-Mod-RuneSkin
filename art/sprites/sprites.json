@@ -486,6 +486,50 @@
       "notes": "thin stone line with bronze diamond studs at the ends, constant along x"
     },
     {
+      "name": "glyph_win_max",
+      "file": "glyph_win_max.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.win.max",
+      "notes": "map window header: maximize (four outward corner brackets); white mask, tint text_header"
+    },
+    {
+      "name": "glyph_win_restore",
+      "file": "glyph_win_restore.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.win.restore",
+      "notes": "map window header: restore (two overlapping squares); white mask, tint text_header"
+    },
+    {
       "name": "header_plaque",
       "file": "header_plaque.png",
       "size": [

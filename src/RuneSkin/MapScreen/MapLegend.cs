@@ -324,16 +324,9 @@ namespace RuneSkin.MapScreen
             var y = pad;
             Place(_pinsHeader.rectTransform, pad, y, w - 2f * pad, headerH);
             _pinsHeader.text = Words.Get("$runeskin_map_pins");
-            // The legend's one window header (RuneWindowHeader): the "Pins" title band drags the legend side panel
-            // (MovableWindow on _legend, BuildLarge); the title is the "Pins" text in the rune face.
-            var header = RuneSkin.Restyle.RuneWindowHeader.Ensure(_rows, RuneSkin.Restyle.WindowMove.MapLegend, _legend);
-            if (header)
-            {
-                header.Adopt(_pinsHeader, Words.Get("$runeskin_win_legend"));
-                header.Stretch(); // the standard header band over the legend top (same height / plate / title as every window)
-                y = Mathf.Max(y + headerH, ((RectTransform)header.transform).rect.height + 4f);
-            }
-            else y += headerH;
+            // A section title of the map window (user 2026-10-26: the side panel is part of the map window, fixed in
+            // place; only the whole window moves, by its header).
+            y += headerH;
             Place(_pinsDivider.rectTransform, pad, y, w - 2f * pad, ThemeTokens.GetFloat("size.map.legend.divider", 11f));
             y += ThemeTokens.GetFloat("size.map.legend.divider", 11f) + 4f;
 
