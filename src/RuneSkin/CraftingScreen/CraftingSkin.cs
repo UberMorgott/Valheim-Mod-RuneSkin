@@ -241,7 +241,8 @@ namespace RuneSkin.CraftingScreen
                 // ColorTint hit area stretched over the progress bar: UpdateRecipe (InventoryGui.cs:1611-1625) hides
                 // m_craftButton and shows m_craftProgressPanel while m_craftTimer >= 0, the click cancels
                 // (OnCraftCancelPressed, :2008). Plating it as a button covered the bar and its "crafting" text.
-                else if (_gui.m_craftCancelButton && image == _gui.m_craftCancelButton.targetGraphic) ctx.Role(image, "skip", "craft cancel hit area over the progress bar (vanilla, transparent; a button sprite would hide the bar)");
+                // Its cue is its own label (ProgressCue), which also becomes the ColorTint target.
+                else if (_gui.m_craftCancelButton && t == _gui.m_craftCancelButton.transform) ctx.Role(image, "skip", "craft cancel hit area over the progress bar (vanilla, transparent; a button sprite would hide the bar)");
                 else if (_gui.m_craftButton && image == _gui.m_craftButton.targetGraphic) ctx.Role(image, "craft.button", "craft / upgrade button (button_craft_*, falls back to button_*)");
                 else if (t.name == DescView && t.parent && t.parent.name == "Decription") ctx.Role(image, "skip", "description scroll view hit area (RuneSkin, clear)");
                 else if (_gui.m_repairButton && image == _gui.m_repairButton.targetGraphic) ctx.Role(image, "craft.repair", "repair button (round)");
@@ -275,7 +276,8 @@ namespace RuneSkin.CraftingScreen
                 else if (_gui.m_craftingStationLevel && text == _gui.m_craftingStationLevel) ctx.Role(text, "craft.level", "station level digit on the star badge (text_active)");
                 else if (IsTab(t, out _)) ctx.Role(text, "craft.tab.label", "tab label");
                 else if (Row(t, out _)) ctx.Role(text, "text.body", "recipe row name / quality (body sans, mockup-1)");
-                else if (_gui.m_craftCancelButton && t.IsChildOf(_gui.m_craftCancelButton.transform)) ctx.Role(text, "skip", "craft cancel hit area label / hint (vanilla, kept as is)");
+                else if (CancelLabel() == text) ctx.Role(text, "text.body", "craft cancel cue: the cancel button's own label, set to $menu_cancel (ProgressCue)");
+                else if (_gui.m_craftCancelButton && t.IsChildOf(_gui.m_craftCancelButton.transform)) ctx.Role(text, "skip", "craft cancel gamepad hint (vanilla, kept as is)");
             }
             return ctx;
         }
@@ -1235,6 +1237,7 @@ namespace RuneSkin.CraftingScreen
                     Label(label, TextAlignmentOptions.Center, o.Craft.H * 0.42f, 14f, upper: true);
                     CraftGlyph(label, o.Craft);
                 }
+                ProgressCue(o.Craft);
             }
             var repair = _gui.m_repairButton;
             if (repair && repair.gameObject.activeSelf) Geo.SetScale(repair.transform, o.Repair.IsEmpty ? 0f : 1f);
@@ -1256,6 +1259,63 @@ namespace RuneSkin.CraftingScreen
                     }
                     else if (NameCache.Of(c) == "Glow") Geo.Place(_canvas, cr, CraftingMath.Inset(o.Repair, -o.Repair.W * 0.08f, -o.Repair.H * 0.08f));
                 }
+            }
+        }
+
+        // Vanilla CraftCancelButton/Text (prefab text 'Button'): the cancel cue.
+        private TMP_Text CancelLabel()
+        {
+            var cancel = _gui.m_craftCancelButton;
+            var t = cancel ? cancel.transform.Find("Text") : null;
+            return t ? t.GetComponent<TMP_Text>() : null;
+        }
+
+        // Craft progress state. UpdateRecipe (InventoryGui.cs:1611-1625) swaps m_craftButton for m_craftProgressPanel while
+        // m_craftTimer >= 0 (bar = m_craftProgressBar); the alpha-0 m_craftCancelButton hit area stays stretched over the bar.
+        // State: the panel's own text (its vanilla token from Localization.textMeshStrings, Localization.cs:303-311) + " x N"
+        // while m_multiCrafting, the craft button's pattern (:1572-1575). DoCrafting makes all m_multiCraftAmount at once
+        // (:1787 / :1897), so N is the batch size; vanilla tracks no i/N. Cancel cue: the cancel button's own label = $menu_cancel
+        // at the bar's right end, ColorTint target (accent on hover / gamepad select), nothing drawn over the bar's centre.
+        private void ProgressCue(Box b)
+        {
+            var panel = _gui.m_craftProgressPanel;
+            if (!panel || !panel.gameObject.activeInHierarchy) return;
+            var pad = b.H * 0.2f;
+            var cancel = _gui.m_craftCancelButton;
+            var cancelLabel = CancelLabel();
+            var cw = cancelLabel ? Mathf.Min(b.W * 0.3f, b.H * 2.2f) : 0f;
+            TMP_Text state = null;
+            foreach (Transform c in panel)
+                if (c.TryGetComponent<TMP_Text>(out var s)) { state = s; break; }
+            if (state)
+            {
+                Geo.Place(_canvas, state.rectTransform, new Box(b.X + pad + cw, b.Y, Mathf.Max(0f, b.W - 2f * (pad + cw)), b.H));
+                Label(state, TextAlignmentOptions.Center, b.H * 0.38f, 12f, upper: true);
+                if (Localization.instance.textMeshStrings.TryGetValue(state, out var token))
+                {
+                    var want = Localization.instance.Localize(token) + (_gui.m_multiCrafting ? " x " + _gui.m_multiCraftAmount : "");
+                    if (state.text != want) state.text = want;
+                }
+            }
+            if (!cancelLabel) return;
+            if (!cancelLabel.gameObject.activeSelf) cancelLabel.gameObject.SetActive(true);
+            if (!cancelLabel.enabled) cancelLabel.enabled = true;
+            var cancelText = Localization.instance.Localize("$menu_cancel");
+            if (cancelLabel.text != cancelText) cancelLabel.text = cancelText;
+            if (cancelLabel.raycastTarget) cancelLabel.raycastTarget = false;
+            Geo.Place(_canvas, cancelLabel.rectTransform, new Box(b.Right - pad - cw, b.Y, cw, b.H));
+            Label(cancelLabel, TextAlignmentOptions.Right, b.H * 0.3f, 11f, upper: true);
+            if (cancel.targetGraphic != cancelLabel)
+            {
+                var accent = ThemeTokens.GetColor("color.text.accent", Color.cyan);
+                var colors = ColorBlock.defaultColorBlock;
+                colors.normalColor = new Color(1f, 1f, 1f, 0.85f);
+                colors.highlightedColor = accent;
+                colors.selectedColor = accent;
+                colors.pressedColor = accent * 0.8f;
+                cancel.targetGraphic = cancelLabel;
+                cancel.transition = Selectable.Transition.ColorTint;
+                cancel.colors = colors;
             }
         }
 
