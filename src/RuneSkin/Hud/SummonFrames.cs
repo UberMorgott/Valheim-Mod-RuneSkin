@@ -112,25 +112,37 @@ namespace RuneSkin.PlayerHud
             var mapOpen = Minimap.instance && Minimap.instance.m_mode == Minimap.MapMode.Large;
             _armed = HoldsSummoner(Player.m_localPlayer);
             var show = _armed && !mapOpen;
-            if (_grid.gameObject.activeSelf != show) _grid.gameObject.SetActive(show);
+            if (_grid.gameObject.activeSelf != show)
+            {
+                _grid.gameObject.SetActive(show);
+                if (show) _timer = 0f; // tiles built / filled this frame
+            }
             _timer -= Time.unscaledDeltaTime;
             if (_timer <= 0f)
             {
                 _timer = Refresh;
                 Collect();
-                for (var i = 0; i < _stacks.Count; i++)
+                // Tiles only under an active grid: TMP texts made under an inactive parent have no material yet and
+                // setting outlineWidth throws (run 20261026-164908, 24x NRE in MakeTile -> Outline while unarmed).
+                if (show)
                 {
-                    if (i == _tiles.Count) _tiles.Add(MakeTile(i));
-                    Fill(_tiles[i], _stacks[i]);
+                    for (var i = 0; i < _stacks.Count; i++)
+                    {
+                        if (i == _tiles.Count) _tiles.Add(MakeTile(i));
+                        Fill(_tiles[i], _stacks[i]);
+                    }
+                    for (var i = _stacks.Count; i < _tiles.Count; i++)
+                        if (_tiles[i].Root.gameObject.activeSelf) _tiles[i].Root.gameObject.SetActive(false);
                 }
-                for (var i = _stacks.Count; i < _tiles.Count; i++)
-                    if (_tiles[i].Root.gameObject.activeSelf) _tiles[i].Root.gameObject.SetActive(false);
                 Log();
             }
             Place();
-            var now = ZNet.instance ? ZNet.instance.GetTimeSeconds() : 0d;
-            var pulse = 0.65f + 0.35f * Mathf.Sin(Time.unscaledTime * Mathf.PI * 2f * F("rate.hud.party.pulse", 1f));
-            for (var i = 0; i < _stacks.Count && i < _tiles.Count; i++) Animate(_tiles[i], _stacks[i], now, pulse);
+            if (show)
+            {
+                var now = ZNet.instance ? ZNet.instance.GetTimeSeconds() : 0d;
+                var pulse = 0.65f + 0.35f * Mathf.Sin(Time.unscaledTime * Mathf.PI * 2f * F("rate.hud.party.pulse", 1f));
+                for (var i = 0; i < _stacks.Count && i < _tiles.Count; i++) Animate(_tiles[i], _stacks[i], now, pulse);
+            }
             Hover(canvas, !show);
         }
 
