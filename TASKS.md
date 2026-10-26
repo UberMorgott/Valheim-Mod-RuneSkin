@@ -28,11 +28,11 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
   -executeMethod BuildBundles.Build` exits -1073741676, native crash in SpriteAtlas PackAtlasOnJob (BuildBundles.cs:237
   BuildAtlas), also with Library copied from D:\tmp\runeskin-unity-library-good (2 tries). 0.25.1 (art unchanged vs
   v0.25.0, `git diff v0.25.0 --stat -- art unity` empty) staged the 0.25.0 bundle AAA86A96.
-- [ ] ui-runeskin-m3 FAILs in runs 20261026-221912 / -222320 (craft-anvil branch on v0.25.0), no m3 run on v0.25.0 itself:
-  overdraw-crafting 1920/2560 covered=9 (panel Backing of Inventory_Doll / Inventory / Crafting; 190758 / 184538 / 182632
-  had covered=1), names-1920x1080/2560x1440 'Кожаные обрывки' / 'Шкура оленя' 9.5 < 10 (cells 60 wide; 190758 PASS with
-  66-wide cells), m3-layout truncated recipe rows 'Метательный кремневый то...' / 'Стрела с кремневым нако…'. Likely from
-  0.25.0 windowed inventory / window headers (cf11dc3..5a0a76f); needs a v0.25.0 baseline m3 run to confirm.
+- [ ] 0.25.0 regression, fix next (crafting width cap 576 / windowed layout A, cf11dc3..5a0a76f; 0.25.1 diff touches only
+  the craft button label / anvil / stepper): ui-runeskin-m3 run 20261026-222320 vs 20261026-190758 -
+  overdraw-crafting 1920/2560 covered 9 vs 1 (panel Backing of Inventory_Doll / Inventory / Crafting); names-1920x1080 /
+  2560x1440 'Кожаные обрывки' / 'Шкура оленя' 9.5 < 10 with requirement cells 60 vs 66 wide (190758 PASS); m3-layout
+  truncated recipe rows 'Метательный кремневый то...' / 'Стрела с кремневым нако…'.
 
 ## M0 completion (2026-10-21)
 
