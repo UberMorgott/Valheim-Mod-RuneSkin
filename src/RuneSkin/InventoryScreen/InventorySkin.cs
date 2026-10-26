@@ -14,9 +14,12 @@ using RuneSkin.Compat;
 
 namespace RuneSkin.InventoryScreen
 {
-    // Family "Inventory" (M2, layout A, inventory-layout.md section 9). Sole geometry owner of the InventoryGui player
-    // panel (doll, grid, footer), the container / backpack dock, the info header and the crafting panel's PLACE (its
-    // look stays with the other skin until M3). How it owns geometry without fighting vanilla:
+    // Family "Inventory" (windowed layout, mockup inv-layout-A, user 2026-10-26). Sole geometry owner of the InventoryGui
+    // windows: the player grid window (m_player: grid locked onto the HUD strip's hotbar, side column over F), the doll
+    // window (m_info name + tabs, EAQS equipment cells, live preview), chest / backpack (m_container, the fork's backpack
+    // panel) and the crafting window's default PLACE (CraftingSkin lays it out). Each window has its own RuneWindowHeader
+    // and user offset (WindowMove ids inventory.grid / .doll / .chest / .backpack, crafting); InventoryWindowsMath gives
+    // the defaults. How it owns geometry without fighting vanilla:
     // - grid pitch: InventoryGrid.m_elementSpace, the field vanilla lays cells out with (InventoryGrid.cs:273) and
     //   sizes the grid root with every frame (:405); existing cells are moved once when pitch / width changes (the
     //   positions vanilla would give them), no destroy/rebuild (Codex M2 review #4);
@@ -24,7 +27,8 @@ namespace RuneSkin.InventoryScreen
     //   SetInventorySize (InventoryGui.cs:1723-1726), which the next frame's placement overrides;
     // - EAQS cells: EAQS re-places them every frame in its InventoryGrid.UpdateGui postfix (EquipmentPanel
     //   UpdateInventorySlots), so the doll places them right after it (AfterGrid, HarmonyAfter EAQS), no reparenting;
-    // - layout math (InventoryMath) runs only when the input tuple changes.
+    // - rows / columns past a window's room scroll inside it (cells outside the shown range at scale 0, like the doll);
+    // - layout math (InventoryWindowsMath) runs only when the input tuple changes.
     public sealed class InventorySkin : MonoBehaviour
     {
         public const string ScreenId = "Inventory";
@@ -32,26 +36,31 @@ namespace RuneSkin.InventoryScreen
 
         public static InventorySkin Instance { get; private set; }
 
-        // Crafting column box of the current layout (canvas units, top-left origin; empty before the first layout).
+        // Default crafting window box (canvas units, top-left origin; empty before the first layout). CraftingSkin adds the
+        // window's own offset (WindowMove.Crafting).
         public Box CraftingBox => _layout != null && InventoryGui.IsVisible() ? _layout.Crafting : default;
 
         public float SkinScaleValue => _input.SkinScale;
 
-        // Centre column box (canvas units; empty before the first layout).
-        public Box CenterBox => _layout != null && InventoryGui.IsVisible() ? _layout.Center : default;
+        // Default doll window box (canvas units; empty before the first layout): the info panels' left bound.
+        public Box CenterBox => _layout != null && InventoryGui.IsVisible() ? _layout.Doll : default;
 
         private InventoryGui _gui;
         private RectTransform _canvas;
         private Canvas _rootCanvas;
-        private RectTransform _decor, _centerHost, _chestHost, _packHost, _doll, _hotbarHeader, _backdrop, _silhouette;
+        private RectTransform _decor, _invHost, _dollHost, _chestHost, _packHost, _doll, _backdrop, _silhouette;
         private CharacterPreview _preview;
-        // Theme rect of the live preview inside the figure box (PreviewMath.Place): normalized x, y, w, h + inset.
-        private float _previewX, _previewY, _previewW = 1f, _previewH = 1f, _previewInset = 8f;
         private readonly InventoryTokens _tokens = new InventoryTokens();
-        private readonly InventoryInput _input = new InventoryInput();
-        // _base = the docked layout (InventoryMath.Compute), _layout = it moved by the user's group offset (WindowMove).
-        private InventoryLayout _layout, _base;
+        private readonly WindowsInput _input = new WindowsInput();
+        // _layout = the default windows (InventoryWindowsMath.Compute); each window is shown at its default + its own user
+        // offset (WindowMove), refreshed every placement pass (Shown).
+        private WindowsLayout _layout;
         private int _layoutHash;
+        // Shown window boxes and their offsets from the defaults (canvas units).
+        private Box _invBox, _dollBox, _chestBox, _packBox;
+        private Vector2 _invOff, _dollOff, _chestOff, _packOff;
+        // Scroll offsets: player grid rows, chest / backpack columns (rows scroll in vanilla's ScrollRect), doll rows.
+        private int _gridScroll;
         private GameObject _tooltipPrefab;
 
         // Doll
@@ -84,6 +93,10 @@ namespace RuneSkin.InventoryScreen
             public float WantPitch, WantScale, WantCell;
             public int Visible = int.MaxValue;
             public bool NeedsReposition;
+            // Shown range of our own scrolling (rows of the player grid, columns of a container): first + count;
+            // VisibleRows / VisibleColumns = int.MaxValue = all.
+            public int RowScroll, ColScroll, VisibleRows = int.MaxValue, VisibleColumns = int.MaxValue;
+            public int AppliedRowScroll = -1, AppliedColScroll = -1;
         }
 
         private struct DollEntry
@@ -92,6 +105,8 @@ namespace RuneSkin.InventoryScreen
             public int Order;
             public int Element; // EAQS element index, -1 = own cell
             public DollCell Cell;
+            // Doll column (0 left, 1 right: InventoryWindowsMath.DollSide) and row in it.
+            public int Side, Row;
         }
 
         public static void Attach(InventoryGui gui)
@@ -114,7 +129,7 @@ namespace RuneSkin.InventoryScreen
             BuildDecor();
             BuildDoll();
             HideVanillaBackgrounds();
-            WindowMove.OnMoved(WindowMove.Inventory, Move);
+            RegisterResetAction();
             foreach (var root in OwnedRoots())
             {
                 var r = root;
@@ -122,12 +137,29 @@ namespace RuneSkin.InventoryScreen
                 ScreenRegistry.Register(r, () => Context(r, id));
                 ScreenRegistry.Restyle(r);
             }
-            Plugin.Log.LogInfo($"[RuneSkin] inventory layout A attached (EAQS {(EaqsBridge.Available ? "on" : "off")})");
+            Plugin.Log.LogInfo($"[RuneSkin] inventory windows attached (EAQS {(EaqsBridge.Available ? "on" : "off")})");
+        }
+
+        private System.Action _resetAction;
+
+        // Player window action: every inventory-screen window back on its default (the layout this class computes).
+        private void RegisterResetAction()
+        {
+            _resetAction = InventoryRegistry.AddAction(Skin.PluginGuid, new PanelActionDescriptor
+            {
+                Id = "layout.reset",
+                Panel = PanelKind.Player,
+                GlyphToken = "glyph.action.layout",
+                TooltipKey = "$runeskin_layout_reset",
+                Order = 1000,
+                OnInvoke = () => WindowMove.Reset(WindowMove.InventoryWindows)
+            });
         }
 
         private void OnDestroy()
         {
             if (Instance == this) Instance = null;
+            _resetAction?.Invoke();
             RestoreQuickBar();
         }
 
@@ -145,22 +177,16 @@ namespace RuneSkin.InventoryScreen
         {
             float F(string token, float fallback) => ThemeTokens.GetFloat(token, fallback);
             var t = _tokens;
-            t.Margin = F("size.inv.margin", t.Margin); t.Gap = F("size.inv.gap", t.Gap);
-            t.DockW = F("size.inv.dock", t.DockW); t.CenterW = F("size.inv.center", t.CenterW); t.CraftW = F("size.inv.craft", t.CraftW);
-            t.MinDockW = F("size.inv.dock.min", t.MinDockW); t.MinCraftW = F("size.inv.craft.min", t.MinCraftW);
-            t.WorkspaceMaxW = F("size.inv.workspace", t.WorkspaceMaxW); t.PanelMaxH = F("size.inv.panel.h", t.PanelMaxH);
+            t.Margin = F("size.inv.margin", t.Margin); t.Gap = F("size.inv.gap", t.Gap); t.StripGap = F("size.inv.strip.gap", t.StripGap);
+            t.CraftW = F("size.inv.craft", t.CraftW); t.MinCraftW = F("size.inv.craft.min", t.MinCraftW);
             t.InnerGap = F("size.inv.inner.gap", t.InnerGap); t.PanelActionsH = F("size.inv.panel.actions", t.PanelActionsH);
-            t.HudBand = F("size.inv.hud.band", t.HudBand); t.HeaderH = F("size.inv.header", t.HeaderH); t.FooterH = F("size.inv.footer", t.FooterH);
+            t.HeaderH = F("size.inv.doll.header", t.HeaderH); t.FooterH = F("size.inv.footer", t.FooterH);
             t.PanelHeaderH = F("size.inv.panel.header", t.PanelHeaderH); t.PanelPad = F("size.inv.panel.pad", t.PanelPad);
-            t.GridCell = F("size.slot", t.GridCell); t.GridGap = F("size.inv.cell.gap", t.GridGap); t.HotbarHeaderH = StripHotbar ? 0f : F("size.inv.hotbar.header", t.HotbarHeaderH);
-            t.ContainerCell = F("size.inv.container.cell", t.ContainerCell); t.ContainerGap = F("size.inv.container.gap", t.ContainerGap);
-            t.DollCell = F("size.inv.doll.cell", t.DollCell); t.DollGap = F("size.inv.doll.gap", t.DollGap);
-            t.DollColumns = F("size.inv.doll.columns", t.DollColumns); t.DollPad = F("size.inv.doll.pad", t.DollPad); t.DollFigureGap = F("size.inv.doll.figure.gap", t.DollFigureGap);
-            t.DollFigureAspect = F("share.inv.doll.figure", t.DollFigureAspect); t.HeaderMinH = F("size.inv.header.min", t.HeaderMinH); t.InnerGapMin = F("size.inv.inner.gap.min", t.InnerGapMin);
+            t.WinHeaderH = F("size.win.header", t.WinHeaderH);
+            t.GridCell = F("size.slot", t.GridCell); t.GridGap = F("size.inv.cell.gap", t.GridGap);
+            t.DollFigureGap = F("size.inv.doll.figure.gap", t.DollFigureGap); t.DollFigureAspect = F("share.inv.doll.figure", t.DollFigureAspect);
+            t.PreviewMaxH = F("size.inv.preview.max", t.PreviewMaxH);
             t.ScrollbarW = F("size.inv.scrollbar", t.ScrollbarW); t.MinCellPhysPx = F("floor.cell.px", t.MinCellPhysPx);
-            _previewX = F("share.inv.preview.x", 0f); _previewY = F("share.inv.preview.y", 0f);
-            _previewW = F("share.inv.preview.w", 1f); _previewH = F("share.inv.preview.h", 1f);
-            _previewInset = F("size.inv.preview.inset", 8f);
         }
 
         // ---------------------------------------------------------------- build
@@ -176,7 +202,8 @@ namespace RuneSkin.InventoryScreen
             _decor.anchorMin = Vector2.zero;
             _decor.anchorMax = Vector2.one;
             _decor.offsetMin = _decor.offsetMax = Vector2.zero;
-            _centerHost = Host("Center");
+            _dollHost = Host("Doll");
+            _invHost = Host("Inventory");
             _chestHost = Host("Chest");
             _packHost = Host("Backpack");
         }
@@ -197,14 +224,6 @@ namespace RuneSkin.InventoryScreen
             _doll.SetParent(_gui.m_player, false);
             _doll.anchorMin = _doll.anchorMax = new Vector2(0.5f, 0.5f);
             _doll.sizeDelta = Vector2.zero;
-            _hotbarHeader = (RectTransform)new GameObject("RuneSkinHotbarHeader", typeof(RectTransform)).transform;
-            _hotbarHeader.SetParent(_gui.m_player, false);
-            var header = _hotbarHeader.gameObject.AddComponent<Image>();
-            header.raycastTarget = false;
-            var mark = DollCell.Mark(header, "inventory.hotbar.header", "hotbar row header (grid row 1 = HotkeyBar 1-8, HotkeyBar.cs:90-142)");
-            mark.Outcome = Restyler.Apply(header, mark, ThemeTokens.Role(mark.Role)) ? Outcome.Styled : Outcome.Degraded;
-            header.enabled = mark.Outcome == Outcome.Styled;
-            if (_gui.m_playerGrid) _hotbarHeader.SetSiblingIndex(_gui.m_playerGrid.transform.GetSiblingIndex());
 
             _backdrop = Decor("RuneSkinDollBackdrop", "doll.backdrop", "doll alcove behind the silhouette");
             _silhouette = Decor("RuneSkinDollFigure", "doll.silhouette", "carved warrior silhouette (fallback when the live preview is off)");
@@ -269,7 +288,8 @@ namespace RuneSkin.InventoryScreen
                 var t = image.transform;
                 var sprite = image.sprite ? image.sprite.name : "";
                 if (t.name == "sunken") ctx.Role(image, "skip", "vanilla inset bevel (hidden, RuneSkin panel stack)");
-                else if (t.name == "bkg" && t.parent && Array.IndexOf(StatPlates, t.parent.name) >= 0) ctx.Role(image, "plate.stat", "stat plate strip (footer: armour, coins, weight, trash)");
+                else if (t.name == "bkg" && t.parent && (t.parent.parent == _gui.m_player || t.parent.parent == _gui.m_info) && Array.IndexOf(StatPlates, t.parent.name) >= 0) ctx.Role(image, "slot.cell", "side column cell (mockup inv-layout-A: trash, armour, weight, coins over F)");
+                else if (t.name == "bkg" && t.parent && Array.IndexOf(StatPlates, t.parent.name) >= 0) ctx.Role(image, "plate.stat", "stat plate strip (container weight)");
                 else if (t.name == "Weight" && t.parent && (t.parent == _gui.m_player || t.parent.GetComponentInChildren<InventoryGrid>(true))) ctx.Role(image, "plate.stat", "weight plate (InventoryGui.m_weight / m_containerWeight)");
                 else if (t.name == "weight_icon") ctx.Role(image, "glyph.stat.weight", "weight plate icon");
                 else if (t.name == "armor_icon" && t.parent && t.parent.name == "Armor") ctx.Role(image, "glyph.stat.armor", "armor plate icon (InventoryGui.m_armor)");
@@ -353,7 +373,7 @@ namespace RuneSkin.InventoryScreen
             UpdateRegisteredSlots();
             UpdateActions();
             HideQuickBar();
-            DollScrollInput();
+            ScrollInput();
         }
 
         private bool _frameReady;
@@ -459,20 +479,23 @@ namespace RuneSkin.InventoryScreen
                 h = h * 31 + (c != null ? c.GetHashCode() ^ (c.GetWidth() * 101 + c.GetHeight()) : 0);
                 h = h * 31 + (ContainerIsBackpack() ? 7 : 0);
                 h = h * 31 + (_packInventory != null ? _packInventory.GetHashCode() ^ (_packInventory.GetWidth() * 101 + _packInventory.GetHeight()) : 0);
-                h = h * 31 + DollStorageCount();
+                DollSideCounts(out var dl, out var dr);
+                h = h * 31 + dl * 97 + dr;
+                h = h * 31 + SidePlateCount();
                 h = h * 31 + InventoryRegistry.Revision;
                 h = h * 31 + ThemeTokens.Revision;
-                h = h * 31 + Mathf.RoundToInt(HudTopLogical(_rootCanvas ? Mathf.Max(_rootCanvas.scaleFactor, 0.01f) : 1f) / 4f);
+                var cluster = PlayerHud.HudCluster.Instance;
+                h = h * 31 + (cluster ? cluster.StripRevision + (cluster.ReservedScreenTop > 0f ? 1 : 0) : -1);
                 return h;
             }
         }
 
-        // HUD cluster top (RuneSkin HUD, buff row reserved) in this canvas's logical units, top-left origin; 0 = no HUD.
-        private static float HudTopLogical(float scale)
+        // The strip's hotbar row in this canvas (InventoryWindowsMath.FromStrip); invalid without the RuneSkin strip.
+        private static HotbarRow StripRow(float scale)
         {
             var cluster = PlayerHud.HudCluster.Instance;
-            var top = cluster ? cluster.ReservedScreenTop : 0f;
-            return top > 0f ? (Screen.height - top) / scale : 0f;
+            if (!cluster || !cluster.StripRow(out var l, out var input, out var abilities, out var originX, out var ppu, out var top)) return default;
+            return InventoryWindowsMath.FromStrip(l, input, abilities, originX, ppu, top, Screen.height, scale);
         }
 
         private Inventory ContainerInventory() => _gui.m_currentContainer ? _gui.m_currentContainer.GetInventory() : null;
@@ -507,17 +530,6 @@ namespace RuneSkin.InventoryScreen
             _packInventory = _packPanel ? AbApi.Inventory() ?? (_packGrid ? _packGrid.GetInventory() : null) : null;
         }
 
-        private int DollStorageCount()
-        {
-            RefreshEaqs();
-            var n = 0;
-            foreach (var s in _eaqs)
-                if (s.Kind != EaqsBridge.Kind.Quick) n++;
-            foreach (var s in InventoryRegistry.Slots)
-                if (!s.Dead) n++;
-            return n;
-        }
-
         private void RefreshEaqs()
         {
             if (Time.frameCount - _eaqsReadFrame < 30 || !_gui.m_playerGrid) return;
@@ -537,39 +549,54 @@ namespace RuneSkin.InventoryScreen
             i.Safe = new Box(safe.x / scale, (Screen.height - safe.yMax) / scale, safe.width / scale, safe.height / scale);
             i.PhysPerUnit = scale;
             i.SkinScale = ResponsiveContext.SkinScale;
+            i.Hotbar = StripHotbar ? StripRow(scale) : default;
             i.GridW = inv.GetWidth();
             // HUD strip: its hotbar IS row 0, so the grid shows the rows under it only (user call 2026-10-22).
-            i.GridH = EaqsBridge.VisibleRows(inv.GetHeight()) - (StripHotbar ? 1 : 0);
+            i.GridH = EaqsBridge.VisibleRows(inv.GetHeight()) - (StripHotbar && i.Hotbar.Valid ? 1 : 0);
             var chest = ContainerIsBackpack() ? null : ContainerInventory();
             var pack = ContainerIsBackpack() ? ContainerInventory() : _packInventory;
             i.ChestW = chest?.GetWidth() ?? 0;
             i.ChestH = chest?.GetHeight() ?? 0;
             i.BackpackW = pack?.GetWidth() ?? 0;
             i.BackpackH = pack?.GetHeight() ?? 0;
-            i.DollStorage = DollStorageCount();
-            i.HudTop = HudTopLogical(scale);
+            DollSideCounts(out i.DollLeft, out i.DollRight);
+            i.SidePlates = SidePlateCount();
             ReadTokens();
             _tokens.PanelCapInset = CapKeepOut(_chestHost);
-            _tokens.CenterCapInset = CapKeepOut(_centerHost);
-            _base = InventoryMath.Compute(i, _tokens);
-            Move();
+            _tokens.CenterCapInset = CapKeepOut(_invHost);
+            _layout = InventoryWindowsMath.Compute(i, _tokens);
+            Shown();
             RequestBand(scale);
             _entriesRevision = -1; // rebuild doll order
             _logPlacement = 3;
-            Plugin.Log.LogInfo($"[RuneSkin] inventory layout {_layout.Mode}: dock {_layout.Dock} centre {_layout.Center} crafting {_layout.Crafting} " +
-                               $"grid {_layout.Player} chest {_layout.ChestGrid} backpack {_layout.BackpackGrid} doll {_layout.DollCells.Rows}r/{_layout.DollCells.VisibleRows}v" +
-                               (_layout.DockOverflow ? " dock overflow" : ""));
+            var o = _layout;
+            Plugin.Log.LogInfo($"[RuneSkin] inventory windows: hotbar c0 {o.Hotbar.C0:0.##} pitch {o.Hotbar.Pitch:0.###} cell {o.Hotbar.Cell:0.##} F {o.Hotbar.Side:0.##} top {o.Hotbar.Top:0.#}{(i.Hotbar.Valid ? "" : " (no strip)")}; " +
+                               $"grid {o.Inventory} {o.Player} doll {o.Doll} {o.DollGrid} preview {o.DollPreview} backpack {o.Backpack} {o.BackpackGrid} chest {o.Chest} {o.ChestGrid} " +
+                               $"crafting {o.Crafting}{(o.CraftingTight ? " tight" : "")}{(o.DockOverflow ? " dock overflow" : "")}{(o.BackpackFolded ? " backpack folded" : "")}");
         }
 
-        // HUD band profile (inventory-layout.md section 4/9, user call 2026-10-21): the HUD cluster re-lays out as one
-        // wide band under the column block, aligned to its left / right edges. Its height comes back as the HUD top
-        // (InputHash), so the next layout gives the columns the height the band freed.
+        // Side column entries present (trash, armour, weight, coins).
+        private int SidePlateCount()
+        {
+            var n = 0;
+            foreach (var p in SidePlates())
+                if (p && p.gameObject.activeSelf) n++;
+            return n;
+        }
+
+        // HUD band flag (the HUD cluster keeps its strip; the quick cells follow its potion cells): spans the windows.
         private void RequestBand(float scale)
         {
             var cluster = PlayerHud.HudCluster.Instance;
-            if (!cluster || _base == null) return;
-            // The band follows the docked block (the HUD stays put when the user moves the group).
-            InventoryMath.BlockEdges(_base, out var left, out var right);
+            if (!cluster || _layout == null) return;
+            float left = float.MaxValue, right = float.MinValue;
+            foreach (var b in _layout.Windows)
+            {
+                if (b.IsEmpty) continue;
+                left = Mathf.Min(left, b.X);
+                right = Mathf.Max(right, b.Right);
+            }
+            if (left > right) return;
             var quick = 0;
             foreach (var s in _eaqs) if (s.Kind == EaqsBridge.Kind.Quick) quick++;
             cluster.SetBand(left * scale, right * scale, quick);
@@ -584,18 +611,35 @@ namespace RuneSkin.InventoryScreen
             if (cluster) cluster.ClearBand();
         }
 
-        // The column block moved by the group offset (drag on any of its title bands: name row, dock panel headers,
-        // crafting header, skills / trophies titles), clamped on screen above the HUD strip.
-        private void Move()
+        // Every window at its default + its own user offset (WindowMove: drag on its header, double-click resets it),
+        // clamped on screen above the HUD strip. Runs every placement pass (offsets change while dragging).
+        private void Shown()
         {
-            if (_base == null) return;
-            var o = WindowMove.Applied(WindowMove.Inventory, InventoryMath.Block(_base), _canvas);
-            _layout = InventoryMath.Shift(_base, o.x, o.y);
+            var o = _layout;
+            if (o == null) return;
+            _invOff = WindowMove.Applied(WindowMove.InventoryGrid, o.Inventory, _canvas);
+            _dollOff = WindowMove.Applied(WindowMove.Doll, o.Doll, _canvas);
+            _chestOff = o.Chest.IsEmpty ? Vector2.zero : WindowMove.Applied(WindowMove.Chest, o.Chest, _canvas);
+            _packOff = o.Backpack.IsEmpty ? Vector2.zero : WindowMove.Applied(WindowMove.Backpack, o.Backpack, _canvas);
+            _invBox = Move(o.Inventory, _invOff);
+            _dollBox = Move(o.Doll, _dollOff);
+            _chestBox = Move(o.Chest, _chestOff);
+            _packBox = Move(o.Backpack, _packOff);
         }
 
-        // Harness: the group's docked block and where it is shown (canvas units).
-        public Box DockedBlock => _base != null ? InventoryMath.Block(_base) : default;
-        public Box ShownBlock => _layout != null ? InventoryMath.Block(_layout) : default;
+        private static Box Move(Box b, Vector2 o) => WindowMoveMath.Shift(b, o.x, o.y);
+
+        // Harness: default and shown window boxes (canvas units) by WindowMove id.
+        public Box DefaultWindow(string id) => _layout == null ? default :
+            id == WindowMove.InventoryGrid ? _layout.Inventory : id == WindowMove.Doll ? _layout.Doll :
+            id == WindowMove.Chest ? _layout.Chest : id == WindowMove.Backpack ? _layout.Backpack : id == WindowMove.Crafting ? _layout.Crafting : default;
+
+        public Box ShownWindow(string id) =>
+            id == WindowMove.InventoryGrid ? _invBox : id == WindowMove.Doll ? _dollBox :
+            id == WindowMove.Chest ? _chestBox : id == WindowMove.Backpack ? _packBox : default;
+
+        // Harness: the computed layout (hotbar row, grids) of the open screen.
+        public WindowsLayout Layout => _layout;
 
         // ---------------------------------------------------------------- panels
 
@@ -618,85 +662,93 @@ namespace RuneSkin.InventoryScreen
                 var off = Mathf.Abs(b.X - want.X) + Mathf.Abs(b.Y - want.Y);
                 sb.Append($" {name}={b}{(off > 2f ? " OFF(want " + want + ")" : "")}");
             }
-            var lg = _gui.m_player.GetComponent<LayoutGroup>();
-            sb.Append($" playerLayoutGroup={(lg ? lg.GetType().Name : "none")} canvasMode={_rootCanvas.renderMode}");
-            if (_gui.m_playerGrid && _gui.m_playerGrid.m_elements.Count > 0 && _gui.m_playerGrid.m_elements[0])
-                sb.Append($" cell0={Geo.BoxOf(_canvas, (RectTransform)_gui.m_playerGrid.m_elements[0].transform)}");
-            var armor = _gui.m_armor ? DirectChild(_gui.m_player, _gui.m_armor.transform) : null;
-            if (armor) sb.Append($" armorPlate={Geo.BoxOf(_canvas, armor)} footer={_layout.Footer}");
-            One("player", _gui.m_player, _layout.Center);
-            var gi = Inset(_layout.Grid, _tokens.PanelPad * _input.SkinScale, _tokens.PanelPad * _input.SkinScale);
-            var hh = _tokens.HotbarHeaderH * _input.SkinScale;
-            One("grid", _gui.m_playerGrid, new Box(gi.X, gi.Y + hh, gi.W, gi.H - hh));
+            sb.Append($" canvasMode={_rootCanvas.renderMode}");
+            if (_gui.m_playerGrid)
+                foreach (var e in _gui.m_playerGrid.m_elements)
+                    if (e && e.Position.x == 0 && e.Position.y == (StripHotbar && _input.Hotbar.Valid ? 1 : 0))
+                    {
+                        // first shown cell vs the hotbar column 0 (same x centre, same side)
+                        sb.Append($" cell0={Geo.BoxOf(_canvas, (RectTransform)e.transform)} want x {_layout.PlayerCellX(0) + _invOff.x:0.#} side {_layout.Player.Cell:0.#}");
+                        break;
+                    }
+            One("player", _gui.m_player, _invBox);
+            One("grid", _gui.m_playerGrid, Move(_layout.PlayerView, _invOff));
+            if (_gui.m_info) One("doll", _gui.m_info, Move(_layout.DollHeader, _dollOff));
             if (_gui.m_container && _gui.m_container.gameObject.activeSelf)
             {
-                One("container", _gui.m_container, ContainerIsBackpack() ? _layout.Backpack : _layout.Chest);
+                One("container", _gui.m_container, ContainerIsBackpack() ? _packBox : _chestBox);
                 if (_gui.m_containerGrid.m_elements.Count > 0 && _gui.m_containerGrid.m_elements[0]) sb.Append($" ccell0={Geo.BoxOf(_canvas, (RectTransform)_gui.m_containerGrid.m_elements[0].transform)}");
             }
-            if (_packPanel) One("backpack", _packPanel, _layout.Backpack);
+            if (_packPanel) One("backpack", _packPanel, _packBox);
             Plugin.Log.LogInfo(sb.ToString());
         }
 
         private void ApplyPanels()
         {
             var o = _layout;
-            var pad = _tokens.PanelPad * _input.SkinScale;
-            // Decor hosts.
-            Show(_centerHost, o.Center);
+            Shown();
+            _colViews.Clear();
             var containerShown = _gui.m_container && _gui.m_container.gameObject.activeSelf;
             var backpackInContainer = containerShown && ContainerIsBackpack();
-            Show(_chestHost, containerShown && !backpackInContainer ? o.Chest : default);
-            Show(_packHost, backpackInContainer || _packPanel ? o.Backpack : default);
+            // Window frames (panel stacks).
+            Show(_invHost, _invBox);
+            Show(_dollHost, _dollBox);
+            Show(_chestHost, containerShown && !backpackInContainer ? _chestBox : default);
+            Show(_packHost, backpackInContainer || _packPanel ? _packBox : default);
 
-            // Centre: player panel, info header, grid, footer.
-            Geo.Place(_canvas, _gui.m_player, o.Center);
-            InfoHeader(Inset(o.Header, pad, pad / 2f));
-            // Grid box = carved hotbar header strip (digits 1-8 on it) + the grid below it.
-            var headerH = _tokens.HotbarHeaderH * _input.SkinScale;
-            var inner = Inset(o.Grid, pad, pad);
-            // Grid view down to the footer plates (Footer: o.Footer inset 4 at the top) minus the same pad as at the top:
-            // the rows centre in it, so the margin over the first row equals the one under the last (no empty band).
-            var gridBottom = Mathf.Max(inner.Bottom, o.Footer.Y + FooterInsetY - pad);
-            var gridBox = new Box(inner.X, inner.Y + headerH, inner.W, Mathf.Max(0f, gridBottom - inner.Y - headerH));
-            if (_gui.m_playerGrid) Geo.Place(_canvas, (RectTransform)_gui.m_playerGrid.transform, gridBox);
-            if (_hotbarHeader && _hotbarHeader.gameObject.activeSelf != !StripHotbar) _hotbarHeader.gameObject.SetActive(!StripHotbar);
-            if (_hotbarHeader && !StripHotbar)
+            // Player grid window: m_player on its box, the grid on its cell block (columns over the hotbar cells), the
+            // side column over F, the header with the player actions.
+            Geo.Place(_canvas, _gui.m_player, _invBox);
+            if (_gui.m_playerGrid)
             {
-                var w = o.Player.Columns * o.Player.Pitch - _tokens.GridGap;
-                var x = gridBox.X + (gridBox.W - o.Player.Columns * o.Player.Pitch) / 2f;
-                Geo.Place(_canvas, _hotbarHeader, new Box(x - 10f, inner.Y, w + 20f, headerH));
+                Geo.Place(_canvas, (RectTransform)_gui.m_playerGrid.transform, Move(o.PlayerView, _invOff));
+                Range(_gui.m_playerGrid, o.Player, true, _gridScroll, 0);
             }
-            Footer(Inset(o.Footer, pad, FooterInsetY));
+            SideColumn(o);
+            GridHeader(Move(o.InventoryHeader, _invOff));
 
-            // Dock.
+            // Doll window: name + info tab row (m_info); cells, alcove and preview after EAQS (PlaceEaqsCells).
+            InfoHeader(new Box(_dollBox.X, _dollBox.Y, _dollBox.W, o.DollHeader.H));
+
+            // Chest / backpack.
             if (containerShown)
             {
-                var box = backpackInContainer ? o.Backpack : o.Chest;
-                var fit = backpackInContainer ? o.BackpackGrid : o.ChestGrid;
-                ArrangeContainer(_gui.m_container, _gui.m_containerGrid, box, fit, backpackInContainer ? PanelKind.Backpack : PanelKind.Container,
-                    ContainerInventory(), _gui.m_containerName,
+                ArrangeContainer(_gui.m_container, _gui.m_containerGrid, backpackInContainer ? _packBox : _chestBox, backpackInContainer ? o.BackpackGrid : o.ChestGrid,
+                    backpackInContainer ? PanelKind.Backpack : PanelKind.Container, ContainerInventory(), _gui.m_containerName,
                     _gui.m_containerWeight ? _gui.m_containerWeight.transform : null, _gui.m_takeAllButton, _gui.m_stackAllButton);
             }
             if (_packPanel && _packGrid)
             {
-                ArrangeContainer(_packPanel, _packGrid, o.Backpack, o.BackpackGrid, PanelKind.Backpack, _packInventory,
+                ArrangeContainer(_packPanel, _packGrid, _packBox, o.BackpackGrid, PanelKind.Backpack, _packInventory,
                     Twin(_gui.m_containerName ? _gui.m_containerName.transform : null)?.GetComponent<TMP_Text>(),
                     Twin(_gui.m_containerWeight ? _gui.m_containerWeight.transform : null),
                     Twin(_gui.m_takeAllButton ? _gui.m_takeAllButton.transform : null)?.GetComponent<Button>(),
                     Twin(_gui.m_stackAllButton ? _gui.m_stackAllButton.transform : null)?.GetComponent<Button>());
             }
 
-            // Crafting: position only (look = other skin until M3); scaled down, never up, to stay in its column.
-            // Width fit (scaled down, never up), height = the column: one bottom edge with dock and centre.
-            // With family Crafting owned, CraftingScreen.CraftingSkin lays the column out on this box itself.
-            if (_gui.m_crafting && _gui.m_crafting.gameObject.activeSelf && !CraftingScreen.CraftingSkin.Instance) Geo.PlaceFitWidth(_canvas, _gui.m_crafting, o.Crafting);
-
-            // Player panel actions in the footer, right of the stats, left of the trash plate.
-            Bar(_gui.m_player, PanelKind.Player, Player.m_localPlayer.GetInventory(), null, null, FooterActionBox());
+            // Crafting: position only when the crafting family is not owned (CraftingSkin lays the window out on
+            // CraftingBox + its own offset); scaled down, never up, to stay in its box.
+            if (_gui.m_crafting && _gui.m_crafting.gameObject.activeSelf && !CraftingScreen.CraftingSkin.Instance)
+                Geo.PlaceFitWidth(_canvas, _gui.m_crafting, WindowMove.Place(WindowMove.Crafting, o.Crafting, _canvas));
         }
 
-        // Info header (layout-a2.png): character name on top, the info tabs (texts, skills, trophies, achievements,
-        // character stats, PVP: every Selectable child of m_info) as one centred row of square tabs below it.
+        // Player grid window header: "Inventory" centred, the player panel's glyph actions (sort, reset layout, mods'
+        // actions) in its aux slot; drag moves the grid window.
+        private void GridHeader(Box band)
+        {
+            var head = RuneWindowHeader.Ensure(_gui.m_player, WindowMove.InventoryGrid);
+            if (!head) return;
+            head.Frame = PanelDecor.Of(_invHost);
+            head.Text("$runeskin_win_inventory");
+            var k = _input.SkinScale;
+            var size = Mathf.Min(_tokens.FooterH * k * 0.8f, band.H);
+            var actionsW = Bar(_gui.m_player, PanelKind.Player, Player.m_localPlayer.GetInventory(), null, null, default, size);
+            head.Place(_canvas, band, null, actionsW);
+            Bar(_gui.m_player, PanelKind.Player, Player.m_localPlayer.GetInventory(), null, null, head.AuxBox, size);
+        }
+
+        // Doll window header band (m_info): the character name in the window header on top, the info tabs (texts, skills,
+        // trophies, achievements, character stats, PVP: every Selectable child of m_info) as one centred row below it.
         private void InfoHeader(Box box)
         {
             var info = _gui.m_info;
@@ -705,7 +757,7 @@ namespace RuneSkin.InventoryScreen
             var k = _input.SkinScale;
             var nameH = Mathf.Min(ThemeTokens.GetFloat("size.inv.name.h", 52f) * k, box.H * 0.42f);
             // Name row = the window's one header (RuneWindowHeader: same height / plate / centred rune title as every
-            // window; drag moves the whole docked block, double-click resets it): the character name (TitlePanel's text,
+            // window; drag moves the doll window, double-click resets it): the character name (TitlePanel's text,
             // mirrored), centred in the name row.
             var title = info.Find("TitlePanel") as RectTransform;
             TMP_Text nameText = null;
@@ -720,15 +772,15 @@ namespace RuneSkin.InventoryScreen
                     if (!nameText && child.TryGetComponent<TMP_Text>(out var label)) nameText = label;
                 }
             }
-            var head = RuneWindowHeader.Ensure(info, WindowMove.Inventory);
+            var head = RuneWindowHeader.Ensure(info, WindowMove.Doll);
             if (head)
             {
-                head.Frame = PanelDecor.Of(_centerHost); // the centre column's frame, never an overlapping window's
+                head.Frame = PanelDecor.Of(_dollHost); // the doll window's frame, never an overlapping window's
                 var playerName = Player.m_localPlayer ? Player.m_localPlayer.GetPlayerName() : "$runeskin_win_character";
                 if (nameText) head.Adopt(nameText, playerName);
                 else head.Fallback(playerName).Text(playerName);
                 var hh = Mathf.Min(WindowHeaderMath.HeaderHeight(ThemeTokens.GetFloat("size.win.header", 40f), k), nameH);
-                head.Place(_canvas, new Box(box.X, box.Y, box.W, hh)); // top-aligned: one top / baseline with the dock headers
+                head.Place(_canvas, new Box(box.X, box.Y + (nameH - hh) / 2f, box.W, hh));
             }
             // Index loops / cached names: this runs every frame while the inventory is open (foreach over a Transform
             // allocates an enumerator, .name a string; perf audit B2).
@@ -799,56 +851,84 @@ namespace RuneSkin.InventoryScreen
             }
         }
 
-        private Box _footerActions;
+        // Side column entries top to bottom (mockup inv-layout-A over F): trash (MorgottTweaks MT_Trash), armour, weight,
+        // coins (CurrencyPocket CoinPocketUI). The plates sit under m_player or the info header depending on the prefab:
+        // the stat text's own plate (its parent object, e.g. Player/Weight, Player/Armor), wherever the prefab put it.
+        private readonly RectTransform[] _sidePlates = new RectTransform[4];
 
-        private Box FooterActionBox() => _footerActions;
-
-        // Footer (layout-a2.png): stat plates armour, coins, weight left, trash plate right, player actions in between.
-        // Every plate is a plate_stat strip (glyph in the round socket, value right of it) of a token width.
-        private void Footer(Box box)
+        private RectTransform[] SidePlates()
         {
-            var k = _input.SkinScale;
-            var gap = _tokens.InnerGap * k;
-            var x = box.X;
-            // The plates sit under m_player or the info header depending on the prefab: the stat text's own plate
-            // (its parent object, e.g. Player/Weight, Player/Armor), wherever the prefab put it.
             RectTransform PlateOf(TMP_Text text) => text && text.transform.parent is RectTransform pr && pr != _gui.m_player && pr != _gui.m_info ? pr : null;
             RectTransform Named(string name) => (_gui.m_player.Find(name) ?? (_gui.m_info ? _gui.m_info.Find(name) : null)) as RectTransform;
-            void Left(RectTransform plate, string token, float width)
-            {
-                if (!plate || !plate.gameObject.activeSelf) return;
-                var w = ThemeTokens.GetFloat(token, width) * k;
-                StatPlate(plate, new Box(x, box.Y, w, box.H));
-                AboveGrid(plate);
-                x += w + gap;
-            }
-            Left(PlateOf(_gui.m_armor), "size.inv.plate.armor", 104f);
-            // Coin pocket plate (CurrencyPocket CoinPocketUI) next to the armour, as in the mockup.
-            Left(Named(ModCompat.CoinPocketPlate), "size.inv.plate.coins", 104f);
-            Left(PlateOf(_gui.m_weight), "size.inv.plate.weight", 160f);
-            var right = box.Right;
-            var trash = Named(ModCompat.MtTrashPlate);
-            if (trash && trash.gameObject.activeSelf)
-            {
-                var w = ThemeTokens.GetFloat("size.inv.plate.trash", 150f) * k;
-                StatPlate(trash, new Box(right - w, box.Y, w, box.H));
-                AboveGrid(trash);
-                right -= w + gap;
-            }
-            _footerActions = new Box(x, box.Y, Mathf.Max(0f, right - x), box.H);
+            _sidePlates[0] = Named(ModCompat.MtTrashPlate);
+            _sidePlates[1] = PlateOf(_gui.m_armor);
+            _sidePlates[2] = PlateOf(_gui.m_weight);
+            _sidePlates[3] = Named(ModCompat.CoinPocketPlate);
+            return _sidePlates;
         }
 
-        // Footer plates draw (and raycast) after the player grid. Vanilla sizes the grid's hit area m_gridRoot to every
+        private void SideColumn(WindowsLayout o)
+        {
+            var n = 0;
+            foreach (var plate in SidePlates())
+            {
+                if (!plate || !plate.gameObject.activeSelf) continue;
+                CellPlate(plate, Move(o.SidePlate(n++), _invOff));
+                AboveGrid(plate);
+            }
+        }
+
+        // Side column plates draw (and raycast) after the player grid. Vanilla sizes the grid's hit area m_gridRoot to every
         // inventory row (InventoryGrid.cs:405-406), and Reposition draws fewer rows (hotbar row in the HUD strip, EAQS
-        // rows hidden), so that transparent raycast Image reaches past the visible grid over the footer. The prefab puts
-        // Armor / Weight (and the MorgottTweaks MT_Trash clone, CurrencyPocket CoinPocketUI) before PlayerGrid: the hit
-        // area ate every click and hover on the trash plate (no drop, no tooltip) and on the coin pocket's button.
+        // rows hidden), so that transparent raycast Image reaches past the visible grid. The prefab puts Armor / Weight
+        // (and the MorgottTweaks MT_Trash clone, CurrencyPocket CoinPocketUI) before PlayerGrid: the hit area ate every
+        // click and hover on the trash plate (no drop, no tooltip) and on the coin pocket's button.
         private void AboveGrid(RectTransform plate)
         {
             var grid = _gui.m_playerGrid ? _gui.m_playerGrid.transform : null;
             if (!plate || !grid || plate.parent != grid.parent) return;
             var g = grid.GetSiblingIndex();
             if (plate.GetSiblingIndex() < g) plate.SetSiblingIndex(g); // removal shifts the grid down: lands right after it
+        }
+
+        // One side column plate as a cell (slot.cell look): its "bkg" over the box, the glyph centred in the upper part,
+        // the value under it, centred (mockup: shield 42, lock 187/300, coins 340).
+        private void CellPlate(RectTransform plate, Box box)
+        {
+            Geo.SetScale(plate, 1f);
+            Geo.Place(_canvas, plate, box);
+            if (plate.Find("bkg") && plate.TryGetComponent<Image>(out var own) && own.enabled) own.enabled = false;
+            var text = plate.GetComponentInChildren<TMP_Text>(false);
+            var hasText = text && !string.IsNullOrEmpty(text.text) && plate != _sidePlates[0];
+            var valueH = hasText ? box.H * ThemeTokens.GetFloat("share.inv.side.value", 0.36f) : 0f;
+            var iconSide = Mathf.Min(box.W, box.H - valueH) * ThemeTokens.GetFloat("share.inv.side.icon", 0.62f);
+            var iconBox = new Box(box.X + (box.W - iconSide) / 2f, box.Y + (box.H - valueH - iconSide) / 2f + (hasText ? box.H * 0.04f : 0f), iconSide, iconSide);
+            for (var n = 0; n < plate.childCount; n++)
+            {
+                var child = plate.GetChild(n);
+                if (!(child is RectTransform rt) || !child.gameObject.activeSelf) continue;
+                var part = NameCache.Of(child);
+                if (part == "bkg") Geo.Place(_canvas, rt, box);
+                else if (part.EndsWith("_icon", StringComparison.Ordinal)) Geo.Place(_canvas, rt, iconBox);
+                else if (child.TryGetComponent<TMP_Text>(out var label))
+                {
+                    // the trash plate's own label: the glyph says it (its tooltip names it)
+                    if (label.enabled != hasText) label.enabled = hasText;
+                    if (!hasText) continue;
+                    Geo.Place(_canvas, rt, new Box(box.X + 2f, box.Bottom - valueH - box.H * 0.04f, Mathf.Max(1f, box.W - 4f), valueH));
+                    if (label.alignment != TextAlignmentOptions.Center) label.alignment = TextAlignmentOptions.Center;
+                    if (label.textWrappingMode != TextWrappingModes.NoWrap) label.textWrappingMode = TextWrappingModes.NoWrap;
+                    if (label.overflowMode != TextOverflowModes.Overflow) label.overflowMode = TextOverflowModes.Overflow;
+                    var floor = ThemeTokens.GetFloat("floor.text.number.px", 14f) / Mathf.Max(0.01f, _rootCanvas.scaleFactor);
+                    var size = Mathf.Max(valueH * 0.85f, floor);
+                    if (!label.enableAutoSizing || Mathf.Abs(label.fontSizeMax - size) > 0.1f || Mathf.Abs(label.fontSizeMin - floor) > 0.1f)
+                    {
+                        label.enableAutoSizing = true;
+                        label.fontSizeMax = size;
+                        label.fontSizeMin = Mathf.Min(size, floor);
+                    }
+                }
+            }
         }
 
         // One stat plate on its box at scale 1: the plate_stat strip (Weight's own image, else its "bkg" child) over the
@@ -881,44 +961,45 @@ namespace RuneSkin.InventoryScreen
             }
         }
 
-        // Chest / backpack panel of the dock: the window's one header (RuneWindowHeader: glyph in the icon slot, the
-        // container name centred in the rune face (mirrored), the weight plate in the aux slot; drag moves the docked
-        // block), grid top-aligned under it (view = visible rows), glyph actions in their own row at the bottom,
-        // right-aligned, clear of the bottom-right corner cap (InventoryMath.ActionRow).
-        private void ArrangeContainer(RectTransform panel, InventoryGrid grid, Box box, GridFit fit, PanelKind kind, Inventory inventory,
+        // Chest / backpack window: the window's one header (RuneWindowHeader: glyph in the icon slot, the container name
+        // centred in the rune face (mirrored), the weight plate in the aux slot; drag moves this window), grid top-aligned
+        // under it (view = visible rows; columns past the room scroll sideways), glyph actions in their own row at the
+        // bottom, right-aligned, clear of the bottom-right corner cap (InventoryMath.ActionRow).
+        private void ArrangeContainer(RectTransform panel, InventoryGrid grid, Box box, WindowGrid g, PanelKind kind, Inventory inventory,
             TMP_Text name, Transform weight, Button takeAll, Button stackAll)
         {
             if (!panel || box.IsEmpty) return;
             var k = _input.SkinScale;
             var pad = _tokens.PanelPad * k;
             var headerH = _tokens.PanelHeaderH * k;
+            var fit = g.Fit;
             Geo.Place(_canvas, panel, box);
             var row = new Box(box.X + pad, box.Y + pad / 2f, box.W - 2f * pad, headerH - pad / 2f);
-            if (grid) Geo.Place(_canvas, (RectTransform)grid.transform, InventoryMath.ContainerGridView(box, fit, _tokens, k));
-            if (grid) Want(grid, fit.Pitch, fit.Cell);
-            var actions = InventoryMath.ActionRow(box, _tokens, k);
-            var actionsW = Bar(panel, kind, inventory, takeAll, stackAll, actions);
+            if (grid)
+            {
+                var view = InventoryMath.ContainerGridView(box, fit, _tokens, k);
+                Geo.Place(_canvas, (RectTransform)grid.transform, view);
+                Want(grid, fit.Pitch, fit.Cell);
+                var s = State(grid);
+                Range(grid, g, false, 0, s.ColScroll);
+                if (g.ScrollH) _colViews.Add((grid, view, g));
+                ColumnBar(panel, view, g, s.ColScroll);
+            }
+            Bar(panel, kind, inventory, takeAll, stackAll, InventoryMath.ActionRow(box, _tokens, k));
             var backpack = kind == PanelKind.Backpack;
             var glyph = HeaderGlyph(panel, backpack ? "glyph.panel.backpack" : "glyph.panel.chest");
-            // The weight plate sits at the left of the action row (glyph actions right-aligned): the header keeps only the
-            // glyph, so the title gets the plate's whole width and truncates only when it really does not fit (user
-            // 2026-10-26: "Сундук из…" cut while the header had room - the aux slot narrowed both title sides; ported
-            // from inv-layout 5727af7).
             var weightPlate = DirectChild(panel, weight);
-            if (weightPlate)
-            {
-                var pw = Mathf.Min(ThemeTokens.GetFloat("size.inv.plate.weight.dock", 110f) * k, Mathf.Max(0f, actions.W - actionsW - _tokens.Gap * k));
-                var ph = Mathf.Min(actions.H, ThemeTokens.GetFloat("size.win.header", 40f) * k * WindowHeaderMath.IconShare);
-                StatPlate(weightPlate, new Box(actions.X, actions.Y + (actions.H - ph) / 2f, pw, ph));
-            }
-            var head = RuneWindowHeader.Ensure(panel, WindowMove.Inventory);
+            var head = RuneWindowHeader.Ensure(panel, backpack ? WindowMove.Backpack : WindowMove.Chest);
             if (!head) return;
             head.Frame = PanelDecor.Of(backpack ? _packHost : _chestHost);
             var fallback = backpack ? "$runeskin_win_backpack" : "$runeskin_win_chest";
             if (name) head.Adopt(name, fallback);
             else head.Fallback(fallback).Text(fallback);
             var hh = Mathf.Min(WindowHeaderMath.HeaderHeight(ThemeTokens.GetFloat("size.win.header", 40f), k), row.H);
-            head.Place(_canvas, new Box(row.X, row.Y, row.W, hh), glyph && glyph.enabled ? glyph : null); // top-aligned (name row too)
+            var auxW = weightPlate ? ThemeTokens.GetFloat("size.inv.plate.weight.dock", 110f) * k : 0f;
+            head.Place(_canvas, new Box(row.X, row.Y + (row.H - hh) / 2f, row.W, hh), glyph && glyph.enabled ? glyph : null, auxW);
+            // The stat plate layout (glyph in the round socket, value beside it) in the aux slot.
+            if (weightPlate) StatPlate(weightPlate, head.AuxBox);
         }
 
         // Panel header glyph (chest / backpack), one per panel, role swapped when the panel changes kind.
@@ -987,15 +1068,38 @@ namespace RuneSkin.InventoryScreen
 
         // ---------------------------------------------------------------- grids
 
+        private GridState State(InventoryGrid grid)
+        {
+            if (!_grids.TryGetValue(grid, out var s)) _grids[grid] = s = new GridState();
+            return s;
+        }
+
         private void Want(InventoryGrid grid, float pitch, float cell)
         {
             if (!grid) return;
-            if (!_grids.TryGetValue(grid, out var s)) _grids[grid] = s = new GridState();
+            var s = State(grid);
             s.WantPitch = pitch;
             s.WantCell = cell;
             var template = grid.m_elementPrefab ? grid.m_elementPrefab.transform as RectTransform : null;
             var native = template ? template.rect.width : cell;
             s.WantScale = native > 1f ? cell / native : 1f;
+        }
+
+        // Shown range of a grid in its window: our own row scroll (player grid) and column scroll (containers past the
+        // room); rows of a container scroll in vanilla's ScrollRect. Re-places the cells when the range changed.
+        private void Range(InventoryGrid grid, WindowGrid g, bool ownRows, int rowScroll, int colScroll)
+        {
+            var s = State(grid);
+            s.VisibleRows = ownRows && g.ScrollV ? Mathf.Max(1, g.VisibleRows) : int.MaxValue;
+            s.VisibleColumns = g.ScrollH ? Mathf.Max(1, g.VisibleColumns) : int.MaxValue;
+            s.RowScroll = ownRows && g.ScrollV ? InventoryWindowsMath.ClampScroll(rowScroll, g.Rows, g.VisibleRows) : 0;
+            s.ColScroll = g.ScrollH ? InventoryWindowsMath.ClampScroll(colScroll, g.Columns, g.VisibleColumns) : 0;
+            if (s.AppliedRowScroll != s.RowScroll || s.AppliedColScroll != s.ColScroll)
+            {
+                s.AppliedRowScroll = s.RowScroll;
+                s.AppliedColScroll = s.ColScroll;
+                s.NeedsReposition = true;
+            }
         }
 
         // InventoryGrid.UpdateGui postfix (after EAQS and V+).
@@ -1027,6 +1131,25 @@ namespace RuneSkin.InventoryScreen
                     if (owner) ScreenRegistry.Restyle(owner);
                 }
             }
+            // Gamepad: the selected cell scrolls into the shown range (vanilla moves m_selected over the whole grid).
+            if (ZInput.IsGamepadActive() && grid.m_selected.x >= 0)
+            {
+                if (s.VisibleColumns != int.MaxValue)
+                {
+                    var c = InventoryWindowsMath.ScrollTo(s.ColScroll, grid.m_selected.x, s.VisibleColumns);
+                    if (c != s.ColScroll) s.ColScroll = c;
+                }
+                if (isPlayer && s.VisibleRows != int.MaxValue && grid.m_selected.y < EaqsBridge.VisibleRows(grid.GetInventory().GetHeight()))
+                    _gridScroll = InventoryWindowsMath.ScrollTo(_gridScroll, grid.m_selected.y - SkipRows(grid), s.VisibleRows);
+            }
+            // Column-scrolled container: the root's hit area (vanilla sizes it to every column, :405) kept to the shown
+            // columns, so it never reaches over the next window's cells.
+            if (s.VisibleColumns != int.MaxValue && grid.m_gridRoot)
+            {
+                var want = s.VisibleColumns * grid.m_elementSpace;
+                var sd = grid.m_gridRoot.sizeDelta;
+                if (Mathf.Abs(sd.x - want) > 0.01f) grid.m_gridRoot.sizeDelta = new Vector2(want, sd.y);
+            }
             for (var i = 0; i < grid.m_elements.Count; i++) CellMarks(grid.m_elements[i]);
             var inv = grid.GetInventory();
             if (rebuilt || s.OverlayRevision != InventoryRegistry.OverlayRevision || !ReferenceEquals(s.Inventory, inv) || s.ThemeRevision != ThemeTokens.Revision)
@@ -1035,9 +1158,11 @@ namespace RuneSkin.InventoryScreen
                 s.Inventory = inv;
                 s.ThemeRevision = ThemeTokens.Revision;
                 Overlays(grid, inv, grid.m_elements.Count); // EAQS cells hold real inventory coordinates too
-                if (isPlayer) HotbarPlates(grid);
             }
         }
+
+        // Rows of a grid that live elsewhere: the player grid's row 0 is the HUD strip's hotbar.
+        private int SkipRows(InventoryGrid grid) => StripHotbar && _input.Hotbar.Valid && grid == _gui.m_playerGrid ? 1 : 0;
 
         // The layout vanilla gives the cells (InventoryGrid.cs:267-275: row-major from the top, pitch m_elementSpace,
         // centred horizontally), measured from the live grid root so it holds for any anchors and a scrolled
@@ -1089,16 +1214,16 @@ namespace RuneSkin.InventoryScreen
             if (rt.sizeDelta != sz) rt.sizeDelta = sz;
         }
 
-        private const float FooterInsetY = InventoryMath.FooterInsetY;
-
         // RuneSkin owns the HUD strip: the inventory's hotbar row is the strip's hotbar.
         private static bool StripHotbar => PlayerHud.HudCluster.Instance;
 
         // Cell block centred in the grid view on both axes (InventoryMath.BlockOffset: cells only, no trailing gap; a
-        // scrolling block starts at the root top). gapShare = gap / pitch.
+        // scrolling block starts at the root top), only the shown range (GridState rows / columns) drawn, the rest at
+        // scale 0. gapShare = gap / pitch.
         private void Reposition(InventoryGrid grid, int visibleCount, float scale, float gapShare)
         {
             if (!grid.m_gridRoot) return;
+            var s = State(grid);
             var w = grid.GetInventory().GetWidth();
             var root = Geo.BoxOf(_canvas, grid.m_gridRoot);
             var view = Geo.BoxOf(_canvas, (RectTransform)grid.transform);
@@ -1106,25 +1231,29 @@ namespace RuneSkin.InventoryScreen
             var pitch = grid.m_elementSpace * grid.m_gridRoot.lossyScale.x / Mathf.Max(unit, 1e-6f); // canvas units
             var gap = pitch * gapShare;
             // Player grid under the HUD strip: row 0 lives in the strip (its hotbar), the grid starts at row 1.
-            var skipRow = StripHotbar && grid == _gui.m_playerGrid ? 1 : 0;
+            var skipRow = SkipRows(grid);
             var count = Mathf.Min(grid.m_elements.Count, visibleCount);
             var rows = w > 0 ? Mathf.Max(0, (count + w - 1) / w - skipRow) : 0;
-            var x0 = view.X + InventoryMath.BlockOffset(view.W, w, pitch, gap);
+            var cols = Mathf.Min(w, s.VisibleColumns);
+            var shownRows = Mathf.Min(rows, s.VisibleRows);
+            var x0 = view.X + InventoryMath.BlockOffset(view.W, cols, pitch, gap);
             // fits: centred in the view (whatever the root's anchors); taller: from the (scrolled) root top
-            var fits = rows * pitch - gap <= view.H + 0.01f;
-            var y0 = fits ? view.Y + InventoryMath.BlockOffset(view.H, rows, pitch, gap) : root.Y;
+            var fits = shownRows * pitch - gap <= view.H + 0.01f;
+            var y0 = fits ? view.Y + InventoryMath.BlockOffset(view.H, shownRows, pitch, gap) : root.Y;
             for (var i = 0; i < grid.m_elements.Count && i < visibleCount; i++)
             {
                 var e = grid.m_elements[i];
                 if (!e) continue;
                 var pos = e.Position;
-                if (pos.y < skipRow)
+                var c = pos.x - s.ColScroll;
+                var r = pos.y - skipRow - s.RowScroll;
+                if (pos.y < skipRow || c < 0 || c >= cols || r < 0 || r >= shownRows)
                 {
                     Geo.SetScale(e.transform, 0f);
                     continue;
                 }
                 Geo.SetScale(e.transform, scale);
-                Geo.SetTopLeft((RectTransform)e.transform, Geo.World(_canvas, x0 + pos.x * pitch, y0 + (pos.y - skipRow) * pitch));
+                Geo.SetTopLeft((RectTransform)e.transform, Geo.World(_canvas, x0 + c * pitch, y0 + r * pitch));
             }
         }
 
@@ -1164,23 +1293,6 @@ namespace RuneSkin.InventoryScreen
             }
         }
 
-        // Hotbar row (grid row 1, HotkeyBar.cs:90-142): carved number plate behind the vanilla binding text.
-        private static void HotbarPlates(InventoryGrid grid)
-        {
-            foreach (var e in grid.m_elements)
-            {
-                if (!e || e.Position.y != 0) continue;
-                var binding = e.transform.Find("binding") as RectTransform;
-                if (!binding) continue;
-                // Digit on the header strip above its cell (layout-a2.png), not inside the cell.
-                binding.anchorMin = binding.anchorMax = new Vector2(0.5f, 1f);
-                binding.pivot = new Vector2(0.5f, 0f);
-                binding.anchoredPosition = new Vector2(0f, 6f);
-                if (binding.TryGetComponent<TMP_Text>(out var digit)) digit.alignment = TextAlignmentOptions.Center;
-                // Digits sit directly on the header strip (art: number plate optional).
-            }
-        }
-
         // ---------------------------------------------------------------- doll
 
         private void RebuildEntries()
@@ -1190,7 +1302,7 @@ namespace RuneSkin.InventoryScreen
             {
                 if (s.Kind == EaqsBridge.Kind.Quick) continue;
                 EaqsBridge.Describe(s.Id, out var glyph, out var order, out var tooltipKey);
-                _entries.Add(new DollEntry { Key = "eaqs:" + s.Id, Glyph = glyph, Name = SlotNames.Get(tooltipKey), Order = order * 1000 + s.Index, Element = s.Element });
+                _entries.Add(new DollEntry { Key = "eaqs:" + s.Id, Glyph = glyph, Name = SlotNames.Get(tooltipKey), Side = InventoryWindowsMath.DollSide(glyph), Order = InventoryWindowsMath.DollRank(glyph) * 10000 + order * 100 + s.Index, Element = s.Element });
             }
             var seen = new HashSet<string>();
             foreach (var r in InventoryRegistry.Slots)
@@ -1217,8 +1329,8 @@ namespace RuneSkin.InventoryScreen
                     cell.SetTooltip(SlotNames.Get(r.D.TooltipKey ?? r.D.Id), "");
                     _registered[r.Key] = cell;
                 }
-                // Groups after the vanilla/EAQS 3x3, in registration group + order (stable ids).
-                _entries.Add(new DollEntry { Key = r.Key, Glyph = null, Order = 100000 + GroupRank(r.D.Group) * 1000 + r.D.Order, Element = -1, Cell = cell });
+                // After the vanilla / EAQS cells of their side, in registration group + order (stable ids).
+                _entries.Add(new DollEntry { Key = r.Key, Glyph = null, Side = RegisteredSide(r), Order = 10000000 + GroupRank(r.D.Group) * 1000 + r.D.Order, Element = -1, Cell = cell });
             }
             foreach (var key in new List<string>(_registered.Keys))
                 if (!seen.Contains(key))
@@ -1227,46 +1339,70 @@ namespace RuneSkin.InventoryScreen
                     _registered.Remove(key);
                 }
             _entries.Sort((a, b) => a.Order != b.Order ? a.Order.CompareTo(b.Order) : string.CompareOrdinal(a.Key, b.Key));
+            int left = 0, right = 0;
+            for (var i = 0; i < _entries.Count; i++)
+            {
+                var e = _entries[i];
+                e.Row = e.Side == 0 ? left++ : right++;
+                _entries[i] = e;
+            }
             _entriesRevision = InventoryRegistry.Revision;
         }
 
         private static int GroupRank(string group) =>
             group == "armor" ? 0 : group == "jewelry" ? 1 : group == "utility" ? 2 : group == "light" ? 3 : 9;
 
-        // After EAQS placed its cells this frame: storage cells on the doll grid, quick cells over the HUD quick bar.
+        // A registered slot's doll side: armour with the body equipment (left), everything else right.
+        private static int RegisteredSide(InventoryRegistry.Slot r) => r.D.Group == "armor" ? 0 : 1;
+
+        // Equipment cells per doll side (the layout's DollLeft / DollRight), same rules as RebuildEntries.
+        private void DollSideCounts(out int left, out int right)
+        {
+            RefreshEaqs();
+            left = right = 0;
+            foreach (var s in _eaqs)
+            {
+                if (s.Kind == EaqsBridge.Kind.Quick) continue;
+                EaqsBridge.Describe(s.Id, out var glyph, out _, out _);
+                if (InventoryWindowsMath.DollSide(glyph) == 0) left++;
+                else right++;
+            }
+            foreach (var r in InventoryRegistry.Slots)
+            {
+                if (r.Dead) continue;
+                if (RegisteredSide(r) == 0) left++;
+                else right++;
+            }
+        }
+
+        // After EAQS placed its cells this frame: storage cells in the doll window's two columns (body left, jewellery /
+        // light / mods right, rows scrolling together past the room), the alcove and the live preview between them; quick
+        // cells over the HUD strip's potion cells.
         private void PlaceEaqsCells(InventoryGrid grid, float gridScale)
         {
             RefreshEaqs();
             if (_entriesRevision != InventoryRegistry.Revision || _entries.Count != CountDollSources()) RebuildEntries();
-            var d = _layout.DollCells;
-            var box = Inset(_layout.Doll, _tokens.DollPad * _input.SkinScale, _tokens.DollPad * _input.SkinScale);
-            var cols = d.StorageColumns;
-            // Storage grid left, portrait figure right of it, centred as one group.
-            var k = _input.SkinScale;
-            var strip = InventoryMath.Strip(box, d, _tokens.DollGap * k, _tokens.DollFigureGap * k, _tokens.DollFigureAspect);
-            var x0 = strip.StorageX;
+            var o = _layout;
+            var d = o.DollGrid;
+            var dx = _dollOff.x;
+            var dy = _dollOff.y;
             var visible = Mathf.Max(1, d.VisibleRows);
-            _dollScroll = Mathf.Clamp(_dollScroll, 0, Mathf.Max(0, d.Rows - visible));
+            _dollScroll = InventoryWindowsMath.ClampScroll(_dollScroll, d.Rows, visible);
             var native = grid.m_elementPrefab ? ((RectTransform)grid.m_elementPrefab.transform).rect.width : d.Cell;
             var cellScale = native > 1f ? d.Cell / native : 1f;
             // Gamepad selection on a hidden EAQS row (EAQS spatial navigation) scrolls it into view.
-            if (d.Scroll && ZInput.IsGamepadActive())
-                for (var i = 0; i < _entries.Count; i++)
+            if (d.ScrollV && ZInput.IsGamepadActive())
+                foreach (var en in _entries)
                 {
-                    var en = _entries[i];
                     if (en.Element < 0 || en.Element >= grid.m_elements.Count || !grid.m_elements[en.Element] || grid.m_elements[en.Element].Position != grid.m_selected) continue;
-                    var r0 = i / cols;
-                    if (r0 < _dollScroll) _dollScroll = r0;
-                    else if (r0 >= _dollScroll + visible) _dollScroll = r0 - visible + 1;
+                    _dollScroll = InventoryWindowsMath.ScrollTo(_dollScroll, en.Row, visible);
                 }
-            for (var i = 0; i < _entries.Count; i++)
+            foreach (var entry in _entries)
             {
-                var row = i / cols - _dollScroll;
-                var col = i % cols;
+                var row = entry.Row - _dollScroll;
                 var shown = row >= 0 && row < visible;
-                var cx = x0 + col * d.Pitch;
-                var cy = box.Y + row * d.Pitch;
-                var entry = _entries[i];
+                var cx = (entry.Side == 0 ? o.DollLeftX : o.DollRightX) + dx;
+                var cy = o.DollCellsY + dy + row * d.Pitch;
                 if (entry.Element >= 0 && entry.Element < grid.m_elements.Count)
                 {
                     var e = grid.m_elements[entry.Element];
@@ -1284,17 +1420,15 @@ namespace RuneSkin.InventoryScreen
                     PlaceOwnCell(entry.Cell, cx, cy, d.Cell, shown);
                 }
             }
-            var figure = strip.Figure;
-
-            if (_backdrop) Show(_backdrop, figure.W >= d.Cell ? figure : default);
+            var figure = Move(o.DollFigure, _dollOff);
             var fits = figure.W >= d.Cell;
+            if (_backdrop) Show(_backdrop, fits ? figure : default);
             var live = _preview && !_preview.Failed;
-            if (_preview) _preview.Place(_canvas, fits && live ? PreviewMath.Place(figure, _previewX, _previewY, _previewW, _previewH, _previewInset * k) : default);
-            if (_silhouette) Show(_silhouette, fits && !live ? Inset(figure, 8f, 8f) : default);
+            if (_preview) _preview.Place(_canvas, fits && live ? Move(o.DollPreview, _dollOff) : default);
+            if (_silhouette) Show(_silhouette, fits && !live ? Move(o.DollPreview, _dollOff) : default);
 
             PlaceQuickCells(grid);
         }
-
         private int CountDollSources()
         {
             var n = 0;
@@ -1478,19 +1612,86 @@ namespace RuneSkin.InventoryScreen
 
         private const string QuickOwner = "inventory.quickbar";
 
-        private void DollScrollInput()
+        // Container grids that scroll sideways (columns past the window's room) with their view, refreshed each placement.
+        private readonly List<(InventoryGrid Grid, Box View, WindowGrid Fit)> _colViews = new List<(InventoryGrid, Box, WindowGrid)>(2);
+        private float _dragScrollAt;
+
+        // Wheel over a window scrolls what overflows in it: doll rows, player grid rows, container columns (rows of a
+        // container are vanilla's ScrollRect; with both, Shift + wheel scrolls the columns). An item dragged to the edge
+        // of a sideways-scrolling container steps its columns (Codex review: drag must reach hidden columns).
+        private void ScrollInput()
         {
-            if (_layout == null || !_layout.DollCells.Scroll) return;
+            if (_layout == null || !_canvas) return;
+            var o = _layout;
+            var scale = _rootCanvas && _rootCanvas.scaleFactor > 0f ? _rootCanvas.scaleFactor : 1f;
+            var p = ZInput.pointerPosition;
+            var pt = new Vector2(p.x / scale, (Screen.height - p.y) / scale);
+            if (_gui.m_dragGo && Time.unscaledTime >= _dragScrollAt)
+                foreach (var v in _colViews)
+                {
+                    if (!v.Grid || pt.y < v.View.Y || pt.y > v.View.Bottom) continue;
+                    var edge = v.Fit.Cell * 0.5f;
+                    var step = pt.x >= v.View.X - edge && pt.x < v.View.X + edge ? -1 : pt.x > v.View.Right - edge && pt.x <= v.View.Right + edge ? 1 : 0;
+                    if (step == 0) continue;
+                    State(v.Grid).ColScroll += step;
+                    _dragScrollAt = Time.unscaledTime + ThemeTokens.GetFloat("time.inv.drag.scroll", 0.35f);
+                }
             if (Screens.TooltipPlacer.CapturesWheel) return; // the hovered cell's long tooltip scrolls instead
             var wheel = ZInput.GetMouseScrollWheel();
             if (Mathf.Approximately(wheel, 0f)) return;
-            var mouse = ZInput.pointerPosition;
-            var tl = Geo.World(_canvas, _layout.Doll.X, _layout.Doll.Y);
-            var br = Geo.World(_canvas, _layout.Doll.Right, _layout.Doll.Bottom);
-            if (mouse.x < tl.x || mouse.x > br.x || mouse.y > tl.y || mouse.y < br.y) return;
-            _dollScroll += wheel < 0f ? 1 : -1;
+            var dir = wheel < 0f ? 1 : -1;
+            if (o.DollGrid.ScrollV && Inside(_dollBox, pt))
+            {
+                _dollScroll += dir;
+                return;
+            }
+            if (o.Player.ScrollV && Inside(_invBox, pt))
+            {
+                _gridScroll = InventoryWindowsMath.ClampScroll(_gridScroll + dir, o.Player.Rows, o.Player.VisibleRows);
+                return;
+            }
+            var shift = ZInput.GetKey(KeyCode.LeftShift) || ZInput.GetKey(KeyCode.RightShift);
+            foreach (var v in _colViews)
+                if (v.Grid && Inside(v.View, pt) && (!v.Fit.ScrollV || shift))
+                {
+                    State(v.Grid).ColScroll += dir;
+                    return;
+                }
         }
 
+        private static bool Inside(Box b, Vector2 pt) => !b.IsEmpty && pt.x >= b.X && pt.x <= b.Right && pt.y >= b.Y && pt.y <= b.Bottom;
+
+        // Column scroll indicator of a sideways-scrolling container (Codex review: show that columns are hidden): a thin
+        // track under the shown cells, the handle = the shown share at the scroll position. Hidden without column scroll.
+        private void ColumnBar(RectTransform panel, Box view, WindowGrid g, int scroll)
+        {
+            var track = OwnImage(panel, "RuneSkinColumnTrack", "scrollbar.track", "container column scroll track");
+            var handle = OwnImage(panel, "RuneSkinColumnHandle", "scrollbar.handle", "container column scroll handle");
+            if (!g.ScrollH || g.Columns <= 0)
+            {
+                if (track.gameObject.activeSelf) track.gameObject.SetActive(false);
+                if (handle.gameObject.activeSelf) handle.gameObject.SetActive(false);
+                return;
+            }
+            if (!track.gameObject.activeSelf) track.gameObject.SetActive(true);
+            if (!handle.gameObject.activeSelf) handle.gameObject.SetActive(true);
+            var k = _input.SkinScale;
+            var h = ThemeTokens.GetFloat("size.inv.colbar", 5f) * k;
+            var x = view.X + InventoryMath.BlockOffset(view.W, g.VisibleColumns, g.Pitch, g.Pitch - g.Cell);
+            var shownH = Mathf.Min(view.H, g.ViewH);
+            var b = new Box(x, view.Y + shownH + Mathf.Max(1f, (g.Pitch - g.Cell - h) / 2f), g.ViewW, h);
+            Geo.Place(_canvas, track.rectTransform, b);
+            Geo.Place(_canvas, handle.rectTransform, new Box(b.X + b.W * scroll / g.Columns, b.Y, b.W * g.VisibleColumns / g.Columns, h));
+        }
+
+        private static Image OwnImage(Transform parent, string name, string role, string reason)
+        {
+            var t = parent.Find(name);
+            if (t && t.TryGetComponent<Image>(out var existing)) return existing;
+            var image = InfoScreens.InfoArt.OwnImage(parent, name, role, reason);
+            image.preserveAspect = false;
+            return image;
+        }
         // ---------------------------------------------------------------- API-registered doll cells
 
         private void UpdateRegisteredSlots()
@@ -1520,13 +1721,13 @@ namespace RuneSkin.InventoryScreen
 
         // ---------------------------------------------------------------- actions
 
-        private float Bar(RectTransform panel, PanelKind kind, Inventory inventory, Button takeAll, Button stackAll, Box box)
+        private float Bar(RectTransform panel, PanelKind kind, Inventory inventory, Button takeAll, Button stackAll, Box box, float size = 0f)
         {
             if (!panel) return 0f;
             if (!_bars.TryGetValue(panel, out var bar) || bar == null)
                 _bars[panel] = bar = new ActionBar(panel, kind, _tooltipPrefab);
             bar.Sync(kind, inventory, takeAll, stackAll);
-            var size = _tokens.FooterH * _input.SkinScale * 0.8f;
+            if (!(size > 0f)) size = _tokens.FooterH * _input.SkinScale * 0.8f;
             var w = bar.Width(size, _tokens.Gap / 2f);
             if (!box.IsEmpty) bar.Place(_canvas, box, size, _tokens.Gap / 2f);
             return w;

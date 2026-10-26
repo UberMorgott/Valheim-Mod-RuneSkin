@@ -655,6 +655,7 @@ namespace RuneSkin.PlayerHud
             var input = _hudStrip.Input(widthPx / _pxPerUnit);
             var l = StripMath.Compute(input);
             _hudStrip.Apply(l, input);
+            _stripInput = input;
 
             // Bars on the art's troughs: HP at the top of the bar box, the resource row at its bottom.
             _barsInnerX = l.BarsX;
@@ -671,6 +672,7 @@ namespace RuneSkin.PlayerHud
             var bottom = safe.y;
             var left = boxX + (boxW - widthPx) / 2f;
             PlaceAtScreen(_root, new Vector2(left, bottom), _pxPerUnit);
+            _stripOriginX = left;
             // readable floors at this scale (run 20261023-191817: applied only when the status cell count changed, so a
             // resolution change kept the previous scale's floors - 720 timers 9.3 px < 14)
             TextFloors();
@@ -679,6 +681,7 @@ namespace RuneSkin.PlayerHud
             // The column panels' stacks reach size.panel.glass.inset beyond their box: counted, so the visible gap is
             // InventoryMath's standard gap (size.inv.gap) from the strip top.
             _reservedTop = bottom + l.Height * _pxPerUnit + ThemeTokens.GetFloat("size.panel.glass.inset", 0f) * s;
+            StripRevision++;
             _chatTopUnits = l.Height;
             _chatGapPx = ThemeTokens.GetFloat("size.hud.strip.chat.gap", 12f) * s;
             // Bottom-anchored HUD elements (build piece info, action bar, ship ladder, key hints ...) clear the drawn
@@ -902,6 +905,26 @@ namespace RuneSkin.PlayerHud
 
         // Applied lift per tracked bottom element, screen px (harness, diagnostics).
         public IEnumerable<KeyValuePair<string, float>> ClearLifts() => _clear.Lifts();
+
+        // Strip geometry for the inventory's hotbar-locked grid (InventoryWindowsMath.FromStrip): the strip layout and
+        // input of the last relayout, its ability cell count, the strip origin x and px per strip unit (screen px), its
+        // reserved top. False while the HUD is hidden or before the first layout.
+        public bool StripRow(out StripMath.Layout layout, out StripMath.Input input, out int abilities, out float originXPx, out float pxPerUnit, out float reservedTopPx)
+        {
+            layout = _hudStrip != null ? _hudStrip.L : default;
+            input = _stripInput;
+            abilities = _hudStrip != null ? _hudStrip.AbilityCount : 0;
+            originXPx = _stripOriginX;
+            pxPerUnit = _pxPerUnit;
+            reservedTopPx = ReservedScreenTop;
+            return _hudStrip != null && HasQuickAnchor && reservedTopPx > 0f && input.Cell > 0f;
+        }
+
+        // Bumped on every strip relayout (screen, scale, cell counts): the inventory re-lays its windows out.
+        public int StripRevision { get; private set; }
+
+        private StripMath.Input _stripInput;
+        private float _stripOriginX;
 
         // Strip hotbar cell i (harness, drop tests).
         public RectTransform HotbarCell(int i) => _hudStrip?.HotbarRect(i);

@@ -128,26 +128,5 @@ namespace RuneSkin.Tests
             Assert.Equal(new Box(10f, 5f, 30f, 15f).ToString(), u.ToString());
             Assert.Equal(new Box(1f, 2f, 3f, 4f).ToString(), WindowMoveMath.Union(default, new Box(1f, 2f, 3f, 4f)).ToString());
         }
-
-        [Fact]
-        public void InventoryShift_MovesEveryBoxKeepsFits()
-        {
-            var o = InventoryMath.Compute(new InventoryInput { ChestW = 5, ChestH = 2 }, new InventoryTokens());
-            Assert.Same(o, InventoryMath.Shift(o, 0f, 0f));
-            var s = InventoryMath.Shift(o, 25f, -10f);
-            foreach (var (a, b) in new[] { (o.Center, s.Center), (o.Chest, s.Chest), (o.Crafting, s.Crafting), (o.Grid, s.Grid), (o.Doll, s.Doll), (o.Footer, s.Footer), (o.Header, s.Header), (o.Dock, s.Dock) })
-            {
-                Assert.Equal(a.X + 25f, b.X, 3);
-                Assert.Equal(a.Y - 10f, b.Y, 3);
-                Assert.Equal(a.W, b.W, 3);
-                Assert.Equal(a.H, b.H, 3);
-            }
-            Assert.True(s.Backpack.IsEmpty == o.Backpack.IsEmpty);
-            Assert.Equal(o.Player.Pitch, s.Player.Pitch);
-            Assert.Equal(o.ChestGrid.Columns, s.ChestGrid.Columns);
-            var block = InventoryMath.Block(o);
-            Assert.True(o.Center.Inside(block) && o.Crafting.Inside(block) && o.Chest.Inside(block));
-            Assert.Equal(block.X + 25f, InventoryMath.Block(s).X, 3);
-        }
     }
 }

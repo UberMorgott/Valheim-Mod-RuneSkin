@@ -25,32 +25,5 @@ namespace RuneSkin.Tests
                 Assert.True(b.Bottom <= i.Panel.Bottom - edge + 0.01f, $"{b} below {i.Panel.Bottom - edge}");
             }
         }
-
-        [Fact]
-        public void InventoryFooterAndGrid_ClearTheCaps()
-        {
-            var t = new InventoryTokens { CenterCapInset = K };
-            var o = InventoryMath.Compute(new InventoryInput { ChestW = 5, ChestH = 2 }, t);
-            var pad = t.PanelPad;
-            // The skin draws the footer plates Inset(Footer, pad, FooterInsetY), the grid Inset(Grid, pad, pad).
-            Assert.True(o.Footer.X + pad >= o.Center.X + K - 0.01f);
-            Assert.True(o.Footer.Right - pad <= o.Center.Right - K + 0.01f);
-            Assert.True(o.Footer.Bottom - InventoryMath.FooterInsetY <= o.Center.Bottom - K + 0.01f);
-            Assert.True(o.Grid.X + pad >= o.Center.X + K - 0.01f);
-            Assert.True(o.Grid.Bottom <= o.Footer.Y + 0.01f);
-        }
-
-        [Fact]
-        public void DockGridAndActions_ClearTheCaps()
-        {
-            var t = new InventoryTokens { PanelCapInset = K };
-            var o = InventoryMath.Compute(new InventoryInput { ChestW = 8, ChestH = 4 }, t);
-            var view = InventoryMath.ContainerGridView(o.Chest, o.ChestGrid, t, 1f);
-            var row = InventoryMath.ActionRow(o.Chest, t, 1f);
-            Assert.True(view.X >= o.Chest.X + K - 0.01f && view.Right <= o.Chest.Right - K + 0.01f);
-            Assert.True(row.X >= o.Chest.X + K - 0.01f && row.Right <= o.Chest.Right - K + 0.01f);
-            Assert.True(row.Bottom <= o.Chest.Bottom - K + 0.01f);
-            Assert.True(o.ChestGrid.Columns * o.ChestGrid.Pitch <= view.W + 0.5f);
-        }
     }
 }

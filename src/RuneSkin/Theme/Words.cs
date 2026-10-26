@@ -44,6 +44,8 @@ namespace RuneSkin.Theme
             { "runeskin_win_crafting", new[] { "Crafting", "Ремесло" } },
             { "runeskin_win_chest", new[] { "Chest", "Сундук" } },
             { "runeskin_win_backpack", new[] { "Backpack", "Рюкзак" } },
+            { "runeskin_win_inventory", new[] { "Inventory", "Инвентарь" } },
+            { "runeskin_layout_reset", new[] { "Reset window layout", "Вернуть окна на места" } },
             { "runeskin_win_character", new[] { "Character", "Персонаж" } },
             { "runeskin_win_map", new[] { "Map", "Карта" } },
             { "runeskin_win_texts", new[] { "Compendium", "Компендиум" } },

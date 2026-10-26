@@ -14,7 +14,7 @@ namespace RuneSkin.Tests
     // split, shield perimeter, centre gauges. Geometry from the shipped theme (size.hud.panel.*).
     public class StripLayoutTests
     {
-        private static readonly Dictionary<string, float> Floats = LoadFloats();
+        internal static readonly Dictionary<string, float> Floats = LoadFloats();
         private static readonly Dictionary<string, string> Sprites = LoadSprites();
 
         private static Dictionary<string, float> LoadFloats()

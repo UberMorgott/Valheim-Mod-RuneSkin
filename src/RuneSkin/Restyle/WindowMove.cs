@@ -11,18 +11,24 @@ namespace RuneSkin.Restyle
     // Movable windows (user call 2026-10-23): every RuneSkin window carries one RuneWindowHeader and is dragged by it
     // (WindowDrag, never the whole window: item drag in the grids stays vanilla). A window's place = its layout default +
     // a user offset (canvas units, y down), clamped fully on screen above the bottom HUD strip (WindowMoveMath.Clamp: a
-    // default already past the bounds is never moved, so no saved offset = the default layout). The docked inventory
-    // block (character name row, player grid, chest / backpack dock) moves as one ("inventory": its windows share their
-    // edges until the new inventory layout); every other window moves on its own - crafting, skills, trophies and
-    // achievements on top of the block offset, stats / compendium / map legend / Almanac / mod windows alone. Offsets
+    // default already past the bounds is never moved, so no saved offset = the default layout). Every window moves on
+    // its own: the inventory screen's player grid, doll, chest, backpack and crafting (mockup inv-layout-A, each its own
+    // id), skills / trophies / achievements, stats / compendium / map legend / Almanac / mod windows. Offsets
     // persist per window id + screen resolution in BepInEx\cache\RuneSkin\window-positions.txt; a double-click on the
     // header resets that window, the Layout.ResetLayout action in ConfigurationManager resets all. Owners apply the
     // offset in their own layout pass (WindowMove.Place / Applied on the default box); windows vanilla or another mod
     // positions (compendium, map legend, mod panels) get a MovableWindow that adds it after their writes.
     public static class WindowMove
     {
-        public const string Inventory = "inventory";
+        // The inventory screen's windows (mockup inv-layout-A): player grid, doll / character, chest, backpack, crafting.
+        public const string InventoryGrid = "inventory.grid";
+        public const string Doll = "inventory.doll";
+        public const string Chest = "inventory.chest";
+        public const string Backpack = "inventory.backpack";
         public const string Crafting = "crafting";
+
+        // Every window of the inventory screen (the reset-layout action puts them all back on their defaults).
+        public static readonly string[] InventoryWindows = { InventoryGrid, Doll, Chest, Backpack, Crafting, Skills, Trophies, Achievements };
         public const string Skills = "skills";
         public const string Trophies = "trophies";
         public const string Achievements = "achievements";
@@ -128,6 +134,19 @@ namespace RuneSkin.Restyle
             if (!Store.Remove(Key(id))) return;
             Changed(id);
             Save();
+        }
+
+        // Several windows at this resolution (the inventory screen's reset-layout action), one save.
+        public static void Reset(string[] ids)
+        {
+            var any = false;
+            foreach (var id in ids)
+                if (Store.Remove(Key(id)))
+                {
+                    any = true;
+                    Changed(id);
+                }
+            if (any) Save();
         }
 
         // Every window, every resolution (ConfigurationManager Layout.ResetLayout).
