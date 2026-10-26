@@ -124,6 +124,21 @@ namespace RuneSkin.WorldHud
             return (titleShift, rowShift, rowBottom + rowShift - pad - Math.Max(0f, borderBottom));
         }
 
+        // Unlock toast row, x only: icon [iconMin, iconMax] + gap + text of width textW as one group centred in the content
+        // span [contentMin, contentMax]; a text wider than what is left is cut to it (its ellipsis) and the group starts at
+        // the content start. Returns the icon shift and the text rect span.
+        public static (float iconShift, float textMin, float textMax) UnlockRow(float contentMin, float contentMax, float iconMin, float iconMax,
+            float gap, float textW)
+        {
+            var iconW = Math.Max(0f, iconMax - iconMin);
+            gap = Math.Max(0f, gap);
+            var room = Math.Max(0f, contentMax - contentMin - iconW - gap);
+            var w = Math.Min(Math.Max(0f, textW), room);
+            var start = (contentMin + contentMax - (iconW + gap + w)) * 0.5f;
+            var textMin = start + iconW + gap;
+            return (start - iconMin, textMin, textMin + w);
+        }
+
         // Slot y of an unlock toast: vanilla stacks slot i at m_maxUnlockMsgSpace * i below the first (UpdateUnlockMsg);
         // a plate grown past that spacing gets plate height + gap so neighbours never overlap.
         public static float UnlockSlotY(float baseY, int slot, float vanillaSpace, float plateHeight, float gap) =>

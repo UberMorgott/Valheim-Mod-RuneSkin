@@ -175,8 +175,25 @@ namespace RuneSkin.Restyle
             var area = AreaIn(box);
             if (!br.Contains(area.center)) return;
             var span = Free(box, br, area, plate, box);
-            Margins(span.Min, span.Max, ThemeTokens.GetFloat("size.row.pad", 12f), 0f, box, right: false);
+            // Not on the plate's cap: a row without an icon before its text (save backups) started size.row.pad after
+            // the row edge, on the frame's left ornament (0.23.0 live report); the plate's drawn 9-slice border +
+            // size.row.cap.pad bounds the start too.
+            var start = LayoutMath.RowStart(span.Min, ThemeTokens.GetFloat("size.row.pad", 12f), Drawn(plate, box).xMin,
+                SliceBorderIn(plate, box).x, ThemeTokens.GetFloat("size.row.cap.pad", 6f));
+            Margins(start, span.Max, 0f, 0f, box, right: false);
         }
+
+        // 9-slice border of an Image in its rect units (x left, y bottom, z right, w top): sprite pixels over the
+        // image's pixels per unit (sprite ppu / canvas reference ppu) times its multiplier. Simple / filled images: 0.
+        public static Vector4 SliceBorder(Image img)
+        {
+            var s = img ? img.sprite : null;
+            if (!s || (img.type != Image.Type.Sliced && img.type != Image.Type.Tiled)) return Vector4.zero;
+            return s.border / Mathf.Max(1e-4f, img.pixelsPerUnit * img.pixelsPerUnitMultiplier);
+        }
+
+        // The same border in another space's x units (scaled subtrees).
+        public static Vector4 SliceBorderIn(Image img, Transform space) => SliceBorder(img) * (img ? ScaleX(img.rectTransform, space) : 1f);
 
         private void Beside(Toggle toggle)
         {
@@ -217,7 +234,10 @@ namespace RuneSkin.Restyle
             if (!column && _text.overflowMode != TextOverflowModes.Ellipsis && _text.overflowMode != TextOverflowModes.Truncate) return;
             // Column texts of a list row keep the readable size (16) and end in their ellipsis below it (m5-text-min,
             // run 20261022-210451: server names shrank to 12-14 px).
-            var floor = _columns == 1 ? ThemeTokens.GetFloat("size.text.readable", 16f) : ThemeTokens.GetFloat("size.text.fit.min", 12f);
+            // The readable floor is a rendered size (Readable.Units, the measure of the pre-world sweep): a canvas-unit 16
+            // under a GUI scale < 1 fought the sweep's raise every few frames.
+            var readable = ThemeTokens.GetFloat("size.text.readable", 16f);
+            var floor = _columns == 1 ? Mathf.Max(readable, Readable.Units(_text, readable)) : ThemeTokens.GetFloat("size.text.fit.min", 12f);
             if (_text.enableAutoSizing && _text.fontSizeMin <= floor + 0.01f) return;
             if (column ? !ColumnOverflows() : !_text.isTextTruncated) return;
             if (!_hasAuto)

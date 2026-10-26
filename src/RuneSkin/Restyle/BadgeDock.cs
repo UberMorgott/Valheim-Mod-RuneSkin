@@ -10,6 +10,12 @@ namespace RuneSkin.Restyle
     // button / tab (half outside, never over the label) at size.badge, on a small round theme plate (sprite.button.round)
     // drawn behind it. Placed every frame it is shown (layout groups move buttons); Revert restores the vanilla rect and
     // drops the plate.
+    // Vanilla lays the badge out as a row child: showChangelog (start scene bundle 10ba9da1, StartGui/Menu/
+    // BottomLeftButtons) is a HorizontalLayoutGroup of LeftKnot / Text / newsNotification / RightKnot, so the group
+    // puts the "!" right after the label. Docked at the corner, the badge leaves that row (LayoutElement.ignoreLayout,
+    // as vanilla's own m_changeLogNotice toggle never moves it): otherwise every layout rebuild (Canvas
+    // willRenderCanvases, after this LateUpdate) put it back mid-button for a frame, a "!" blinking in the centre of
+    // "Изменения" next to an empty corner plate (0.23.0 live report).
     [DisallowMultipleComponent]
     public sealed class BadgeDock : MonoBehaviour, IRevertible
     {
@@ -44,6 +50,7 @@ namespace RuneSkin.Restyle
             {
                 _aMin = rt.anchorMin; _aMax = rt.anchorMax; _pivot = rt.pivot; _pos = rt.anchoredPosition; _size = rt.sizeDelta;
                 _saved = true;
+                OutOfLayout();
                 rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
                 var size = ThemeTokens.GetFloat("size.badge", 22f);
                 rt.sizeDelta = new Vector2(size, size);
@@ -86,6 +93,21 @@ namespace RuneSkin.Restyle
             return corner;
         }
 
+        private LayoutElement _layout;
+        private bool _layoutAdded, _layoutIgnored;
+
+        private void OutOfLayout()
+        {
+            if (!TryGetComponent(out _layout))
+            {
+                _layout = gameObject.AddComponent<LayoutElement>();
+                _layoutAdded = true;
+            }
+            _layoutIgnored = _layout.ignoreLayout;
+            _layout.ignoreLayout = true;
+            if (transform.parent is RectTransform parent) LayoutRebuilder.MarkLayoutForRebuild(parent);
+        }
+
         private void PlateBehind(RectTransform rt, float size)
         {
             var sprite = ThemeTokens.GetSprite("sprite.button.round");
@@ -124,6 +146,11 @@ namespace RuneSkin.Restyle
             if (_saved)
             {
                 rt.anchorMin = _aMin; rt.anchorMax = _aMax; rt.pivot = _pivot; rt.anchoredPosition = _pos; rt.sizeDelta = _size;
+            }
+            if (_layout)
+            {
+                if (_layoutAdded) Destroy(_layout);
+                else _layout.ignoreLayout = _layoutIgnored;
             }
             if (_plate) Destroy(_plate.gameObject);
             Destroy(this);

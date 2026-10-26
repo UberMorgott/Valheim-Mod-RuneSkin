@@ -18,6 +18,27 @@ namespace RuneSkin.Tests
             Assert.Equal(70f, span.Max, 3);
         }
 
+        // Save backup row (0.23.0): no icon before the name -> the start is the plate's drawn cap (21) + cap pad (6), not
+        // row pad (12) on the cap; a primary row's arrow (ends 30) keeps the row pad after it.
+        [Fact]
+        public void RowStartClearsThePlateCap()
+        {
+            Assert.Equal(27f, LayoutMath.RowStart(0f, 12f, 0f, 21f, 6f), 3);
+            Assert.Equal(42f, LayoutMath.RowStart(30f, 12f, 0f, 21f, 6f), 3);
+            Assert.Equal(12f, LayoutMath.RowStart(0f, 12f, 0f, 0f, 6f), 3);
+        }
+
+        // Readable floor in font units: 16 px at 1080 with one unit = 1 px -> 16.05; GUI scale 0.9 -> 17.83; no measure -> 0.
+        [Fact]
+        public void ReadableUnitsFollowTheRenderedScale()
+        {
+            Assert.Equal(16.05f, LayoutMath.ReadableUnits(16f, 1f, 1080f), 3);
+            Assert.Equal(16f / 0.9f + 0.05f, LayoutMath.ReadableUnits(16f, 0.9f, 1080f), 3);
+            Assert.Equal(16.05f, LayoutMath.ReadableUnits(16f, 4f / 3f, 1440f), 3);
+            Assert.Equal(0f, LayoutMath.ReadableUnits(16f, 0f, 1080f), 3);
+            Assert.Equal(0f, LayoutMath.ReadableUnits(16f, 1f, 0f), 3);
+        }
+
         [Fact]
         public void FreeSpanWithoutIconsIsTheBox()
         {

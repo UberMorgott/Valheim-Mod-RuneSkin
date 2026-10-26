@@ -97,6 +97,23 @@ namespace RuneSkin.Tests
             Assert.Equal(-20f, b3, 3);
         }
 
+        [Fact]
+        public void UnlockRowCentresIconAndTextInTheContentSpan()
+        {
+            // 0.23.0 live report: plate 0..400, border 9 + pad 10 -> content 19..381; icon socket 64 at the plate's left
+            // edge (0..64), gap 10, "Обжаренные соты" 150 wide -> group 224 centred at 200: 88..312.
+            var (shift, tMin, tMax) = PlayHudMath.UnlockRow(19f, 381f, 0f, 64f, 10f, 150f);
+            Assert.Equal(88f, shift, 3);
+            Assert.Equal(162f, tMin, 3);
+            Assert.Equal(312f, tMax, 3);
+            Assert.Equal(200f, (0f + shift + tMax) * 0.5f, 3);
+            // A long name: cut to what is left, the group fills the content span from its start.
+            var (s2, a2, b2) = PlayHudMath.UnlockRow(19f, 381f, 0f, 64f, 10f, 1000f);
+            Assert.Equal(19f, s2, 3);
+            Assert.Equal(93f, a2, 3);
+            Assert.Equal(381f, b2, 3);
+        }
+
         [Theory]
         [InlineData(0, 120f, 0f)]
         [InlineData(1, 100f, -110f)]  // fits the vanilla 110 spacing

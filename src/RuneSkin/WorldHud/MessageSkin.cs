@@ -516,6 +516,42 @@ namespace RuneSkin.WorldHud
             if (icon && icon.parent == msg) icon.anchoredPosition += new Vector2(0f, rs);
             if (desc && desc.rectTransform.parent == msg) desc.rectTransform.anchoredPosition += new Vector2(0f, rs);
             prt.offsetMin += new Vector2(0f, bottom - pr.yMin);
+            UnlockRow(plate, desc, icon, msg);
+        }
+
+        // Icon + description row (vanilla order: icon_bkg, then UnlockDescription to its right) as one group centred in
+        // the plate's content span under the title: the frame's drawn 9-slice side borders + size.message.plate.pad (the
+        // insets of the top-left notification plate); the icon's recess centred on the description's line box. Vanilla
+        // put the icon at the plate's left edge, on the frame's ornament (0.23.0 live report, "Новый чертеж").
+        private static void UnlockRow(Image plate, TMP_Text desc, RectTransform icon, RectTransform msg)
+        {
+            if (!icon || icon.parent != msg || !desc || desc.rectTransform.parent != msg) return;
+            var border = SliceBorder(plate);
+            var pad = ThemeTokens.GetFloat("size.message.plate.pad", 10f);
+            var pr = Edges(plate.rectTransform, msg);
+            var ir = Edges(icon, msg);
+            var dr = desc.rectTransform;
+            desc.horizontalAlignment = HorizontalAlignmentOptions.Left;
+            var gap = ThemeTokens.GetFloat("size.message.icon.gap", 10f);
+            var size = desc.enableAutoSizing ? desc.fontSizeMax : desc.fontSize;
+            var auto = desc.enableAutoSizing;
+            desc.enableAutoSizing = false;
+            var cur = desc.fontSize;
+            desc.fontSize = size;
+            // +2: the measured width as the rect width must not tip TMP into its ellipsis by rounding.
+            var textW = desc.GetPreferredValues(desc.text ?? "", float.PositiveInfinity, float.PositiveInfinity).x + desc.margin.x + desc.margin.z + 2f;
+            desc.fontSize = cur;
+            desc.enableAutoSizing = auto;
+            var (iconShift, textMin, textMax) = PlayHudMath.UnlockRow(pr.xMin + border.x + pad, pr.xMax - border.z - pad, ir.xMin, ir.xMax, gap, textW * Mathf.Abs(dr.localScale.x));
+            icon.anchoredPosition += new Vector2(iconShift, 0f);
+            var d0 = Edges(dr, msg);
+            var k = Mathf.Max(1e-4f, Mathf.Abs(dr.localScale.x));
+            dr.offsetMin += new Vector2((textMin - d0.xMin) / k, 0f);
+            dr.offsetMax += new Vector2((textMax - d0.xMax) / k, 0f);
+            // The (taller) recess keeps its stacked row slot; the line moves onto its centre.
+            var (lt, lb) = LineBox(desc, msg);
+            var ic = Edges(icon, msg).center.y;
+            dr.anchoredPosition += new Vector2(0f, ic - (lt + lb) * 0.5f);
         }
 
         // 9-slice border of an Image in its rect units (x left, y bottom, z right, w top): sprite pixels over the

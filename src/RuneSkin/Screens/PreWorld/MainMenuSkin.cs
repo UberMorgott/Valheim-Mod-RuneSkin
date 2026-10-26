@@ -202,6 +202,9 @@ namespace RuneSkin.PreWorld
         // icon, BackupSaveElement name / size / date; 678 x 32 vanilla). Vanilla column boxes sized for its own face put
         // "Сохранения: 2" in a 70-unit box that auto-sized it to 12 px (run 20261022-210451); here fixed columns at the
         // readable size: name | size (right) | backups (centre) | date (right, from the right edge, clear of the icon).
+        // The date column starts after the backups column (ends 465 from the left of the 678-wide row).
+        private const float VanillaSaveRowWidth = 678f;
+
         private static void SaveRows(FejdStartup fejd)
         {
             var menu = fejd.m_manageSavesMenu;
@@ -213,10 +216,25 @@ namespace RuneSkin.PreWorld
             {
                 if (!b) continue;
                 var row = b.transform;
+                // Source icon (vanilla "source" at the right edge + 34, its glyphs at -50: centred 16 inside the row, on
+                // the plate's right cap, 0.23.0 live report): its glyph ends size.row.cap.pad before the plate's drawn
+                // 9-slice right border; the date column ends size.row.pad before the icon.
+                var plate = b.targetGraphic as Image;
+                var cap = TextInset.SliceBorder(plate).z + ThemeTokens.GetFloat("size.row.cap.pad", 6f);
+                var dateEnd = -40f;
+                if (row.Find("source") is RectTransform src)
+                {
+                    var half = 0f;
+                    foreach (RectTransform g in src) half = Mathf.Max(half, g.rect.width * Mathf.Abs(g.localScale.x) * 0.5f);
+                    var glyphX = src.anchoredPosition.x - 50f; // glyph centre from the row's right edge
+                    var want = -(cap + half);
+                    if (glyphX > want) src.anchoredPosition += new Vector2(want - glyphX, 0f);
+                    dateEnd = Mathf.Min(dateEnd, Mathf.Min(glyphX, want) - half - ThemeTokens.GetFloat("size.row.pad", 12f));
+                }
                 Place(row, "name", new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(40f, 0f), new Vector2(210f, 0f), font, TextAlignmentOptions.MidlineLeft);
                 Place(row, "size", new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(215f, 0f), new Vector2(345f, 0f), font, TextAlignmentOptions.MidlineRight);
                 Place(row, "backups", new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(355f, 0f), new Vector2(465f, 0f), font, TextAlignmentOptions.Midline);
-                Place(row, "date", new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(-215f, 0f), new Vector2(-40f, 0f), font, TextAlignmentOptions.MidlineRight);
+                Place(row, "date", new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(Mathf.Max(dateEnd - 175f, 470f - VanillaSaveRowWidth), 0f), new Vector2(dateEnd, 0f), font, TextAlignmentOptions.MidlineRight);
                 foreach (var n in new[] { "name", "size", "backups", "date" })
                     if (row.Find(n) is Transform tn && tn.TryGetComponent<TMP_Text>(out var tt)) tt.overflowMode = TextOverflowModes.Ellipsis;
             }
@@ -560,6 +578,12 @@ namespace RuneSkin.PreWorld
                 foreach (var img in list.GetComponents<Image>()) PanelSwap.Apply(img, img.sprite ? img.sprite.name : null);
                 var entries = list.Find("MenuEntries");
                 if (entries) foreach (var img in entries.GetComponents<Image>()) PanelSwap.Apply(img, img.sprite ? img.sprite.name : null);
+                // MenuList/ornament (start scene bundle 10ba9da1: BraidLineHorisontalMedium 504x17, anchored top-centre
+                // 20 below the 257-wide column, no script reads it) is the vanilla column panel's crown braid. With the
+                // column moved left and no panel behind it, the 504 braid ran from the screen's left edge past the
+                // entries as a bare line with a tip (0.23.0 live report). Its panel is off, so is it.
+                if (list.Find("ornament") is Transform crown)
+                    foreach (var img in crown.GetComponents<Image>()) PanelSwap.Apply(img, img.sprite ? img.sprite.name : null);
             }
             // Logo stays vanilla (the menu animator drives it). Bottom-left text links (changelog, EULA, log) as small
             // plated buttons.

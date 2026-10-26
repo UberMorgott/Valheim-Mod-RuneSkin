@@ -716,6 +716,7 @@
     { "token": "size.field.h", "value": 40 },
     { "token": "size.field.inset", "value": 12 },
     { "token": "size.row.pad", "value": 12 },
+    { "token": "size.row.cap.pad", "value": 6 },
     { "token": "size.field.font", "value": 19 },
     { "token": "size.charframe.body", "value": 1.9 },
     // --- 0.20.3 track F (menu rows): gap between a row and the next (new-world hint row, tab row / separator / title).

@@ -188,16 +188,8 @@ namespace RuneSkin.PreWorld
 
         public static void Apply(TMP_Text t, float floor)
         {
-            var canvas = t.canvas;
-            if (!canvas) return;
-            var root = canvas.rootCanvas;
-            if (root.renderMode == RenderMode.WorldSpace) return;
-            var cam = root.renderMode == RenderMode.ScreenSpaceOverlay ? null : root.worldCamera;
-            var p0 = RectTransformUtility.WorldToScreenPoint(cam, t.transform.TransformPoint(Vector3.zero));
-            var p1 = RectTransformUtility.WorldToScreenPoint(cam, t.transform.TransformPoint(Vector3.up));
-            var k = Vector2.Distance(p0, p1) * 1080f / Screen.height; // px@1080 per font unit
-            if (!(k > 0.01f)) return;
-            var want = floor / k + 0.05f;
+            var want = Readable.Units(t, floor);
+            if (!(want > 0f)) return;
             if (!t.enableAutoSizing) { if (t.fontSize < want - 0.05f) t.fontSize = want; }
             else
             {

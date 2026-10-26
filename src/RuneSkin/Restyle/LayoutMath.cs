@@ -46,6 +46,20 @@ namespace RuneSkin.Restyle
         // Right margin that ends the text area at edge - pad, given the rect end of the text.
         public static float EndMargin(float rectMax, float edge, float pad) => rectMax - (edge - Math.Max(0f, pad));
 
+        // Font units that draw floorPx pixels at 1080 px screen height, given the screen pixels of one font unit at the
+        // current screen height (+0.05: the size lands on the floor, not just under it). 0 when not measurable.
+        public static float ReadableUnits(float floorPx, float pxPerUnit, float screenHeight)
+        {
+            if (!(screenHeight > 0f)) return 0f;
+            var k = pxPerUnit * 1080f / screenHeight;
+            return k > 0.01f ? floorPx / k + 0.05f : 0f;
+        }
+
+        // Start of a row text: pad after the icon / edge before it (span start), and never on the row plate's 9-slice
+        // cap: at least capPad after the plate start + its drawn left border.
+        public static float RowStart(float spanMin, float pad, float plateMin, float capBorder, float capPad) =>
+            Math.Max(spanMin + Math.Max(0f, pad), plateMin + Math.Max(0f, capBorder) + Math.Max(0f, capPad));
+
         // Offset that moves [min, max] to the centre of [cellMin, cellMax].
         public static float CentreOffset(float cellMin, float cellMax, float min, float max) => (cellMin + cellMax - min - max) * 0.5f;
 
