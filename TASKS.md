@@ -28,7 +28,12 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
   -executeMethod BuildBundles.Build` exits -1073741676, native crash in SpriteAtlas PackAtlasOnJob (BuildBundles.cs:237
   BuildAtlas), also with Library copied from D:\tmp\runeskin-unity-library-good (2 tries). 0.25.1 (art unchanged vs
   v0.25.0, `git diff v0.25.0 --stat -- art unity` empty) staged the 0.25.0 bundle AAA86A96.
-- [ ] 0.25.0 regression, fix next (crafting width cap 576 / windowed layout A, cf11dc3..5a0a76f; 0.25.1 diff touches only
+- [x] 0.25.0 regression, fixed in 0.25.2 (d816482): crafting window = min(576, room right of the hotbar-locked centre column)
+  = 536 at 16:9 (576 cannot fit without overlapping the centre column); list keeps 204 (size.craft.list.min), requirements grow
+  full-size rows before shrinking, inventory window backings feed CoverCull (minimap / crosshair gated). Run
+  tools\out\20261026-223903: overdraw-crafting covered=0 (foreign Vaettir BA_WorldBossBar only), names-* + m3-layout PASS,
+  m2 inv-* 57 PASS; tips-sweep-player-diag 1,2 no tooltip (new, open), tips-bottom-player / tips-wheel FAIL since 0.24.0 (open).
+  Was (crafting width cap 576 / windowed layout A, cf11dc3..5a0a76f; 0.25.1 diff touches only
   the craft button label / anvil / stepper): ui-runeskin-m3 run 20261026-222320 vs 20261026-190758 -
   overdraw-crafting 1920/2560 covered 9 vs 1 (panel Backing of Inventory_Doll / Inventory / Crafting); names-1920x1080 /
   2560x1440 'Кожаные обрывки' / 'Шкура оленя' 9.5 < 10 with requirement cells 60 vs 66 wide (190758 PASS); m3-layout
