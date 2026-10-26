@@ -505,7 +505,7 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "plaque.header",
-      "notes": "title strip 620x86: broad interlaced knotwork bands flanking the name field (fixed 230 px borders), title text_header"
+      "notes": "window header plate 620x86 (RuneWindowHeader on every window): v2 dark rune-metal (mockup bottom-hud-center-v2), knotwork end blocks with teal triquetra gems (fixed 230 px borders), thin teal inlay along both rails, flat dark centre field (x 232..388 column-identical, stretched), title text_header; Codex image edit of the old ctrl2 plaque, prompt header_plaque_v2.prompt.txt"
     },
     {
       "name": "knot",
