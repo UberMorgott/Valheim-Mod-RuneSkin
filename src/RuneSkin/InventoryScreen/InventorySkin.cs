@@ -98,6 +98,8 @@ namespace RuneSkin.InventoryScreen
             public int RowScroll, ColScroll, VisibleRows = int.MaxValue, VisibleColumns = int.MaxValue;
             public int AppliedRowScroll = -1, AppliedColScroll = -1, AppliedRows = -1, AppliedColumns = -1;
             public Box AppliedView;
+            // Grid root (the cells' parent) where the last Reposition saw it: the cells move with it.
+            public Box AppliedRoot;
         }
 
         private struct DollEntry
@@ -394,6 +396,7 @@ namespace RuneSkin.InventoryScreen
             {
                 var s = pair.Value;
                 if (pair.Key && pair.Key != _gui.m_playerGrid && ScrollView(pair.Key)) s.NeedsReposition = true;
+                if (pair.Key && RootMoved(pair.Key, s)) s.NeedsReposition = true;
                 if (!pair.Key || !s.NeedsReposition) continue;
                 s.NeedsReposition = false;
                 Reposition(pair.Key, s.Visible, s.Scale, s.WantPitch > 0f ? Mathf.Clamp01((s.WantPitch - s.WantCell) / s.WantPitch) : 0f);
@@ -1216,6 +1219,19 @@ namespace RuneSkin.InventoryScreen
             return true;
         }
 
+        // The cells are children of the grid root (a container's ScrollRect content) but placed against the view in canvas
+        // coordinates, so a root that moves after a Reposition drags them along: ResetView puts the root's pivot at
+        // anchoredPosition 0 and the ScrollRect then pulls the content into its viewport over the next frames (run
+        // 20261026-200900 inv-rows-chest-small-2560x1440: the top row 5 px over the viewport top, one gap off the centred
+        // block, with an unchanged view). A moved root re-places its cells.
+        private bool RootMoved(InventoryGrid grid, GridState s)
+        {
+            if (!grid.m_gridRoot) return false;
+            var root = Geo.BoxOf(_canvas, grid.m_gridRoot);
+            var a = s.AppliedRoot;
+            return Mathf.Abs(root.X - a.X) > 0.01f || Mathf.Abs(root.Y - a.Y) > 0.01f || Mathf.Abs(root.W - a.W) > 0.01f || Mathf.Abs(root.H - a.H) > 0.01f;
+        }
+
         // Rows of a grid that live elsewhere: the player grid's row 0 is the HUD strip's hotbar.
         private int SkipRows(InventoryGrid grid) => StripHotbar && _input.Hotbar.Valid && grid == _gui.m_playerGrid ? 1 : 0;
 
@@ -1281,6 +1297,7 @@ namespace RuneSkin.InventoryScreen
             var s = State(grid);
             var w = grid.GetInventory().GetWidth();
             var root = Geo.BoxOf(_canvas, grid.m_gridRoot);
+            s.AppliedRoot = root;
             var view = Geo.BoxOf(_canvas, (RectTransform)grid.transform);
             var unit = Geo.WorldPerUnit(_canvas);
             var pitch = grid.m_elementSpace * grid.m_gridRoot.lossyScale.x / Mathf.Max(unit, 1e-6f); // canvas units
