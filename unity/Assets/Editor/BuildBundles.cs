@@ -207,7 +207,11 @@ public static class BuildBundles
 
     static void BuildAtlas(List<Sprite> sprites, string atlasPath, int maxSize, bool mips)
     {
-        EditorSettings.spritePackerMode = SpritePackerMode.AlwaysOnAtlas;
+        // V2 packer: the legacy V1 mode (AlwaysOnAtlas) crashes 6000.0.75f1 on every uncached pack, even a 2-sprite atlas in
+        // an empty project ("Image invalid format!" / "Unsupported Format 0", then 0xC0000094 in GetRowSize). Earlier builds
+        // only passed on Library/AtlasCache hits. See art/README.md "Atlas packer".
+        EditorSettings.spritePackerMode = SpritePackerMode.SpriteAtlasV2;
+        ValidatePackInputs(sprites, atlasPath);
         var atlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(atlasPath);
         if (atlas == null)
         {
@@ -235,6 +239,31 @@ public static class BuildBundles
         AssetDatabase.SaveAssets();
         SpriteAtlasUtility.PackAtlases(new[] { atlas }, BuildTarget.StandaloneWindows64);
         Debug.Log($"RuneSkin: atlas {atlasPath} packed with {atlas.spriteCount} sprites");
+    }
+
+    // The native packer divides by the source row size: a missing/empty/truncated PNG or a 0-size sprite kills the editor
+    // with no asset name. Checked here first so the build fails with the offending file instead.
+    static void ValidatePackInputs(List<Sprite> sprites, string atlasPath)
+    {
+        if (sprites.Count == 0)
+            throw new Exception($"{atlasPath}: no sprites to pack");
+        var png = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+        foreach (var sp in sprites)
+        {
+            var path = AssetDatabase.GetAssetPath(sp);
+            var file = new FileInfo(Path.GetFullPath(path));
+            if (!file.Exists || file.Length < 67)
+                throw new Exception($"{atlasPath}: {path} missing or truncated ({(file.Exists ? file.Length : 0)} bytes)");
+            var head = new byte[8];
+            using (var fs = file.OpenRead())
+                if (fs.Read(head, 0, 8) != 8 || !head.SequenceEqual(png))
+                    throw new Exception($"{atlasPath}: {path} is not a PNG");
+            var tex = sp.texture;
+            if (tex == null || tex.width <= 0 || tex.height <= 0 || (int)tex.format == 0)
+                throw new Exception($"{atlasPath}: {path} imported texture invalid ({(tex == null ? "null" : $"{tex.width}x{tex.height} {tex.format}")})");
+            if (sp.rect.width < 1 || sp.rect.height < 1)
+                throw new Exception($"{atlasPath}: {path} sprite rect {sp.rect} is empty");
+        }
     }
 
     static List<string> BakeFonts()

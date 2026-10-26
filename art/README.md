@@ -11,8 +11,16 @@ go -C art/tools run . build; & 'D:\Unity\Editors\6000.0.75f1\Editor\Unity.exe' -
 `build` cuts `art/src/kit/*.png` per `art/src/kit/cuts.json` into `art/sprites/*.png` + `sprites.json` and runs
 `check` (sizes, borders, orphans). Exit code 0 + `RuneSkin: BUILD OK` in the log = bundle `unity\Build\runeskin`
 (StandaloneWindows64, LZ4) built and verified: it is loaded back and every `sprites.json` entry and both fonts are
-checked (`unity\Build\runeskin.contents.txt`). Do NOT add `-nographics`: the sprite atlas packer fails without a
-graphics device ("Unsupported Format 0", editor crash).
+checked (`unity\Build\runeskin.contents.txt`).
+
+Atlas packer (2026-10-26): the build packs with Sprite Atlas **V2** (`m_SpritePackerMode: 5`, set again in
+`BuildBundles.BuildAtlas`). The legacy V1 mode (`AlwaysOnAtlas`, 4) crashes Unity 6000.0.75f1 on every uncached pack,
+with or without `-nographics`, even a 2-sprite atlas in a new empty project: `Image invalid format!` /
+`Unsupported Format 0. Please report an issue.` per sprite, then exit -1073741676 (0xC0000094, divide by zero in
+`GetRowSize` <- `PackAtlasOnJob`). V1 builds only ever passed on `Library/AtlasCache` hits, so every art change (new
+cache key) crashed. Not an art defect, not a Library or outage problem. `ValidatePackInputs` fails the build with the
+asset path before packing on a missing / truncated / non-PNG source, an invalid imported texture or an empty sprite rect.
+Keep the build command without `-nographics` (V2 is only verified with a graphics device).
 
 Review aids (not part of the build, output in `art/review/`, git-ignored):
 `go -C art/tools run . compare` -> `compare-inventory.png`, `compare-hud.png`, `compare-corner.png`,
