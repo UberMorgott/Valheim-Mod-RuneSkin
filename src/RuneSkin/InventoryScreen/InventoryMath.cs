@@ -87,7 +87,9 @@ namespace RuneSkin.InventoryScreen
             var top = panel.Y + t.PanelHeaderH * k + pad;
             var maxH = Math.Max(0f, ActionRow(panel, t, k).Y - pad / 2f - top); // = Fit's inner height
             var h = fit.ScrollV || !(fit.Pitch > 0f) ? maxH : Math.Min(maxH, fit.VisibleRows * fit.Pitch);
-            var side = DockSide(t, k);
+            // Content inset, narrowed to the panel pad when the shown columns need the room (0.24.0 FitDock rule; the shown block = the visible columns of a sideways-scrolling grid).
+            var cols = fit.VisibleColumns > 0 ? fit.VisibleColumns : fit.Columns;
+            var side = Math.Max(pad, Math.Min(DockSide(t, k), (panel.W - (cols * fit.Pitch - (fit.Pitch - fit.Cell))) / 2f));
             return new Box(panel.X + side, top, Math.Max(0f, panel.W - 2f * side), h);
         }
 
