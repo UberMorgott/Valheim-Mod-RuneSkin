@@ -79,6 +79,9 @@ namespace RuneSkin.Restyle
         // The frame layer (9-slice border art) of this stack.
         public Image Frame => _frame;
 
+        // The opaque backing quad (glass stacks only; null otherwise).
+        public RectTransform Backing => _backing;
+
         private void OnEnable() => All.Add(this);
 
         private void OnDisable() => All.Remove(this);

@@ -1057,6 +1057,7 @@
     { "token": "size.craft.subcategory", "value": 44 },
     { "token": "size.craft.search", "value": 38 },
     { "token": "share.craft.list", "value": 0.4 },
+    { "token": "size.craft.list.min", "value": 204 },
     { "token": "size.craft.row", "value": 40 },
     { "token": "size.craft.chain.max", "value": 150 },
     { "token": "size.craft.chain.min", "value": 72 },

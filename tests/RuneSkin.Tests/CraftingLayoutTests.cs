@@ -52,11 +52,17 @@ namespace RuneSkin.Tests
         }
 
         [Fact]
-        public void ManyRequirementsShrinkToTwoRows()
+        public void ManyRequirementsGrowRowsThenShrink()
         {
+            // Full-size rows while the detail has height above the icon + description minimum (3 here) ...
             var o = CraftingMath.Compute(Input(10), new CraftingTokens());
-            Assert.Equal(2, o.RequirementRows);
-            Assert.True(o.RequirementCells[0].W < 68f && o.RequirementCells[0].W >= 52f);
+            Assert.Equal(3, o.RequirementRows);
+            Assert.Equal(68f, o.RequirementCells[0].W, 2);
+            Assert.True(o.Icon.H >= 112f - 0.01f && o.Description.H >= 48f - 0.01f);
+            // ... a short window has no such room: the cells shrink to fit two rows (floor ReqMinW)
+            var shortWin = CraftingMath.Compute(Input(10, h: 640f), new CraftingTokens());
+            Assert.Equal(2, shortWin.RequirementRows);
+            Assert.True(shortWin.RequirementCells[0].W < 68f && shortWin.RequirementCells[0].W >= 52f);
             // Past the floor the rows grow instead (every requirement stays visible, no paging).
             var many = CraftingMath.Compute(Input(14), new CraftingTokens());
             Assert.Equal(14, many.RequirementCells.Length);

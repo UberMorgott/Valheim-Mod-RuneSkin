@@ -499,5 +499,74 @@ namespace RuneSkin.Tests
             Assert.Equal(1, InventoryWindowsMath.ScrollTo(2, 1, 6));
             Assert.Equal(2, InventoryWindowsMath.ScrollTo(2, 5, 6));
         }
+
+        // Crafting content in the layout-A crafting window (docked in the room right of the hotbar-locked centre column:
+        // 536 at 16:9 instead of 0.24.0's 576, run 20261026-222320): the recipe list keeps its 0.24.0 width (204, names
+        // untruncated) and 8 requirements keep full-size cells (>= 66 wide: 3 columns, rows grow into the detail's height)
+        // instead of shrinking to 60 (names under the 10 font floor). Shipped theme tokens, scale 1.
+        public static TheoryData<float, float> CraftScreens => new TheoryData<float, float>
+        {
+            { 1280f, 720f }, { 1600f, 900f }, { 1920f, 1080f }, { 2560f, 1440f }, // 16:9
+            { 1680f, 1050f }, { 1920f, 1200f }, { 2560f, 1600f },               // 16:10
+            { 2560f, 1080f }, { 3440f, 1440f }                                  // 21:9
+        };
+
+        [Theory]
+        [MemberData(nameof(CraftScreens))]
+        public void CraftingContentKeepsItsRoom(float w, float h)
+        {
+            var sc = At(w, h);
+            var o = Run(sc, 8, 4, 6, 3);
+            Assert.False(o.CraftingTight);
+            var t = new RuneSkin.CraftingScreen.CraftingTokens
+            {
+                Pad = F("size.craft.pad"),
+                Gap = F("size.craft.gap"),
+                ListShare = F("share.craft.list"),
+                ListMinW = F("size.craft.list.min"),
+                RowH = F("size.craft.row"),
+                ScrollbarW = F("size.craft.scrollbar"),
+                IconH = F("size.craft.icon"),
+                DescriptionMinH = F("size.craft.description.min"),
+                ReqW = F("size.craft.req.w"),
+                ReqH = F("size.craft.req.h"),
+                ReqMinW = F("size.craft.req.min"),
+                ReqMaxRows = F("size.craft.req.rows"),
+                WellPad = F("size.craft.well.pad")
+            };
+            foreach (var reqs in new[] { 1, 4, 6, 8 })
+            {
+                var i = new RuneSkin.CraftingScreen.CraftingInput
+                {
+                    Panel = o.Crafting,
+                    CapInset = 32f,
+                    Scale = 1f,
+                    Tabs = 3,
+                    Categories = 9,
+                    Requirements = reqs,
+                    Search = true,
+                    Repair = true,
+                    CraftType = true,
+                    Quality = true,
+                    WindowHeaderH = F("size.win.header")
+                };
+                var c = RuneSkin.CraftingScreen.CraftingMath.Compute(i, t);
+                var at = $"{w}x{h} crafting {o.Crafting} reqs {reqs}";
+                Assert.True(c.List.W >= 204f - 0.01f, $"{at}: list {c.List}");
+                Assert.True(c.Detail.X >= c.List.Right && c.Detail.Right <= o.Crafting.Right - 32f + 0.01f, $"{at}: detail {c.Detail}");
+                foreach (var cell in c.RequirementCells)
+                {
+                    Assert.True(cell.W >= 66f, $"{at}: req cell {cell}");
+                    Assert.True(cell.Inside(c.Detail), $"{at}: req {cell} outside {c.Detail}");
+                }
+                for (var a = 0; a < c.RequirementCells.Length; a++)
+                    for (var b = a + 1; b < c.RequirementCells.Length; b++)
+                        Assert.False(c.RequirementCells[a].Overlaps(c.RequirementCells[b]), at);
+                // the icon and the description minimum keep theirs above the grid
+                Assert.Equal(t.IconH, c.Icon.H, 2);
+                Assert.True(c.Description.H >= t.DescriptionMinH - 0.01f, $"{at}: description {c.Description}");
+                Assert.True(c.Description.Bottom <= c.Requirements.Y + 0.01f, at);
+            }
+        }
     }
 }

@@ -65,26 +65,58 @@ namespace RuneSkin.InventoryScreen
         public static void Tick()
         {
             WatchAlmanac();
-            if (Open.Count == 0) return;
-            var n = Open.Count;
-            Open.RemoveAll(t => !t || !t.gameObject.activeInHierarchy);
-            if (Open.Count == 0) Restore();
-            else if (Open.Count != n && InventoryGui.instance) Apply(InventoryGui.instance.m_inventoryRoot);
-            if (Open.Count != n)
+            if (Open.Count > 0)
             {
-                _nextCull = 0f;
-                Stale.Clear();
-                foreach (var w in Opaque.Keys)
-                    if (!w || !Open.Contains(w)) Stale.Add(w);
-                foreach (var w in Stale) Opaque.Remove(w);
-                Stale.Clear();
+                var n = Open.Count;
+                Open.RemoveAll(t => !t || !t.gameObject.activeInHierarchy);
+                if (Open.Count == 0) Restore();
+                else if (Open.Count != n && InventoryGui.instance) Apply(InventoryGui.instance.m_inventoryRoot);
+                if (Open.Count != n)
+                {
+                    _nextCull = 0f;
+                    Stale.Clear();
+                    foreach (var w in Opaque.Keys)
+                        if (!w || !Open.Contains(w)) Stale.Add(w);
+                    foreach (var w in Stale) Opaque.Remove(w);
+                    Stale.Clear();
+                }
             }
-            Cull();
+            var gui = InventoryGui.instance;
+            var standing = StandingShown(gui);
+            if (standing != _standing)
+            {
+                _standing = standing;
+                _nextCull = 0f;
+            }
+            if (Open.Count == 0 && !standing)
+            {
+                if (CoverWindows.Count > 0 || CoverCull.CoveredCount > 0)
+                {
+                    CoverWindows.Clear();
+                    CoverRects.Clear();
+                    CoverCull.Clear();
+                }
+                return;
+            }
+            Cull(gui);
         }
 
-        private static void Cull()
+        // Standing covers: the open inventory's own windows (every RuneSkin panel stack under the inventory root with a
+        // drawn opaque backing) gate the UI drawn before them inside their backing, like a full window's opaque area -
+        // layout A docks crafting at the top right over the minimap, the doll over the crosshair (run 20261026-222320
+        // overdraw-crafting covered=9). Only while the screen shows fully faded in (the fade CanvasGroup on InventoryGui)
+        // and no full window is open (that one hides these panels).
+        private static bool _standing;
+
+        private static bool StandingShown(InventoryGui gui)
         {
-            if (Open.Count == 0 || Time.unscaledTime < _nextCull) return;
+            if (!gui || !gui.m_inventoryRoot || Open.Count > 0 || !InventoryGui.IsVisible()) return false;
+            return !gui.TryGetComponent<CanvasGroup>(out var fade) || fade.alpha >= 0.999f;
+        }
+
+        private static void Cull(InventoryGui gui)
+        {
+            if (Time.unscaledTime < _nextCull) return;
             _nextCull = Time.unscaledTime + CullEvery;
             CoverWindows.Clear();
             CoverRects.Clear();
@@ -94,7 +126,32 @@ namespace RuneSkin.InventoryScreen
                     CoverWindows.Add(w);
                     CoverRects.Add(f());
                 }
+            if (_standing && gui) AddStanding(gui.m_inventoryRoot);
             CoverCull.Refresh(CoverWindows, CoverRects);
+        }
+
+        private static readonly Vector3[] Corners = new Vector3[4];
+
+        private static void AddStanding(Transform root)
+        {
+            foreach (var d in PanelDecor.All)
+            {
+                var b = d ? d.Backing : null;
+                if (!b || !b.gameObject.activeInHierarchy || !b.IsChildOf(root) || RenderGate.IsConcealed(b)) continue;
+                if (!b.TryGetComponent<UnityEngine.UI.Graphic>(out var g) || !g.enabled || g.color.a < 0.999f || !g.canvas) continue;
+                var canvas = g.canvas.rootCanvas;
+                var cam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+                b.GetWorldCorners(Corners);
+                float x0 = float.MaxValue, y0 = float.MaxValue, x1 = float.MinValue, y1 = float.MinValue;
+                foreach (var c in Corners)
+                {
+                    var s = RectTransformUtility.WorldToScreenPoint(cam, c);
+                    x0 = Mathf.Min(x0, s.x); y0 = Mathf.Min(y0, s.y);
+                    x1 = Mathf.Max(x1, s.x); y1 = Mathf.Max(y1, s.y);
+                }
+                CoverWindows.Add(b);
+                CoverRects.Add(Rect.MinMaxRect(x0, y0, x1, y1));
+            }
         }
 
         // Harness / diagnostics: the open windows' opaque areas (screen px).

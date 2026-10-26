@@ -15,7 +15,9 @@ namespace RuneSkin.CraftingScreen
         public float Pad = 18f, Gap = 8f;
         public float HeaderH = 80f, TabH = 36f, TabW = 150f, TabMinW = 96f, ArrowW = 28f;
         public float CategoryH = 44f, SubCategoryH = 44f, SearchH = 38f;
-        public float ListShare = 0.4f, RowH = 46f, ScrollbarW = 10f;
+        // ListMinW: the list column never narrower than this while the detail keeps half the body (0.24.0 list at the
+        // 576 window; layout A docks crafting at the room right of the hotbar-locked centre column, 536 at 16:9).
+        public float ListShare = 0.4f, ListMinW = 204f, RowH = 46f, ScrollbarW = 10f;
         public float TitleH = 32f, CraftTypeH = 24f, IconH = 112f, QualityH = 44f, DescriptionMinH = 48f;
         public float ReqW = 68f, ReqH = 88f, ReqMinW = 52f, ReqMaxRows = 2f;
         public float ButtonH = 64f;
@@ -132,7 +134,7 @@ namespace RuneSkin.CraftingScreen
 
             // Body: list column (search + list well) | detail column (detail well + button row).
             var body = new Box(c.X, y, c.W, Math.Max(0f, c.Bottom - y));
-            var listW = (float)Math.Floor(body.W * Clamp(t.ListShare, 0.25f, 0.6f));
+            var listW = (float)Math.Floor(Math.Max(body.W * Clamp(t.ListShare, 0.25f, 0.6f), Math.Min(S(t.ListMinW), body.W * 0.5f)));
             var lx = body.X;
             var ly = body.Y;
             if (i.Search)
@@ -172,7 +174,9 @@ namespace RuneSkin.CraftingScreen
             }
             top += gap * 0.5f;
             var bottom = d.Bottom;
-            Requirements(o, i.Requirements, new Box(d.X, d.Y, d.W, d.H), S(t.ReqW), S(t.ReqH), S(t.ReqMinW), (int)Math.Max(1f, t.ReqMaxRows), gap * 0.75f);
+            // Height the grid may take while the title / type, the full icon, the description minimum and the quality row keep theirs.
+            var keep = (top - d.Y) + S(t.IconH) + gap * 0.5f + S(t.DescriptionMinH) + gap + (i.Quality ? S(t.QualityH) + gap * 0.5f : 0f);
+            Requirements(o, i.Requirements, new Box(d.X, d.Y, d.W, d.H), S(t.ReqW), S(t.ReqH), S(t.ReqMinW), (int)Math.Max(1f, t.ReqMaxRows), gap * 0.75f, Math.Max(0f, d.H - keep));
             if (o.RequirementRows > 0)
             {
                 var rh = o.Requirements.H;
@@ -199,14 +203,18 @@ namespace RuneSkin.CraftingScreen
 
         // Requirement grid: N cells left-aligned, rows wrap; when more rows than maxRows would be needed the cells
         // shrink (aspect kept) down to minW so they fit maxRows; past that the rows grow (the description gives way).
+        // roomH > 0: the height the grid may take without squeezing the icon / description minimum; full-size rows that
+        // fit it come first (the cells shrink only past it: a 60-wide cell drops its two-line names under the 10 font
+        // floor, run 20261026-222320 names-*).
         // Cell boxes relative to `area` (y from area.Y). Requirements.H = grid height.
-        public static void Requirements(CraftingLayout o, int n, Box area, float w, float h, float minW, int maxRows, float gap)
+        public static void Requirements(CraftingLayout o, int n, Box area, float w, float h, float minW, int maxRows, float gap, float roomH = 0f)
         {
             o.RequirementCells = new Box[Math.Max(0, n)];
             o.RequirementColumns = o.RequirementRows = 0;
             o.Requirements = new Box(area.X, area.Y, area.W, 0f);
             if (n <= 0 || !(area.W > 0f)) return;
             var cols = Columns(area.W, w, gap);
+            if (roomH > 0f) maxRows = Math.Max(maxRows, (int)Math.Floor((roomH + gap + 0.01f) / (h + gap)));
             if ((n + cols - 1) / cols > maxRows)
             {
                 var want = (n + maxRows - 1) / maxRows;

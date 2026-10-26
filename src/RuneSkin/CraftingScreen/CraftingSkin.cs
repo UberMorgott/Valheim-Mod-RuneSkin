@@ -637,7 +637,7 @@ namespace RuneSkin.CraftingScreen
             t.Pad = F("size.craft.pad", t.Pad); t.Gap = F("size.craft.gap", t.Gap); t.HeaderH = F("size.craft.header", t.HeaderH);
             t.TabH = F("size.craft.tab.h", t.TabH); t.TabW = F("size.craft.tab.w", t.TabW); t.TabMinW = F("size.craft.tab.min", t.TabMinW);
             t.ArrowW = F("size.craft.arrow", t.ArrowW); t.CategoryH = F("size.craft.category", t.CategoryH); t.SubCategoryH = F("size.craft.subcategory", t.SubCategoryH); t.SearchH = F("size.craft.search", t.SearchH);
-            t.ListShare = F("share.craft.list", t.ListShare); t.RowH = F("size.craft.row", t.RowH); t.ScrollbarW = F("size.craft.scrollbar", t.ScrollbarW);
+            t.ListShare = F("share.craft.list", t.ListShare); t.ListMinW = F("size.craft.list.min", t.ListMinW); t.RowH = F("size.craft.row", t.RowH); t.ScrollbarW = F("size.craft.scrollbar", t.ScrollbarW);
             t.TitleH = F("size.craft.title", t.TitleH); t.CraftTypeH = F("size.craft.crafttype", t.CraftTypeH); t.IconH = F("size.craft.icon", t.IconH);
             t.QualityH = F("size.craft.quality", t.QualityH); t.DescriptionMinH = F("size.craft.description.min", t.DescriptionMinH);
             t.ReqW = F("size.craft.req.w", t.ReqW); t.ReqH = F("size.craft.req.h", t.ReqH); t.ReqMinW = F("size.craft.req.min", t.ReqMinW);
