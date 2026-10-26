@@ -136,8 +136,9 @@ namespace RuneSkin.Restyle
             Save();
         }
 
-        // Several windows at this resolution (the inventory screen's reset-layout action), one save.
-        public static void Reset(string[] ids)
+        // Several windows at this resolution (the inventory screen's reset-layout action), one save. Own name: harness
+        // reflection looks Reset(string) up by name.
+        public static void ResetMany(string[] ids)
         {
             var any = false;
             foreach (var id in ids)

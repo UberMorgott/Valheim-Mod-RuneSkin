@@ -96,7 +96,7 @@ namespace RuneSkin.InventoryScreen
             // Shown range of our own scrolling (rows of the player grid, columns of a container): first + count;
             // VisibleRows / VisibleColumns = int.MaxValue = all.
             public int RowScroll, ColScroll, VisibleRows = int.MaxValue, VisibleColumns = int.MaxValue;
-            public int AppliedRowScroll = -1, AppliedColScroll = -1;
+            public int AppliedRowScroll = -1, AppliedColScroll = -1, AppliedRows = -1, AppliedColumns = -1;
         }
 
         private struct DollEntry
@@ -152,7 +152,7 @@ namespace RuneSkin.InventoryScreen
                 GlyphToken = "glyph.action.layout",
                 TooltipKey = "$runeskin_layout_reset",
                 Order = 1000,
-                OnInvoke = () => WindowMove.Reset(WindowMove.InventoryWindows)
+                OnInvoke = () => WindowMove.ResetMany(WindowMove.InventoryWindows)
             });
         }
 
@@ -1094,10 +1094,12 @@ namespace RuneSkin.InventoryScreen
             s.VisibleColumns = g.ScrollH ? Mathf.Max(1, g.VisibleColumns) : int.MaxValue;
             s.RowScroll = ownRows && g.ScrollV ? InventoryWindowsMath.ClampScroll(rowScroll, g.Rows, g.VisibleRows) : 0;
             s.ColScroll = g.ScrollH ? InventoryWindowsMath.ClampScroll(colScroll, g.Columns, g.VisibleColumns) : 0;
-            if (s.AppliedRowScroll != s.RowScroll || s.AppliedColScroll != s.ColScroll)
+            if (s.AppliedRowScroll != s.RowScroll || s.AppliedColScroll != s.ColScroll || s.AppliedRows != s.VisibleRows || s.AppliedColumns != s.VisibleColumns)
             {
                 s.AppliedRowScroll = s.RowScroll;
                 s.AppliedColScroll = s.ColScroll;
+                s.AppliedRows = s.VisibleRows;
+                s.AppliedColumns = s.VisibleColumns;
                 s.NeedsReposition = true;
             }
         }
