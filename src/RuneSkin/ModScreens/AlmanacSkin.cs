@@ -71,7 +71,9 @@ namespace RuneSkin.ModScreens
                 if (topic) header.Mirror(topic);
                 else header.Text("Almanac");
                 header.Frame = PanelDecor.Of(bkg ? bkg : root);
-                header.Stretch();
+                // Its own close button in the header's aux slot (the generic mod-window rule, RuneWindowHeader.FindClose).
+                if (!header.CloseButton) header.CloseButton = RuneWindowHeader.FindClose(root);
+                header.Stretch(header.CloseButton ? WindowHeaderMath.IconShare : 0f);
             }
             ScreenRegistry.Register(root, () => Context(_root, ScreenId));
             ScreenRegistry.Restyle(root);

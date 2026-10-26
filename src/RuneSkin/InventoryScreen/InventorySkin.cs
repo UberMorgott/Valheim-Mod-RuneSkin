@@ -896,10 +896,21 @@ namespace RuneSkin.InventoryScreen
             var row = new Box(box.X + pad, box.Y + pad / 2f, box.W - 2f * pad, headerH - pad / 2f);
             if (grid) Geo.Place(_canvas, (RectTransform)grid.transform, InventoryMath.ContainerGridView(box, fit, _tokens, k));
             if (grid) Want(grid, fit.Pitch, fit.Cell);
-            Bar(panel, kind, inventory, takeAll, stackAll, InventoryMath.ActionRow(box, _tokens, k));
+            var actions = InventoryMath.ActionRow(box, _tokens, k);
+            var actionsW = Bar(panel, kind, inventory, takeAll, stackAll, actions);
             var backpack = kind == PanelKind.Backpack;
             var glyph = HeaderGlyph(panel, backpack ? "glyph.panel.backpack" : "glyph.panel.chest");
+            // The weight plate sits at the left of the action row (glyph actions right-aligned): the header keeps only the
+            // glyph, so the title gets the plate's whole width and truncates only when it really does not fit (user
+            // 2026-10-26: "Сундук из…" cut while the header had room - the aux slot narrowed both title sides; ported
+            // from inv-layout 5727af7).
             var weightPlate = DirectChild(panel, weight);
+            if (weightPlate)
+            {
+                var pw = Mathf.Min(ThemeTokens.GetFloat("size.inv.plate.weight.dock", 110f) * k, Mathf.Max(0f, actions.W - actionsW - _tokens.Gap * k));
+                var ph = Mathf.Min(actions.H, ThemeTokens.GetFloat("size.win.header", 40f) * k * WindowHeaderMath.IconShare);
+                StatPlate(weightPlate, new Box(actions.X, actions.Y + (actions.H - ph) / 2f, pw, ph));
+            }
             var head = RuneWindowHeader.Ensure(panel, WindowMove.Inventory);
             if (!head) return;
             head.Frame = PanelDecor.Of(backpack ? _packHost : _chestHost);
@@ -907,10 +918,7 @@ namespace RuneSkin.InventoryScreen
             if (name) head.Adopt(name, fallback);
             else head.Fallback(fallback).Text(fallback);
             var hh = Mathf.Min(WindowHeaderMath.HeaderHeight(ThemeTokens.GetFloat("size.win.header", 40f), k), row.H);
-            var auxW = weightPlate ? ThemeTokens.GetFloat("size.inv.plate.weight.dock", 110f) * k : 0f;
-            head.Place(_canvas, new Box(row.X, row.Y, row.W, hh), glyph && glyph.enabled ? glyph : null, auxW); // top-aligned (name row too)
-            // The footer's stat plate layout (glyph in the round socket, value beside it) in the aux slot.
-            if (weightPlate) StatPlate(weightPlate, head.AuxBox);
+            head.Place(_canvas, new Box(row.X, row.Y, row.W, hh), glyph && glyph.enabled ? glyph : null); // top-aligned (name row too)
         }
 
         // Panel header glyph (chest / backpack), one per panel, role swapped when the panel changes kind.

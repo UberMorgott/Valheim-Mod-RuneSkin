@@ -301,11 +301,26 @@ namespace RuneSkin.Restyle
                 if (!s || !s.isActiveAndEnabled || !s.interactable) continue;
                 if (s.transform.IsChildOf(transform) || !(s.transform is RectTransform rt)) continue;
                 if (!RectTransformUtility.RectangleContainsScreenPoint(rt, sp, eventCamera)) continue;
+                // Clipped away there (a scrolled grid's rows above its view, under a RectMask2D / Mask): not a control at
+                // this point. Run 20261026-184538: a chest's masked top rows lay under the top-aligned dock header, the
+                // band gave way and the pointer fell through to InventoryGui's dropButton.
+                if (ClippedAt(rt, sp, eventCamera)) continue;
                 // A selectable spanning the whole band is a backdrop (full-screen closer, scrim), not a control in it.
                 if (Covers(rt)) continue;
                 return false;
             }
             return true;
+        }
+
+        private static bool ClippedAt(RectTransform rt, Vector2 sp, Camera cam)
+        {
+            for (var p = rt.parent; p; p = p.parent)
+            {
+                if (!(p is RectTransform pr)) continue;
+                var clips = p.TryGetComponent<RectMask2D>(out var m2) && m2.enabled || p.TryGetComponent<Mask>(out var m) && m.enabled;
+                if (clips && !RectTransformUtility.RectangleContainsScreenPoint(pr, sp, cam)) return true;
+            }
+            return false;
         }
 
         private static readonly Vector3[] Own = new Vector3[4];

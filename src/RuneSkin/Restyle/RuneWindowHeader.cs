@@ -55,6 +55,9 @@ namespace RuneSkin.Restyle
 
         public string TitleText => Title ? Title.text : "";
 
+        // The header's own title text (fitted by Arrange only; other text fitters keep off it).
+        public static bool IsTitle(TMP_Text text) => text && text.name == TitleName && text.transform.parent && text.transform.parent.name == FaceName;
+
         // The header of window `id` under `parent` (the window root or its title panel); `window` = the transform the
         // drag moves / whose controls keep their clicks (default: parent).
         public static RuneWindowHeader Ensure(Transform parent, string id, Transform window = null)
@@ -211,7 +214,7 @@ namespace RuneSkin.Restyle
         // Header of a window RuneSkin does not lay out (vanilla / mod panels): a band stretched over the top of `panel`,
         // moving `moved`; title = the window's own title text found in that top band (TMP or legacy, mirrored), else
         // `fallback`.
-        public static RuneWindowHeader TopBand(RectTransform panel, string id, Transform moved, string fallback)
+        public static RuneWindowHeader TopBand(RectTransform panel, string id, Transform moved, string fallback, bool adoptClose = false)
         {
             var h = Ensure(panel, id, moved ? moved : panel);
             if (!h) return null;
@@ -229,7 +232,8 @@ namespace RuneSkin.Restyle
                 }
             }
             h.Frame = PanelDecor.Of(panel) ?? PanelDecor.Of(moved); // the window's own stack (child panel or root)
-            h.Stretch();
+            if (adoptClose && !h.CloseButton) h.CloseButton = FindClose(moved ? moved : panel);
+            h.Stretch(h.CloseButton ? WindowHeaderMath.IconShare : 0f);
             return h;
         }
 
@@ -294,6 +298,48 @@ namespace RuneSkin.Restyle
             if ((rt.offsetMin - offMin).sqrMagnitude > 0.01f) rt.offsetMin = offMin;
             if (rt.offsetMax != Vector2.zero) rt.offsetMax = Vector2.zero;
             Arrange();
+            PlaceClose(rt);
+        }
+
+        // The window's own close button (a mod window we do not lay out, e.g. Almanac's "Closebutton" under its frame):
+        // shown in the header's aux slot like every window's close cap (user 2026-10-26: every mod panel fully skinned).
+        public Button CloseButton;
+
+        // The window's close button: an active Button named "*close*" (vanilla / mod convention), the smallest one.
+        public static Button FindClose(Transform window)
+        {
+            if (!window) return null;
+            Button best = null;
+            var bestArea = float.MaxValue;
+            foreach (var b in window.GetComponentsInChildren<Button>(false))
+            {
+                if (!b || b.name.IndexOf("close", System.StringComparison.OrdinalIgnoreCase) < 0 || !(b.transform is RectTransform r)) continue;
+                var area = Mathf.Abs(r.rect.width * r.rect.height);
+                // A closer spanning most of the window is a backdrop (click outside), not its close button.
+                if (window is RectTransform wr && area > 0.25f * Mathf.Abs(wr.rect.width * wr.rect.height) * Sq(r.lossyScale.x / Mathf.Max(1e-6f, wr.lossyScale.x))) continue;
+                if (area < bestArea) { best = b; bestArea = area; }
+            }
+            return best;
+        }
+
+        private static float Sq(float v) => v * v;
+
+        private void PlaceClose(RectTransform rt)
+        {
+            if (!CloseButton || !(CloseButton.transform is RectTransform bt) || !(bt.parent is RectTransform bp) || AuxLocal.width <= 0f) return;
+            var aux = AuxLocal;
+            var s = Mathf.Min(aux.width, aux.height);
+            var centre = bp.InverseTransformPoint(rt.TransformPoint(new Vector3(aux.xMax - s / 2f, aux.center.y, 0f)));
+            var scale = Mathf.Abs(rt.lossyScale.y) / Mathf.Max(Mathf.Abs(bp.lossyScale.y), 1e-6f);
+            var half = new Vector2(0.5f, 0.5f);
+            if (bt.anchorMin != half || bt.anchorMax != half) { bt.anchorMin = half; bt.anchorMax = half; }
+            if (bt.pivot != half) bt.pivot = half;
+            var pos = (Vector2)centre - bp.rect.center;
+            if ((bt.anchoredPosition - pos).sqrMagnitude > 0.0001f) bt.anchoredPosition = pos;
+            var size = new Vector2(s, s) * scale;
+            if ((bt.sizeDelta - size).sqrMagnitude > 0.0001f) bt.sizeDelta = size;
+            if (bt.localScale != Vector3.one) bt.localScale = Vector3.one;
+            if (bt.GetSiblingIndex() < transform.GetSiblingIndex() && bt.parent == transform.parent) bt.SetSiblingIndex(transform.GetSiblingIndex()); // over the band
         }
 
         // Plate and title inside the header rect (its own units), every size a share of the header height: identical on

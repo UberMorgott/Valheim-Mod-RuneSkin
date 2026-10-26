@@ -96,7 +96,7 @@ namespace RuneSkin.ModScreens
                 if ((t != unit && t.parent != unit) || !(t is RectTransform panel)) continue;
                 var key = "mod." + id;
                 MovableWindow.Ensure(ur, key);
-                RuneWindowHeader.TopBand(panel, key, ur, ForeignMath.WindowTitle(unit.name, id));
+                RuneWindowHeader.TopBand(panel, key, ur, ForeignMath.WindowTitle(unit.name, id), adoptClose: true);
                 return;
             }
         }
