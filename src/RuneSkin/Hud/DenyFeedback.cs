@@ -43,7 +43,12 @@ namespace RuneSkin.PlayerHud
             if (!player) return;
             if (!_searched) Find();
             if (!_sound) return;
-            var go = Object.Instantiate(_sound, player.GetHeadPoint(), Quaternion.identity);
+            // local only: vanilla sfx prefabs carry a ZNetView (EffectList.Create spawns them networked); this cue is the
+            // local player's own, so no ZDO is created (ZNetView.m_forceDisableInit, ZNetView.cs:45)
+            GameObject go;
+            ZNetView.m_forceDisableInit = true;
+            try { go = Object.Instantiate(_sound, player.GetHeadPoint(), Quaternion.identity); }
+            finally { ZNetView.m_forceDisableInit = false; }
             Object.Destroy(go, 5f);
             LastSound = go.GetComponentInChildren<ZSFX>();
             Sounds++;
@@ -70,7 +75,7 @@ namespace RuneSkin.PlayerHud
             foreach (var e in list.m_effectPrefabs)
             {
                 var p = e?.m_prefab;
-                if (!p || !e.m_enabled || p.GetComponent<ZNetView>()) continue;
+                if (!p || !e.m_enabled) continue;
                 if (!p.GetComponentInChildren<ZSFX>(true)) continue; // a sound prefab (ZSFX drives its AudioSource)
                 _sound = p;
                 return true;
