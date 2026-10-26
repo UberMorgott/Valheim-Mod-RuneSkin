@@ -860,3 +860,9 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
 - [x] In-game run ui-runeskin-hud2: run 20261026-145708 126/3 (stale harness checks dock / strip-joints; seams + unequal stamina | eitr fixed in e31fe3d) -> run 20261026-150855 126/3: only joints-<res> FAIL = the harness expected exact butting, not the designed 1 art px slice overlap (logged overlaps 2.0 / 1.3 / 2.7 px = both laps at 1080 / 720 / 1440); check fixed in tools 2e2282e, not re-run (rerun budget used). Codex in-game 9/10 (D:\tmp\cx-runeskin\review\final\codex-score.md). Final run 20261026-155901 PASS 129/0 (user: panel ok) -> released 0.23.0.
 - [ ] Codex in-game notes: hotbar cells read double-framed (StripCell rarity rim / glow inside the art well), the empty 4th potion slot shows no key label (EAQS has 3 quick cells; capacity 4 from the provider), f1p1 / f2p3 end medallions a few px off the mockup's own rows 1-2 (the panel follows row 3).
 
+
+## 0.23.1 VNEI docked in crafting without its own window frame
+
+- [x] Window art its mod switched off (VNEI attach-to-crafting hides its dragHandler woodpanel) is no window: ForeignUi draws no panel stack / move band for it, image role skip; controls stay skinned (eeb3318).
+- [x] Run 20261026-164635 ui-runeskin-vnei PASS 4/0 (vnei-inside, vnei-tabs, vnei-noframe, vnei-skinned; harness tools 95e9043).
+- [ ] Visual follow-up: the crafting body's list / detail wells (CraftingSkin) still draw behind VNEI, their column seam runs through the VNEI grid.
