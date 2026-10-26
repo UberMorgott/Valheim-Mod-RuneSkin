@@ -12,7 +12,9 @@ namespace RuneSkin.Tests
     {
         private static float F(string token) => StripLayoutTests.Floats[token];
 
-        private static InventoryTokens Theme(float cap = 20f) => new InventoryTokens
+        // cap: the panel stack's corner-cap keep-out at the shipped art (clear.frame_panel_corner_* 87 sprite px / PPU 200 x 100 -
+        // size.panel.glass.inset 11.5 = 32 canvas units, PanelMath.CapInset)
+        private static InventoryTokens Theme(float cap = 32f) => new InventoryTokens
         {
             Margin = F("size.inv.margin"),
             Gap = F("size.inv.gap"),
@@ -117,7 +119,7 @@ namespace RuneSkin.Tests
             Assert.InRange((o.Side.X + o.Side.W / 2f) * sc.S - sc.AbilityCentrePx, -1f, 1f);
             // directly above the strip: the window ends the strip gap over its reserved top, the rows on its bottom inset
             Assert.True(o.Inventory.Bottom <= o.Hotbar.Top + 0.01f);
-            Assert.InRange(o.Hotbar.Top - o.Inventory.Bottom, 0f, F("size.inv.strip.gap") * 1.01f);
+            Assert.InRange(o.Hotbar.Top - o.Inventory.Bottom, -0.01f, F("size.inv.strip.gap") + 0.01f);
             Assert.False(o.Player.ScrollV);
             Assert.Equal(3, o.Player.VisibleRows);
         }
@@ -309,6 +311,94 @@ namespace RuneSkin.Tests
             Assert.Equal(t.GridCell + t.GridGap, o.Player.Pitch, 2);
             Assert.InRange(o.Inventory.X + o.Inventory.W / 2f, 950f, 970f);
             Assert.True(o.Inventory.Bottom <= 1080f - t.Margin);
+        }
+
+        private static readonly System.Text.Json.JsonSerializerOptions PreviewJson = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+
+        // Offline preview (art/tools compare-inv): the 1080p layout of mockup A's state (backpack 6x3 over a reinforced
+        // chest 8x4, 1 ability, 3 foods, Z/V/B) as JSON, written only when RUNESKIN_INV_PREVIEW names the file.
+        [Fact]
+        public void ExportPreviewLayout()
+        {
+            var path = Environment.GetEnvironmentVariable("RUNESKIN_INV_PREVIEW");
+            if (string.IsNullOrEmpty(path)) return;
+            var t = Theme();
+            var sc = At(1920f, 1080f, 1f, 1, 3, 3);
+            var o = Run(sc, 8, 4, 6, 3, t: t);
+            float X(float stripX) => (sc.Left + stripX * sc.PxPerUnit) / sc.S;
+            var height = sc.L.Height * sc.PxPerUnit / sc.S;
+            var top = sc.H / sc.S - height;
+            object B(Box b) => new { b.X, b.Y, b.W, b.H };
+            object S(StripMath.Box b) => new { X = X(b.X), Y = top, W = b.W * sc.PxPerUnit / sc.S, H = height };
+            var pieces = new System.Collections.Generic.List<object>
+            {
+                new { Name = "panel_block_l", Box = S(sc.L.EndL) },
+                new { Name = "panel_hotbar", Box = S(sc.L.Hotbar) },
+                new { Name = "panel_ability", Box = S(new StripMath.Box(sc.L.AbilityX0, 0f, sc.L.AbilitySliceW, sc.L.Height)) },
+                new { Name = "panel_block_r", Box = S(sc.L.EndR) },
+                new { Name = "panel_food_in", Box = S(sc.L.WingL.Inner) },
+                new { Name = "panel_food_end", Box = S(sc.L.WingL.End) },
+                new { Name = "panel_potion_in", Box = S(sc.L.WingR.Inner) },
+                new { Name = "panel_potion_end", Box = S(sc.L.WingR.End) }
+            };
+            for (var k = 0; k < sc.L.WingL.Slots; k++) pieces.Add(new { Name = "panel_food_seg" + StripMath.SegArt(k, sc.L.WingL.Slots, 3), Box = S(sc.L.WingL.Seg(k)) });
+            for (var k = 0; k < sc.L.WingR.Slots; k++) pieces.Add(new { Name = "panel_potion_seg" + StripMath.SegArt(k, sc.L.WingR.Slots, 4), Box = S(sc.L.WingR.Seg(k)) });
+            float CellY(float stripY, float side) => sc.H / sc.S - (stripY + side) * sc.PxPerUnit / sc.S;
+            var cell = sc.In.Cell * sc.PxPerUnit / sc.S;
+            var hotbar = new System.Collections.Generic.List<object>();
+            for (var j = 0; j < 8; j++) hotbar.Add(B(new Box(X(StripMath.CellX(sc.L.HotbarX, j, sc.In.Cell, sc.L.Gap)), CellY(sc.L.CellsY, sc.In.Cell), cell, cell)));
+            var ab = sc.In.AbilityCell * sc.PxPerUnit / sc.S;
+            var ability = B(new Box(X(sc.L.AbilityLeft(0, sc.In.AbilityCell)), CellY(sc.L.CellsY - (sc.In.AbilityCell - sc.In.CellH) / 2f, sc.In.AbilityCell), ab, ab));
+            var potions = new System.Collections.Generic.List<object>();
+            for (var n = 0; n < sc.L.PotionShown; n++) potions.Add(B(new Box(X(sc.L.PotionLeft(n)), CellY(sc.L.PotionY, sc.L.PotionCell), sc.L.PotionCell * sc.PxPerUnit / sc.S, sc.L.PotionCell * sc.PxPerUnit / sc.S)));
+            var foods = new System.Collections.Generic.List<object>();
+            for (var n = 0; n < sc.L.FoodShown; n++) foods.Add(B(new Box(X(sc.L.FoodLeft(n)), CellY(sc.L.FoodY, sc.L.FoodCell), sc.L.FoodCell * sc.PxPerUnit / sc.S, sc.L.FoodCell * sc.PxPerUnit / sc.S)));
+            var bars = B(new Box(X(sc.L.BarsX), CellY(sc.L.BarsY, sc.L.BarsH), sc.L.BarsW * sc.PxPerUnit / sc.S, sc.L.BarsH * sc.PxPerUnit / sc.S));
+            var player = new System.Collections.Generic.List<object>();
+            for (var r = 0; r < o.Player.VisibleRows; r++)
+                for (var c = 0; c < o.Player.Columns; c++)
+                    player.Add(B(new Box(o.PlayerCellX(c), o.PlayerCellY(r), o.Player.Cell, o.Player.Cell)));
+            var plates = new System.Collections.Generic.List<object>();
+            for (var n = 0; n < 4; n++) plates.Add(B(o.SidePlate(n)));
+            var doll = new System.Collections.Generic.List<object>();
+            var left = new[] { "head", "chest", "legs", "back", "belt", "neck" };
+            var right = new[] { "ring", "ring", "light" };
+            for (var r = 0; r < left.Length; r++) doll.Add(new { Glyph = left[r], Box = B(new Box(o.DollLeftX, o.DollCellsY + r * o.DollGrid.Pitch, o.DollGrid.Cell, o.DollGrid.Cell)) });
+            for (var r = 0; r < right.Length; r++) doll.Add(new { Glyph = right[r], Box = B(new Box(o.DollRightX, o.DollCellsY + r * o.DollGrid.Pitch, o.DollGrid.Cell, o.DollGrid.Cell)) });
+            object Container(Box box, WindowGrid g)
+            {
+                var view = InventoryMath.ContainerGridView(box, g.Fit, t, 1f);
+                var x0 = view.X + InventoryMath.BlockOffset(view.W, g.VisibleColumns, g.Pitch, g.Pitch - g.Cell);
+                var cells = new System.Collections.Generic.List<object>();
+                for (var r = 0; r < g.VisibleRows; r++)
+                    for (var c = 0; c < g.VisibleColumns; c++)
+                        cells.Add(B(new Box(x0 + c * g.Pitch, view.Y + r * g.Pitch, g.Cell, g.Cell)));
+                return new { Box = B(box), View = B(view), Actions = B(InventoryMath.ActionRow(box, t, 1f)), Header = B(new Box(box.X + t.PanelPad, box.Y + t.PanelPad / 2f, box.W - 2f * t.PanelPad, t.PanelHeaderH - t.PanelPad / 2f)), Cells = cells, g.ScrollH, g.Columns, g.VisibleColumns };
+            }
+            var json = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                Inventory = B(o.Inventory),
+                InventoryHeader = B(o.InventoryHeader),
+                Player = player,
+                Plates = plates,
+                Doll = B(o.Doll),
+                DollHeader = B(o.DollHeader),
+                DollFigure = B(o.DollFigure),
+                DollPreview = B(o.DollPreview),
+                DollCells = doll,
+                Backpack = Container(o.Backpack, o.BackpackGrid),
+                Chest = Container(o.Chest, o.ChestGrid),
+                Crafting = B(o.Crafting),
+                Strip = pieces,
+                Hotbar = hotbar,
+                Ability = ability,
+                Potions = potions,
+                Foods = foods,
+                Bars = bars,
+                StripTop = top,
+                o.Hotbar.Top
+            }, PreviewJson);
+            System.IO.File.WriteAllText(path, json);
         }
 
         [Fact]

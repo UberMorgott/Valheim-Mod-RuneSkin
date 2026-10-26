@@ -13,6 +13,7 @@
 //	go run ./art/tools compare-m6       art/review/compare-{build,trader,text,load,ship,dialogs,groups}-m6.png
 //	go run ./art/tools compare-eb ME MB BLOOD OUT  enemy-b tiers + boss-c bar from the sprites next to the mockups
 //	go run ./art/tools compare-m7       art/review/compare-{ench,board,modhud,groups}-m7.png
+//	go run ./art/tools compare-inv LAYOUT.json MOCKUP.png OUT.png  windowed inventory (inv-layout-A) from the layout math
 //	go run ./art/tools sheet           art/review/contact-sheet.png
 //	go run ./art/tools zoom IN x,y,w,h SCALE OUT    inspection crop
 //	go run ./art/tools sample IN x,y [x,y...]       print pixel hex
@@ -94,6 +95,8 @@ func main() {
 		cmdCompareHud4()
 	case "compare-gauges":
 		cmdCompareGauges()
+	case "compare-inv":
+		cmdCompareInv(os.Args[2:])
 	case "compare-panel":
 		cmdComparePanel(os.Args[2:])
 	case "paint4":
