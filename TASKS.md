@@ -593,7 +593,13 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
 
 Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.text.readable` / `size.text.hud.min`) and `<prefix>-two-fonts` (only PT Sans Regular/Bold + Valheim-Norsebold) gate the pre-world screens (m5) only; every other screen reports its offenders as `otherTracks` (PASS). Owners fix these in their tracks:
 
-- [ ] Below 16 px (smallest seen, screens):
+- [ ] Below 16 px (smallest seen, screens). Still reported in the latest runs (20261023-132956 m6 / m6c / m7, 20261024-180235
+      info, -184003 m3, -213803 m2). Plan (Codex chat fb40c2e3, 2026-10-26): no blanket ReadableSweep on in-world roots
+      (no Selectable / LayoutGroup does not prove free room); floor only explicitly allowed roles whose container wraps or
+      grows, buttons / tabs / dropdowns / placeholders / fixed cells get per-screen container sizing (autosize min = floor
+      does not create room), crafting res_name excluded until the socket fits 2 lines at 16 px; text lists cached at
+      open / restyle (ForeignUi dirty pass), re-measured on scale / language / text change from the original size (no
+      accumulation). Own track with per-screen in-game iterations. Offenders:
   - `AchContainer/AchList/ListRoot/AchElement(Clone)/name` 9.8 px (m7)
   - `Almanac/Tabs/Trophies/Selected/Text` 14 px (info)
   - `AvailableBountiesPanel/ItemList/ItemElement(Clone)/Rewards/RewardLabel` 14 px (m6c,m7)
@@ -723,7 +729,9 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
   - `TabContent/SacrificeContent/SacrificeItemList/SortDropdown/Label` 14 px (m7)
   - `TabContent/SacrificeContent/SacrificeItemList/SortDropdown/SortByLabel` 14 px (m7)
   - `TreasureMap/Panel/ItemList/ItemElement(Clone)/Name` 13 px (m6c,m7)
-- [ ] Faces outside the two-font theme (path:face, screens):
+- [ ] Faces outside the two-font theme (path:face, screens). 2026-10-26: HotKeyBar binding and Almanac placeholders no longer
+      reported (latest m1 / info runs); EnemyHud Alerted / Aware marks take the name face + outline (EnemyHudSkin.AlertFace),
+      awaits final run ui-runeskin-m4 (m4-two-fonts otherTracks without HudBase(Clone)/Alerted):
   - `HUD/hudroot/HotKeyBar/HotKeyElement(Clone)/binding:Valheim-AveriaSansLibre` (m1,m4,m5,m6,m6b,m6c,m7)
   - `IngameGui/EnemyHud/HudRoot/HudBase(Clone)/Alerted:Valheim-AveriaSerifLibre` (m6)
   - `IngameGui/HUD/Almanac/SearchField (1)/Placeholder:AveriaSerifLibre-Regular` (info)

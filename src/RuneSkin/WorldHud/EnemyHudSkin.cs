@@ -180,6 +180,10 @@ namespace RuneSkin.WorldHud
                 Art.Note(text, boss ? "boss.name" : "enemy.name", ok, "enemy name (outlined)");
                 if (boss) BossPlaque(name as RectTransform);
             }
+            // Alert / aware marks (EnemyHud.cs:151-152 Find("Alerted") / Find("Aware"), TMP glyphs in the vanilla Averia
+            // face, run 20261023-161531 m4-two-fonts): the name's face and outline look, vanilla colour and size kept.
+            AlertFace(t.Find("Alerted"));
+            AlertFace(t.Find("Aware"));
             for (var i = 0; i < t.childCount; i++)
             {
                 var row = t.GetChild(i);
@@ -346,6 +350,18 @@ namespace RuneSkin.WorldHud
         // The enemy name sits centred right above the frame top (socket included), size.enemy.name.gap away: bottom-centre
         // pivot, bottom-centred one-line text, its bottom-centre placed explicitly over the Health centre (the prefab rect's
         // own offset / alignment no longer matter). Star rows move up by the name's lift, as before.
+        private static void AlertFace(Transform mark)
+        {
+            if (!mark) return;
+            foreach (var text in mark.GetComponentsInChildren<TMP_Text>(true))
+            {
+                var color = text.color;
+                var ok = TextLook.ApplyNameplate(text, "font.body.bold", "enemyname", ThemeTokens.GetFloat("size.enemy.name.dilate", 0.25f));
+                text.color = color;
+                Art.Note(text, "enemy.alert", ok, "alert / aware mark (name face + outline, vanilla colour)");
+            }
+        }
+
         private static void ClearName(Transform hud, RectTransform health, float frameTop)
         {
             var top = health.rect.yMax + frameTop + ThemeTokens.GetFloat("size.enemy.name.gap", 2f);
