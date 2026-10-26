@@ -92,6 +92,8 @@ func main() {
 		cmdCompareHud4()
 	case "compare-gauges":
 		cmdCompareGauges()
+	case "compare-panel":
+		cmdComparePanel(os.Args[2:])
 	case "paint4":
 		cmdPaint4(os.Args[2:])
 	case "compare-hud2-shot":

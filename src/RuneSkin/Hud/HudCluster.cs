@@ -123,14 +123,11 @@ namespace RuneSkin.PlayerHud
             _health.ShieldPerimeter = true;
             // Bar fills on the RuneSkin/UI Bar shader (user call 2026-10-23): glossy cylinder, straight-cut end, grey
             // missing part, lag ghost, shield sheen + perimeter glow; the sprite fills stay as the fallback.
-            // Target panel (user screenshot 2026-10-23): the bar block piece carries the channels - frameless bars.
-            if (HudStrip.Target)
-            {
-                _health.Frameless(ThemeTokens.GetFloat("size.hud.strip.bar.hp", 26f));
-                _stamina.Frameless(ThemeTokens.GetFloat("size.hud.strip.bar.row", 27f));
-                _eitr.Frameless(ThemeTokens.GetFloat("size.hud.strip.bar.row", 27f));
-                _adrenaline.Frameless(ThemeTokens.GetFloat("size.hud.strip.bar.row", 27f));
-            }
+            // The panel art carries the troughs (mockup bottom-hud-center-v2): frameless bars on the trough rects.
+            _health.Frameless(ThemeTokens.GetFloat("size.hud.strip.bar.hp", 26f));
+            _stamina.Frameless(ThemeTokens.GetFloat("size.hud.strip.bar.row", 27f));
+            _eitr.Frameless(ThemeTokens.GetFloat("size.hud.strip.bar.row", 27f));
+            _adrenaline.Frameless(ThemeTokens.GetFloat("size.hud.strip.bar.row", 27f));
             var barShader = ThemeTokens.BarShader;
             if (barShader && barShader.isSupported)
             {
@@ -139,18 +136,16 @@ namespace RuneSkin.PlayerHud
                 _eitr.UseShader(barShader, "color.hud.bar.fx.eitr", BarFxPool.Arcane);
                 _adrenaline.UseShader(barShader, "color.hud.bar.fx.adrenaline");
             }
-            // Target panel: the bar block piece is the outer frame only - each channel draws its own pill rim (the
-            // stamina | eitr split moves, so the rims cannot be baked into the block).
-            if (HudStrip.Target)
+            // Each channel draws its own pill rim (the stamina | eitr split moves, so the rims cannot be baked into the art).
             {
                 float rx = ThemeTokens.GetFloat("size.hud.strip7.rim.x", 4.3f), ry = ThemeTokens.GetFloat("size.hud.strip7.rim.y", 4.3f);
                 foreach (var b in new[] { _health, _stamina, _eitr, _adrenaline })
-                    b.Rim("sprite.hud.strip7.rim", HudStrip.FrameTint, rx, ry, ThemeTokens.GetFloat("share.hud.strip4.art", 1f));
+                    b.Rim("sprite.hud.strip7.rim", "color.hud.strip7.frame", rx, ry, ThemeTokens.GetFloat("share.hud.strip4.art", 1f));
             }
             _row[0] = _stamina;
             _row[1] = _eitr;
             _row[2] = _adrenaline;
-            _hudStrip.BuildRowDividers(_root); _plaque = HudArt.Rect("ConversionPlaque", _root);
+            _plaque = HudArt.Rect("ConversionPlaque", _root);
             var seal = _art.Image("Seal", _plaque, "sprite.hud.plaque.seal", "color.frame", Image.Type.Sliced);
             seal.rectTransform.anchorMin = Vector2.zero;
             seal.rectTransform.anchorMax = Vector2.one;
@@ -391,8 +386,16 @@ namespace RuneSkin.PlayerHud
             var hp = p.GetHealth();
             var hpC = p.GetMaxHealth();
             var hpB = Extension(ResourcePools.Health, p, hpC, out _);
-            CollectDots(p);
-            FrameOverlayOf(p, out var overlaySprite, out var overlayColor);
+            // Status visuals on the bars (frost ice / wet drips frame overlays, poison / fire / bleed / spirit DoT hatch
+            // stripes) are off by default (user 2026-10-24: they look bad for now; the effects still show as status
+            // icons); theme mode.hud.bar.status.fx 1 brings them back. (Ported from the unmerged rs-panelfix 63e1a8c.)
+            string overlaySprite = null, overlayColor = null;
+            if (ThemeTokens.GetFloat("mode.hud.bar.status.fx", 0f) > 0.5f)
+            {
+                CollectDots(p);
+                FrameOverlayOf(p, out overlaySprite, out overlayColor);
+            }
+            else _pending.Clear();
             _health.SetOuterWidth(_hpOuter);
             _health.Tick(dt);
             if (esMain)
@@ -452,10 +455,6 @@ namespace RuneSkin.PlayerHud
         private bool _adrenalineOn, _eitrOn;
         private float _barsInnerX, _barsInnerW, _hpY, _rowY;
 
-        private float BarsFullHeight() =>
-            ThemeTokens.GetFloat("size.hud.strip.bars.pad.t", 14f) + _health.Height + ThemeTokens.GetFloat("size.hud.strip.bar.gap", 12f) +
-            _stamina.Height + ThemeTokens.GetFloat("size.hud.strip.bars.pad.b", 16f);
-
         // Row weights ease toward presence (time.hud.row.slide): the split slides when eitr food is eaten / runs out.
         // Layout writes happen only while a weight moves or after a relayout (RowPlace), never otherwise.
         private void RowAnimate(float dt)
@@ -490,12 +489,9 @@ namespace RuneSkin.PlayerHud
             var gap = ThemeTokens.GetFloat("size.hud.strip.row.gap", 18f);
             // target panel: stamina | eitr channels of unequal length (share.hud.strip.row.<k> scales the weights)
             for (var k = 0; k < RowEntries; k++) _rowShare[k] = _rowWeight[k] * ThemeTokens.GetFloat("share.hud.strip.row." + k, 1f);
-            // the resource row ends size.hud.strip.row.pad.r short of the HP row (target: eitr channel ends 4.5 px before HP's)
-            var total = StripMath.RowSplit(Mathf.Max(0f, _barsInnerW - ThemeTokens.GetFloat("size.hud.strip.row.pad.r", 0f)), gap, _rowShare, RowEntries, _rowX, _rowW);
+            var total = StripMath.RowSplit(_barsInnerW, gap, _rowShare, RowEntries, _rowX, _rowW);
             var pxPerUnitY = _root.lossyScale.y;
             var y = HudMath.Snap(_rowY, pxPerUnitY);
-            var div = 0;
-            var prevEnd = -1f;
             for (var k = 0; k < RowEntries; k++)
             {
                 var w = _rowW[k];
@@ -515,16 +511,8 @@ namespace RuneSkin.PlayerHud
                     view.Root.anchoredPosition = new Vector2(_barsInnerX + _rowX[k], y);
                     view.Root.localScale = Vector3.one;
                 }
-                if (prevEnd >= 0f && div < HudStrip.MaxRowDividers && !HudStrip.Target)
-                    _hudStrip.RowDivider(div++, _barsInnerX + (prevEnd + _rowX[k]) / 2f, y, _stamina.Height, Mathf.Min(1f, _rowWeight[k]));
-                prevEnd = _rowX[k] + w;
             }
-            for (; div < HudStrip.MaxRowDividers; div++) _hudStrip.RowDivider(div, 0f, 0f, 0f, 0f);
             _halfOuter = total > 0f ? _rowW[0] : 0f;
-            // Frame: full with a resource row; without one it closes under the HP row (mockup hud-4M3-nostam).
-            var full = BarsFullHeight();
-            var shortH = ThemeTokens.GetFloat("size.hud.strip.bars.pad.t", 14f) + _health.Height + ThemeTokens.GetFloat("size.hud.strip.bars.pad.b", 16f);
-            _hudStrip.BarFrame(Mathf.Lerp(shortH, full, Mathf.Clamp01(total)));
         }
 
         // B for a vanilla pool: the provider's pre-reservation max when its C matches the game's max, else C.
@@ -640,10 +628,6 @@ namespace RuneSkin.PlayerHud
         // Geometry pass (inputs changed): strip layout, bars, scale and screen placement.
         private void Relayout()
         {
-            // Bar block (mockup hud-4M3): fixed full height (HP row + resource row) so the hotbar block never moves; a
-            // missing resource row only shortens the frame (HudStrip.BarFrame).
-            var barsH = BarsFullHeight();
-            var plaqueOn = _plaque.gameObject.activeSelf;
             // Screen box and scale: reference px x HUD scale (font floors win), times the configured strip height
             // over the natural one; the width is a share of the box in screen px, converted to strip units.
             var safe = ResponsiveContext.SafeArea;
@@ -652,39 +636,33 @@ namespace RuneSkin.PlayerHud
                 ThemeTokens.GetFloat("size.hud.font.number", 16f), ThemeTokens.GetFloat("floor.text.number.px", 14f),
                 ThemeTokens.GetFloat("size.hud.font.timer", 13f), ThemeTokens.GetFloat("floor.text.timer.px", 12f));
             // User call 2026-10-23: the hotbar cell IS an inventory grid cell (one token size.slot, the inventory's skin
-            // scale and the GUI canvas scale), every other piece keeps its hud-4M3 proportion to that cell (uniform scale);
-            // the width is HudStrip.Width of the box and only the wings' straight rails stretch to fill it.
+            // scale and the GUI canvas scale), every other piece keeps its mockup proportion to that cell (uniform scale);
+            // the width is HudStrip.Width of the box (the space budget the wings may grow into).
             var slotPx = StripMath.SlotPx(ThemeTokens.GetFloat("size.slot", 70f), ResponsiveContext.SkinScale, SlotCanvasScale());
             _pxPerUnit = StripMath.UnitPx(slotPx, ThemeTokens.GetFloat("size.hud.strip.cell", 85f));
             var widthPx = StripMath.WidthPx(boxW, Plugin.StripWidth?.Value ?? 1f);
-            var input = _hudStrip.Input(widthPx / _pxPerUnit, barsH);
+            var input = _hudStrip.Input(widthPx / _pxPerUnit);
             var l = StripMath.Compute(input);
             _hudStrip.Apply(l, input);
 
-            // HP row at the top of the bar block, the resource row under it.
-            var padT = ThemeTokens.GetFloat("size.hud.strip.bars.pad.t", 14f);
-            var padX = ThemeTokens.GetFloat("size.hud.strip.bars.pad.x", 22f);
-            _barsInnerX = l.BarsX + padX;
-            _barsInnerW = Mathf.Max(0f, l.BarsW - padX - ThemeTokens.GetFloat("size.hud.strip.bars.pad.r", padX));
+            // Bars on the art's troughs: HP at the top of the bar box, the resource row at its bottom.
+            _barsInnerX = l.BarsX;
+            _barsInnerW = l.BarsW;
             _hpOuter = _barsInnerW;
             _health.SetOuterWidth(_barsInnerW);
             var pxPerUnitY = _root.lossyScale.y;
-            _hpY = l.BarsY + l.BarsH - padT - _health.Height;
+            _hpY = l.BarsY + l.BarsH - _health.Height;
             _health.Root.anchoredPosition = new Vector2(_barsInnerX, HudMath.Snap(_hpY, pxPerUnitY));
-            _rowY = _hpY - ThemeTokens.GetFloat("size.hud.strip.bar.gap", 12f) - _stamina.Height;
+            _rowY = l.BarsY;
             RowPlace();
-            _ = plaqueOn;
-            // Screen placement: centred in the box, the bottom margin above the safe area.
-            // Target panel (user 2026-10-23): flush with the screen bottom - the lowest frame edge (the end medallion tips
-            // under the wings) on the safe-area bottom, nothing clipped, no world under the panel.
-            var margin = HudStrip.Target ? 0f : ThemeTokens.GetFloat("size.hud.strip.margin", 8f) * s;
-            var bottom = safe.y + margin - (HudStrip.Target ? _hudStrip.FrameBottom * _pxPerUnit : 0f);
+            // Screen placement (user 2026-10-23): centred in the box, flush with the screen bottom - the panel's lowest
+            // opaque row (strip y 0) on the safe-area bottom, nothing clipped, no world under the panel.
+            var bottom = safe.y;
             var left = boxX + (boxW - widthPx) / 2f;
             PlaceAtScreen(_root, new Vector2(left, bottom), _pxPerUnit);
             // readable floors at this scale (run 20261023-191817: applied only when the status cell count changed, so a
             // resolution change kept the previous scale's floors - 720 timers 9.3 px < 14)
             TextFloors();
-            _stripWidth = input.Width;
             _statusBase = l.WingH + ThemeTokens.GetFloat("size.hud.strip.status.gap", 8f) + ThemeTokens.GetFloat("size.hud.status.pad", 6f);
             // The inventory docks on the strip top (InventoryMath keeps its standard gap above the HUD top).
             // The column panels' stacks reach size.panel.glass.inset beyond their box: counted, so the visible gap is
@@ -695,16 +673,16 @@ namespace RuneSkin.PlayerHud
             // Bottom-anchored HUD elements (build piece info, action bar, ship ladder, key hints ...) clear the drawn
             // strip top by size.hud.strip.clear.gap (StripClear).
             _stripTopPx = bottom + l.Height * _pxPerUnit;
-            // target panel: the drawn extent (end medallion to end medallion, centre wings), not the layout width
-            _stripLeftPx = HudStrip.Target ? left + _hudStrip.DrawnLeft * _pxPerUnit : left;
-            _stripRightPx = HudStrip.Target ? left + _hudStrip.DrawnRight * _pxPerUnit : left + widthPx;
+            // the drawn extent (end medallion to end medallion), not the layout width
+            _stripLeftPx = left + l.DrawnLeft * _pxPerUnit;
+            _stripRightPx = left + l.DrawnRight * _pxPerUnit;
             _clearGapPx = ThemeTokens.GetFloat("size.hud.strip.clear.gap", 12f) * s;
             _clear.SetStrip(_stripTopPx, _stripLeftPx, _stripRightPx, _clearGapPx);
             Plugin.Log.LogInfo($"[RuneSkin] HUD strip layout: width {widthPx:0}px origin ({left:0.##},{bottom:0.##})px slot {slotPx:0.#}px scale {_pxPerUnit:0.####} height {l.Height:0} units = {l.Height * _pxPerUnit:0} px " +
                                $"({100f * l.Height * _pxPerUnit / Mathf.Max(1f, Screen.height):0.0} % of {Screen.height}), food {l.FoodShown}/{_hudStrip.FoodCount} potions {l.PotionShown}/{_hudStrip.PotionCount} (wing fits {l.FoodMax}) abilities {_hudStrip.AbilityCount}{(l.Fits ? "" : " (tight)")}");
         }
 
-        private float _stripWidth, _statusBase;
+        private float _statusBase;
         private float _stripTopPx, _stripLeftPx, _stripRightPx, _clearGapPx;
         private readonly StripClear _clear = new StripClear();
 
@@ -843,30 +821,28 @@ namespace RuneSkin.PlayerHud
             if (_buffs.Root.gameObject.activeSelf != show) _buffs.Root.gameObject.SetActive(show);
             if (_strip.Root.gameObject.activeSelf != show) _strip.Root.gameObject.SetActive(show);
             if (!show) return;
-            var inset = ThemeTokens.GetFloat("size.hud.strip.knot", 70f) + pad;
-            // A row ends before the medallion (it rises over the wing next to the hotbar block): fewer cells a row, more rows.
-            var perRow = StripMath.StatusPerRow(Mathf.Clamp(Plugin.StatusPerRow?.Value ?? 10, 1, 30), cell, gap, _hudStrip.L.MedLX - inset - gap);
+            // A row fits between the strip edge and the centre's side: fewer cells a row, more rows.
+            var perRow = StripMath.StatusPerRow(Mathf.Clamp(Plugin.StatusPerRow?.Value ?? 10, 1, 30), cell, gap, SideLeft - pad);
             var rows = Mathf.Clamp(Plugin.StatusRows?.Value ?? 2, 1, 6);
             var rowW = StripMath.RowWidth(perRow, cell, gap);
             var buffsLeft = (Plugin.BuffSide?.Value ?? "Left") != "Right";
             var leftGroup = buffsLeft ? _buffs : _strip;
             var rightGroup = buffsLeft ? _strip : _buffs;
             leftGroup.Upward = rightGroup.Upward = true;
-            // target panel (centre wings): the groups hug the hotbar block's sides, growing outward like the wings
-            leftGroup.AlignRight = HudStrip.Target;
-            rightGroup.AlignRight = !HudStrip.Target;
+            // the groups hug the centre's sides, growing outward like the wings
+            leftGroup.AlignRight = true;
+            rightGroup.AlignRight = false;
             var budget = rows * (cell + gap);
             leftGroup.Arrange(rowW, budget);
             rightGroup.Arrange(rowW, budget);
-            var lp = new Vector2(HudStrip.Target ? SideLeft - leftGroup.Root.sizeDelta.x : inset, _statusBase);
+            var lp = new Vector2(SideLeft - leftGroup.Root.sizeDelta.x, _statusBase);
             if (leftGroup.Root.anchoredPosition != lp) leftGroup.Root.anchoredPosition = lp;
-            var rp = new Vector2(HudStrip.Target ? SideRight : _stripWidth - inset - rightGroup.Root.sizeDelta.x, _statusBase);
+            var rp = new Vector2(SideRight, _statusBase);
             if (rightGroup.Root.anchoredPosition != rp) rightGroup.Root.anchoredPosition = rp;
         }
-        // Status side areas of the target panel (strip units): the left group ends, the right one starts, a gap off the
-        // hotbar block's crest sides (StripMath MedLX / MedRX boxes, the hidden hotbar medallions' footprint).
-        private float SideLeft => _hudStrip.L.MedLX - StatusStrip.StripGap;
-        private float SideRight => _hudStrip.L.MedRX + ThemeTokens.GetFloat("size.hud.strip.med.r.w", ThemeTokens.GetFloat("size.hud.strip.med.w", 200f)) + StatusStrip.StripGap;
+        // Status side areas (strip units): the left group ends, the right one starts, a gap off the centre's sides.
+        private float SideLeft => _hudStrip.L.StatusL - StatusStrip.StripGap;
+        private float SideRight => _hudStrip.L.StatusR + StatusStrip.StripGap;
 
         // ---- inventory contract (InventorySkin) ------------------------------------------------------------------
 

@@ -8,43 +8,31 @@ using UnityEngine.UI;
 
 namespace RuneSkin.PlayerHud
 {
-    // The bottom HUD strip, mockup hud-4M3 (user approved 2026-10-22). Frame pieces are Codex redraws of the mockup at
-    // 4x (art\src\kit\cuts.json strip4_*): the two wings (9-slice, knot end-cap = fixed left border, rails tiled; the
-    // right wing is the left one mirrored), the bar block and the hotbar block (9-slice, braided borders tiled), the
-    // hotbar | ability divider, the two medallions (knot frame + the shared triquetra glyph sprite.ornament.triquetra)
-    // and the knot dividers between split resource bars. Hotbar = player inventory row 0 in 8 cells, abilities 1..2 from
-    // the RuneSkin.API ability registry (guardian power, Epic Loot set skill), food 0..N (capacity list "food", vanilla
-    // 3), potions 0..N (capacity list "potions" = MorgottTweaks PotionSlotCount, else the active EAQS quick cells). Counts
-    // are polled every frame (pull providers, cheap) and the geometry is recomputed only when one of them or the screen /
-    // config changed (LayoutKey); every cell write is change-only, cells are pooled, nothing allocates per frame.
+    // The bottom HUD panel, mockup bottom-hud-center-v2 (user approved 2026-10-26). The frame is the mockup's own
+    // food 3 / potion 4 row (Codex clean, art\src\kit\panel_row.png) cut into full-height column slices and laid edge to
+    // edge by StripMath: centre = left end | hotbar run | one ability slice per ability cell | right end; each wing =
+    // inner cap | one segment per slot (growing outward) | round end medallion. Hotbar = player inventory row 0 in 8
+    // cells, abilities 0..2 from the RuneSkin.API ability registry (guardian power, Epic Loot set skill), food = the
+    // eaten foods (vanilla Hud.UpdateFood), potions 0..N (capacity list "potions" = MorgottTweaks PotionSlotCount, else
+    // the active EAQS quick cells). Counts are polled every frame (pull providers, cheap) and the geometry is recomputed
+    // only when one of them or the screen / config changed (LayoutKey); every cell write is change-only, cells are
+    // pooled, nothing allocates per frame.
     public sealed class HudStrip
     {
         public const int HotbarCells = 8;
-        public const int MaxRowDividers = 3;
 
         private readonly HudArt _art;
         private readonly RectTransform _root, _back;
         private RectTransform _front;
-        private readonly Image _wingL, _wingR, _bars, _block, _divider, _endL, _endR, _knot2L, _knot2R;
-        // centre wings (target panel): tip / segments / outer end pieces per side (pre-cut wing art, StripMath.Wing)
-        private Image _tipPieceL, _tipPieceR, _outerPieceL, _outerPieceR;
-        private readonly RectTransform _wingBoxL, _wingBoxR;
-        private readonly List<Image> _segL = new List<Image>(4), _segR = new List<Image>(4);
-        private readonly Image _field, _capL, _capR, _tipL, _tipR;
+        // frame pieces: StripBack/WingLeft {Seg*, Inner, End}, StripBack/WingRight {...}, StripBack/Centre {BlockLeft,
+        // Hotbar, Ability*, BlockRight}
+        private readonly RectTransform _wingL, _wingR, _centre;
+        private readonly Image _innerL, _innerR, _endL, _endR, _blockL, _hotbarArt, _blockR;
+        private readonly List<Image> _segL = new List<Image>(4), _segR = new List<Image>(4), _abilityArt = new List<Image>(2);
 
-        // Target panel layout (mode.hud.strip.target, user screenshot 2026-10-23, strip-target/spec.md).
-        public static bool Target => ThemeTokens.GetFloat("mode.hud.strip.target", 0f) > 0.5f;
+        // Frame tint: the pieces are the mockup's own pixels (white = untinted).
+        public const string FrameTint = "color.hud.panel.frame";
 
-        // Frame tint: the target pieces are exact 4x crops of the reference, so no tint (run 20261023-191817: the shared
-        // #C9CBD0 frame tint darkened every piece to ~0.79, medallion / block / bars dE 16-19 vs ~3 offline).
-        public static string FrameTint => Target ? "color.hud.strip7.frame" : "color.hud.strip.frame";
-
-        // Right-side art of its own ("<token>.r"); without it the left piece is mirrored.
-        private static bool HasOwn(string token) => ThemeTokens.GetSprite(token + ".r");
-        private static string Own(string token) => HasOwn(token) ? token + ".r" : token;
-
-        private Image _medL, _medR, _glyphL, _glyphR;
-        private readonly Image[] _rowDiv = new Image[MaxRowDividers];
         private readonly StripCell[] _hotbar = new StripCell[HotbarCells];
         private readonly List<StripCell> _food = new List<StripCell>(5), _potions = new List<StripCell>(6), _abilities = new List<StripCell>(2);
         private readonly List<EaqsBridge.QuickInfo> _quick = new List<EaqsBridge.QuickInfo>(6);
@@ -61,82 +49,35 @@ namespace RuneSkin.PlayerHud
         public int AbilityCount { get; private set; }
         public StripMath.Layout L;
 
-        // Extra scale of the strip4 frame pieces (1: the cuts are 2x the mockup's px and ship at PPU 200 = 2 px per unit).
-        private static float ArtScale => ThemeTokens.GetFloat("share.hud.strip4.art", 1f);
-
         public HudStrip(HudArt art, RectTransform root)
         {
             _art = art;
             _root = root;
             _back = HudArt.Rect("StripBack", root);
-            // Draw order: wings (tucked under the centre) -> bar block -> hotbar block -> divider; the bars follow (HudCluster),
-            // then the medallions and the cells (BuildFront).
-            // Target panel extras: the composed centre wings (pre-cut pieces), end medallions over their outer ends, the bar
-            // block's inner diamonds as the one connector to each wing tip (user 2026-10-26, mockup bottom-hud-center-v2).
-            // block-tip rail caps: first = under the inner diamonds (Knot2) and the bar block's tips (composite gate of the pieces)
-            // rail extensions under the bar block tips (StripMath.TargetFrame CapL / CapR): the rail itself, tiled
-            _capL = Piece("RailCapLeft", _back, "sprite.hud.strip7.rail", Image.Type.Tiled);
-            _capR = Piece("RailCapRight", _back, Own("sprite.hud.strip7.rail"), Image.Type.Tiled);
-            // block-tip caps (target crops: rail glint + bead) over the rail ends, under the inner diamonds and the block tips
-            _tipL = Piece("TipCapLeft", _back, "sprite.hud.strip7.tipcap", Image.Type.Simple);
-            _tipR = Piece("TipCapRight", _back, Own("sprite.hud.strip7.tipcap"), Image.Type.Simple);
-            // centre wings (target panel, user 2026-10-26): "WingLeft" / "WingRight" = a box over the composed wing whose
-            // children are the pre-cut pieces (tip, segments, outer end); the whole-wing images serve the hud-4M3 strip
-            _wingL = Piece(Target ? "WingLeftWhole" : "WingLeft", _back, "sprite.hud.strip4.wing", Image.Type.Sliced);
-            _wingR = Piece(Target ? "WingRightWhole" : "WingRight", _back, ThemeTokens.GetSprite("sprite.hud.strip4.wing.r") ? "sprite.hud.strip4.wing.r" : "sprite.hud.strip4.wing", Image.Type.Sliced);
-            _wingBoxL = HudArt.Rect(Target ? "WingLeft" : "WingLeftParts", _back);
-            _wingBoxR = HudArt.Rect(Target ? "WingRight" : "WingRightParts", _back);
-            _tipPieceL = Piece("Tip", _wingBoxL, "sprite.hud.strip7.wing.tip", Image.Type.Simple);
-            _tipPieceR = Piece("Tip", _wingBoxR, "sprite.hud.strip7.wing.r.tip", Image.Type.Simple);
-            _outerPieceL = Piece("Outer", _wingBoxL, "sprite.hud.strip7.wing.outer", Image.Type.Simple);
-            _outerPieceR = Piece("Outer", _wingBoxR, "sprite.hud.strip7.wing.r.outer", Image.Type.Simple);
-            _wingBoxL.gameObject.SetActive(Target);
-            _wingBoxR.gameObject.SetActive(Target);
-            _endL = Piece("EndLeft", _back, "sprite.hud.strip7.end", Image.Type.Simple);
-            _endR = Piece("EndRight", _back, Own("sprite.hud.strip7.end"), Image.Type.Simple);
-            // small diamonds at the bar-block end of each rail run (target: diamonds at both rail ends)
-            _knot2L = Piece("Knot2Left", _back, "sprite.hud.strip7.knot2", Image.Type.Simple);
-            _knot2R = Piece("Knot2Right", _back, Own("sprite.hud.strip7.knot2"), Image.Type.Simple);
-            foreach (var img in new[] { _capL, _capR, _tipL, _tipR, _endL, _endR, _knot2L, _knot2R }) img.gameObject.SetActive(Target);
-            // always built like the other target pieces (run 20261023-191817: created only when the sprite resolved at
-            // construction -> never built in game, the scene showed between the HP and stamina channels)
-            // own tint token (color.hud.strip7.field): the 0.20.0 field art read ~27 % lighter than the target's metal (mean
-            // grey 31.2 vs 24.5, run 20261023-204838); the 0.20.1 plain field (no baked channels / sockets) is drawn at the
-            // target tone (mean ~24), tint white
-            _field = _art.Image("BarField", _back, "sprite.hud.strip7.field", Target ? "color.hud.strip7.field" : FrameTint, Image.Type.Simple);
-            _art.Track(_field, ArtScale);
-            _field.gameObject.SetActive(Target);
-            _bars = Piece("BarBlock", _back, "sprite.hud.strip4.bars", Image.Type.Sliced);
-            _block = Piece("HotbarBlock", _back, "sprite.hud.strip4.block", Image.Type.Sliced);
-            _divider = Piece("Divider", _back, "sprite.hud.strip4.divider", Image.Type.Simple);
+            // Draw order: wings, then the centre; the bars follow (HudCluster), then the cells (BuildFront). The slices
+            // butt edge to edge, so the order only matters at their anti-aliased silhouettes.
+            _wingL = HudArt.Rect("WingLeft", _back);
+            _wingR = HudArt.Rect("WingRight", _back);
+            _innerL = Piece("Inner", _wingL, "sprite.hud.panel.food.in");
+            _endL = Piece("End", _wingL, "sprite.hud.panel.food.end");
+            _innerR = Piece("Inner", _wingR, "sprite.hud.panel.potion.in");
+            _endR = Piece("End", _wingR, "sprite.hud.panel.potion.end");
+            _centre = HudArt.Rect("Centre", _back);
+            _blockL = Piece("BlockLeft", _centre, "sprite.hud.panel.block.l");
+            _hotbarArt = Piece("Hotbar", _centre, "sprite.hud.panel.hotbar");
+            _blockR = Piece("BlockRight", _centre, "sprite.hud.panel.block.r");
         }
 
-        private Image Piece(string name, Transform parent, string token, Image.Type type)
+        private Image Piece(string name, Transform parent, string token)
         {
-            var img = _art.Image(name, parent, token, FrameTint, type);
-            _art.Track(img, ArtScale);
+            var img = _art.Image(name, parent, token, FrameTint, Image.Type.Simple);
             return img;
         }
 
-        // Resource-row dividers (knots between split bars) live in the bar layer: HudCluster parents them after the bars.
-        public void BuildRowDividers(Transform parent)
-        {
-            for (var i = 0; i < MaxRowDividers; i++)
-            {
-                _rowDiv[i] = Piece("RowDivider" + i, parent, "sprite.hud.strip4.rowdiv", Image.Type.Simple);
-                _rowDiv[i].gameObject.SetActive(false);
-            }
-        }
-
-        // Medallions and cells over the bars and panels: created after the bar views (sibling order = draw order).
+        // Cells over the bars and panels: created after the bar views (sibling order = draw order).
         public void BuildFront()
         {
             _front = HudArt.Rect("StripCells", _root);
-            _medL = Piece("MedallionLeft", _front, "sprite.hud.strip4.medallion", Image.Type.Simple);
-            _medR = Piece("MedallionRight", _front, Own("sprite.hud.strip4.medallion"), Image.Type.Simple);
-            _glyphL = _art.Image("GlyphLeft", _medL.rectTransform, "sprite.ornament.triquetra", "color.ornament.glow", Image.Type.Simple);
-            _glyphR = _art.Image("GlyphRight", _medR.rectTransform, "sprite.ornament.triquetra", "color.ornament.glow", Image.Type.Simple);
-            _glyphL.preserveAspect = _glyphR.preserveAspect = true;
             for (var i = 0; i < HotbarCells; i++)
             {
                 _hotbar[i] = new StripCell(_art, _front, "Hotbar" + i, CellKind.Hotbar);
@@ -202,58 +143,54 @@ namespace RuneSkin.PlayerHud
             }
         }
 
+
         // ---- layout ----------------------------------------------------------------------------------------------
 
-        public StripMath.Input Input(float width, float barsH)
+        // Panel art geometry (theme size.hud.panel.*, art px = mockup 1080p px of the row; measured on panel_row.png).
+        private static float P(string name, float fallback) => ThemeTokens.GetFloat("size.hud.panel." + name, fallback);
+
+        private static StripMath.WingArt WingArt(string side, int arts) => new StripMath.WingArt
+        {
+            InnerW = P(side + ".in.w", 0f),
+            SegW = P(side + ".seg.w", 0f),
+            EndW = P(side + ".end.w", 0f),
+            SlotY = P(side + ".slot.y", 0f),
+            Arts = arts
+        };
+
+        public StripMath.Input Input(float width)
         {
             var cell = ThemeTokens.GetFloat("size.hud.strip.cell", 85f);
             return new StripMath.Input
             {
                 Width = width,
-                // Every slot cell is the same square (user call 2026-10-23): the inventory slot (HudCluster maps
-                // size.hud.strip.cell onto it), food / potion / ability included; wings spread gaps, never cells.
+                Unit = P("unit", 85f / 70f),
+                CenterDX = ThemeTokens.GetFloat("size.hud.strip.center.dx", 0f),
+                H = P("h", 162f),
+                EndLW = P("block.l.w", 0f),
+                HotbarW = P("hotbar.w", 0f),
+                AbilityW = P("ability.w", 0f),
+                EndRW = P("block.r.w", 0f),
+                // every hotbar cell is the inventory slot (HudCluster maps size.hud.strip.cell onto it)
                 Cell = cell,
                 CellH = cell,
-                Gap = ThemeTokens.GetFloat("size.hud.strip.gap", 11f),
-                ZoneGap = ThemeTokens.GetFloat("size.hud.strip.zone.gap", 34f),
-                BlockPadX = ThemeTokens.GetFloat("size.hud.strip.block.pad.x", 26f),
-                BlockPadT = ThemeTokens.GetFloat("size.hud.strip.block.pad.t", 16f),
-                BlockPadB = ThemeTokens.GetFloat("size.hud.strip.block.pad.b", 8f),
-                DurH = ThemeTokens.GetFloat("size.hud.strip.dur", 14f),
-                BarsH = barsH,
-                MinCenterW = ThemeTokens.GetFloat("size.hud.strip.min.bars", 700f),
-                WingH = ThemeTokens.GetFloat("size.hud.strip.wing.h", 130f),
-                KnotW = ThemeTokens.GetFloat("size.hud.strip.knot", 70f),
-                WingTuck = ThemeTokens.GetFloat("size.hud.strip.wing.tuck", 14f),
-                MedW = ThemeTokens.GetFloat("size.hud.strip.med.w", 200f),
-                MedH = ThemeTokens.GetFloat("size.hud.strip.med.h", 150f),
-                MedY = ThemeTokens.GetFloat("size.hud.strip.med.y", 172f),
-                MedTuck = ThemeTokens.GetFloat("size.hud.strip.med.tuck", 12f),
-                WingInnerY = WingInner(ThemeTokens.GetFloat("size.hud.strip.wing.h", 130f)),
+                AbilityCell = ThemeTokens.GetFloat("size.hud.strip.ability.cell", cell),
+                HotbarC0 = P("hotbar.c0", 0f),
+                HotbarPitch = P("hotbar.pitch", 0f),
+                AbilityC = P("ability.c", 0f),
+                CellsCY = P("cells.cy", 0f),
+                BarsL = P("bars.l", 0f),
+                BarsR = P("bars.r", 0f),
+                BarsB = P("bars.b", 0f),
+                BarsT = P("bars.t", 0f),
+                WingTop = P("wing.top", 0f),
+                FoodArt = WingArt("food", (int)ThemeTokens.GetFloat("count.hud.panel.food.arts", 1f)),
+                PotionArt = WingArt("potion", (int)ThemeTokens.GetFloat("count.hud.panel.potion.arts", 1f)),
+                FoodCell = ThemeTokens.GetFloat("size.hud.strip.food.size", cell),
+                PotionCell = ThemeTokens.GetFloat("size.hud.strip.potion.size", cell),
                 // the food disc sits above the timer band (StripCell.Size): half the band above the cell centre
-                FoodLift = cell * Mathf.Clamp(ThemeTokens.GetFloat("share.hud.strip.timer.band", 0.27f), 0f, 0.5f) / 2f,
-                BarsExtra = ThemeTokens.GetFloat("size.hud.strip.bars.extra", 0f),
-                CentreWings = Target,
-                CutL = Cut("wing.", true),
-                CutR = Cut("wing.r.", false),
-                JoinL = T7("wing.join", 36f),
-                JoinR = T7("wing.r.join", 36f),
-                EndPadL = T7("wing.x", 85f),
-                EndPadR = T7("wing.r.right", 60.5f),
-                CenterDX = ThemeTokens.GetFloat("size.hud.strip.center.dx", 0f),
-                MedRW = ThemeTokens.GetFloat("size.hud.strip.med.r.w", 0f),
-                MedRTuck = ThemeTokens.GetFloat("size.hud.strip.med.r.tuck", 0f),
-                FoodSize = ThemeTokens.GetFloat("size.hud.strip.food.size", 0f),
-                CellsDX = ThemeTokens.GetFloat("size.hud.strip.cells.dx", 0f),
-                AbilityCell = ThemeTokens.GetFloat("size.hud.strip.ability.cell", 0f),
+                FoodLift = ThemeTokens.GetFloat("size.hud.strip.food.size", cell) * Mathf.Clamp(ThemeTokens.GetFloat("share.hud.strip.timer.band", 0.27f), 0f, 0.5f) / 2f,
                 WingMax = (int)ThemeTokens.GetFloat("count.hud.strip.wing.max", 0f),
-                PotionSize = ThemeTokens.GetFloat("size.hud.strip.potion.size", 0f),
-                FoodCell = cell,
-                PotionCell = cell,
-                PotionH = cell,
-                TimerH = ThemeTokens.GetFloat("size.hud.strip.timer", 24f),
-                MinCell = ThemeTokens.GetFloat("size.hud.strip.wing.min", 52f),
-                SlotPad = ThemeTokens.GetFloat("size.hud.strip.slot.pad", 8f),
                 Hotbar = HotbarCells,
                 Abilities = AbilityCount,
                 Food = FoodCount,
@@ -261,53 +198,23 @@ namespace RuneSkin.PlayerHud
             };
         }
 
-        // Centre of the wing plate's inner area (between the top and bottom rails = the 9-slice top / bottom borders of
-        // the wing sprite), in strip units above the strip bottom; 0 = no sprite (StripMath uses the middle).
-        private static float WingInner(float wingH)
-        {
-            var s = ThemeTokens.GetSprite("sprite.hud.strip4.wing");
-            if (!s || s.rect.height <= 0f) return 0f;
-            var b = s.border; // (left, bottom, right, top) in sprite px
-            return wingH * (b.y + (s.rect.height - b.w)) / 2f / s.rect.height;
-        }
-
         public void Apply(in StripMath.Layout l, in StripMath.Input i)
         {
             L = l;
-            if (Target) TargetFrame(l);
-            else
-            {
-                Box(_wingL.rectTransform, 0f, 0f, l.LeftW, l.WingH, false);
-                Box(_wingR.rectTransform, l.RightX, 0f, l.RightW, l.WingH, true);
-            }
-            var lap = ThemeTokens.GetFloat("size.hud.strip.block.overlap", 6f);
-            Box(_block.rectTransform, l.CenterX, l.BlockY - lap, l.CenterW, l.BlockH + lap, false);
-            var divOn = AbilityCount > 0 && _divider.sprite;
-            if (_divider.gameObject.activeSelf != divOn) _divider.gameObject.SetActive(divOn);
-            if (divOn) Native(_divider, l.DividerX, l.CellsY - i.DurH, i.CellH + i.DurH, 0.5f);
-            Box(_medL.rectTransform, l.MedLX, l.MedY, i.MedW, i.MedH, false);
-            Box(_medR.rectTransform, l.MedRX, l.MedY, i.MedRW > 0f ? i.MedRW : i.MedW, i.MedH, !HasOwn("sprite.hud.strip4.medallion"));
-            Glyph(_glyphL, i.MedW, i.MedH);
-            Glyph(_glyphR, i.MedW, i.MedH);
-            if (_glyphL.gameObject.activeSelf == Target) { _glyphL.gameObject.SetActive(!Target); _glyphR.gameObject.SetActive(!Target); } // target medallion piece carries its glyph
-            // Target panel: no medallions at the hotbar block ends (user 2026-10-24) - the block's own crest ends close it.
-            // Only these two go: the end medallions the wing slots grow from are EndLeft / EndRight. MedLX / MedRX stay in
-            // the layout (status rows end there), no cell moves.
-            Show(_medL, !Target);
-            Show(_medR, !Target);
+            Frame(l, i);
             for (var n = 0; n < HotbarCells; n++)
             {
                 var c = _hotbar[n];
-                c.Size(i.Cell, i.CellH, i.DurH, false);
-                c.Place(StripMath.CellX(l.HotbarX, n, i.Cell, i.Gap), l.CellsY);
+                c.Size(i.Cell, i.CellH, ThemeTokens.GetFloat("size.hud.strip.dur", 10f), false);
+                c.Place(StripMath.CellX(l.HotbarX, n, i.Cell, l.Gap), l.CellsY);
             }
             Pool(_abilities, AbilityCount, "Ability", CellKind.Hotbar);
             for (var n = 0; n < AbilityCount; n++)
             {
                 var c = _abilities[n];
-                var ac = i.AbilityCell > 0f ? i.AbilityCell : i.Cell;
+                var ac = i.AbilityCell;
                 c.Size(ac, ac, 0f, false);
-                c.Place(StripMath.CellX(l.AbilityX, n, ac, i.Gap), l.CellsY - (ac - i.CellH) / 2f); // centred on the hotbar row
+                c.Place(l.AbilityLeft(n, ac), l.CellsY - (ac - i.CellH) / 2f); // centred on the hotbar row
                 c.Root.GetComponent<StripInput>().Ability = _abilityIndex[n];
             }
             Pool(_food, l.FoodShown, "Food", CellKind.Food);
@@ -325,151 +232,62 @@ namespace RuneSkin.PlayerHud
             }
         }
 
-        // Target panel frame (units = target px x 85 / 59, StripMath.TargetFrame): centre wings against the bar block's
-        // inner diamonds, end medallions over their outer ends, a rail from inside each wing tip under the block tip.
-        private static float T7(string name, float fallback) => ThemeTokens.GetFloat("size.hud.strip7." + name, fallback);
-
-        // Lowest frame edge in strip units (<= 0: the end medallion tips hang below the wings); HudCluster places the
-        // strip so this edge sits on the screen bottom.
-        public float FrameBottom { get; private set; }
-
-        private static readonly System.Func<string, float, float> T7Fn = T7;
-
-        // Wing art slices (centre wings) in source-art px of the whole wing piece (art\src\kit\strip7_wing_l / _r,
-        // cuts.json strip7_wing_*_tip / _seg / _outer cut at the same columns): wing.src.w / h = the art's size,
-        // wing.cut.* = cut columns, wing.slot.* = slot area centres (StripMath.WingCut).
-        private static StripMath.WingCut Cut(string p, bool innerRight) => new StripMath.WingCut
+        // Frame slices on their StripMath boxes; a wing without slots is not drawn at all.
+        private void Frame(in StripMath.Layout l, in StripMath.Input i)
         {
-            W = T7(p + "src.w", 0f),
-            H = T7(p + "src.h", 0f),
-            Tip = T7(p + "cut.tip", 0f),
-            Seg = T7(p + "cut.seg", 0f),
-            Outer = T7(p + "cut.outer", 0f),
-            SlotTip = T7(p + "slot.tip", 0f),
-            SlotSeg = T7(p + "slot.seg", 0f),
-            InnerRight = innerRight
-        };
+            Box(_centre, l.CenterX, 0f, l.CenterW, l.Height);
+            Place(_blockL, Local(l.EndL, l.CenterX));
+            Place(_hotbarArt, Local(l.Hotbar, l.CenterX));
+            Place(_blockR, Local(l.EndR, l.CenterX));
+            while (_abilityArt.Count < AbilityCount)
+            {
+                var a = Piece("Ability" + _abilityArt.Count, _centre, "sprite.hud.panel.ability");
+                a.transform.SetSiblingIndex(_blockR.transform.GetSiblingIndex());
+                _abilityArt.Add(a);
+            }
+            for (var n = 0; n < _abilityArt.Count; n++)
+            {
+                Show(_abilityArt[n], n < AbilityCount);
+                if (n < AbilityCount) Place(_abilityArt[n], new StripMath.Box(l.AbilityX0 + n * l.AbilitySliceW - l.CenterX, 0f, l.AbilitySliceW, l.Height));
+            }
+            WingPieces(l.WingL, _wingL, _innerL, _endL, _segL, "sprite.hud.panel.food.seg", i.FoodArt.Arts);
+            WingPieces(l.WingR, _wingR, _innerR, _endR, _segR, "sprite.hud.panel.potion.seg", i.PotionArt.Arts);
+        }
 
-        // Composed wing: tip, segments (pooled), outer end on their StripMath.Wing boxes; nothing for 0 slots.
-        private void WingPieces(in StripMath.WingRun r, RectTransform box, Image tip, Image outer, List<Image> segs, string segToken)
+        // Composed wing: inner cap, segments (pooled, each with its row slice StripMath.SegArt), end medallion.
+        private void WingPieces(in StripMath.WingRun r, RectTransform box, Image inner, Image end, List<Image> segs, string segToken, int arts)
         {
             var on = r.Slots > 0;
             if (box.gameObject.activeSelf != on) box.gameObject.SetActive(on);
             if (!on) return;
-            Box(box, r.X, 0f, r.Right - r.X, r.Tip.H, false);
-            // child boxes relative to the wing box (its pivot / anchors at the bottom-left)
-            Place(tip, Local(r.Tip, r.X), false);
-            Place(outer, Local(r.Outer, r.X), false);
-            while (segs.Count < r.Segs) segs.Add(Piece("Seg" + segs.Count, box, segToken, Image.Type.Simple));
-            for (var j = 0; j < segs.Count; j++)
+            Box(box, r.X, 0f, r.Right - r.X, r.Inner.H);
+            Place(inner, Local(r.Inner, r.X));
+            Place(end, Local(r.End, r.X));
+            while (segs.Count < r.Slots)
             {
-                Show(segs[j], j < r.Segs);
-                if (j < r.Segs) Place(segs[j], Local(r.Seg(j), r.X), false);
+                var s = Piece("Seg" + segs.Count, box, segToken + "0");
+                s.transform.SetSiblingIndex(0); // under the caps
+                segs.Add(s);
+            }
+            for (var k = 0; k < segs.Count; k++)
+            {
+                Show(segs[k], k < r.Slots);
+                if (k >= r.Slots) continue;
+                var token = segToken + StripMath.SegArt(k, r.Slots, arts);
+                var sprite = ThemeTokens.GetSprite(token);
+                if (sprite && segs[k].sprite != sprite) segs[k].sprite = sprite;
+                Place(segs[k], Local(r.Seg(k), r.X));
             }
         }
 
         private static StripMath.Box Local(in StripMath.Box b, float x0) => new StripMath.Box(b.X - x0, b.Y, b.W, b.H);
 
-        private void TargetFrame(in StripMath.Layout l)
-        {
-            var f = StripMath.TargetFrame(l, T7Fn);
-            FrameBottom = f.Bottom;
-            // drawn extent = the union of every shown wing-side piece and the bar block (with no wing the block's inner
-            // diamonds and rail extensions still reach past its box)
-            DrawnLeft = Mathf.Min(l.BarsX, Mathf.Min(f.Knot2L.X, f.CapL.W > 0f ? f.CapL.X : l.BarsX));
-            DrawnRight = Mathf.Max(l.BarsX + l.BarsW, Mathf.Max(f.Knot2R.Right, f.CapR.W > 0f ? f.CapR.Right : l.BarsX + l.BarsW));
-            if (f.EndL.W > 0f) DrawnLeft = Mathf.Min(DrawnLeft, f.EndL.X);
-            if (f.EndR.W > 0f) DrawnRight = Mathf.Max(DrawnRight, f.EndR.Right);
-            Place(_endL, f.EndL, false);
-            // the right end medallion (run 20261023-175632: never placed, it sat at the strip origin over the left one)
-            Place(_endR, f.EndR, !HasOwn("sprite.hud.strip7.end"));
-            Show(_endL, f.EndL.W > 0f);
-            Show(_endR, f.EndR.W > 0f);
-            // the whole-wing pieces give way to the composed wings
-            Show(_wingL, false);
-            Show(_wingR, false);
-            WingPieces(l.WingL, _wingBoxL, _tipPieceL, _outerPieceL, _segL, "sprite.hud.strip7.wing.seg");
-            WingPieces(l.WingR, _wingBoxR, _tipPieceR, _outerPieceR, _segR, "sprite.hud.strip7.wing.r.seg");
-            // tile phase: a tiled image tiles from its local left; the right rail is drawn mirrored so both tile outward
-            // from the block tips
-            Place(_capL, f.CapL, false);
-            Place(_capR, f.CapR, true);
-            foreach (var (img, h) in new[] { (_capL, f.CapL.H), (_capR, f.CapR.H) }) FitTile(img, h);
-            Place(_tipL, f.TipL, false);
-            Place(_tipR, f.TipR, !HasOwn("sprite.hud.strip7.tipcap"));
-            Show(_tipL, f.TipL.W > 0f);
-            Show(_tipR, f.TipR.W > 0f);
-            Place(_knot2L, f.Knot2L, false);
-            Place(_knot2R, f.Knot2R, !HasOwn("sprite.hud.strip7.knot2"));
-            Field(l);
-        }
-
-        // Drawn horizontal extent of the target panel in strip units (end medallion to end medallion, or the bar block
-        // when a side has no wing): HudCluster's keep-out box for the bottom HUD elements and the chat lift.
-        public float DrawnLeft { get; private set; }
-        public float DrawnRight { get; private set; }
-
-        // Tiled rail piece: one tile row fills the box height exactly (the band fit draws the rail taller than its sprite;
-        // tiles are sprite px x the tracked scale), so no second, cut tile row shows at the top.
-        private void FitTile(Image img, float h)
-        {
-            var s = img ? img.sprite : null;
-            if (!s || s.rect.height <= 0f || s.pixelsPerUnit <= 0f || h <= 0f) return;
-            _art.Track(img, h / (s.rect.height * 100f / s.pixelsPerUnit));
-        }
-
-        private static void Place(Image img, in StripMath.Box b, bool mirrored) => Box(img.rectTransform, b.X, b.Y, b.W, b.H, mirrored);
+        private static void Place(Image img, in StripMath.Box b) => Box(img.rectTransform, b.X, b.Y, b.W, b.H);
 
         private static void Show(Image img, bool on)
         {
             on = on && img.sprite;
             if (img.gameObject.activeSelf != on) img.gameObject.SetActive(on);
-        }
-
-        // The bar block's metal field under the channels (the bar-frame piece is only the outer frame; its interior is
-        // open): stretched over the block between its end knots, under the frame piece.
-        private void Field(in StripMath.Layout l)
-        {
-            if (!_field) return;
-            // the target's field band (x 522..1100, y 142..199 of the target) on its own rect inside the block
-            float fl = T7("field.l", 121f), fr = T7("field.r", 129.7f), fb = T7("field.b", 5.76f), ft = T7("field.t", 4.34f);
-            Box(_field.rectTransform, l.BarsX + fl, l.BarsY + fb, l.BarsW - fl - fr, l.BarsH - fb - ft, false);
-        }
-
-
-        // The bar block frame: its top is fixed under the hotbar block, its height follows the bar rows (no resource
-        // row: the frame closes right under the HP row and the space below shows the scene, mockup hud-4M3-nostam).
-        public void BarFrame(float height)
-        {
-            var top = L.BarsY + L.BarsH;
-            if (Target) height = L.BarsH; // the target's bar block is one fixed piece
-            Box(_bars.rectTransform, L.BarsX, top - height, L.BarsW, height, false);
-        }
-
-        // Knot divider i between split resource bars: centred at x (strip units), over the row [y, y + h]; hidden when
-        // h <= 0 (fewer entries).
-        public void RowDivider(int i, float x, float y, float h, float alpha)
-        {
-            if (i < 0 || i >= MaxRowDividers || !_rowDiv[i]) return;
-            var on = h > 0f && alpha > 0.01f && _rowDiv[i].sprite;
-            if (_rowDiv[i].gameObject.activeSelf != on) _rowDiv[i].gameObject.SetActive(on);
-            if (!on) return;
-            Native(_rowDiv[i], x, y, h, 0.5f);
-            if (!Mathf.Approximately(_rowDiv[i].canvasRenderer.GetAlpha(), alpha)) _rowDiv[i].canvasRenderer.SetAlpha(alpha);
-        }
-
-        // Triquetra glyph in the medallion's disc (sprite-relative centre / diameter, theme floats of the art).
-        private static void Glyph(Image g, float w, float h)
-        {
-            if (!g) return;
-            var rt = g.rectTransform;
-            rt.anchorMin = rt.anchorMax = Vector2.zero;
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            var d = h * ThemeTokens.GetFloat("share.hud.strip4.med.glyph", 0.42f);
-            var p = new Vector2(w * ThemeTokens.GetFloat("share.hud.strip4.med.disc.x", 0.58f), h * ThemeTokens.GetFloat("share.hud.strip4.med.disc.y", 0.5f));
-            if (rt.anchoredPosition != p) rt.anchoredPosition = p;
-            var s = new Vector2(d, d);
-            if (rt.sizeDelta != s) rt.sizeDelta = s;
         }
 
         private static string EaqsKey(string text) => string.IsNullOrEmpty(text) ? null : EpicLootBridge.Label(text);
@@ -622,27 +440,15 @@ namespace RuneSkin.PlayerHud
 
         public RectTransform HotbarRect(int i) => i >= 0 && i < HotbarCells && _hotbar[i] != null ? _hotbar[i].Root : null;
 
-        // Box with its bottom-left at (x, y); mirrored = flipped horizontally inside the same box (right wing / medallion).
-        private static void Box(RectTransform rt, float x, float y, float w, float h, bool mirrored)
+        // Box with its bottom-left at (x, y) in the parent's units.
+        private static void Box(RectTransform rt, float x, float y, float w, float h)
         {
             rt.anchorMin = rt.anchorMax = Vector2.zero;
-            var pivot = mirrored ? new Vector2(1f, 0f) : Vector2.zero;
-            if (rt.pivot != pivot) rt.pivot = pivot;
-            var scale = mirrored ? new Vector3(-1f, 1f, 1f) : Vector3.one;
-            if (rt.localScale != scale) rt.localScale = scale;
-            // Mirrored around the right edge pivot: the flipped box still covers [x, x + w].
+            if (rt.pivot != Vector2.zero) rt.pivot = Vector2.zero;
             var p = new Vector2(x, y);
             var s = new Vector2(Mathf.Max(0f, w), Mathf.Max(0f, h));
             if (rt.anchoredPosition != p) rt.anchoredPosition = p;
             if (rt.sizeDelta != s) rt.sizeDelta = s;
-        }
-
-        // Simple sprite at native aspect, height h, bottom at y, horizontal anchor share px of its width at x.
-        private static void Native(Image img, float x, float y, float h, float px)
-        {
-            var s = img.sprite;
-            var w = s ? h * s.rect.width / Mathf.Max(1f, s.rect.height) : 0f;
-            Box(img.rectTransform, x - w * px, y, w, h, false);
         }
     }
 }

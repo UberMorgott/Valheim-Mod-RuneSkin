@@ -77,7 +77,7 @@ namespace RuneSkin.Tests
             var f = ThemeJson.Parse(r.ReadToEnd());
             Assert.Empty(System.Array.FindAll(f.floats, x => x.token.StartsWith("sprite.", System.StringComparison.Ordinal)));
             Assert.Empty(System.Array.FindAll(f.sprites, x => !x.token.StartsWith("sprite.", System.StringComparison.Ordinal)));
-            Assert.Contains(f.sprites, x => x.token == "sprite.hud.strip7.field");
+            Assert.Contains(f.sprites, x => x.token == "sprite.hud.panel.hotbar");
         }
 
         // hud2 sharpness (batch201): the packed atlas pages ship mip bias 0 (the importer's -0.5 is lost in packing),

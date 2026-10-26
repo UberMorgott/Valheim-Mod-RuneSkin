@@ -8602,213 +8602,6 @@
       "atlas": "hires"
     },
     {
-      "name": "strip7_wing_l_tip",
-      "file": "strip7_wing_l_tip.png",
-      "size": [
-        272,
-        190
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.wing.tip",
-      "notes": "Centre wings (user 2026-10-26, mockup bottom-hud-center-v2): pre-cut piece of the wing art at the separator edges (theme size.hud.strip7.wing*.cut.*), composed per slot count by StripMath.Wing - left tip: inner pointed end + the innermost slot area",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_wing_l_seg",
-      "file": "strip7_wing_l_seg.png",
-      "size": [
-        207,
-        190
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.wing.seg",
-      "notes": "Centre wings (user 2026-10-26, mockup bottom-hud-center-v2): pre-cut piece of the wing art at the separator edges (theme size.hud.strip7.wing*.cut.*), composed per slot count by StripMath.Wing - left segment: strap separator + one slot area, repeated outward",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_wing_l_outer",
-      "file": "strip7_wing_l_outer.png",
-      "size": [
-        110,
-        190
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.wing.outer",
-      "notes": "Centre wings (user 2026-10-26, mockup bottom-hud-center-v2): pre-cut piece of the wing art at the separator edges (theme size.hud.strip7.wing*.cut.*), composed per slot count by StripMath.Wing - left outer end under the end medallion",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_wing_r_tip",
-      "file": "strip7_wing_r_tip.png",
-      "size": [
-        256,
-        190
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.wing.r.tip",
-      "notes": "Centre wings (user 2026-10-26, mockup bottom-hud-center-v2): pre-cut piece of the wing art at the separator edges (theme size.hud.strip7.wing*.cut.*), composed per slot count by StripMath.Wing - right tip: inner pointed end + the innermost slot area",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_wing_r_seg",
-      "file": "strip7_wing_r_seg.png",
-      "size": [
-        192,
-        190
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.wing.r.seg",
-      "notes": "Centre wings (user 2026-10-26, mockup bottom-hud-center-v2): pre-cut piece of the wing art at the separator edges (theme size.hud.strip7.wing*.cut.*), composed per slot count by StripMath.Wing - right segment: strap separator + one slot area, repeated outward",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_wing_r_outer",
-      "file": "strip7_wing_r_outer.png",
-      "size": [
-        134,
-        190
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.wing.r.outer",
-      "notes": "Centre wings (user 2026-10-26, mockup bottom-hud-center-v2): pre-cut piece of the wing art at the separator edges (theme size.hud.strip7.wing*.cut.*), composed per slot count by StripMath.Wing - right outer end (curved knot + the part under the end medallion)",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_wing_l",
-      "file": "strip7_wing_l.png",
-      "size": [
-        743,
-        190
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.wing_l",
-      "notes": "Target panel (user screenshot 2026-10-23, strip-target/spec.md): 4x piece wing-left by the mockup agent, 0.72 = 2.88 sprite px per target px (85 strip units per 59 px cell, 2 px per unit)",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_wing_r",
-      "file": "strip7_wing_r.png",
-      "size": [
-        789,
-        190
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.wing_r",
-      "notes": "Target panel: wing-right-v2 by the mockup agent (target x 1306..1580, the true right end under the end medallion; SSIM .933), 0.72 = 2.88 sprite px per target px",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_field",
-      "file": "strip7_field.png",
-      "size": [
-        1475,
-        138
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.field",
-      "notes": "Target panel bar block field band by the mockup agent (target x 522..1100, y 142..199; dE 2.11 on the visible strips), drawn on its own rect under the outer bar-frame piece",
-      "atlas": "strip"
-    },
-    {
       "name": "strip7_rim",
       "file": "strip7_rim.png",
       "size": [
@@ -8829,98 +8622,6 @@
       "fillCenter": false,
       "token": "hud.strip7.rim",
       "notes": "Target panel channel rim: Codex 4x repaint of the HP channel pill outline (dark border + teal line), interior transparent; 9-slice ends 96 source px, drawn around every bar (HP, stamina, eitr, adrenaline)",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_bars",
-      "file": "strip7_bars.png",
-      "size": [
-        2166,
-        184
-      ],
-      "border": {
-        "left": 236,
-        "bottom": 23,
-        "right": 253,
-        "top": 23
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Sliced",
-      "fillCenter": true,
-      "token": "hud.strip7.bars",
-      "notes": "Target panel (user screenshot 2026-10-23, strip-target/spec.md): 4x piece bar-frame by the mockup agent, 0.72 = 2.88 sprite px per target px (85 strip units per 59 px cell, 2 px per unit)",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_block",
-      "file": "strip7_block.png",
-      "size": [
-        1935,
-        282
-      ],
-      "border": {
-        "left": 130,
-        "bottom": 40,
-        "right": 130,
-        "top": 66
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Sliced",
-      "fillCenter": true,
-      "token": "hud.strip7.block",
-      "notes": "Target panel (user screenshot 2026-10-23, strip-target/spec.md): 4x piece hotbar-frame by the mockup agent, 0.72 = 2.88 sprite px per target px (85 strip units per 59 px cell, 2 px per unit)",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_medallion",
-      "file": "strip7_medallion.png",
-      "size": [
-        265,
-        230
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.medallion",
-      "notes": "Target panel (user screenshot 2026-10-23, strip-target/spec.md): 4x piece medallion by the mockup agent, 0.72 = 2.88 sprite px per target px (85 strip units per 59 px cell, 2 px per unit)",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_rail",
-      "file": "strip7_rail.png",
-      "size": [
-        276,
-        121
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Sliced",
-      "fillCenter": true,
-      "token": "hud.strip7.rail",
-      "notes": "Target panel (user screenshot 2026-10-23, strip-target/spec.md): 4x piece rail-tile by the mockup agent, 0.72 = 2.88 sprite px per target px (85 strip units per 59 px cell, 2 px per unit)",
       "atlas": "strip"
     },
     {
@@ -8967,190 +8668,6 @@
       "fillCenter": true,
       "token": "hud.strip7.socket_round",
       "notes": "Target panel (user screenshot 2026-10-23, strip-target/spec.md): 4x piece food-socket by the mockup agent, 0.72 = 2.88 sprite px per target px (85 strip units per 59 px cell, 2 px per unit)",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_medallion_hl",
-      "file": "strip7_medallion_hl.png",
-      "size": [
-        274,
-        248
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.medallion_hl",
-      "notes": "Target panel: 4x piece medallion-hotbar-l by the mockup agent (exact crop of the user's screenshot), 0.72 = 2.88 sprite px per target px",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_medallion_hr",
-      "file": "strip7_medallion_hr.png",
-      "size": [
-        308,
-        248
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.medallion_hr",
-      "notes": "Target panel: 4x piece medallion-hotbar-r by the mockup agent (exact crop of the user's screenshot), 0.72 = 2.88 sprite px per target px",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_end_r",
-      "file": "strip7_end_r.png",
-      "size": [
-        294,
-        242
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.end_r",
-      "notes": "Target panel: 4x piece medallion-end-r by the mockup agent (exact crop of the user's screenshot), 0.72 = 2.88 sprite px per target px",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_rail_r",
-      "file": "strip7_rail_r.png",
-      "size": [
-        294,
-        132
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Sliced",
-      "fillCenter": true,
-      "token": "hud.strip7.rail_r",
-      "notes": "Target panel: 4x piece rail-tile-r by the mockup agent (exact crop of the user's screenshot), 0.72 = 2.88 sprite px per target px",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_knot_in",
-      "file": "strip7_knot_in.png",
-      "size": [
-        86,
-        98
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7_knot_in",
-      "notes": "Target panel: inner rail diamond (bar-block end of the rail run), 4x crop by the mockup agent",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_knot_in_r",
-      "file": "strip7_knot_in_r.png",
-      "size": [
-        86,
-        98
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7_knot_in_r",
-      "notes": "Target panel: inner rail diamond (bar-block end of the rail run), 4x crop by the mockup agent",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_tipcap_l",
-      "file": "strip7_tipcap_l.png",
-      "size": [
-        63,
-        132
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7_tipcap_l",
-      "notes": "Target panel: block-tip rail cap left (target 428..450 x 148..194), 4x piece by the mockup agent; drawn under knot-inner-l + the bar block tip",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_tipcap_r",
-      "file": "strip7_tipcap_r.png",
-      "size": [
-        63,
-        132
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7_tipcap_r",
-      "notes": "Target panel: block-tip rail cap right (target 1178..1200 x 148..194), 4x piece by the mockup agent; drawn under knot-inner-r",
       "atlas": "strip"
     },
     {
@@ -9474,6 +8991,351 @@
       "token": "hud.gauge5.col.burst",
       "notes": "Track H r3: Codex repaint of the rs-C1 / rs-C2 gauge crops (strip5_tiles/prompt-G*.txt); staggered fill with sparks",
       "atlas": "hires"
+    },
+    {
+      "name": "panel_food_end",
+      "file": "panel_food_end.png",
+      "size": [
+        212,
+        324
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.panel.food.end",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 24..236 - left wing end: round triquetra medallion + its strap; placed edge to edge by StripMath (size.hud.panel.*)",
+      "atlas": "strip"
+    },
+    {
+      "name": "panel_food_seg2",
+      "file": "panel_food_seg2.png",
+      "size": [
+        165,
+        324
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.panel.food.seg2",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 236..401 - left wing segment, outermost food socket of the row (meets the end medallion); placed edge to edge by StripMath (size.hud.panel.*)",
+      "atlas": "strip"
+    },
+    {
+      "name": "panel_food_seg1",
+      "file": "panel_food_seg1.png",
+      "size": [
+        165,
+        324
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.panel.food.seg1",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 401..566 - left wing segment, middle food socket; placed edge to edge by StripMath (size.hud.panel.*)",
+      "atlas": "strip"
+    },
+    {
+      "name": "panel_food_seg0",
+      "file": "panel_food_seg0.png",
+      "size": [
+        165,
+        324
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.panel.food.seg0",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 566..731 - left wing segment, innermost food socket; placed edge to edge by StripMath (size.hud.panel.*)",
+      "atlas": "strip"
+    },
+    {
+      "name": "panel_food_in",
+      "file": "panel_food_in.png",
+      "size": [
+        43,
+        324
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.panel.food.in",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 731..774 - left wing inner cap: strap + nub against the bar block diamond; placed edge to edge by StripMath (size.hud.panel.*)",
+      "atlas": "strip"
+    },
+    {
+      "name": "panel_block_l",
+      "file": "panel_block_l.png",
+      "size": [
+        94,
+        324
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.panel.block.l",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 774..868 - centre left end: inner diamond, bar block end, hotbar block left crest; placed edge to edge by StripMath (size.hud.panel.*)",
+      "atlas": "strip"
+    },
+    {
+      "name": "panel_hotbar",
+      "file": "panel_hotbar.png",
+      "size": [
+        1246,
+        324
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.panel.hotbar",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 868..2114 - centre: the 8 hotbar wells over the HP / resource troughs; placed edge to edge by StripMath (size.hud.panel.*)",
+      "atlas": "strip"
+    },
+    {
+      "name": "panel_ability",
+      "file": "panel_ability.png",
+      "size": [
+        170,
+        324
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.panel.ability",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 2114..2284 - centre: one ability well (F) over the troughs, one slice per ability cell; placed edge to edge by StripMath (size.hud.panel.*)",
+      "atlas": "strip"
+    },
+    {
+      "name": "panel_block_r",
+      "file": "panel_block_r.png",
+      "size": [
+        104,
+        324
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.panel.block.r",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 2284..2388 - centre right end: hotbar block right crest, bar block end, inner diamond; placed edge to edge by StripMath (size.hud.panel.*)",
+      "atlas": "strip"
+    },
+    {
+      "name": "panel_potion_in",
+      "file": "panel_potion_in.png",
+      "size": [
+        59,
+        324
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.panel.potion.in",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 2388..2447 - right wing inner cap: nub + strap against the bar block diamond; placed edge to edge by StripMath (size.hud.panel.*)",
+      "atlas": "strip"
+    },
+    {
+      "name": "panel_potion_seg0",
+      "file": "panel_potion_seg0.png",
+      "size": [
+        127,
+        324
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.panel.potion.seg0",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 2447..2574 - right wing segment, innermost potion well; placed edge to edge by StripMath (size.hud.panel.*)",
+      "atlas": "strip"
+    },
+    {
+      "name": "panel_potion_seg1",
+      "file": "panel_potion_seg1.png",
+      "size": [
+        127,
+        324
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.panel.potion.seg1",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 2574..2701 - right wing segment, 2nd potion well; placed edge to edge by StripMath (size.hud.panel.*)",
+      "atlas": "strip"
+    },
+    {
+      "name": "panel_potion_seg2",
+      "file": "panel_potion_seg2.png",
+      "size": [
+        127,
+        324
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.panel.potion.seg2",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 2701..2828 - right wing segment, 3rd potion well; placed edge to edge by StripMath (size.hud.panel.*)",
+      "atlas": "strip"
+    },
+    {
+      "name": "panel_potion_seg3",
+      "file": "panel_potion_seg3.png",
+      "size": [
+        127,
+        324
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.panel.potion.seg3",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 2828..2955 - right wing segment, outermost potion well (meets the end medallion strap); placed edge to edge by StripMath (size.hud.panel.*)",
+      "atlas": "strip"
+    },
+    {
+      "name": "panel_potion_end",
+      "file": "panel_potion_end.png",
+      "size": [
+        181,
+        324
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.panel.potion.end",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice x 2955..3136 - right wing end: round triquetra medallion + its strap; placed edge to edge by StripMath (size.hud.panel.*)",
+      "atlas": "strip"
     }
   ]
 }

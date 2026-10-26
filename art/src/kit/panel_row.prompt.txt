@@ -1,0 +1,27 @@
+Task: produce a CLEAN, EMPTY, background-free sprite sheet of the approved Valheim bottom HUD panel, pixel-aligned to the approved mockup.
+
+Inputs (load with view_image):
+- D:\tmp\cx-runeskin\fresh\row-2x.png  (3160 x 368 RGB) = the user-APPROVED mockup's bottom row (3 foods, 4 potions), crop x 170..1750, y 676..860 of D:\tmp\cx-runeskin\mockups\bottom-hud-center-v2.png, upscaled 2x. THIS IS THE GROUND TRUTH: geometry, material, straps, rivets, ornament, colours.
+- D:\tmp\cx-runeskin\fresh\row-1x.png  (same crop at 1x).
+
+Output: D:\tmp\cx-runeskin\fresh\clean_row.png, RGBA, EXACTLY 3160 x 368, pixel-aligned 1:1 with row-2x.png.
+
+What the output must contain (the panel FRAME only, every frame pixel kept as in row-2x.png):
+1. Left wing: the round triquetra end medallion (with its strap), the wing plate with its three round food sockets, the strap + small cyan nub at its inner end.
+2. Centre block: the hotbar block (crest ends, straps, top/bottom bands) and the bar block under it with both side diamond connectors and their straps.
+3. Right wing: inner strap + nub, the plate with its four square potion cell wells, the right round triquetra end medallion with its strap.
+
+What must be REMOVED (replaced by the empty recessed interior the art shows elsewhere, e.g. hotbar cell 1 which is empty):
+- every item icon, key letter/number (1..8, F, Z, V, B, N), stack count, food timer text (20m / 25m) and the yellow food timer arcs;
+- the coloured rarity rims of hotbar cells 2..8 -> repaint each as the same thin teal-blue rim + dark well as empty cell 1;
+- the potion bottles, keys and counts -> empty dark wells with their teal rim (as the art's cell frame);
+- food icons -> empty dark round sockets with their dark metal socket ring;
+- the red HP bar, yellow stamina bar, purple eitr bar and their numbers -> empty dark recessed bar troughs (same channel shape, very dark slate, subtle inner bevel), the thin divider between stamina and eitr kept.
+- the blurred meadow background -> fully transparent (alpha 0). Soft anti-aliased silhouette edges, no halo / fringe of background colour.
+
+Method (use image_gen for ALL new pixels; python/PIL only for crop, resize, masking, compositing, checks - never draw art with code):
+- Keep the mockup's own pixels for every frame area that is not one of the removed elements (paste them from row-2x.png), so the frame stays 1:1.
+- Use image_gen edits (work in tiles / regions if needed, then composite back at the exact positions) to inpaint ONLY the removed areas: cell interiors, sockets, bar channels.
+- Alpha: derive the panel silhouette mask (e.g. an image_gen pass of the same crop on flat #FF00FF magenta background, keyed, or careful segmentation), refined so the frame edge matches row-2x.png. Background pixels alpha 0.
+- Verify with python and PRINT: output size; mean abs RGB difference vs row-2x.png over pixels with alpha > 250 that lie OUTSIDE the removed areas (must be < 4); fraction of the crop's border rows/columns that are transparent (top/bottom rows should be ~fully transparent except where the crest/medallion touch); count of pixels with alpha in (0,250).
+No text, no captions, no watermark. Save PNG (RGBA) to D:\tmp\cx-runeskin\fresh\clean_row.png. Also save the alpha mask alone as D:\tmp\cx-runeskin\fresh\clean_row_mask.png.
