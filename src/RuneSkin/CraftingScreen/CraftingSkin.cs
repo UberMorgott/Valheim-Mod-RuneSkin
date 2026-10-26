@@ -1369,7 +1369,7 @@ namespace RuneSkin.CraftingScreen
                 {
                     Geo.Place(_canvas, label.rectTransform, row.Button);
                     Label(label, TextAlignmentOptions.Center, o.Craft.H * 0.42f, 14f, upper: true);
-                    Condense(label);
+                    Condense(label, squeeze: false); // PlateLabelFit sets its margins in the label's local units: no x-scale
                     CraftGlyph(label, row.Button);
                 }
                 Amount(row, stepper);
@@ -1512,14 +1512,16 @@ namespace RuneSkin.CraftingScreen
             return CraftingMath.Inset(frame, insetX, insetY);
         }
         // Craft-row labels condensed like the approved mockup's caps: tighter tracking (size.craft.label.tracking, TMP
-        // em/100) and a horizontal glyph scale (share.craft.label.condense on the label's own localScale.x; Geo.Place sizes
-        // the rect in that scale, so the box stays the same on screen).
-        private static void Condense(TMP_Text t)
+        // em/100) and, on the centred margin-less labels (state text, cancel), a horizontal glyph scale
+        // (share.craft.label.condense on the label's localScale.x; Geo.Place sizes the rect in that scale). The craft
+        // label keeps scale 1: PlateLabelFit writes its margins (span right of the anvil) in the label's local units, so a
+        // scaled label would sit off-centre in that span (layout check button-skew).
+        private static void Condense(TMP_Text t, bool squeeze = true)
         {
             if (!t) return;
             var spacing = ThemeTokens.GetFloat("size.craft.label.tracking", -1f);
             if (!Mathf.Approximately(t.characterSpacing, spacing)) t.characterSpacing = spacing;
-            var sx = Mathf.Clamp(ThemeTokens.GetFloat("share.craft.label.condense", 0.88f), 0.6f, 1f);
+            var sx = squeeze ? Mathf.Clamp(ThemeTokens.GetFloat("share.craft.label.condense", 0.88f), 0.6f, 1f) : 1f;
             var s = t.rectTransform.localScale;
             if (!Mathf.Approximately(s.x, sx)) t.rectTransform.localScale = new Vector3(sx, s.y, s.z);
         }
