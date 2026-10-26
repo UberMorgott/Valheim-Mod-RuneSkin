@@ -73,10 +73,10 @@ namespace RuneSkin.Tests
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
-        public void HotbarCells_IndependentOfTheMedallions(bool grow)
+        public void HotbarCells_IndependentOfTheMedallions(bool centre)
         {
             var with = In();
-            with.GrowFromEnds = grow;
+            if (centre) Centre(ref with);
             var without = with;
             without.MedW = without.MedH = without.MedY = without.MedTuck = without.MedRW = without.MedRTuck = 0f;
             var a = StripMath.Compute(with);
@@ -163,34 +163,149 @@ namespace RuneSkin.Tests
             Assert.InRange(share, 0.15f, 0.3f);
         }
 
-        // Target panel (user 2026-10-23): fixed wing frame, slots grow from the outer medallions inwards with a fixed
-        // pitch, never past the connector knot; frame rects identical for 3 / 4 / 5 slots.
-        [Fact]
-        public void WingSlotsGrowFromTheMedallionsWithAFixedPitch()
+        // Shipped wing art cuts (theme size.hud.strip7.wing*.src / cut / slot, art px of strip7_wing_l / _r).
+        internal static readonly StripMath.WingCut CutL = new StripMath.WingCut { W = 1032f, H = 264f, Tip = 654f, Seg = 366f, Outer = 153f, SlotTip = 810f, SlotSeg = 534f, InnerRight = true };
+        internal static readonly StripMath.WingCut CutR = new StripMath.WingCut { W = 1096f, H = 264f, Tip = 362f, Seg = 629f, Outer = 910f, SlotTip = 239f, SlotSeg = 507f };
+
+        private static void Centre(ref StripMath.Input i)
         {
-            StripMath.Layout? first = null;
-            foreach (var n in new[] { 3, 4, 5 })
+            i.CentreWings = true;
+            i.CutL = CutL;
+            i.CutR = CutR;
+            i.WingH = 95f;
+            i.JoinL = 76f;
+            i.JoinR = 78f;
+            i.EndPadL = 85f;
+            i.EndPadR = 60.5f;
+            i.BarsExtra = 57.7f;
+            i.FoodSize = 75f;
+            i.PotionSize = 77.1f;
+            i.WingMax = 4;
+        }
+
+        // Centre wings (user 2026-10-26, mockup bottom-hud-center): each wing starts at a fixed join from the bar block
+        // and grows outward with its count; the inner end never moves, the outer end moves out by one segment per slot.
+        [Theory]
+        [InlineData(3000f)]
+        [InlineData(2600f)]
+        [InlineData(3400f)]
+        public void CentreWings_GrowOutwardFromTheBarBlock(float width)
+        {
+            float? lastL = null, lastR = null;
+            for (var n = 0; n <= 4; n++)
             {
-                var i = In(food: n, potions: n, width: 2200f);
-                i.GrowFromEnds = true;
-                i.BarsExtra = 60f;
-                i.ConnW = 40f;
+                var i = In(food: n, potions: n, width: width);
+                Centre(ref i);
                 var l = StripMath.Compute(i);
-                Assert.Equal(l.CenterX - 60f, l.BarsX, 3);
-                Assert.Equal(i.KnotW + i.SlotPad, l.FoodX, 3);
-                Assert.Equal(i.Cell + i.Gap, l.FoodStep, 3);
-                Assert.Equal(i.Width - i.KnotW - i.SlotPad, l.PotionX + l.PotionShown * i.Cell + (l.PotionShown - 1) * i.Gap, 3);
-                Assert.True(l.FoodX + l.FoodShown * l.FoodStep - i.Gap <= l.BarsX - i.ConnW / 2f + 0.01f);
-                Assert.Equal(System.Math.Min(n, l.FoodMax), l.FoodShown);
-                if (first is StripMath.Layout f)
+                Assert.Equal(n, l.FoodShown);
+                Assert.Equal(n, l.PotionShown);
+                Assert.Equal(l.BarsX - 76f, l.WingL.Inner, 2);
+                Assert.Equal(l.BarsX + l.BarsW + 78f, l.WingR.Inner, 2);
+                if (n == 0)
                 {
-                    Assert.Equal(f.LeftW, l.LeftW, 3);
-                    Assert.Equal(f.RightX, l.RightX, 3);
+                    Assert.Equal(0f, l.WingL.Right - l.WingL.X);
+                    Assert.Equal(0f, l.WingR.Right - l.WingR.X);
+                    continue;
                 }
-                first = l;
+                // inner end fixed at the block, the wing grows away from it
+                Assert.Equal(l.WingL.Inner, l.WingL.Right, 2);
+                Assert.Equal(l.WingR.Inner, l.WingR.X, 2);
+                if (lastL is float pl) Assert.Equal(l.WingL.SegW, pl - l.WingL.X, 2);
+                if (lastR is float pr) Assert.Equal(l.WingR.SegW, l.WingR.Right - pr, 2);
+                lastL = l.WingL.X;
+                lastR = l.WingR.Right;
+                // pieces abut: tip | segments | outer, no gap, no overlap
+                Assert.Equal(l.WingL.Tip.X, n > 1 ? l.WingL.Seg(0).Right : l.WingL.Outer.Right, 2);
+                Assert.Equal(l.WingL.X, l.WingL.Outer.X, 2);
+                Assert.Equal(l.WingR.Tip.Right, n > 1 ? l.WingR.Seg(0).X : l.WingR.Outer.X, 2);
+                Assert.Equal(l.WingR.Right, l.WingR.Outer.Right, 2);
+                // slots inside their wing, reading order left -> right, no overlap; the last food / first potion innermost
+                for (var k = 0; k < n; k++)
+                {
+                    var fx = l.FoodLeft(k);
+                    var px = l.PotionLeft(k);
+                    Assert.True(fx >= l.WingL.X && fx + l.FoodCell <= l.WingL.Right, $"food {k}/{n} {fx} in {l.WingL.X}..{l.WingL.Right}");
+                    Assert.True(px >= l.WingR.X && px + l.PotionCell <= l.WingR.Right, $"potion {k}/{n} {px} in {l.WingR.X}..{l.WingR.Right}");
+                    if (k > 0)
+                    {
+                        Assert.True(fx >= l.FoodLeft(k - 1) + l.FoodCell, $"food {k} overlaps");
+                        Assert.True(px >= l.PotionLeft(k - 1) + l.PotionCell, $"potion {k} overlaps");
+                    }
+                }
+                Assert.True(l.FoodLeft(n - 1) + l.FoodCell <= l.WingL.Inner && l.FoodLeft(n - 1) + l.FoodCell > l.WingL.Inner - l.WingL.Tip.W);
+                Assert.True(l.PotionLeft(0) >= l.WingR.Inner && l.PotionLeft(0) < l.WingR.Inner + l.WingR.Tip.W);
+                Assert.Equal(l.FoodLeft(0), l.FoodX, 2);
+                Assert.Equal(l.PotionLeft(0), l.PotionX, 2);
+                // symmetric about the strip centre within the art's own asymmetry (a few units)
+                var mid = width / 2f;
+                Assert.InRange((mid - l.WingL.Inner) - (l.WingR.Inner - mid), -10f, 10f);
             }
         }
 
+        // Slots sit on the art's slot areas: the tip's slot centre and each segment's (Codex review: no averaged pitch).
+        [Fact]
+        public void CentreWings_SlotsOnTheArtSlotAreas()
+        {
+            var r = StripMath.Wing(CutL, 3, 500f, 95f);
+            var s = 95f / 264f;
+            Assert.Equal(500f - (1032f - 810f) * s, r.SlotCenter(0), 3);
+            Assert.Equal(500f - ((1032f - 654f) + (654f - 534f)) * s, r.SlotCenter(1), 3);
+            Assert.Equal(r.SlotCenter(1) - (654f - 366f) * s, r.SlotCenter(2), 3);
+            var q = StripMath.Wing(CutR, 2, 100f, 95f);
+            Assert.Equal(100f + 239f * s, q.SlotCenter(0), 3);
+            Assert.Equal(100f + 507f * s, q.SlotCenter(1), 3);
+            Assert.Equal(100f + (362f + 267f + 186f) * s, q.Right, 3);
+            // source columns of the pre-cut pieces (cuts.json strip7_wing_*_tip / _seg / _outer)
+            Assert.Equal((654f, 378f, 366f, 288f, 0f, 153f), (r.TipSrc, r.TipSrcW, r.SegSrc, r.SegSrcW, r.OuterSrc, r.OuterSrcW));
+            Assert.Equal((0f, 362f, 362f, 267f, 910f, 186f), (q.TipSrc, q.TipSrcW, q.SegSrc, q.SegSrcW, q.OuterSrc, q.OuterSrcW));
+        }
+
+        // Counts clip to WingMax and to the strip (end medallion inside): a narrow strip shows fewer slots, never off-screen.
+        [Fact]
+        public void CentreWings_ClipToTheStrip()
+        {
+            var i = In(food: 9, potions: 9, width: 3400f);
+            Centre(ref i);
+            var l = StripMath.Compute(i);
+            Assert.Equal(4, l.FoodShown);
+            Assert.Equal(4, l.PotionShown);
+            Assert.False(l.Fits);
+            i = In(food: 4, potions: 4, width: 1300f);
+            Centre(ref i);
+            l = StripMath.Compute(i);
+            Assert.True(l.FoodShown < 4 && l.PotionShown < 4, $"{l.FoodShown} / {l.PotionShown}");
+            Assert.True(l.FoodShown == 0 || l.WingL.X - 85f >= 0f);
+            Assert.True(l.PotionShown == 0 || l.WingR.Right + 60.5f <= 1300f);
+        }
+
+        // 16:9 / 21:9 / 16:10 at the default GUI scale: food 0..3 and potions 0..4 fit the default strip (no clipping); a larger GUI scale grows the slot and the strip and may clip the outer slots (CentreWings_ClipToTheStrip).
+        [Theory]
+        [InlineData(1920, 1080, 1f)]
+        [InlineData(1280, 720, 1f)]
+        [InlineData(2560, 1080, 1f)]
+        [InlineData(3440, 1440, 1f)]
+        [InlineData(1920, 1200, 1f)]
+        [InlineData(2560, 1440, 1f)]
+        public void CentreWings_FitEveryAspect(int w, int h, float gui)
+        {
+            var canvas = System.Math.Min(w / 1920f, h / 1080f) * gui;
+            var unit = StripMath.UnitPx(StripMath.SlotPx(70f, 1f, canvas), 85f);
+            var box = w / (float)h >= 2.2f ? System.Math.Min(w, h * 16f / 9f) : w;
+            for (var f = 0; f <= 3; f++)
+                for (var p = 0; p <= 4; p++)
+                {
+                    // the shipped centre column: 8 hotbar cells + the guardian power cell (theme size.hud.strip.*)
+                    var i = In(abilities: 1, food: f, potions: p, width: StripMath.WidthPx(box, 1f) / unit);
+                    i.Cell = i.CellH = 85f;
+                    i.Gap = i.ZoneGap = 7.8f;
+                    i.BlockPadX = 67.4f;
+                    i.AbilityCell = 90.8f;
+                    i.MinCenterW = 760f;
+                    Centre(ref i);
+                    var l = StripMath.Compute(i);
+                    Assert.True(l.Fits, $"{w}x{h} gui {gui}: food {f} -> {l.FoodShown}, potions {p} -> {l.PotionShown} (width {i.Width:0})");
+                }
+        }
         [Fact]
         public void SkinScaleMovesBothTogether()
         {

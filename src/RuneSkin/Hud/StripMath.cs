@@ -34,10 +34,10 @@ namespace RuneSkin.PlayerHud
             public float WingInnerY;     // centre of the wing plate's inner area above the strip bottom (0 = WingH / 2)
             public float FoodLift;       // food disc centre above its cell centre (the timer band under the disc)
             public float BarsExtra;      // bar block reaches this far past the hotbar block on each side (target panel)
-            public float ConnW;          // connector knot over the wing | bar block joint (slots stop before its half)
-            public bool GrowFromEnds;    // target panel: fixed cells + fixed gap from the outer medallion inwards
-            public float WingGap;        // gap between wing slots in that mode (0 = Gap)
-            public float PotionStart, PotionGap; // right wing in that mode: margin from the right end / gap (0 = as food)
+            public bool CentreWings;     // target panel (user 2026-10-26): wings against the bar block, grown outward
+            public WingCut CutL, CutR;   // wing art slices in that mode (sprite px)
+            public float JoinL, JoinR;   // bar block side -> wing inner end (the wing-tip diamond + a short rail between)
+            public float EndPadL, EndPadR; // how far the end medallion reaches past the wing's outer end
             public float CenterDX;       // centre column offset from the strip middle (0; offline comparisons only)
             public float MedRW, MedRTuck; // right medallion width / tuck when its art differs from the left (0 = as left)
             public float FoodSize, PotionSize; // wing slot sides in that mode (target: round 52 px / square 53 px; 0 = Cell)
@@ -62,7 +62,86 @@ namespace RuneSkin.PlayerHud
             public float FoodX, FoodCell, FoodStep, FoodY;
             public float PotionX, PotionCell, PotionH, PotionStep, PotionY;
             public bool Fits;                            // false: centre + minimal wings exceed the width
-            public int FoodShown, PotionShown, FoodMax, PotionMax; // slots drawn / that fit before the connector knot
+            public int FoodShown, PotionShown, FoodMax, PotionMax; // slots drawn / that fit inside the strip
+            public WingRun WingL, WingR;                 // centre-wings mode: the composed wing pieces
+
+            // Left edge of food / potion cell i (reading order left -> right). Centre wings: the art's own slot
+            // centres (the last food at the left wing's inner end, the first potion at the right wing's); else a
+            // uniform row from FoodX / PotionX.
+            public float FoodLeft(int i) => WingL.Slots > 0 ? WingL.SlotCenter(WingL.Slots - 1 - i) - FoodCell / 2f : FoodX + i * FoodStep;
+            public float PotionLeft(int i) => WingR.Slots > 0 ? WingR.SlotCenter(i) - PotionCell / 2f : PotionX + i * PotionStep;
+        }
+
+        // Wing art slices (centre-wings mode), sprite px of the wing sprite (W x H): the tip piece (inner pointed end +
+        // the slot nearest the bar block), one segment (separator + one slot area, repeated per extra slot) and the outer
+        // end (under the end medallion). Cuts sit on the separators' outer edges, so tip -> segment and segment ->
+        // segment joins continue the art. Slot* = centre x of the tip's / segment's slot area. InnerRight: the inner end
+        // is the sprite's right edge (left wing); else its left edge (right wing).
+        public struct WingCut
+        {
+            public float W, H, Tip, Seg, Outer, SlotTip, SlotSeg;
+            public bool InnerRight;
+        }
+
+        // A composed wing in strip units: tip at the inner end, Segs segments outward, outer piece last. Source rects
+        // (art px, x0 / width) of the pre-cut pieces. Slot k (0 = nearest the bar block): k = 0 on the tip's own slot
+        // area, k >= 1 on segment k - 1's (Slot1 + (k - 1) * Step; Step < 0 for the left wing). X / Right = the extent.
+        public struct WingRun
+        {
+            public int Slots, Segs;
+            public Box Tip, Outer;
+            public float SegX, SegW;      // left edge of the first (innermost) segment, width of one
+            public float SegDX;           // offset from one segment to the next outward (-SegW left wing, +SegW right)
+            public float TipSrc, TipSrcW, SegSrc, SegSrcW, OuterSrc, OuterSrcW;
+            public float Slot0, Slot1, Step, X, Right, Inner;
+            public float SlotCenter(int k) => k <= 0 ? Slot0 : Slot1 + (k - 1) * Step;
+            public Box Seg(int j) => new Box(SegX + j * SegDX, Tip.Y, SegW, Tip.H);
+        }
+
+        // Pure: the wing for n slots with its inner end at innerX, drawn h units high (the art's own aspect).
+        public static WingRun Wing(in WingCut c, int n, float innerX, float h)
+        {
+            var r = new WingRun { Inner = innerX, X = innerX, Right = innerX };
+            if (n <= 0 || c.W <= 0f || c.H <= 0f) return r;
+            var s = h / c.H;
+            float tipLen, segLen, outLen, slotTip, inSeg;
+            if (c.InnerRight)
+            {
+                r.TipSrc = c.Tip; r.TipSrcW = c.W - c.Tip;
+                r.SegSrc = c.Seg; r.SegSrcW = c.Tip - c.Seg;
+                r.OuterSrc = 0f; r.OuterSrcW = c.Outer;
+                slotTip = c.W - c.SlotTip;
+                inSeg = c.Tip - c.SlotSeg;
+            }
+            else
+            {
+                r.TipSrc = 0f; r.TipSrcW = c.Tip;
+                r.SegSrc = c.Tip; r.SegSrcW = c.Seg - c.Tip;
+                r.OuterSrc = c.Outer; r.OuterSrcW = c.W - c.Outer;
+                slotTip = c.SlotTip;
+                inSeg = c.SlotSeg - c.Tip;
+            }
+            tipLen = r.TipSrcW; segLen = r.SegSrcW; outLen = r.OuterSrcW;
+            var dir = c.InnerRight ? -1f : 1f;
+            // outward interval [a, b] (sprite px from the inner end) -> box in strip units
+            Box Out(float a, float b) => dir < 0f ? new Box(innerX - b * s, 0f, (b - a) * s, h) : new Box(innerX + a * s, 0f, (b - a) * s, h);
+            r.Slots = n;
+            r.Segs = n - 1;
+            r.Tip = Out(0f, tipLen);
+            var first = Out(tipLen, tipLen + segLen);
+            r.SegX = first.X;
+            r.SegW = segLen * s;
+            r.SegDX = dir * segLen * s;
+            var outA = tipLen + (n - 1) * segLen;
+            r.Outer = Out(outA, outA + outLen);
+            var total = (outA + outLen) * s;
+            r.X = dir < 0f ? innerX - total : innerX;
+            r.Right = dir < 0f ? innerX : innerX + total;
+            // every slot on its own art slot area (Codex review: no averaged pitch): the tip's, then one per segment
+            r.Slot0 = innerX + dir * slotTip * s;
+            r.Slot1 = innerX + dir * (tipLen + inSeg) * s;
+            r.Step = dir * segLen * s;
+            return r;
         }
 
         public static float Zone(int n, float cell, float gap) => n > 0 ? n * cell + (n - 1) * Math.Max(0f, gap) : 0f;
@@ -130,42 +209,56 @@ namespace RuneSkin.PlayerHud
             o.Fits = o.CenterX >= i.KnotW + i.SlotPad && (i.Food == 0 || o.FoodCell >= i.FoodCell * 0.6f) && (i.Potions == 0 || o.PotionCell >= i.PotionCell * 0.6f);
             o.FoodShown = i.Food;
             o.PotionShown = i.Potions;
-            if (i.GrowFromEnds) GrowLayout(i, ref o);
+            if (i.CentreWings) CentreLayout(i, ref o);
             return o;
         }
 
-        // Target panel (user 2026-10-23): the wing frame is fixed; food slots start at the left medallion and grow
-        // rightward, potions start at the right medallion and grow leftward, fixed square cells and a fixed gap; a slot
-        // never reaches the connector knot over the wing | bar block joint (the count is clipped to what fits).
-        private static void GrowLayout(in Input i, ref Layout o)
+        // Target panel, centre wings (user 2026-10-26, mockups bottom-hud-center / -v2): each wing sits against the bar
+        // block (wing-tip diamond + a short rail between) and grows outward with its slot count; the end medallion caps
+        // the outer end. Slots keep reading order left -> right: the last food sits at the inner end of the left wing,
+        // the first potion at the inner end of the right wing. A count is clipped to what fits inside the strip (end
+        // medallion included) and to WingMax.
+        private static void CentreLayout(in Input i, ref Layout o)
         {
             var fc = i.FoodSize > 0f ? i.FoodSize : i.Cell;
             var pc = i.PotionSize > 0f ? i.PotionSize : i.Cell;
-            var g = i.WingGap > 0f ? i.WingGap : Math.Max(0f, i.Gap);
-            var start = i.KnotW + i.SlotPad;
-            var stop = o.BarsX - i.ConnW / 2f;
-            var pitch = fc + g;
-            var max = pitch > 0f ? Math.Max(0, (int)Math.Floor((stop - start + g) / pitch)) : 0;
-            if (i.WingMax > 0) max = Math.Min(max, i.WingMax);
-            o.FoodMax = max;
-            o.FoodShown = Math.Min(i.Food, max);
-            o.FoodCell = fc;
-            o.FoodStep = pitch;
-            o.FoodX = start;
-            // right wing mirrored: the last potion sits against the right medallion, earlier ones to its left
-            var ps = i.PotionStart > 0f ? i.PotionStart : start;
-            var pg = i.PotionGap > 0f ? i.PotionGap : g;
-            var pmax = pc + pg > 0f ? Math.Max(0, (int)Math.Floor((i.Width - ps - (o.BarsX + o.BarsW + i.ConnW / 2f) + pg) / (pc + pg))) : 0;
-            if (i.WingMax > 0) pmax = Math.Min(pmax, i.WingMax);
+            var innerL = o.BarsX - i.JoinL;
+            var innerR = o.BarsX + o.BarsW + i.JoinR;
+            var fmax = MaxSlots(i.CutL, innerL, i.WingH, i.WingMax, i.EndPadL, float.MaxValue);
+            var pmax = MaxSlots(i.CutR, innerR, i.WingH, i.WingMax, float.MinValue, i.Width - i.EndPadR);
+            o.FoodMax = fmax;
             o.PotionMax = pmax;
-            o.PotionShown = Math.Min(i.Potions, pmax);
+            o.FoodShown = Math.Min(Math.Max(0, i.Food), fmax);
+            o.PotionShown = Math.Min(Math.Max(0, i.Potions), pmax);
+            o.WingL = Wing(i.CutL, o.FoodShown, innerL, i.WingH);
+            o.WingR = Wing(i.CutR, o.PotionShown, innerR, i.WingH);
+            o.FoodCell = fc;
+            o.FoodStep = Math.Abs(o.WingL.Step);
             o.PotionCell = o.PotionH = pc;
-            o.PotionStep = pc + pg;
-            o.PotionX = i.Width - ps - o.PotionShown * pc - Math.Max(0, o.PotionShown - 1) * pg;
+            o.PotionStep = Math.Abs(o.WingR.Step);
+            o.FoodX = o.FoodShown > 0 ? o.FoodLeft(0) : innerL;      // leftmost food = the outermost slot
+            o.PotionX = o.PotionShown > 0 ? o.PotionLeft(0) : innerR;
+            o.LeftW = o.WingL.Right;
+            o.RightX = o.WingR.X;
+            o.RightW = o.WingR.Right - o.WingR.X;
             var inner = i.WingInnerY > 0f ? i.WingInnerY : i.WingH / 2f;
             o.FoodY = inner - fc / 2f - i.FoodLift;
             o.PotionY = inner - pc / 2f;
             o.Fits = o.FoodShown == i.Food && o.PotionShown == i.Potions;
+        }
+
+        // Slots that fit with the wing inside [lo, hi] (strip units; the end medallion's overhang already taken off).
+        private static int MaxSlots(in WingCut c, float inner, float h, int cap, float lo, float hi)
+        {
+            var limit = cap > 0 ? cap : 16;
+            var n = 0;
+            while (n < limit)
+            {
+                var r = Wing(c, n + 1, inner, h);
+                if (r.X < lo || r.Right > hi) break;
+                n++;
+            }
+            return n;
         }
         public struct Box
         {
@@ -184,55 +277,61 @@ namespace RuneSkin.PlayerHud
             public float Bottom;
         }
 
-        public static Frame TargetFrame(in Layout l, float width, Func<string, float, float> t7)
+        public static Frame TargetFrame(in Layout l, Func<string, float, float> t7)
         {
             var f = new Frame();
-            var w = width;
+            // Centre wings (user 2026-10-26): every wing-side piece hangs off the wing's inner end (StripMath.Wing) - the
+            // end medallion past its outer end (wing.x / wing.r.right = how far the medallion reaches beyond it), the
+            // wing-tip diamond at knot.dx / knot.r.dx from the inner end, the rail run from rail.dx / rail.r.dx to the bar
+            // block. No slots on a side = no wing, medallion, diamond or rail there (the block keeps its own tip art).
+            float wingH = t7("wing.h", 95f);
+            var wl = l.WingL;
+            var wr = l.WingR;
+            bool onL = wl.Slots > 0, onR = wr.Slots > 0;
             float endW = t7("end.w", 132.5f), endH = t7("end.h", 115.3f), endY = t7("end.y", -10f);
-            f.EndL = new Box(0f, endY, endW, endH);
             float endRW = t7("end.r.w", endW), endRH = t7("end.r.h", endH), endRY = t7("end.r.y", endY);
-            f.EndR = new Box(w - endRW, endRY, endRW, endRH);
-            float wingH = t7("wing.h", 95f), wingX = t7("wing.x", 85f), wingW = t7("wing.w", 371.7f), wingRW = t7("wing.r.w", 334.2f), wingRR = t7("wing.r.right", 111f);
-            f.WingL = new Box(wingX, 0f, wingW, wingH);
-            f.WingR = new Box(w - wingRR - wingRW, 0f, wingRW, wingH);
-            float knotX = t7("knot.x", 448f), knotW = t7("knot.w", 40.3f), knotY = t7("knot.y", 26f), knotH = t7("knot.h", 43.2f), knotRR = t7("knot.r.right", 436.5f);
-            f.KnotL = new Box(knotX, knotY, knotW, knotH);
+            float endPadL = t7("wing.x", 85f), endPadR = t7("wing.r.right", 60.5f);
+            f.EndL = onL ? new Box(wl.X - endPadL, endY, endW, endH) : new Box(wl.Inner, endY, 0f, endH);
+            f.EndR = onR ? new Box(wr.Right + endPadR - endRW, endRY, endRW, endRH) : new Box(wr.Inner, endRY, 0f, endRH);
+            f.WingL = new Box(wl.X, 0f, wl.Right - wl.X, wingH);
+            f.WingR = new Box(wr.X, 0f, wr.Right - wr.X, wingH);
+            float knotW = t7("knot.w", 40.3f), knotY = t7("knot.y", 26f), knotH = t7("knot.h", 43.2f);
             float knotRW = t7("knot.r.w", knotW), knotRH = t7("knot.r.h", knotH), knotRY = t7("knot.r.y", knotY);
-            f.KnotR = new Box(w - knotRR - knotRW, knotRY, knotRW, knotRH);
-            // Rail runs at the target's own scale (the piece stretched over the target's run: rail.x / rail.r.right), and
-            // a short stub of the same tileable rail under the whole wing-tip diamond up to the run's start: the
-            // diamond's art ends short of its box, so without it a gap showed between diamond and rail (run
-            // 20261023-175632; the run itself must not move or stretch: its wire pattern is pinned to the target).
+            f.KnotL = new Box(wl.Inner + t7("knot.dx", -8.7f), knotY, onL ? knotW : 0f, knotH);
+            f.KnotR = new Box(wr.Inner + t7("knot.r.dx", -34.6f), knotRY, onR ? knotRW : 0f, knotRH);
             // Rail rows (jointdiff / stripsim, runs 20261024-134656 vs -143631): the rail art is a crop of the target at its
-            // own scale (2 sprite px per unit), so its wire rows only land on the target's at that scale. Fitting its
-            // opaque rows onto the wing stub band (0.20.1 RailBand, x 1.21) moved the outer bright rows 2.8 target px out
-            // (157.4 -> 154.6, 184.6 -> 187.5) and every joint got worse (A 9.43 -> 13.54 dE76). The box is the sprite at
-            // native height on the target's rows (rail.y / rail.h; the left run uses the right rail's exact crop, whose
-            // band is the target's full 37 px - the left tile's cut lost ~5 px of its dark edge rows).
-            float railX = t7("rail.x", 486f), railRR = t7("rail.r.right", 474f), tuck = t7("rail.tuck", 6f);
+            // own scale (2 sprite px per unit), so its wire rows only land on the target's at that scale; the box is the
+            // sprite at native height on the target's rows (rail.y / rail.h). The run starts past the wing-tip diamond and
+            // ends tucked under the bar block.
+            float tuck = t7("rail.tuck", 6f);
             float railY = t7("rail.y", 15.8f), railH = t7("rail.h", 60.6f);
             float railRY = t7("rail.r.y", railY), railRH = t7("rail.r.h", railH);
-            f.RailL = new Box(railX, railY, l.BarsX + t7("rail.tuck.l", tuck) - railX, railH);
+            var railX = wl.Inner + t7("rail.dx", 29.3f);
+            f.RailL = new Box(railX, railY, onL ? l.BarsX + t7("rail.tuck.l", tuck) - railX : 0f, railH);
             var rx = l.BarsX + l.BarsW - tuck;
-            f.RailR = new Box(rx, railRY, w - railRR - rx, railRH);
+            f.RailR = new Box(rx, railRY, onR ? wr.Inner + t7("rail.r.dx", -26f) - rx : 0f, railRH);
             // Stubs: the same tileable rail from INSIDE the wing tip (rail.stub.wing under the tip's chevron, whose notches
             // are see-through - user crop 0.20.0: scene showing under the left tip) to the run. Tile phase: a stub / cap
             // abuts its run (no overlap) and starts its tiling at that joint (StubL / CapR are drawn mirrored, HudStrip),
             // so the wire pattern meets the run's first / last column instead of an arbitrary column (seam next to the
             // diamonds and the bar block tips).
             var inWing = t7("rail.stub.wing", 30f);
-            var stubL = Math.Min(f.KnotL.X, f.WingL.Right - inWing);
-            f.StubL = new Box(stubL, railY, railX - stubL, railH);
+            var stubL = Math.Min(f.KnotL.X, wl.Inner - inWing);
+            f.StubL = new Box(stubL, railY, onL ? railX - stubL : 0f, railH);
             var stubR = f.RailR.Right;
-            f.StubR = new Box(stubR, f.RailR.Y, Math.Max(f.KnotR.Right, f.WingR.X + inWing) - stubR, f.RailR.H);
+            f.StubR = new Box(stubR, f.RailR.Y, onR ? Math.Max(f.KnotR.Right, wr.Inner + inWing) - stubR : 0f, f.RailR.H);
             // rail extensions under the bar block's pointed ends: the same rail (its own y / height, tiled) runs on from the
             // rail end to rail.under units INSIDE the block, so the block tip and the inner diamond are drawn over a
             // continuous rail (user crops 0.20.0: separate tip caps of another height left a hard rectangular step and
             // see-through gaps next to the tip)
             var under = t7("rail.under", 24f);
-            var capLX = f.RailL.Right;
+            float k2dx = t7("knot2.dx", -21.6f), k2y = t7("knot2.y", 47.5f), k2w = t7("knot2.w", 30.5f), k2h = t7("knot2.h", 32.6f);
+            f.Knot2L = new Box(l.BarsX + k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h);
+            f.Knot2R = new Box(l.BarsX + l.BarsW - k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h);
+            // no wing on a side: the extension starts under the block's own inner diamond (no rail into the scene)
+            var capLX = onL ? f.RailL.Right : f.Knot2L.X;
             f.CapL = new Box(capLX, f.RailL.Y, Math.Max(0f, l.BarsX + under - capLX), f.RailL.H);
-            var capRR = f.RailR.X;
+            var capRR = onR ? f.RailR.X : f.Knot2R.Right;
             var capRX = l.BarsX + l.BarsW - under;
             f.CapR = new Box(capRX, f.RailR.Y, Math.Max(0f, capRR - capRX), f.RailR.H);
             // block-tip caps: exact crops of the target at the bar block tips (target 428..450 / 1178..1200 x 148..194: the
@@ -241,9 +340,6 @@ namespace RuneSkin.PlayerHud
             float tipY = t7("tipcap.y", 13f), tipW = t7("tipcap.w", 0f), tipH = t7("tipcap.h", 66.3f);
             f.TipL = new Box(l.BarsX + t7("tipcap.dx", -14.4f), tipY, tipW, tipH);
             f.TipR = new Box(l.BarsX + l.BarsW + t7("tipcap.r.dx", -17.3f), tipY, tipW, tipH);
-            float k2dx = t7("knot2.dx", -21.6f), k2y = t7("knot2.y", 47.5f), k2w = t7("knot2.w", 30.5f), k2h = t7("knot2.h", 32.6f);
-            f.Knot2L = new Box(l.BarsX + k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h);
-            f.Knot2R = new Box(l.BarsX + l.BarsW - k2dx - k2w / 2f, k2y - k2h / 2f, k2w, k2h);
             f.Bottom = Math.Min(0f, Math.Min(Math.Min(endY, endRY), Math.Min(f.RailL.Y, f.RailR.Y)));
             return f;
         }

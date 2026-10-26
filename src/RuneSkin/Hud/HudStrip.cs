@@ -25,7 +25,10 @@ namespace RuneSkin.PlayerHud
         private readonly HudArt _art;
         private readonly RectTransform _root, _back;
         private RectTransform _front;
-        private readonly Image _wingL, _wingR, _bars, _block, _divider, _railL, _railR, _knotL, _knotR, _endL, _endR, _iconHp, _iconSt, _iconEi, _knot2L, _knot2R;
+        private readonly Image _wingL, _wingR, _bars, _block, _divider, _railL, _railR, _knotL, _knotR, _endL, _endR, _knot2L, _knot2R;
+        // centre wings (target panel): tip / segments / outer end pieces per side (pre-cut wing art, StripMath.Wing)
+        private Image _tipPieceL, _tipPieceR, _outerPieceL, _outerPieceR;
+        private readonly List<Image> _segL = new List<Image>(4), _segR = new List<Image>(4);
         private readonly Image _field, _stubL, _stubR, _capL, _capR, _tipL, _tipR;
 
         // Target panel layout (mode.hud.strip.target, user screenshot 2026-10-23, strip-target/spec.md).
@@ -39,24 +42,6 @@ namespace RuneSkin.PlayerHud
         private static bool HasOwn(string token) => ThemeTokens.GetSprite(token + ".r");
         private static string Own(string token) => HasOwn(token) ? token + ".r" : token;
 
-        // Pool socket (whole round ring + glyph, own sprite): a circle of size.hud.strip7.socket.d centred on the target's
-        // icon box (icon.<name>.x / y / w / h). User crops 0.20.0: the old icon crops cut the ring and the field / frame
-        // art carried ring fragments (an eitr ring splitting the stamina row with no eitr).
-        private void Icon(Image img, string name, float barsX)
-        {
-            if (!img || !img.sprite) return;
-            var d = T7("socket.d", 37f);
-            var cx = barsX + T7(name + ".x", 0f) + T7(name + ".w", 0f) / 2f;
-            var cy = T7(name + ".y", 0f) + T7(name + ".h", 0f) / 2f;
-            Box(img.rectTransform, cx - d / 2f, cy - d / 2f, d, d, false);
-        }
-
-        // The eitr socket between stamina and eitr shows with the eitr channel (HudCluster.RowPlace).
-        public void EitrIcon(bool on)
-        {
-            on = on && Target && _iconEi.sprite;
-            if (_iconEi.gameObject.activeSelf != on) _iconEi.gameObject.SetActive(on);
-        }
         private Image _medL, _medR, _glyphL, _glyphR;
         private readonly Image[] _rowDiv = new Image[MaxRowDividers];
         private readonly StripCell[] _hotbar = new StripCell[HotbarCells];
@@ -100,6 +85,11 @@ namespace RuneSkin.PlayerHud
             _tipR = Piece("TipCapRight", _back, Own("sprite.hud.strip7.tipcap"), Image.Type.Simple);
             _wingL = Piece("WingLeft", _back, "sprite.hud.strip4.wing", Image.Type.Sliced);
             _wingR = Piece("WingRight", _back, ThemeTokens.GetSprite("sprite.hud.strip4.wing.r") ? "sprite.hud.strip4.wing.r" : "sprite.hud.strip4.wing", Image.Type.Sliced);
+            // centre wings (user 2026-10-26): composed from the pre-cut wing pieces, drawn where the whole wing was
+            _tipPieceL = Piece("WingLeftTip", _back, "sprite.hud.strip7.wing.tip", Image.Type.Simple);
+            _tipPieceR = Piece("WingRightTip", _back, "sprite.hud.strip7.wing.r.tip", Image.Type.Simple);
+            _outerPieceL = Piece("WingLeftOuter", _back, "sprite.hud.strip7.wing.outer", Image.Type.Simple);
+            _outerPieceR = Piece("WingRightOuter", _back, "sprite.hud.strip7.wing.r.outer", Image.Type.Simple);
             _endL = Piece("EndLeft", _back, "sprite.hud.strip7.end", Image.Type.Simple);
             _endR = Piece("EndRight", _back, Own("sprite.hud.strip7.end"), Image.Type.Simple);
             // the wing-tip diamonds over the rail run and the wing's tip stub (target: the diamond sits on top)
@@ -108,7 +98,7 @@ namespace RuneSkin.PlayerHud
             // small diamonds at the bar-block end of each rail run (target: diamonds at both rail ends)
             _knot2L = Piece("Knot2Left", _back, "sprite.hud.strip7.knot2", Image.Type.Simple);
             _knot2R = Piece("Knot2Right", _back, Own("sprite.hud.strip7.knot2"), Image.Type.Simple);
-            foreach (var img in new[] { _capL, _capR, _stubL, _stubR, _railL, _railR, _tipL, _tipR, _knotL, _knotR, _endL, _endR, _knot2L, _knot2R }) img.gameObject.SetActive(Target);
+            foreach (var img in new[] { _capL, _capR, _stubL, _stubR, _railL, _railR, _tipL, _tipR, _knotL, _knotR, _endL, _endR, _knot2L, _knot2R, _tipPieceL, _tipPieceR, _outerPieceL, _outerPieceR }) img.gameObject.SetActive(Target);
             // always built like the other target pieces (run 20261023-191817: created only when the sprite resolved at
             // construction -> never built in game, the scene showed between the HP and stamina channels)
             // own tint token (color.hud.strip7.field): the 0.20.0 field art read ~27 % lighter than the target's metal (mean
@@ -118,10 +108,6 @@ namespace RuneSkin.PlayerHud
             _art.Track(_field, ArtScale);
             _field.gameObject.SetActive(Target);
             _bars = Piece("BarBlock", _back, "sprite.hud.strip4.bars", Image.Type.Sliced);
-            _iconHp = Piece("IconHealth", _back, "sprite.hud.strip7.icon.hp", Image.Type.Simple);
-            _iconSt = Piece("IconStamina", _back, "sprite.hud.strip7.icon.st", Image.Type.Simple);
-            _iconEi = Piece("IconEitr", _back, "sprite.hud.strip7.icon.ei", Image.Type.Simple);
-            foreach (var img in new[] { _iconHp, _iconSt, _iconEi }) img.gameObject.SetActive(Target && img.sprite);
             _block = Piece("HotbarBlock", _back, "sprite.hud.strip4.block", Image.Type.Sliced);
             _divider = Piece("Divider", _back, "sprite.hud.strip4.divider", Image.Type.Simple);
         }
@@ -171,9 +157,9 @@ namespace RuneSkin.PlayerHud
 
         public void Counts(Player p)
         {
-            var foods = p.GetFoods();
-            var cap = FoodRowCapacity(p);
-            FoodCount = Mathf.Max(cap, foods.Count);
+            // One food cell per eaten food, like vanilla Hud.UpdateFood (a bar per Player.GetFoods() entry, the rest hidden):
+            // the food wing grows from the bar block outward as foods are eaten (user 2026-10-26).
+            FoodCount = p.GetFoods().Count;
             if (Time.unscaledTime >= _quickReadAt)
             {
                 _quickReadAt = Time.unscaledTime + 2f; // EAQS slot set changes only with its config / equipment
@@ -204,9 +190,6 @@ namespace RuneSkin.PlayerHud
             for (var i = 0; i < _quick.Count; i++) if (_quick[i].Active) n++;
             return n;
         }
-
-        private static int FoodRowCapacity(Player p) =>
-            Providers.TryCapacity("food", p, out var c) && c.Valid ? Mathf.Max(0, c.Count) : 3; // Player.m_maxFoods (Player.cs:330)
 
         public int LayoutKey()
         {
@@ -251,10 +234,13 @@ namespace RuneSkin.PlayerHud
                 // the food disc sits above the timer band (StripCell.Size): half the band above the cell centre
                 FoodLift = cell * Mathf.Clamp(ThemeTokens.GetFloat("share.hud.strip.timer.band", 0.27f), 0f, 0.5f) / 2f,
                 BarsExtra = ThemeTokens.GetFloat("size.hud.strip.bars.extra", 0f),
-                ConnW = ThemeTokens.GetFloat("size.hud.strip.conn", 0f),
-                WingGap = ThemeTokens.GetFloat("size.hud.strip.wing.gap", 0f),
-                PotionStart = ThemeTokens.GetFloat("size.hud.strip.potion.start", 0f),
-                PotionGap = ThemeTokens.GetFloat("size.hud.strip.potion.gap", 0f),
+                CentreWings = Target,
+                CutL = Cut("wing.", true),
+                CutR = Cut("wing.r.", false),
+                JoinL = T7("wing.join", 76f),
+                JoinR = T7("wing.r.join", 78f),
+                EndPadL = T7("wing.x", 85f),
+                EndPadR = T7("wing.r.right", 60.5f),
                 CenterDX = ThemeTokens.GetFloat("size.hud.strip.center.dx", 0f),
                 MedRW = ThemeTokens.GetFloat("size.hud.strip.med.r.w", 0f),
                 MedRTuck = ThemeTokens.GetFloat("size.hud.strip.med.r.tuck", 0f),
@@ -263,7 +249,6 @@ namespace RuneSkin.PlayerHud
                 AbilityCell = ThemeTokens.GetFloat("size.hud.strip.ability.cell", 0f),
                 WingMax = (int)ThemeTokens.GetFloat("count.hud.strip.wing.max", 0f),
                 PotionSize = ThemeTokens.GetFloat("size.hud.strip.potion.size", 0f),
-                GrowFromEnds = ThemeTokens.GetFloat("mode.hud.strip.wing.grow", 0f) > 0.5f,
                 FoodCell = cell,
                 PotionCell = cell,
                 PotionH = cell,
@@ -330,13 +315,13 @@ namespace RuneSkin.PlayerHud
             for (var n = 0; n < l.FoodShown; n++)
             {
                 _food[n].Size(l.FoodCell, 0f, true);
-                _food[n].Place(l.FoodX + n * l.FoodStep, l.FoodY);
+                _food[n].Place(l.FoodLeft(n), l.FoodY);
             }
             Pool(_potions, l.PotionShown, "Potion", CellKind.Potion);
             for (var n = 0; n < l.PotionShown; n++)
             {
                 _potions[n].Size(l.PotionCell, l.PotionH, 0f, false);
-                _potions[n].Place(l.PotionX + n * l.PotionStep, l.PotionY);
+                _potions[n].Place(l.PotionLeft(n), l.PotionY);
                 _potions[n].Key(n < _quick.Count ? EaqsKey(_quick[n].Key) : null);
             }
         }
@@ -351,19 +336,69 @@ namespace RuneSkin.PlayerHud
 
         private static readonly System.Func<string, float, float> T7Fn = T7;
 
+        // Wing art slices (centre wings) in source-art px of the whole wing piece (art\src\kit\strip7_wing_l / _r,
+        // cuts.json strip7_wing_*_tip / _seg / _outer cut at the same columns): wing.src.w / h = the art's size,
+        // wing.cut.* = cut columns, wing.slot.* = slot area centres (StripMath.WingCut).
+        private static StripMath.WingCut Cut(string p, bool innerRight) => new StripMath.WingCut
+        {
+            W = T7(p + "src.w", 0f),
+            H = T7(p + "src.h", 0f),
+            Tip = T7(p + "cut.tip", 0f),
+            Seg = T7(p + "cut.seg", 0f),
+            Outer = T7(p + "cut.outer", 0f),
+            SlotTip = T7(p + "slot.tip", 0f),
+            SlotSeg = T7(p + "slot.seg", 0f),
+            InnerRight = innerRight
+        };
+
+        // Composed wing: tip, segments (pooled), outer end on their StripMath.Wing boxes; nothing for 0 slots.
+        private void WingPieces(in StripMath.WingRun r, Image tip, Image outer, List<Image> segs, string segToken, string name)
+        {
+            var on = r.Slots > 0;
+            Show(tip, on);
+            Show(outer, on);
+            if (on)
+            {
+                Place(tip, r.Tip, false);
+                Place(outer, r.Outer, false);
+            }
+            while (segs.Count < r.Segs)
+            {
+                var img = Piece(name + "Seg" + segs.Count, _back, segToken, Image.Type.Simple);
+                img.transform.SetSiblingIndex(tip.transform.GetSiblingIndex()); // under the end medallions and diamonds
+                segs.Add(img);
+            }
+            for (var j = 0; j < segs.Count; j++)
+            {
+                Show(segs[j], j < r.Segs);
+                if (j < r.Segs) Place(segs[j], r.Seg(j), false);
+            }
+        }
+
         private void TargetFrame(in StripMath.Layout l)
         {
-            var f = StripMath.TargetFrame(l, l.RightX + l.RightW, T7Fn);
+            var f = StripMath.TargetFrame(l, T7Fn);
             FrameBottom = f.Bottom;
+            DrawnLeft = f.EndL.W > 0f ? f.EndL.X : l.BarsX;
+            DrawnRight = f.EndR.W > 0f ? f.EndR.Right : l.BarsX + l.BarsW;
             Place(_endL, f.EndL, false);
             // the right end medallion (run 20261023-175632: never placed, it sat at the strip origin over the left one)
             Place(_endR, f.EndR, !HasOwn("sprite.hud.strip7.end"));
-            Place(_wingL, f.WingL, false);
-            Place(_wingR, f.WingR, false);
+            Show(_endL, f.EndL.W > 0f);
+            Show(_endR, f.EndR.W > 0f);
+            // the whole-wing pieces give way to the composed wings
+            Show(_wingL, false);
+            Show(_wingR, false);
+            WingPieces(l.WingL, _tipPieceL, _outerPieceL, _segL, "sprite.hud.strip7.wing.seg", "WingLeft");
+            WingPieces(l.WingR, _tipPieceR, _outerPieceR, _segR, "sprite.hud.strip7.wing.r.seg", "WingRight");
             Place(_knotL, f.KnotL, false);
             Place(_knotR, f.KnotR, !HasOwn("sprite.hud.strip7.knot"));
             Place(_railL, f.RailL, false);
             Place(_railR, f.RailR, !HasOwn("sprite.hud.strip7.rail"));
+            Show(_railL, f.RailL.W > 0f);
+            Show(_railR, f.RailR.W > 0f);
+            Show(_stubL, f.StubL.W > 0f);
+            Show(_stubR, f.StubR.W > 0f);
             // tile phase: every stub / cap starts its tiling at the joint with its run (StripMath.TargetFrame); a tiled image
             // tiles from its local left, so the pieces left of a run (StubL, CapR) are drawn mirrored
             Place(_stubL, f.StubL, true);
@@ -377,16 +412,15 @@ namespace RuneSkin.PlayerHud
             Show(_tipR, f.TipR.W > 0f);
             Place(_knot2L, f.Knot2L, false);
             Place(_knot2R, f.Knot2R, !HasOwn("sprite.hud.strip7.knot2"));
-            // a wing slot grown onto the rail run hides the wing-tip diamond under it (the round socket would leave its
-            // corners peeking out)
-            Show(_knotL, !(l.FoodShown > 0 && StripMath.Covers(l.FoodX + (l.FoodShown - 1) * l.FoodStep, l.FoodCell, f.KnotL)));
-            Show(_knotR, !(l.PotionShown > 0 && StripMath.Covers(l.PotionX, l.PotionCell, f.KnotR)));
+            Show(_knotL, f.KnotL.W > 0f);
+            Show(_knotR, f.KnotR.W > 0f);
             Field(l);
-            // pool icons in the bar block (heart / lightning / eitr socket), placed from its left edge
-            Icon(_iconHp, "icon.hp", l.BarsX);
-            Icon(_iconSt, "icon.st", l.BarsX);
-            Icon(_iconEi, "icon.ei", l.BarsX);
         }
+
+        // Drawn horizontal extent of the target panel in strip units (end medallion to end medallion, or the bar block
+        // when a side has no wing): HudCluster's keep-out box for the bottom HUD elements and the chat lift.
+        public float DrawnLeft { get; private set; }
+        public float DrawnRight { get; private set; }
 
         // Tiled rail piece: one tile row fills the box height exactly (the band fit draws the rail taller than its sprite;
         // tiles are sprite px x the tracked scale), so no second, cut tile row shows at the top.
@@ -591,7 +625,7 @@ namespace RuneSkin.PlayerHud
             bottomLeft = default;
             side = 0f;
             if (i < 0 || i >= L.PotionShown) return false;
-            bottomLeft = new Vector2(L.PotionX + i * L.PotionStep, L.PotionY);
+            bottomLeft = new Vector2(L.PotionLeft(i), L.PotionY);
             side = Mathf.Min(L.PotionCell, L.PotionH);
             return true;
         }

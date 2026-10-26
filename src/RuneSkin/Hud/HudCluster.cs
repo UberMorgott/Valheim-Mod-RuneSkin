@@ -520,7 +520,6 @@ namespace RuneSkin.PlayerHud
                 prevEnd = _rowX[k] + w;
             }
             for (; div < HudStrip.MaxRowDividers; div++) _hudStrip.RowDivider(div, 0f, 0f, 0f, 0f);
-            _hudStrip.EitrIcon(_rowW.Length > 1 && _rowW[1] > 1f && _rowWeight[1] > 0.5f);
             _halfOuter = total > 0f ? _rowW[0] : 0f;
             // Frame: full with a resource row; without one it closes under the HP row (mockup hud-4M3-nostam).
             var full = BarsFullHeight();
@@ -696,8 +695,9 @@ namespace RuneSkin.PlayerHud
             // Bottom-anchored HUD elements (build piece info, action bar, ship ladder, key hints ...) clear the drawn
             // strip top by size.hud.strip.clear.gap (StripClear).
             _stripTopPx = bottom + l.Height * _pxPerUnit;
-            _stripLeftPx = left;
-            _stripRightPx = left + widthPx;
+            // target panel: the drawn extent (end medallion to end medallion, centre wings), not the layout width
+            _stripLeftPx = HudStrip.Target ? left + _hudStrip.DrawnLeft * _pxPerUnit : left;
+            _stripRightPx = HudStrip.Target ? left + _hudStrip.DrawnRight * _pxPerUnit : left + widthPx;
             _clearGapPx = ThemeTokens.GetFloat("size.hud.strip.clear.gap", 12f) * s;
             _clear.SetStrip(_stripTopPx, _stripLeftPx, _stripRightPx, _clearGapPx);
             Plugin.Log.LogInfo($"[RuneSkin] HUD strip layout: width {widthPx:0}px origin ({left:0.##},{bottom:0.##})px slot {slotPx:0.#}px scale {_pxPerUnit:0.####} height {l.Height:0} units = {l.Height * _pxPerUnit:0} px " +
@@ -857,11 +857,22 @@ namespace RuneSkin.PlayerHud
             var budget = rows * (cell + gap);
             leftGroup.Arrange(rowW, budget);
             rightGroup.Arrange(rowW, budget);
-            var lp = new Vector2(inset, _statusBase);
+            // target panel (centre wings): the groups hug the hotbar block's sides, growing outward like the wings
+            if (HudStrip.Target)
+            {
+                leftGroup.AlignRight = true;
+                rightGroup.AlignRight = false;
+            }
+            var lp = new Vector2(HudStrip.Target ? SideLeft - leftGroup.Root.sizeDelta.x : inset, _statusBase);
             if (leftGroup.Root.anchoredPosition != lp) leftGroup.Root.anchoredPosition = lp;
-            var rp = new Vector2(_stripWidth - inset - rightGroup.Root.sizeDelta.x, _statusBase);
+            var rp = new Vector2(HudStrip.Target ? SideRight : _stripWidth - inset - rightGroup.Root.sizeDelta.x, _statusBase);
             if (rightGroup.Root.anchoredPosition != rp) rightGroup.Root.anchoredPosition = rp;
         }
+        // Status side areas of the target panel (strip units): the left group ends, the right one starts, a gap off the
+        // hotbar block's crest sides (StripMath MedLX / MedRX boxes, the hidden hotbar medallions' footprint).
+        private float SideLeft => _hudStrip.L.MedLX - StatusStrip.StripGap;
+        private float SideRight => _hudStrip.L.MedRX + ThemeTokens.GetFloat("size.hud.strip.med.r.w", ThemeTokens.GetFloat("size.hud.strip.med.w", 200f)) + StatusStrip.StripGap;
+
         // ---- inventory contract (InventorySkin) ------------------------------------------------------------------
 
         // The strip stays at the bottom while the inventory is open (decisions 2026-10-22: the strip with its hotbar
@@ -927,11 +938,11 @@ namespace RuneSkin.PlayerHud
             // In the buff side area (mockup hud-3: side groups above the strip), over the buff rows.
             var buffsLeft = (Plugin.BuffSide?.Value ?? "Left") != "Right";
             var inset = ThemeTokens.GetFloat("size.hud.strip.knot", 70f) + ThemeTokens.GetFloat("size.hud.status.pad", 6f);
-            var x = buffsLeft ? inset : _stripWidth - inset - rt.sizeDelta.x;
+            var k = ThemeTokens.GetFloat("share.hud.summon.strip", 0.7f);
+            var x = HudStrip.Target ? (buffsLeft ? SideLeft - rt.sizeDelta.x * k : SideRight) : buffsLeft ? inset : _stripWidth - inset - rt.sizeDelta.x;
             var want = new Vector2(x, _statusBase + _buffs.Root.sizeDelta.y + ThemeTokens.GetFloat("size.hud.gap", 5f) * 4f + h * ThemeTokens.GetFloat("share.hud.summon.strip", 0.7f));
             if ((rt.anchoredPosition - want).sqrMagnitude > 0.25f) rt.anchoredPosition = want;
             // Smaller than the status cells and kept above the buff rows (lead review: the summon row cluttered the buffs).
-            var k = ThemeTokens.GetFloat("share.hud.summon.strip", 0.7f);
             var scale = new Vector3(k, k, 1f);
             if (rt.localScale != scale) rt.localScale = scale;
             return true;
