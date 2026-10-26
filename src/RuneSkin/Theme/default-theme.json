@@ -1222,6 +1222,7 @@
       "spriteHover": "sprite.scrollbar.handle.hover", "spritePressed": "sprite.scrollbar.handle.pressed",
       "spriteSelected": "sprite.scrollbar.handle.hover" },
     { "role": "hud.slot", "cell": true, "sprite": "sprite.hud.socket", "color": "color.frame", "imageType": "Sliced", "fillCenter": "true" },
+    { "role": "plate.side", "sprite": "sprite.slot.cell", "color": "color.frame", "imageType": "Sliced", "fillCenter": "true" },
     { "role": "slot.cell", "cell": true, "zones": true, "sprite": "sprite.slot.cell", "color": "color.frame", "imageType": "Sliced", "fillCenter": "true", "spriteHover": "sprite.slot.cell.selected", "spriteSelected": "sprite.slot.cell.selected" },
     { "role": "slot.hotbar", "cell": true, "sprite": "sprite.hud.socket.hotbar", "color": "color.frame", "imageType": "Sliced", "fillCenter": "true", "spriteHover": "sprite.slot.cell.selected", "spriteSelected": "sprite.slot.cell.selected" },
     { "role": "slot.mirror", "cell": true, "sprite": "sprite.slot.mirror", "color": "color.frame", "imageType": "Sliced", "fillCenter": "true" },

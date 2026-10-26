@@ -97,6 +97,7 @@ namespace RuneSkin.InventoryScreen
             // VisibleRows / VisibleColumns = int.MaxValue = all.
             public int RowScroll, ColScroll, VisibleRows = int.MaxValue, VisibleColumns = int.MaxValue;
             public int AppliedRowScroll = -1, AppliedColScroll = -1, AppliedRows = -1, AppliedColumns = -1;
+            public Box AppliedView;
         }
 
         private struct DollEntry
@@ -288,7 +289,7 @@ namespace RuneSkin.InventoryScreen
                 var t = image.transform;
                 var sprite = image.sprite ? image.sprite.name : "";
                 if (t.name == "sunken") ctx.Role(image, "skip", "vanilla inset bevel (hidden, RuneSkin panel stack)");
-                else if (t.name == "bkg" && t.parent && (t.parent.parent == _gui.m_player || t.parent.parent == _gui.m_info) && Array.IndexOf(StatPlates, t.parent.name) >= 0) ctx.Role(image, "slot.cell", "side column cell (mockup inv-layout-A: trash, armour, weight, coins over F)");
+                else if (t.name == "bkg" && t.parent && (t.parent.parent == _gui.m_player || t.parent.parent == _gui.m_info) && Array.IndexOf(StatPlates, t.parent.name) >= 0) ctx.Role(image, "plate.side", "side column plate (mockup inv-layout-A: trash, armour, weight, coins over F; the slot cell look without the cell fitter: CellFit re-fitted the values every few frames, run 20261026-195047)");
                 else if (t.name == "bkg" && t.parent && Array.IndexOf(StatPlates, t.parent.name) >= 0) ctx.Role(image, "plate.stat", "stat plate strip (container weight)");
                 else if (t.name == "Weight" && t.parent && (t.parent == _gui.m_player || t.parent.GetComponentInChildren<InventoryGrid>(true))) ctx.Role(image, "plate.stat", "weight plate (InventoryGui.m_weight / m_containerWeight)");
                 else if (t.name == "weight_icon") ctx.Role(image, "glyph.stat.weight", "weight plate icon");
@@ -702,8 +703,9 @@ namespace RuneSkin.InventoryScreen
             Geo.Place(_canvas, _gui.m_player, _invBox);
             if (_gui.m_playerGrid)
             {
-                Geo.Place(_canvas, (RectTransform)_gui.m_playerGrid.transform, Move(o.PlayerView, _invOff));
-                Range(_gui.m_playerGrid, o.Player, true, _gridScroll, 0);
+                var view = Move(o.PlayerView, _invOff);
+                Geo.Place(_canvas, (RectTransform)_gui.m_playerGrid.transform, view);
+                Range(_gui.m_playerGrid, o.Player, true, _gridScroll, 0, view);
             }
             SideColumn(o);
             GridHeader(Move(o.InventoryHeader, _invOff));
@@ -1003,7 +1005,7 @@ namespace RuneSkin.InventoryScreen
                 Geo.Place(_canvas, (RectTransform)grid.transform, view);
                 Want(grid, fit.Pitch, fit.Cell);
                 var s = State(grid);
-                Range(grid, g, false, 0, s.ColScroll);
+                Range(grid, g, false, 0, s.ColScroll, view);
                 if (g.ScrollH) _colViews.Add((grid, view, g));
                 ColumnBar(panel, view, g, s.ColScroll);
             }
@@ -1116,9 +1118,17 @@ namespace RuneSkin.InventoryScreen
 
         // Shown range of a grid in its window: our own row scroll (player grid) and column scroll (containers past the
         // room); rows of a container scroll in vanilla's ScrollRect. Re-places the cells when the range changed.
-        private void Range(InventoryGrid grid, WindowGrid g, bool ownRows, int rowScroll, int colScroll)
+        private void Range(InventoryGrid grid, WindowGrid g, bool ownRows, int rowScroll, int colScroll, Box view)
         {
             var s = State(grid);
+            // A moved / resized view re-places its cells (they are placed in canvas coordinates, not parented to the view
+            // layout): run 20261026-195047 inv-rows-chest-small: a chest window placed after its cells kept them 6 px over
+            // its viewport top.
+            if (s.AppliedView.X != view.X || s.AppliedView.Y != view.Y || s.AppliedView.W != view.W || s.AppliedView.H != view.H)
+            {
+                s.AppliedView = view;
+                s.NeedsReposition = true;
+            }
             s.VisibleRows = ownRows && g.ScrollV ? Mathf.Max(1, g.VisibleRows) : int.MaxValue;
             s.VisibleColumns = g.ScrollH ? Mathf.Max(1, g.VisibleColumns) : int.MaxValue;
             s.RowScroll = ownRows && g.ScrollV ? InventoryWindowsMath.ClampScroll(rowScroll, g.Rows, g.VisibleRows) : 0;
