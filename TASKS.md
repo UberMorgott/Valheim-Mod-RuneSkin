@@ -861,6 +861,13 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
 - [ ] Codex in-game notes: hotbar cells read double-framed (StripCell rarity rim / glow inside the art well), the empty 4th potion slot shows no key label (EAQS has 3 quick cells; capacity 4 from the provider), f1p1 / f2p3 end medallions a few px off the mockup's own rows 1-2 (the panel follows row 3).
 
 
+## 0.23.4 Bottom panel: strip hover tooltips, refused-action pulse, food sockets = capacity, soft glow, mirrored end, shield value
+
+- [x] Hover on every strip cell: the grid's hover frame + UITooltip with the grid element's prefab (vanilla ItemData.GetTooltip; guardian power SE tooltip); hit layer forwards enter/exit (8b6cd33).
+- [x] Refused action: Hud.StaminaBarEmptyFlash / EitrBarEmptyFlash / FlashHealthBar (not the SetMaxHealth upgrade) -> 3 pulses / 0.6 s on the bar + one craft-fail sound per 0.6 s (fx_UpgradeStation_Fail, local-only spawn; 9f0c11e).
+- [x] Food wing = every slot of the capacity, empty sockets included (reverts 0.23.0 eaten-only); selection glow cut widened (alpha 0 at its edge); right end = mirrored left end, strap offsets equal; shield value of its own (variant C, Codex) (8b6cd33).
+- [x] Run 20261026-174040 ui-runeskin-hud2 PASS 161/0 (strip-hover, deny-flash, wing-capacity, end-mirror, shield-text variant C; harness tools 422e6ee). Run 20261026-173510: deny sound none (fixed 9f0c11e), inv-closed-1920x1080 foreign Inventory-key Show (did not recur).
+
 ## 0.23.3 Live-report batch: menu badge / braid, save rows, unlock toast, stats window, stats icon
 - [x] Changelog "!" out of showChangelog's HorizontalLayoutGroup (no centre blink); MenuList/ornament crown braid off; save rows: one rendered readable floor (Readable.Units) + 9-slice cap inset (size.row.cap.pad); unlock toast icon + name centred; stats: no gear speed notes in combat, empty sub-lines take no space, cards rest on row tops, close back to the opener; stats button glyph in the vanilla gold icon style (Codex 8/10).
 - [x] Run 20261026-171856 (ui-runeskin-m5 / -m4 / -stats, harness tools a8253a0): every new / changed check PASS (m5-changelog-badge, m5-menu-column, m5-saves-inset/-stable, m5-layout, m4-unlock-row-*, stats-button-glyph, stats-combat-no-speed, stats-rows-whole/-even, stats-speed-breakdown, stats-back-esc/-key).
