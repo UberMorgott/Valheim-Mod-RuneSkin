@@ -448,6 +448,36 @@ namespace RuneSkin.Tests
             }
         }
 
+        // Side column plate parts (user 2026-10-26: values under the plates, the coin value under CurrencyPocket's button):
+        // glyph, value and extra controls inside the plate, none overlapping, at the 1080 plate size and a tall one.
+        [Theory]
+        [InlineData(70f, 52f, 1)]
+        [InlineData(70f, 52f, 0)]
+        [InlineData(70f, 70f, 2)]
+        [InlineData(93f, 69f, 1)]
+        public void SidePlatePartsInsideNoOverlap(float w, float h, int extras)
+        {
+            var plate = new Box(1234f, 650f, w, h);
+            InventoryWindowsMath.SidePlateParts(plate, true, extras, 0.9f, 0.32f, out var icon, out var value, out var e0, out var step);
+            var parts = new System.Collections.Generic.List<Box> { icon, value };
+            for (var n = 0; n < extras; n++) parts.Add(new Box(e0.X, e0.Y + n * step, e0.W, e0.H));
+            foreach (var p in parts) Assert.True(p.Inside(plate) && !p.IsEmpty, $"{p} outside {plate}");
+            for (var a = 0; a < parts.Count; a++)
+                for (var b = a + 1; b < parts.Count; b++)
+                    Assert.False(parts[a].Overlaps(parts[b]), $"{parts[a]} x {parts[b]}");
+            Assert.True(value.Y >= icon.Bottom - 0.01f);
+            Assert.True(icon.W >= (extras > 1 ? 0.2f : 0.3f) * w, $"icon {icon.W}");
+        }
+
+        [Fact]
+        public void FitSizeIsDeterministicAndReadable()
+        {
+            Assert.Equal(20f, InventoryWindowsMath.FitSize(20f, 40f, 60f, 14f), 3); // fits: the wanted size
+            Assert.Equal(15f, InventoryWindowsMath.FitSize(20f, 80f, 60f, 14f), 3); // too wide: scaled to the box
+            Assert.Equal(14f, InventoryWindowsMath.FitSize(20f, 200f, 60f, 14f), 3); // never under the readable floor
+            Assert.Equal(10f, InventoryWindowsMath.FitSize(10f, 200f, 60f, 14f), 3); // a wanted size under the floor stays
+        }
+
         [Fact]
         public void BoundsInsetKeepsTheFrame()
         {

@@ -892,46 +892,67 @@ namespace RuneSkin.InventoryScreen
             if (plate.GetSiblingIndex() < g) plate.SetSiblingIndex(g); // removal shifts the grid down: lands right after it
         }
 
-        // One side column plate as a cell (slot.cell look): its "bkg" over the box, the glyph centred in the upper part,
-        // the value under it, centred (mockup: shield 42, lock 187/300, coins 340).
+        // One side column plate as a cell (slot.cell look, mockup inv-layout-A): its "bkg" over the box, the glyph centred in
+        // the upper part, the value centred under it inside the plate, a mod's own control on the plate (CurrencyPocket
+        // ExtractCoinsButton) as a small square in the top-right corner (InventoryWindowsMath.SidePlateParts: nothing
+        // overlaps). The value has one fixed size per text / box (FitSize, no auto-size) and is claimed from the generic
+        // fitters (OwnFit): user 2026-10-26 - values under the plates, the coin value hidden under the extract button,
+        // numbers blinking.
+        private readonly List<RectTransform> _plateExtras = new List<RectTransform>(2);
+        private readonly Dictionary<TMP_Text, (string Text, float W, float H, float Size)> _plateFit = new Dictionary<TMP_Text, (string, float, float, float)>();
+
         private void CellPlate(RectTransform plate, Box box)
         {
             Geo.SetScale(plate, 1f);
             Geo.Place(_canvas, plate, box);
             if (plate.Find("bkg") && plate.TryGetComponent<Image>(out var own) && own.enabled) own.enabled = false;
-            var text = plate.GetComponentInChildren<TMP_Text>(false);
-            var hasText = text && !string.IsNullOrEmpty(text.text) && plate != _sidePlates[0];
-            var valueH = hasText ? box.H * ThemeTokens.GetFloat("share.inv.side.value", 0.36f) : 0f;
-            var iconSide = Mathf.Min(box.W, box.H - valueH) * ThemeTokens.GetFloat("share.inv.side.icon", 0.62f);
-            var iconBox = new Box(box.X + (box.W - iconSide) / 2f, box.Y + (box.H - valueH - iconSide) / 2f + (hasText ? box.H * 0.04f : 0f), iconSide, iconSide);
+            RectTransform bkg = null, icon = null;
+            TMP_Text value = null;
+            _plateExtras.Clear();
             for (var n = 0; n < plate.childCount; n++)
             {
                 var child = plate.GetChild(n);
                 if (!(child is RectTransform rt) || !child.gameObject.activeSelf) continue;
                 var part = NameCache.Of(child);
-                if (part == "bkg") Geo.Place(_canvas, rt, box);
-                else if (part.EndsWith("_icon", StringComparison.Ordinal)) Geo.Place(_canvas, rt, iconBox);
-                else if (child.TryGetComponent<TMP_Text>(out var label))
-                {
-                    // the trash plate's own label: the glyph says it (its tooltip names it)
-                    if (label.enabled != hasText) label.enabled = hasText;
-                    if (!hasText) continue;
-                    Geo.Place(_canvas, rt, new Box(box.X + 2f, box.Bottom - valueH - box.H * 0.04f, Mathf.Max(1f, box.W - 4f), valueH));
-                    if (label.alignment != TextAlignmentOptions.Center) label.alignment = TextAlignmentOptions.Center;
-                    if (label.textWrappingMode != TextWrappingModes.NoWrap) label.textWrappingMode = TextWrappingModes.NoWrap;
-                    if (label.overflowMode != TextOverflowModes.Overflow) label.overflowMode = TextOverflowModes.Overflow;
-                    var floor = ThemeTokens.GetFloat("floor.text.number.px", 14f) / Mathf.Max(0.01f, _rootCanvas.scaleFactor);
-                    var size = Mathf.Max(valueH * 0.85f, floor);
-                    if (!label.enableAutoSizing || Mathf.Abs(label.fontSizeMax - size) > 0.1f || Mathf.Abs(label.fontSizeMin - floor) > 0.1f)
-                    {
-                        label.enableAutoSizing = true;
-                        label.fontSizeMax = size;
-                        label.fontSizeMin = Mathf.Min(size, floor);
-                    }
-                }
+                if (part == "bkg") bkg = rt;
+                else if (part.EndsWith("_icon", StringComparison.Ordinal)) icon = rt;
+                else if (!value && child.TryGetComponent<TMP_Text>(out var label)) value = label;
+                else if (child.TryGetComponent<Selectable>(out _)) _plateExtras.Add(rt);
             }
+            var hasValue = value && plate != _sidePlates[0] && !string.IsNullOrEmpty(value.text);
+            InventoryWindowsMath.SidePlateParts(box, hasValue, _plateExtras.Count, ThemeTokens.GetFloat("share.inv.side.icon", 0.9f), ThemeTokens.GetFloat("share.inv.side.value", 0.32f),
+                out var iconBox, out var valueBox, out var extra0, out var step);
+            if (bkg) Geo.Place(_canvas, bkg, box);
+            if (icon) Geo.Place(_canvas, icon, iconBox);
+            for (var n = 0; n < _plateExtras.Count; n++)
+            {
+                Geo.SetScale(_plateExtras[n], 1f);
+                Geo.Place(_canvas, _plateExtras[n], new Box(extra0.X, extra0.Y + n * step, extra0.W, extra0.H));
+            }
+            if (!value) return;
+            // the trash plate's own label: the glyph says it (its tooltip names it)
+            if (value.enabled != hasValue) value.enabled = hasValue;
+            if (!hasValue) return;
+            OwnFit.Claim(value);
+            Geo.Place(_canvas, value.rectTransform, valueBox);
+            if (value.alignment != TextAlignmentOptions.Center) value.alignment = TextAlignmentOptions.Center;
+            if (value.textWrappingMode != TextWrappingModes.NoWrap) value.textWrappingMode = TextWrappingModes.NoWrap;
+            if (value.overflowMode != TextOverflowModes.Overflow) value.overflowMode = TextOverflowModes.Overflow;
+            if (value.enableAutoSizing) value.enableAutoSizing = false;
+            if (value.margin != Vector4.zero) value.margin = Vector4.zero;
+            // one size per text / box: measured only when either changed (vanilla rewrites the text every frame, same value)
+            var txt = value.text;
+            if (!_plateFit.TryGetValue(value, out var fit) || fit.Text != txt || Mathf.Abs(fit.W - valueBox.W) > 0.01f || Mathf.Abs(fit.H - valueBox.H) > 0.01f)
+            {
+                var want = valueBox.H * 0.9f;
+                var at = value.fontSize > 0.5f ? value.fontSize : want;
+                var width = value.GetPreferredValues(txt, 100000f, 100000f).x * want / at;
+                var floor = ThemeTokens.GetFloat("floor.text.number.px", 14f) / Mathf.Max(0.01f, _rootCanvas.scaleFactor);
+                fit = (txt, valueBox.W, valueBox.H, InventoryWindowsMath.FitSize(want, width, valueBox.W, floor));
+                _plateFit[value] = fit;
+            }
+            if (Mathf.Abs(value.fontSize - fit.Size) > 0.01f) value.fontSize = fit.Size;
         }
-
         // One stat plate on its box at scale 1: the plate_stat strip (Weight's own image, else its "bkg" child) over the
         // whole plate, the glyph in the round socket on the left, the value text in the field right of it.
         private void StatPlate(RectTransform plate, Box box)

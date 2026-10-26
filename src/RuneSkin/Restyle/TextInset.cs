@@ -48,7 +48,7 @@ namespace RuneSkin.Restyle
             // A window header title is fitted by its header (RuneWindowHeader.Arrange: one size, steps down, then its
             // ellipsis). FitTruncated switched auto-size on every ~10 frames and Arrange switched it off every frame:
             // the chest title flickered between full, shrunk and cut (user 2026-10-26, live chest window). One fitter.
-            if (RuneWindowHeader.IsTitle(text))
+            if (RuneWindowHeader.IsTitle(text) || OwnFit.Owns(text))
             {
                 if (text.TryGetComponent<TextInset>(out var stale)) stale.Revert();
                 return;

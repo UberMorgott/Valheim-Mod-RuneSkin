@@ -359,6 +359,32 @@ namespace RuneSkin.InventoryScreen
             return g;
         }
 
+        // Parts of one side column plate (mockup inv-layout-A: glyph above, value under it, inside the plate): `extras` small
+        // controls a mod put on the plate (CurrencyPocket's extract-coins button) as squares stacked down its top-right
+        // corner (extra0, then extraStep lower each), the glyph centred in the rest of the upper part clear of them, the
+        // value band at the bottom. Nothing overlaps; all inside the plate (pad = 6 % of its height).
+        public static void SidePlateParts(Box plate, bool hasValue, int extras, float iconShare, float valueShare, out Box icon, out Box value, out Box extra0, out float extraStep)
+        {
+            var pad = plate.H * 0.06f;
+            var valueH = hasValue ? plate.H * Clamp(valueShare, 0f, 0.6f) : 0f;
+            var upper = Math.Max(0f, plate.H - valueH - 2f * pad);
+            var n = Math.Max(0, extras);
+            var e = n > 0 ? Math.Max(0f, Math.Min(Math.Min(plate.W, plate.H) * 0.3f, (upper - (n - 1) * pad / 2f) / n)) : 0f;
+            extraStep = e + pad / 2f;
+            extra0 = n > 0 ? new Box(plate.Right - pad - e, plate.Y + pad, e, e) : default;
+            var side = Math.Max(0f, Math.Min(upper, plate.W - 2f * (pad + (n > 0 ? e + pad / 2f : 0f))) * Clamp(iconShare, 0.1f, 1f));
+            icon = new Box(plate.X + (plate.W - side) / 2f, plate.Y + pad + (upper - side) / 2f, side, side);
+            value = hasValue ? new Box(plate.X + pad, plate.Bottom - pad - valueH, Math.Max(0f, plate.W - 2f * pad), valueH) : default;
+        }
+        // Font size of a one-line value in a box: `want`, lowered so the measured width fits (width at `want` known), never
+        // under `floor` (the readable size): one deterministic size per text / box (no auto-size feedback).
+        public static float FitSize(float want, float widthAtWant, float boxW, float floor)
+        {
+            var s = want;
+            if (widthAtWant > boxW && widthAtWant > 0f) s = want * boxW / widthAtWant;
+            return Math.Max(Math.Min(floor, want), s);
+        }
+
         // First shown row / column of a scrolled window over `count` with `visible` shown: clamped to the valid range.
         public static int ClampScroll(int offset, int count, int visible) => Math.Max(0, Math.Min(offset, Math.Max(0, count - Math.Max(1, visible))));
 
