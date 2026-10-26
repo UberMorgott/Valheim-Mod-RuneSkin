@@ -24,10 +24,14 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 ## Later
 
 - Settings family; Compendium entry to MorgottTweaks before AugaSkin retires
-- [ ] Unity packer crash (open, 2026-10-26, 0.25.1 worktree): `Unity.exe -batchmode -quit [-nographics] -projectPath unity
-  -executeMethod BuildBundles.Build` exits -1073741676, native crash in SpriteAtlas PackAtlasOnJob (BuildBundles.cs:237
-  BuildAtlas), also with Library copied from D:\tmp\runeskin-unity-library-good (2 tries). 0.25.1 (art unchanged vs
-  v0.25.0, `git diff v0.25.0 --stat -- art unity` empty) staged the 0.25.0 bundle AAA86A96.
+- [x] Unity packer crash, fixed in 0.25.3: the legacy V1 packer (AlwaysOnAtlas) of 6000.0.75f1 crashes on every uncached
+  pack (also a 2-sprite atlas in an empty project; -1073741676 in GetRowSize <- PackAtlasOnJob); V1 builds only passed on
+  Library/AtlasCache hits. Build packs with Sprite Atlas V2 + `ValidatePackInputs` (art/README.md "Atlas packer"). Sprites
+  425/425 same rect/border/pivot/ppu/pages as AAA86A96; run tools\out\20261026-225145 hud2/m2/m3 352 PASS, FAILs below.
+- [ ] Harness: clear UITooltip between shots; verify players can't get a stuck tooltip. Run 20261026-225145 (order
+  hud2,m2,m3): m3-workbench-2560x1440 overdraw-crafting covered=4, all offenders PlayerGrid cells under a stale
+  InventoryTooltip(Clone) ("Древесина") left by m2's tips sweep; run 20261026-223903 (order m3,m2) covered=0. Same
+  tooltip is the m2-chest-small-2560x1440 overdraw-container offender.
 - [x] 0.25.0 regression, fixed in 0.25.2 (d816482): crafting window = min(576, room right of the hotbar-locked centre column)
   = 536 at 16:9 (576 cannot fit without overlapping the centre column); list keeps 204 (size.craft.list.min), requirements grow
   full-size rows before shrinking, inventory window backings feed CoverCull (minimap / crosshair gated). Run
@@ -568,8 +572,8 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
 - [x] Audit P2: VT_Frame lookup cached with a 1 s retry (was Find per frame per HUD); HudArt rows / suppressed / ppu tables
       pruned when doubled + Reset on EnemyHud.Awake (world reload piled up dead templates).
 - [x] Unit tests EnemyBarTests (visibility, pick cap, fades, distance scale, stagger build / decay / active / immune).
-- Art pipeline note: a fresh worktree's unity\ has no Library -> the first batch build crashes in the atlas packer
-  ("Unsupported Format 0"); copying the main checkout's unity\Library first builds fine.
+- Art pipeline note (superseded 0.25.3): the "fresh Library crash" was the V1 atlas packer crashing on any uncached pack;
+  the build now uses Sprite Atlas V2 and packs from a fresh Library.
 - [x] Verified: runs tools\out\20261022-184813 and 20261022-185607 (ui-runeskin-enemybars + m4) 74/74 PASS each; Codex fidelity in game normal 9 / magic 8 / rare 8 / unique 8 (run -184813), Vaettir boss bar 8 (run -185607: bar height from width, name on the rune face).
 
 ## 0.14.1 perf track B1-B5 (2026-10-22, audit scratchpad perf-audit.md re-verified at 0.14.0)
