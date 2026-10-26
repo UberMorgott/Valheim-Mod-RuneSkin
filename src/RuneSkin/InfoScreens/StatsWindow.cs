@@ -43,6 +43,7 @@ namespace RuneSkin.InfoScreens
             public Sprite IconSprite;
             public Color IconColor = Color.white, Icon2Color = Color.white;
             public int LastValueLength = -1;
+            public Kind LastShape = (Kind)(-1);
             public float FillShare;
             public float H;
             // Breakdown shown while the plate is hovered (Explain2 / Tip2: the right half of a resistance cell).
@@ -422,21 +423,32 @@ namespace RuneSkin.InfoScreens
         public void Open()
         {
             if (!Player.m_localPlayer || !_gui) return;
+            _shownInventory = false;
             if (_gui.m_uiGroups != null && _gui.m_uiGroups.Length > 2) _gui.SetActiveGroup(_gui.m_uiGroups[2]);
             _root.SetAsLastSibling();
             _root.gameObject.SetActive(true);
             FullWindow.Enter(_root, OpaqueRect); // modal: the inventory panels hide (not drawn) until it closes
             _layoutDirty = true;
             _nextRefresh = 0f;
+            // Every card opens at its top (the offset of the last visit is no rest position for new content).
+            foreach (var card in _cards) if (card != null) card.Scroll = 0f;
             Refresh();
             LayoutAll();
         }
 
+        // Back to where it was opened from, like vanilla's info dialogs (SkillsDialog.OnClose / TextsDialog.OnClose only
+        // deactivate themselves, InventoryGui.Update :535-542): opened from the inventory, the inventory stays; opened by
+        // StatsKey outside it (ToggleFromKey showed the inventory for it), the game.
         public void Close()
         {
+            var back = _shownInventory;
+            _shownInventory = false;
             if (_root && _root.gameObject.activeSelf) _root.gameObject.SetActive(false);
             if (_root) FullWindow.Exit(_root);
+            if (back && _gui && InventoryGui.IsVisible()) _gui.Hide();
         }
+
+        private bool _shownInventory;
 
         // The chrome's opaque interior on screen (px): the four quarters' union less their transparent rim. Measured on
         // stats_chrome_*.png (3840x2160 composed, alpha >= 250 everywhere inside 88 / 104 / 88 / 56 px = 44 / 52 / 44 /
@@ -492,8 +504,10 @@ namespace RuneSkin.InfoScreens
                 Close();
                 return;
             }
-            if (!InventoryGui.IsVisible()) _gui.Show(null);
+            var shown = !InventoryGui.IsVisible();
+            if (shown) _gui.Show(null);
             Open();
+            _shownInventory = shown && IsOpen;
         }
 
         private void Refresh()
@@ -580,6 +594,13 @@ namespace RuneSkin.InfoScreens
                     if (r.V.Length != r.LastValueLength)
                     {
                         r.LastValueLength = r.V.Length;
+                        _layoutDirty = true;
+                    }
+                    // A sub-line appearing / emptying changes the row's shape and height (Shape).
+                    var shape = Shape(r);
+                    if (shape != r.LastShape)
+                    {
+                        r.LastShape = shape;
                         _layoutDirty = true;
                     }
                     if (r.Icon2)
@@ -714,13 +735,13 @@ namespace RuneSkin.InfoScreens
             Place(c.View, D(view.X, view.Y, view.W, view.H));
             c.ViewH = view.H;
             var n = Mathf.Min(c.Used, _heights.Length);
-            for (var i = 0; i < n; i++) { _heights[i] = RowHeight(c.Index, c.Rows[i].Kind); _kinds[i] = c.Rows[i].Kind; }
+            for (var i = 0; i < n; i++) { _kinds[i] = Shape(c.Rows[i]); _heights[i] = RowHeight(c.Index, _kinds[i]); }
             // Food: 0..N dishes from the live slot count; when they do not fit, every dish row shrinks evenly (down to
             // the min), only then the card scrolls. Never clipped.
             if (c.Index == 4) CompressDishes(n, view.H);
             else FitRows(n, view.H);
             c.ContentH = StatsMath.Stack(_heights, n, 0f, _tops);
-            c.Scroll = StatsMath.ClampScroll(c.Scroll, c.ContentH, c.ViewH);
+            c.Scroll = StatsMath.SnapScroll(c.Scroll, _tops, n, c.ContentH, c.ViewH);
             for (var i = 0; i < n; i++)
             {
                 var r = c.Rows[i];
@@ -863,8 +884,9 @@ namespace RuneSkin.InfoScreens
             if (r.Plate) { Place(r.Plate.rectTransform, D(b.X, b.Y + 2f, b.W, b.H - 4f)); Ppu(r.Plate); }
             var iw = tall ? T("size.stats.icon.tall", 42f) : iconW;
             if (tall) textX = b.X + T("size.stats.label.x.tall", 74f);
-            var lineH = r.Kind == Kind.PairSub ? b.H * 0.56f : r.Kind == Kind.TallSub ? b.H * 0.68f : b.H;
-            var iy = r.Kind == Kind.PairSub ? b.Y + (lineH - iw) / 2f : b.Y + (b.H - iw) / 2f;
+            var shape = Shape(r);
+            var lineH = shape == Kind.PairSub ? b.H * 0.56f : shape == Kind.TallSub ? b.H * 0.68f : b.H;
+            var iy = shape == Kind.PairSub ? b.Y + (lineH - iw) / 2f : b.Y + (b.H - iw) / 2f;
             Place(r.Icon.rectTransform, D(b.X + 6f, iy, iw, iw));
             // Value column as wide as its text (+ a gap), the label gets the rest: long labels ("Delay after break")
             // and long values ("+15.0/s after 3.0 s") both fit without shrinking below the readable floor.
@@ -883,12 +905,19 @@ namespace RuneSkin.InfoScreens
             }
             if (r.Sub)
             {
-                var sy = r.Kind == Kind.TallSub ? b.Y + b.H * 0.56f : b.Y + lineH - 6f;
-                var sh = r.Kind == Kind.TallSub ? b.H * 0.32f : b.Bottom - sy;
+                // An empty sub-line takes no space (its row has the one-line shape, Shape).
+                var sy = shape == Kind.TallSub ? b.Y + b.H * 0.56f : shape == Kind.PairSub ? b.Y + lineH - 6f : b.Bottom;
+                var sh = shape == Kind.TallSub ? b.H * 0.32f : shape == Kind.PairSub ? b.Bottom - sy : 0f;
                 Place(r.Sub.rectTransform, D(textX, sy, right - textX, sh));
                 Font(r.Sub, sub);
             }
         }
+
+        // Drawn shape of a row: a sub-line row (PairSub / TallSub) whose sub-line is empty is laid out and sized as its
+        // one-line kind. The weight row ("Переносимый вес") is PairSub for its carry bonus line and stood double height
+        // with nothing under it (0.23.0 live report).
+        internal static Kind Shape(Row r) =>
+            r.S.Length > 0 ? r.Kind : r.Kind == Kind.PairSub ? Kind.Pair : r.Kind == Kind.TallSub ? Kind.Tall : r.Kind;
 
         private void CellHalf(Image plate, Image icon, TMP_Text label, TMP_Text value, Box b, float labelSize, float valueSize)
         {
@@ -988,6 +1017,9 @@ namespace RuneSkin.InfoScreens
                 (TextViewer.instance && TextViewer.instance.IsVisible()) || GameCamera.InFreeFly() || Minimap.IsOpen()) return true;
             if (!ZInput.GetButtonDown("JoyButtonB") && !ZInput.GetKeyDown(KeyCode.Escape)) return true;
             w.Close();
+            // One press closes one layer: the button is consumed as vanilla consumes it when it hides the inventory
+            // (InventoryGui.Update :556-559), so no later reader this frame sees it.
+            ZInput.ResetButtonStatus("JoyButtonB");
             return false;
         }
 

@@ -121,6 +121,21 @@ namespace RuneSkin.Tests
             Assert.Equal(0f, StatsMath.ClampScroll(-5f, 400f, 320f));
         }
 
+        // Combat card (0.23.0): 10 rows of 31.5 in a 250 view; at rest the view starts on a row top, never mid-row.
+        [Fact]
+        public void ScrollRestsOnRowTops()
+        {
+            var heights = new float[10];
+            for (var i = 0; i < 10; i++) heights[i] = 31.5f;
+            var tops = new float[10];
+            var content = StatsMath.Stack(heights, 10, 0f, tops); // 315
+            Assert.Equal(0f, StatsMath.SnapScroll(0f, tops, 10, content, 250f), 3);
+            Assert.Equal(31.5f, StatsMath.SnapScroll(40f, tops, 10, content, 250f), 3);      // nearest top
+            Assert.Equal(94.5f, StatsMath.SnapScroll(65f, tops, 10, content, 250f), 3);      // end: first top >= 65 shows row 10 whole
+            Assert.Equal(94.5f, StatsMath.SnapScroll(80f, tops, 10, content, 250f), 3);
+            Assert.Equal(0f, StatsMath.SnapScroll(80f, tops, 10, 200f, 250f), 3);            // fits: no scroll
+        }
+
         [Fact]
         public void ThemeShipsTheStatsFamily()
         {

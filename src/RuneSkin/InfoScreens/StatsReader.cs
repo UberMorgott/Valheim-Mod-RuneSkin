@@ -622,33 +622,10 @@ namespace RuneSkin.InfoScreens
             Percent(Row(c, Kind.Pair, "double", "$runeskin_stats_double").V, StatsSources.El(p, "ChanceDoubleDamage"), true, false);
             Percent(Row(c, Kind.Pair, "lifesteal", "$runeskin_stats_lifesteal").V, StatsSources.El(p, "LifeSteal"), true, false);
             Percent(Row(c, Kind.Pair, "stagger", "$runeskin_stats_stagger").V, StatsSources.El(p, "ModifyStaggerDamage"), true, true);
-            // Sources: worn gear with a movement modifier (ItemData m_shared.m_movementModifier) and status effects that
-            // add carry weight (SE_Stats.m_addMaxCarryWeight).
-            var notes = 0;
-            var items = p.GetInventory().GetAllItems();
-            for (var i = 0; i < items.Count; i++)
-            {
-                var it = items[i];
-                if (it == null || !it.m_equipped || Mathf.Abs(it.m_shared.m_movementModifier) < 0.005f) continue;
-                if (notes++ == 0) _w.Next(c, Kind.Divider);
-                var r = Row(c, Kind.Note, "boots", null);
-                var sem = it.m_shared.m_movementModifier > 0f ? 1 : -1;
-                StatsMath.Open(r.L, sem, GoodHex, BadHex);
-                StatsMath.AppendInt(r.L, it.m_shared.m_movementModifier * 100f, true).Append("% ");
-                StatsMath.Close(r.L, sem);
-                r.L.Append(Loc("$runeskin_stats_speed_short")).Append(" (").Append(Loc(it.m_shared.m_name)).Append(')');
-            }
-            foreach (var se in p.GetSEMan().GetStatusEffects())
-            {
-                if (!(se is SE_Stats st) || Mathf.Abs(st.m_addMaxCarryWeight) < 0.5f) continue;
-                if (notes++ == 0) _w.Next(c, Kind.Divider);
-                var r = Row(c, Kind.Note, "ring", null);
-                var sem = st.m_addMaxCarryWeight > 0f ? 1 : -1;
-                StatsMath.Open(r.L, sem, GoodHex, BadHex);
-                StatsMath.AppendInt(r.L, st.m_addMaxCarryWeight, true);
-                StatsMath.Close(r.L, sem);
-                r.L.Append(' ').Append(Loc("$runeskin_stats_weight_short")).Append(" (").Append(EffectName(st)).Append(')');
-            }
+            // No gear movement / carry-weight notes here: they explain the movement card's values (0.23.0 live report:
+            // "-5% скорость (Громокровный меч)" under the combat rows repeated the walk / run figures). The walk / run rows'
+            // breakdown lists every worn item's m_movementModifier (x1.5 running, Player.GetRunSpeedFactor :7144-7147)
+            // and sums to the shown total (StatsExplain.Speed); the weight row names the carry bonus and its source.
         }
 
         private static StatsWindow.Row Explained(StatsWindow.Row r, Explain explain)

@@ -200,5 +200,25 @@ namespace RuneSkin.InfoScreens
         // Scroll offset clamp: content taller than the view scrolls 0..(content - view).
         public static float ClampScroll(float offset, float content, float view) =>
             content <= view ? 0f : Math.Max(0f, Math.Min(offset, content - view));
+
+        // Scroll offset at rest on a row top, so the view never starts in the middle of a row (combat card, 0.23.0 live
+        // report: the first row cut in half under the header): the nearest row top, and at the end the first row top
+        // that shows the last row whole (the view may end below the content then). 0 when everything fits.
+        public static float SnapScroll(float offset, float[] tops, int n, float content, float view)
+        {
+            if (content <= view + 0.5f || tops == null || n <= 0) return 0f;
+            var end = content - view;
+            var last = 0f;
+            for (var i = 0; i < n; i++)
+            {
+                last = tops[i];
+                if (tops[i] >= end - 0.5f) break;
+            }
+            if (offset >= end - 0.5f) return last;
+            var best = 0f;
+            for (var i = 0; i < n && tops[i] <= last + 0.01f; i++)
+                if (Math.Abs(tops[i] - offset) < Math.Abs(best - offset)) best = tops[i];
+            return best;
+        }
     }
 }
