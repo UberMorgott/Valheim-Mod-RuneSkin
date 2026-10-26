@@ -1850,72 +1850,6 @@
       "notes": "M2 doll empty-cell glyph: lantern (light slot)"
     },
     {
-      "name": "glyph_slot_hand_right",
-      "file": "glyph_slot_hand_right.png",
-      "size": [
-        72,
-        72
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "glyph.slot.hand.right",
-      "notes": "M2 hand mirror empty glyph: right hand (sword)"
-    },
-    {
-      "name": "glyph_slot_hand_left",
-      "file": "glyph_slot_hand_left.png",
-      "size": [
-        72,
-        72
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "glyph.slot.hand.left",
-      "notes": "M2 hand mirror empty glyph: left hand (round shield)"
-    },
-    {
-      "name": "glyph_slot_ammo",
-      "file": "glyph_slot_ammo.png",
-      "size": [
-        72,
-        72
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "glyph.slot.ammo",
-      "notes": "M2 hand mirror empty glyph: ammo (arrows)"
-    },
-    {
       "name": "glyph_slot_utility",
       "file": "glyph_slot_utility.png",
       "size": [
@@ -2290,28 +2224,6 @@
       "notes": "M2 hand mirror: linked-to-grid badge (chain links), tint rune_glow"
     },
     {
-      "name": "glyph_hand_occupied",
-      "file": "glyph_hand_occupied.png",
-      "size": [
-        72,
-        72
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "glyph.hand.occupied",
-      "notes": "M2 two-handed weapon: shown in the second hand mirror (both mirrors linked)"
-    },
-    {
       "name": "glyph_coins",
       "file": "glyph_coins.png",
       "size": [
@@ -2398,28 +2310,6 @@
       "fillCenter": true,
       "token": "slot.mirror",
       "notes": "M2 hand mirror cell (right/left hand, ammo): chain-link rim + thin cyan inner line; owns no item, shows the equipped grid item"
-    },
-    {
-      "name": "slot_mirror_linked",
-      "file": "slot_mirror_linked.png",
-      "size": [
-        128,
-        124
-      ],
-      "border": {
-        "left": 20,
-        "bottom": 20,
-        "right": 20,
-        "top": 20
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Sliced",
-      "fillCenter": true,
-      "token": "slot.mirror.linked",
-      "notes": "M2 hand mirror highlighted: bright cyan chain rim (hover / source cell flash / two-handed link)"
     },
     {
       "name": "plate_hotbar_number",

@@ -363,8 +363,9 @@ from disk; record what mockup-1 was made from (if from AugaSkin screenshots, the
       DollMirrors / MirrorRows / MirrorX, Words runeskin_slot_right / left / ammo / mirror_hint, theme slot.link,
       glyph.hand.occupied, glyph.slot.weapon / offhand / ammo). API SlotSource.Mirror cells keep slot.mirror + link badge.
       Doll strip = storage | figure centred (size.inv.doll.figure.gap, was mirror.gap); tests updated.
-- [ ] Art bundle still holds slot_mirror_linked, glyph_hand_occupied, glyph_slot_hand_right / left, glyph_slot_ammo
-      (no theme token points at them): drop at the next art bundle build (art owner).
+- [x] Art bundle still holds slot_mirror_linked, glyph_hand_occupied, glyph_slot_hand_right / left, glyph_slot_ammo
+      (no theme token points at them): drop at the next art bundle build (art owner). Dropped 2026-10-26 (cuts.json + sprites,
+      compare-m2 draws slot_mirror only; bundle 424 sprites, contents check holds none of them).
 - [x] Harness m2 no-mirrors (no RuneSkinDoll_right / left / ammo, equipped sword keeps its grid cell, figure right margin
       <= 25 % of the panel: 200 / 240 px at 2560): run tools\out\20261022-150023 m2 + m3 26/26 PASS.
 

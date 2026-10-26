@@ -120,11 +120,7 @@ func compareM2() *image.NRGBA {
 	}
 	for i := 0; i < 3; i++ {
 		y := 190 + float64(i)*97
-		n := "slot_mirror"
-		if i == 0 {
-			n = "slot_mirror_linked"
-		}
-		c.sprite(n, 1145, y, 97, 94)
+		c.sprite("slot_mirror", 1145, y, 97, 94)
 		c.icon(mock, 1154, y+8, 80, 78)
 		c.equipped(1145, y, 97)
 	}
