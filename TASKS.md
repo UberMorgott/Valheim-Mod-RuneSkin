@@ -45,7 +45,7 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 - [x] MorgottTweaks 1.122.0 RuneSkinHud providers (2c23285); AugaSkin 2.2.10 yields Hud (e2d1b70)
 - [x] In-game run ui-runeskin-m1 (tools 2021c6a) with art ad65a9c: tools\out\20261021-153950 all 6 checks PASS (Hud unknown=0 degraded=0, MT providers, +N list, EL tooltip, 21:9 box)
 - [x] Codex final review: 9 findings fixed (1392c13, MT c57b773)
-- [ ] Acceptance with mockup art df8dc3a: Codex HUD 5/10 (runs 20261021-165440, -172719) -> 7/10 -> 7.5/10 -> 7.5/10 (runs 20261021-182522, -185104, -185500; 2560x1440, m0+m1 10/10 checks PASS, 0.2.3). Fixed: broken frames = HUD canvas referencePixelsPerUnit 50 (dump refPpu=50) vs geometry at 100 -> HudArt multiplier refPPU/100/scale; fixed equal bar width size.hud.bar.outer 438 (user call, proportional + growth ghosts removed, max step pulses value/frame); HP fill always red (no whole-bar tint); lag ghost alpha 0.3 / hold 0.3 s; wet = 3 drip clusters; rail numbers inside the window; Menu without empty plaque; tooltip double glass + bottom inset 30. Remaining = art: glyph_stamina / glyph_eitr 40x40 masks (slim recess (49,23) r 12), bar_fill bevel/texture, dot_poison sparser 3-4 px dots
+- [x] (2026-10-26 art triage: the art remainder below shipped in 0.2.4 - glyphs.png / fill3.png, next items - and the M1 bar cluster is superseded by the strip7 target panel, mode.hud.strip.target 1) Acceptance with mockup art df8dc3a: Codex HUD 5/10 (runs 20261021-165440, -172719) -> 7/10 -> 7.5/10 -> 7.5/10 (runs 20261021-182522, -185104, -185500; 2560x1440, m0+m1 10/10 checks PASS, 0.2.3). Fixed: broken frames = HUD canvas referencePixelsPerUnit 50 (dump refPpu=50) vs geometry at 100 -> HudArt multiplier refPPU/100/scale; fixed equal bar width size.hud.bar.outer 438 (user call, proportional + growth ghosts removed, max step pulses value/frame); HP fill always red (no whole-bar tint); lag ghost alpha 0.3 / hold 0.3 s; wet = 3 drip clusters; rail numbers inside the window; Menu without empty plaque; tooltip double glass + bottom inset 30. Remaining = art: glyph_stamina / glyph_eitr 40x40 masks (slim recess (49,23) r 12), bar_fill bevel/texture, dot_poison sparser 3-4 px dots
 - [x] Panel corner caps above content (PanelCaps sibling container, 04539ed)
 - [x] Menu / tooltip canvas refPpu=50 (dump): Restyler multiplies every themed Sliced/Tiled multiplier by refPpu/100, corner caps sized at reference 100 (Restyler.SetReferenceSize); tooltip content inset 26 / bottom 44 (0.2.4)
 - [x] Stamina / eitr pool glyphs (Codex glyphs.png) in the slim recess (theme recess.bar_frame_slim.x/y/r); bevel bar_fill + sparse dot_poison (fill3.png); fill-end FX front_health/stamina/eitr + clear wet drips (fx2.png); GP socket + ring (gp.png) (0.2.4)
@@ -53,9 +53,9 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 - [x] Frame overlays per art notes (wet drips from frame bottom, since 0.2.3 three clusters, frost cluster native at top-left), trough/glass alpha 1.0, cluster width fit measures food row + EAQS/GP (0.2.2)
 - [x] 0.2.5: panel content inset from corner-cap keep-out (theme clear.<cap> = alpha-measured min(dx,dy) 85-87 sprite px -> 43.5 ref; PanelMath.CapInset; tooltip ContentInset all sides + column controls child width, menu FitToChildren pad), opaque panel backing (decor.backing color.panel.backing #101C22FF under the glass; single 0.9 glass let the world through), HUD frames rail to rail (theme edge.<frame>.top/bottom, HudMath.StackStep, pixel-snapped), food checkerboard (HudMath.DiamondStep, equal diagonal steps, AugaSkin geometry); runs tools\out\20261021-204453 (m0+m1 12/12 PASS) + 20261021-205505 (m0 recheck 4/4 PASS)
 - [x] EAQS quick-slot placement not verified: bar empty in the test save (harness check reports n/a, tools commit). Superseded by the strip: EAQS quick cells sit on the strip potion cells (382b0d7, d0560cf); run tools\out\20261024-214207 hud2 hit-align-1280x720 / -1920x1080 / -2560x1440 + potion-carry / potion-dragdrop PASS
-- [ ] Hotbar slot art (socket.hotbar, plate.number) and quick-slot art: M2 with doll slots
+- [x] Hotbar slot art (socket.hotbar, plate.number) and quick-slot art: M2 with doll slots (2026-10-26: socket_hotbar / plate_number / plate_hotbar_number in the bundle and themed; HUD hotbar + quick cells = strip7_cell of the target panel)
 - [ ] Reserve tooltip (auras / summons) on hover: needs inventory-open hit area (M2). Blocked (2026-10-26): the strip bars are Plain (hud-3 / hud-4M3 mockups, HudCluster sets BarView.Plain) and draw no reserve hatch, so there is no hover target; needs a design call on where reservations show (ResourceState.ReservedAuras / ReservedSummons are still read)
-- [ ] Bar-cap pool glyph sockets are empty in the art (no HP/stamina/eitr glyphs yet)
+- [x] Bar-cap pool glyph sockets are empty in the art (no HP/stamina/eitr glyphs yet) (2026-10-26: strip7_socket_hp / _st / _ei = whole round sockets with heart / lightning / eitr glyphs, 57ea8e1 + steel/teal 12b1deb; tokens sprite.hud.strip7.icon.*)
 
 ## M2 (code, 2026-10-21) - inventory layout A
 
@@ -804,7 +804,14 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
       dock, drop; m1 / m4 bar-caps / p rules for the 0.16+ strip.
 - [x] r3 art pass (lead review): frame repainted EMPTY by Codex as strict 2x-crop tiles (art/src/kit/strip5_tiles), composed by `paint4` into strip5_* (fixed knot / curl ends, sampled runs, mirrored right ends, wells open), gauges from rs-C1 / rs-C2 crops (gauge5_*); all HUD art in the hires atlas. Eitr = neutral fill tinted (the violet fill was keyed as magenta). Summon frames 0.7 above the buffs.
 - [x] In-game Codex fidelity (runs 20261023-055133 / -062811 / -070615): strip 7.5 -> 8, gauges 7 -> 8. Perf (99r, run 20261023-052657 vs main 3efc5bf run -050706): RuneSkin B/frame hud-idle 376 vs 997, inventory 20.8 K vs 22.1 K, crafting 13.9 K vs 31.8 K (CharacterPreview dominates on main too).
-- [ ] Remaining art diffs (Codex): metal a bit darker / bluer than the mockup, hotbar cells slightly smaller, rage arc slightly redder, column frame detail softer.
+- [x] Remaining art diffs (Codex): metal a bit darker / bluer than the mockup, hotbar cells slightly smaller, rage arc slightly redder, column frame detail softer.
+      2026-10-26: metal / hotbar cells = strip7 target panel now (user pick steel + teal, cell size is layout). Rage arc: the
+      offline render ignored Image.color - tinted #FFE6A8 the glow read hue 25.0 vs reference 27.6; ring glow repainted
+      (Codex, kit gauge5_ring2 on black, key black: the magenta un-mix cut the halo into a hard red rim), core aligned to the
+      track (r 62.6 / 62.7 px), tint color.hud.gauge.rage #FFD8B0 -> hue 27.9; Codex 7 -> 8. Column frame repainted slim with
+      diamond-pointed ends + knot inlays (kit gauge5_col2), size.hud.gauge.stagger.w 20 -> 12, fill recess inset
+      share.hud.gauge.stagger.inset.y 0.12 (was a hard-coded 0.06); Codex 6 -> 8. `compare-gauges` applies the tints and
+      reads the theme's // comments.
 
 ## Enemy names + alert above (0.18.1, 2026-10-23)
 

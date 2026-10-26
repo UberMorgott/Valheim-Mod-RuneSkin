@@ -9472,14 +9472,14 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.gauge5.ring.fill",
-      "notes": "Track H r3: Codex repaint of the rs-C1 / rs-C2 gauge crops (strip5_tiles/prompt-G*.txt); full rage ring glow (radial fill)",
+      "notes": "Track H r3: Codex repaint of the rs-C1 / rs-C2 gauge crops (strip5_tiles/prompt-G*.txt); full rage ring glow (radial fill). 2026-10-26 redraw gauge5_ring2 (hot core + symmetric orange halo, Codex 7/10 note: red outer rim + yellow inner band); painted on black, key black (alpha = max channel: soft halo, no magenta-unmix rim); core circle fitted r 399.2 at (508.8, 497.3), cropped so core r / half-size = 0.829 as the old fill (aligned to the track)",
       "atlas": "hires"
     },
     {
       "name": "gauge5_col_frame",
       "file": "gauge5_col_frame.png",
       "size": [
-        33,
+        22,
         178
       ],
       "border": {
@@ -9495,7 +9495,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.gauge5.col.frame",
-      "notes": "Track H r3: Codex repaint of the rs-C1 / rs-C2 gauge crops (strip5_tiles/prompt-G*.txt); stagger column frame",
+      "notes": "Track H r3: Codex repaint of the rs-C1 / rs-C2 gauge crops (strip5_tiles/prompt-G*.txt); stagger column frame. 2026-10-26 redraw gauge5_col2 (slim, diamond-pointed ends, knot inlays; Codex 6/10 note on the old wide chevron caps): frame 79 % of the sprite width, recess x 0.28..0.72, y 0.12..0.88 (share.hud.gauge.stagger.inset / .inset.y)",
       "atlas": "hires"
     },
     {

@@ -81,8 +81,9 @@ namespace RuneSkin.PlayerHud
             Centre(col, new Vector2(d / 2f + ThemeTokens.GetFloat("size.hud.gauge.stagger.gap", 22f) + cw / 2f, 0f), cw, ch);
             Stretch(_colFrame.rectTransform);
             var inset = ThemeTokens.GetFloat("share.hud.gauge.stagger.inset", 0.18f);
-            Inset(_colFill.rectTransform, cw * inset, ch * 0.06f);
-            Inset(_colBurst.rectTransform, cw * inset, ch * 0.06f); // inside the frame channel (the burst never covers the frame)
+            var insetY = ch * ThemeTokens.GetFloat("share.hud.gauge.stagger.inset.y", 0.06f); // frame art recess ends (gauge5_col_frame notes)
+            Inset(_colFill.rectTransform, cw * inset, insetY);
+            Inset(_colBurst.rectTransform, cw * inset, insetY); // inside the frame channel (the burst never covers the frame)
         }
 
         public void SetActive(bool on)

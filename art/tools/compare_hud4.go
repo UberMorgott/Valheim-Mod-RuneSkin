@@ -26,6 +26,15 @@ func loadTheme() {
 		b, err = os.ReadFile("../src/RuneSkin/Theme/default-theme.json")
 	}
 	must(err)
+	// the theme carries whole-line // section comments (the runtime parser skips them); drop them for encoding/json
+	lines := strings.Split(string(b), "\n")
+	kept := lines[:0]
+	for _, ln := range lines {
+		if !strings.HasPrefix(strings.TrimSpace(ln), "//") {
+			kept = append(kept, ln)
+		}
+	}
+	b = []byte(strings.Join(kept, "\n"))
 	var doc map[string]json.RawMessage
 	must(json.Unmarshal(b, &doc))
 	themeVals = map[string]float64{}
@@ -616,6 +625,7 @@ func renderGauges(r, s float64, staggered bool) *image.NRGBA {
 	cx, cy := 960.0-720, 540.0-380
 	d := tv("size.hud.gauge.ring", 76)
 	op := 0.85
+	tint := color.NRGBA{255, 255, 255, 255}
 	put := func(name string, x, y, w, h float64, a float64, mask func(px, py int) bool) {
 		s := sprites[name].img
 		t := resize(s, int(math.Round(w)), int(math.Round(h)))
@@ -626,12 +636,18 @@ func renderGauges(r, s float64, staggered bool) *image.NRGBA {
 					t.Pix[i+3] = 0
 					continue
 				}
-				t.Pix[i+3] = uint8(float64(t.Pix[i+3]) * a)
+				// Image.color multiplies the sprite as in game (CenterGauges tint tokens)
+				t.Pix[i] = uint8(int(t.Pix[i]) * int(tint.R) / 255)
+				t.Pix[i+1] = uint8(int(t.Pix[i+1]) * int(tint.G) / 255)
+				t.Pix[i+2] = uint8(int(t.Pix[i+2]) * int(tint.B) / 255)
+				t.Pix[i+3] = uint8(float64(t.Pix[i+3]) * a * float64(tint.A) / 255)
 			}
 		}
 		over(img, t, image.Pt(int(math.Round(x)), int(math.Round(y))))
 	}
+	tint = tcol("color.hud.gauge.frame", "#FFFFFFFF")
 	put("gauge5_ring_track", cx-d/2, cy-d/2, d, d, op, nil)
+	tint = tcol("color.hud.gauge.rage", "#FFFFFFFF")
 	put("gauge5_ring_fill", cx-d/2, cy-d/2, d, d, op, func(px, py int) bool {
 		a := math.Atan2(float64(px)+0.5-d/2, d/2-(float64(py)+0.5))
 		if a < 0 {
@@ -649,9 +665,15 @@ func renderGauges(r, s float64, staggered bool) *image.NRGBA {
 		name = "gauge5_col_burst"
 		ins *= 0.6
 	}
-	fh := ch - 2*ch*0.06
+	iy := ch * tv("share.hud.gauge.stagger.inset.y", 0.06)
+	fh := ch - 2*iy
+	tint = tcol("color.hud.gauge.frame", "#FFFFFFFF")
 	put("gauge5_col_frame", colX, cy-ch/2, cw, ch, op, nil)
-	put(name, colX+ins, cy-ch/2+ch*0.06, cw-2*ins, fh, op, func(px, py int) bool { return float64(py) >= fh*(1-s) })
+	tint = tcol("color.hud.gauge.stagger", "#FFFFFFFF")
+	if staggered {
+		tint = tcol("color.hud.gauge.stagger.active", "#FFFFFFFF")
+	}
+	put(name, colX+ins, cy-ch/2+iy, cw-2*ins, fh, op, func(px, py int) bool { return float64(py) >= fh*(1-s) })
 	return img
 }
 
