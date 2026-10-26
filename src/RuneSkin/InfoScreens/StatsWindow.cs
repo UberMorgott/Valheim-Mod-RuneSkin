@@ -1030,10 +1030,20 @@ namespace RuneSkin.InfoScreens
             var w = Instance;
             if (!w || !w.IsOpen) return true;
             var p = Player.m_localPlayer;
-            if (!p || p.IsDead() || p.InCutscene() || p.IsTeleporting()) return true;
+            var pressed = ZInput.GetButtonDown("JoyButtonB") || ZInput.GetKeyDown(KeyCode.Escape);
+            if (!p || p.IsDead() || p.InCutscene() || p.IsTeleporting())
+            {
+                if (pressed) Plugin.Log.LogInfo("[RuneSkin] stats back ignored: player dead / cutscene / teleporting");
+                return true;
+            }
             if (gui.m_craftTimer >= 0f || (Chat.instance && Chat.instance.HasFocus()) || global::Console.IsVisible() || Menu.IsVisible() ||
-                (TextViewer.instance && TextViewer.instance.IsVisible()) || GameCamera.InFreeFly() || Minimap.IsOpen()) return true;
-            if (!ZInput.GetButtonDown("JoyButtonB") && !ZInput.GetKeyDown(KeyCode.Escape)) return true;
+                (TextViewer.instance && TextViewer.instance.IsVisible()) || GameCamera.InFreeFly() || Minimap.IsOpen())
+            {
+                // Run 20261026-182632 / -184538: Escape left the window open; name the guard that held it.
+                if (pressed) Plugin.Log.LogInfo($"[RuneSkin] stats back ignored: craftTimer={gui.m_craftTimer:0.00} chat={(Chat.instance && Chat.instance.HasFocus())} console={(global::Console.IsVisible())} menu={Menu.IsVisible()} textViewer={(TextViewer.instance && TextViewer.instance.IsVisible())} freeFly={GameCamera.InFreeFly()} map={Minimap.IsOpen()}");
+                return true;
+            }
+            if (!pressed) return true;
             w.Close();
             // One press closes one layer: the button is consumed as vanilla consumes it when it hides the inventory
             // (InventoryGui.Update :556-559), so no later reader this frame sees it.

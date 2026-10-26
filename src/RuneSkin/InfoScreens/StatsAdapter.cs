@@ -21,8 +21,12 @@ namespace RuneSkin.InfoScreens
             catch (System.Exception e) { Plugin.Log.LogError($"[RuneSkin] character stats window build failed: {e}"); }
         }
 
+        // First among the InventoryGui.Update prefixes: the stats window sits above the inventory, so its Escape / B is
+        // read before any mod's (a later prefix never runs once an earlier one returns false - HarmonyX; run 20261026-184538:
+        // with a worn AdventureBackpacks backpack the window stayed open on Escape).
         [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Update))]
         [HarmonyPrefix]
+        [HarmonyPriority(Priority.First)]
         private static bool Update_Prefix(InventoryGui __instance) => StatsWindow.HandleBack(__instance);
 
         // Real attack timing for the damage-per-second line (AttackTimer): a local player attack starts here ...
