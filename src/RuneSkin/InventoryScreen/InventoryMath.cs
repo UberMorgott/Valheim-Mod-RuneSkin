@@ -54,6 +54,8 @@ namespace RuneSkin.InventoryScreen
         // Corner-cap keep-out of the dock panels (PanelDecor.ContentInset -> PanelMath.CapInset, canvas units, set
         // live): the glyph action row sits at least this far from the bottom and right edges.
         public float PanelCapInset;
+        // Corner-cap keep-out of the centre column's panel stack (canvas units, PanelDecor.KeepOut).
+        public float CenterCapInset;
         // Figure box right of the storage cells: portrait, width = height x aspect.
         public float DollFigureAspect = 0.66f;
         public float GridCell = 64f, GridGap = 8f, HotbarHeaderH = 30f;
@@ -205,11 +207,20 @@ namespace RuneSkin.InventoryScreen
             return o;
         }
 
+        // Footer plates start this far above the footer box bottom (InventorySkin.Footer inset, canvas units).
+        public const float FooterInsetY = 4f;
+
         private static void LayoutCenter(InventoryInput i, InventoryTokens t, float k, InventoryLayout o)
         {
-            var c = o.Center;
             var gap = t.InnerGap * k;
             var pad = t.PanelPad * k;
+            // Window content inset (PanelDecor.KeepOut of the centre host): the skin draws every row PanelPad inside its
+            // box and the footer plates FooterInsetY above its bottom, so the boxes give the rest of the keep-out -
+            // sideways for every row, upward for the footer (user 2026-10-26: armor / trash plates under the bottom
+            // corner straps).
+            var side = Math.Max(0f, t.CenterCapInset - pad);
+            var lift = Math.Max(0f, t.CenterCapInset - FooterInsetY);
+            var c = new Box(o.Center.X + side, o.Center.Y, Math.Max(0f, o.Center.W - 2f * side), Math.Max(0f, o.Center.H - lift));
             var footerH = t.FooterH * k;
             var dollPad = t.DollPad * k;
             var dollRows = DollRows(i, t);
@@ -355,8 +366,10 @@ namespace RuneSkin.InventoryScreen
             var hasChest = i.ChestW > 0 && i.ChestH > 0;
             var hasPack = i.BackpackW > 0 && i.BackpackH > 0;
             GridFit chest = default, pack = default;
-            if (hasChest) chest = Fit(i.ChestW, i.ChestH, dock.W, dock.H, headerH, pad, t.ContainerCell * k, t.ContainerGap * k, o.MinCell, t.ScrollbarW * k);
-            if (hasPack) pack = Fit(i.BackpackW, i.BackpackH, dock.W, dock.H, headerH, pad, t.ContainerCell * k, t.ContainerGap * k, o.MinCell, t.ScrollbarW * k);
+            // Grid width inside the window content inset (DockSide each side, ContainerGridView).
+            var fitW = Math.Max(0f, dock.W - 2f * (DockSide(t, k) - pad));
+            if (hasChest) chest = Fit(i.ChestW, i.ChestH, fitW, dock.H, headerH, pad, t.ContainerCell * k, t.ContainerGap * k, o.MinCell, t.ScrollbarW * k);
+            if (hasPack) pack = Fit(i.BackpackW, i.BackpackH, fitW, dock.H, headerH, pad, t.ContainerCell * k, t.ContainerGap * k, o.MinCell, t.ScrollbarW * k);
 
             float chestH = 0f, packH = 0f;
             if (hasChest && hasPack)
@@ -427,9 +440,9 @@ namespace RuneSkin.InventoryScreen
         {
             var pad = t.PanelPad * k;
             var h = t.PanelActionsH * k;
-            var right = Math.Max(pad, t.PanelCapInset);
+            var side = DockSide(t, k);
             var bottom = Math.Max(pad / 2f, t.PanelCapInset);
-            return new Box(panel.X + pad, panel.Bottom - bottom - h, Math.Max(0f, panel.W - pad - right), h);
+            return new Box(panel.X + side, panel.Bottom - bottom - h, Math.Max(0f, panel.W - 2f * side), h);
         }
 
         // Grid view of a dock panel: under the title row, top-aligned, as tall as its visible rows (InventoryGrid
@@ -440,8 +453,13 @@ namespace RuneSkin.InventoryScreen
             var top = panel.Y + t.PanelHeaderH * k + pad;
             var maxH = Math.Max(0f, ActionRow(panel, t, k).Y - pad / 2f - top); // = Fit's inner height
             var h = fit.ScrollV || !(fit.Pitch > 0f) ? maxH : Math.Min(maxH, fit.VisibleRows * fit.Pitch);
-            return new Box(panel.X + pad, top, Math.Max(0f, panel.W - 2f * pad), h);
+            var side = DockSide(t, k);
+            return new Box(panel.X + side, top, Math.Max(0f, panel.W - 2f * side), h);
         }
+
+        // Left / right edge of a dock panel's content: its pad, at least the window content inset (corner caps: the
+        // bottom grid rows sit inside the caps' reach, user 2026-10-26).
+        public static float DockSide(InventoryTokens t, float k) => Math.Max(t.PanelPad * k, t.PanelCapInset);
 
         private static float MinPanelH(int rows, float pitch, float headerH, float pad) =>
             headerH + 2f * pad + Math.Min(rows, 2) * pitch;

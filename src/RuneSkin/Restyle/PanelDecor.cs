@@ -214,6 +214,18 @@ namespace RuneSkin.Restyle
         // keep-out (theme "clear.<asset>", PanelMath.CapInset) minus how far the stack reaches beyond the host.
         public float ContentInset() => _fitted ? 0f : CapClearance(ThemeTokens.GetFloat(PadToken, 0f));
 
+        // THE window content inset (canvas units of `canvas`) of the panel stack on `host` (0 = no stack): every owner
+        // that lays a window's inner content out keeps it at least this far from the host's left / right / bottom edges
+        // (and below the header at the top), so no row, plate or button runs under a corner cap (user 2026-10-26:
+        // footer plates and the craft button under the bottom corner straps). One rule for every window
+        // (PanelMath.CapInset: a rect inset by the keep-out on both sides of a corner never touches the cap).
+        public static float KeepOut(Transform host, RectTransform canvas)
+        {
+            var stack = host ? host.Find(ChildName) : null;
+            if (!stack || !stack.TryGetComponent<PanelDecor>(out var decor) || !canvas) return 0f;
+            return decor.ContentInset() * host.lossyScale.x / Mathf.Max(InventoryScreen.Geo.WorldPerUnit(canvas), 1e-6f);
+        }
+
         // Widest corner cap (native size, host units): content further than this from the left / right edge never
         // runs under a cap whatever its height (wide short hosts such as the HUD band use it instead of ContentInset).
         public float CapWidth()

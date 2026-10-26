@@ -550,6 +550,7 @@ namespace RuneSkin.InventoryScreen
             i.HudTop = HudTopLogical(scale);
             ReadTokens();
             _tokens.PanelCapInset = CapKeepOut(_chestHost);
+            _tokens.CenterCapInset = CapKeepOut(_centerHost);
             _base = InventoryMath.Compute(i, _tokens);
             Move();
             RequestBand(scale);
@@ -574,13 +575,8 @@ namespace RuneSkin.InventoryScreen
             cluster.SetBand(left * scale, right * scale, quick);
         }
 
-        // Corner-cap keep-out of a dock host's panel stack (PanelDecor.ContentInset, host units) in canvas units.
-        private float CapKeepOut(RectTransform host)
-        {
-            var stack = host ? host.Find(PanelDecor.ChildName) : null;
-            if (!stack || !stack.TryGetComponent<PanelDecor>(out var decor)) return 0f;
-            return decor.ContentInset() * host.lossyScale.x / Mathf.Max(Geo.WorldPerUnit(_canvas), 1e-6f);
-        }
+        // Corner-cap keep-out of a host's panel stack in canvas units (PanelDecor.KeepOut: the window content inset).
+        private float CapKeepOut(RectTransform host) => PanelDecor.KeepOut(host, _canvas);
 
         private static void ClearBand()
         {
@@ -1083,8 +1079,7 @@ namespace RuneSkin.InventoryScreen
             if (rt.sizeDelta != sz) rt.sizeDelta = sz;
         }
 
-        // Footer plates start this far under the footer box top (canvas units).
-        private const float FooterInsetY = 4f;
+        private const float FooterInsetY = InventoryMath.FooterInsetY;
 
         // RuneSkin owns the HUD strip: the inventory's hotbar row is the strip's hotbar.
         private static bool StripHotbar => PlayerHud.HudCluster.Instance;

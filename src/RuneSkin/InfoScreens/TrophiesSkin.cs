@@ -271,7 +271,7 @@ namespace RuneSkin.InfoScreens
             if (box.IsEmpty) return;
             Geo.SetScale(_frame, 1f);
             Geo.Place(_canvas, _frame, box);
-            var pad = ThemeTokens.GetFloat("size.info.pad", 22f) * k;
+            var pad = Mathf.Max(ThemeTokens.GetFloat("size.info.pad", 22f) * k, PanelDecor.KeepOut(_frame, _canvas)); // window content inset (corner caps)
             var inner = new Box(box.X + pad, box.Y + pad, box.W - 2f * pad, box.H - 2f * pad);
             var gap = ThemeTokens.GetFloat("size.info.trophy.gap", 8f) * k;
             // The window's one header (RuneWindowHeader): band at the window top, title "topic" centred in the rune face

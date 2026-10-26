@@ -77,25 +77,26 @@ namespace RuneSkin.CraftingScreen
             var k = i.Scale > 0f ? i.Scale : 1f;
             float S(float v) => v * k;
             var gap = S(t.Gap);
-            // Content: Pad from the edges; the corner caps only reach into the header row (kept clear horizontally)
-            // and the bottom edge (half their keep-out).
+            // Content: Pad from the edges, at least the window content inset (PanelDecor.KeepOut = CapInset) from the
+            // left / right / bottom edges, so nothing runs under a corner cap (user 2026-10-26: the requirements well and
+            // the craft button lay under the bottom corner straps with half the keep-out at the bottom only).
             var pad = S(t.Pad);
-            var bottomPad = Math.Max(pad, i.CapInset * 0.5f);
-            var c = new Box(i.Panel.X + pad, i.Panel.Y + pad, Math.Max(0f, i.Panel.W - 2f * pad), Math.Max(0f, i.Panel.H - pad - bottomPad));
+            var edge = Math.Max(pad, i.CapInset);
+            var c = new Box(i.Panel.X + edge, i.Panel.Y + pad, Math.Max(0f, i.Panel.W - 2f * edge), Math.Max(0f, i.Panel.H - pad - edge));
             o.Content = c;
             var y = c.Y;
 
             // Header: station icon (square) | name plaque | level badge (square, a little smaller), clear of the caps.
             var hh = Math.Min(S(t.HeaderH), c.H * 0.14f);
-            var capX = Math.Max(0f, i.CapInset - pad);
-            o.Header = new Box(c.X + capX, y, Math.Max(0f, c.W - 2f * capX), hh);
+            o.Header = new Box(c.X, y, c.W, hh); // c is clear of the caps sideways already
             if (i.WindowHeaderH > 0f)
             {
                 // The one window header (RuneWindowHeader): the band at the panel top, content under it.
                 hh = i.WindowHeaderH;
                 y = i.Panel.Y;
                 o.Header = new Box(i.Panel.X, y, i.Panel.W, hh);
-                c = new Box(c.X, i.Panel.Y + hh + gap, c.W, Math.Max(0f, c.Bottom - (i.Panel.Y + hh + gap)));
+                var contentTop = i.Panel.Y + Math.Max(hh + gap, edge);
+                c = new Box(c.X, contentTop, c.W, Math.Max(0f, c.Bottom - contentTop));
                 o.Content = c;
             }
             var badge = hh * 0.8f;

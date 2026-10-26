@@ -616,12 +616,7 @@ namespace RuneSkin.CraftingScreen
             }
         }
 
-        private float CapInset()
-        {
-            var stack = _host ? _host.Find(PanelDecor.ChildName) : null;
-            if (!stack || !stack.TryGetComponent<PanelDecor>(out var decor)) return 0f;
-            return decor.ContentInset() * _host.lossyScale.x / Mathf.Max(Geo.WorldPerUnit(_canvas), 1e-6f);
-        }
+        private float CapInset() => PanelDecor.KeepOut(_host, _canvas);
 
         private int _tokensRevision = -1;
 

@@ -81,6 +81,10 @@ namespace RuneSkin.Restyle
             return h * InsetShare + Math.Max(iconSlot, auxSlot);
         }
 
+        // How far the icon / aux slots move in from the band edges: the plate's frame keep-out beyond the plate's own
+        // inset (PlateInFrame narrows the plate by the same amount, so the slots stay inside the drawn plate).
+        public static float SlotShift(float keepOut, float h) => Math.Max(0f, keepOut - h * PlateInsetShare);
+
         // Canvas slots of a header band: small icon left, aux value right (both vertically centred, IconShare of the
         // height tall), the title box between the symmetric sides.
         public static void Slots(Box band, bool icon, float auxW, out Box iconBox, out Box auxBox, out Box titleBox)

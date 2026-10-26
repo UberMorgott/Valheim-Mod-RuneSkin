@@ -166,8 +166,16 @@ namespace RuneSkin.Restyle
         {
             if (!canvas || band.IsEmpty) return;
             _stretch = 0f;
-            Geo.Place(canvas, (RectTransform)transform, band);
-            WindowHeaderMath.Slots(band, icon, auxW, out IconBox, out AuxBox, out TitleBox);
+            var rt = (RectTransform)transform;
+            Geo.Place(canvas, rt, band);
+            // Icon / aux slots move in with the plate's frame keep-out (its own frame's top border and corner caps): an
+            // icon or weight plate at the band edge lay under the top corner caps (user 2026-10-26). Own frame only, so
+            // the slots never jump while the window is dragged over another one.
+            FrameInsets(rt, Window, WorldRect(rt), FrameMargin * Mathf.Abs(canvas.lossyScale.x), out var kl, out var kr, out _);
+            var wpu = Mathf.Max(Geo.WorldPerUnit(canvas), 1e-6f);
+            var shift = WindowHeaderMath.SlotShift(Mathf.Max(kl, kr) / wpu, band.H);
+            var slots = new Box(band.X + shift, band.Y, Mathf.Max(0f, band.W - 2f * shift), band.H);
+            WindowHeaderMath.Slots(slots, icon, auxW, out IconBox, out AuxBox, out TitleBox);
             _hasIcon = icon;
             _iconShare = icon ? 1f : 0f;
             _auxShare = auxW > 0f && band.H > 0f ? auxW / band.H : 0f;
