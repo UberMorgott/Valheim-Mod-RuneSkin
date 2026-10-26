@@ -8,7 +8,7 @@ namespace RuneSkin.PlayerHud
     // Raycast-only layer of the strip (coordinator decision 2026-10-23): the strip's visuals keep the HUD's sort, so every
     // window, info box, TopOverlay and ModalLayer renders above them; while the inventory is open this sibling of the
     // strip (same parent, mirrored transform) sorts above the GUI canvas with one invisible hit area per hotbar / potion
-    // cell, so a press or drop on a strip cell still reaches StripInput (forwarded by StripHit) instead of InventoryGui's
+    // cell (hotbar / potion / food / ability; hover = frame + tooltip), so a press, drop or hover on a strip cell still reaches StripInput (forwarded by StripHit) instead of InventoryGui's
     // full-screen root/dropButton (run 20261022-194551). Nothing is drawn: HitArea builds no mesh and is fully clear.
     internal sealed class StripHits
     {
@@ -44,7 +44,7 @@ namespace RuneSkin.PlayerHud
                 _inputs.Clear();
                 strip.GetComponentsInChildren(false, _inputs);
                 for (var i = _inputs.Count - 1; i >= 0; i--)
-                    if (_inputs[i].Hotbar < 0 && _inputs[i].Potion < 0) _inputs.RemoveAt(i);
+                    if (_inputs[i].Hotbar < 0 && _inputs[i].Potion < 0 && _inputs[i].Food < 0 && _inputs[i].Ability < 0) _inputs.RemoveAt(i);
             }
             for (var i = 0; i < _inputs.Count; i++)
             {
@@ -115,7 +115,8 @@ namespace RuneSkin.PlayerHud
     }
 
     // Hit area of one strip cell: pointer events go to that cell's StripInput.
-    public sealed class StripHit : MonoBehaviour, IPointerDownHandler, IDropHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
+    public sealed class StripHit : MonoBehaviour, IPointerDownHandler, IDropHandler, IBeginDragHandler, IDragHandler, IEndDragHandler,
+        IPointerEnterHandler, IPointerExitHandler
     {
         public StripInput Target;
 
@@ -124,5 +125,10 @@ namespace RuneSkin.PlayerHud
         public void OnBeginDrag(PointerEventData eventData) { if (Target) Target.OnBeginDrag(eventData); }
         public void OnDrag(PointerEventData eventData) { if (Target) Target.OnDrag(eventData); }
         public void OnEndDrag(PointerEventData eventData) { if (Target) Target.OnEndDrag(eventData); }
+        // hover: the cell's hover frame + item tooltip (the hit area is the hovered object UITooltip tracks)
+        public void OnPointerEnter(PointerEventData eventData) { if (Target) Target.OnPointerEnter(eventData); }
+        public void OnPointerExit(PointerEventData eventData) { if (Target) Target.OnPointerExit(eventData); }
+        // the layer goes with the inventory: Unity sends no exit then, so the hover ends here
+        private void OnDisable() { if (Target && Target.Hovered) Target.OnPointerExit(null); }
     }
 }

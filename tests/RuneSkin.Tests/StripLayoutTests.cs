@@ -43,6 +43,7 @@ namespace RuneSkin.Tests
             SegW = P(side + ".seg.w"),
             EndW = P(side + ".end.w"),
             SlotY = P(side + ".slot.y"),
+            EndJoint = Floats.TryGetValue("size.hud.panel." + side + ".end.joint", out var j) ? j : 0f,
             Arts = (int)Floats["count.hud.panel." + side + ".arts"]
         };
 
@@ -104,7 +105,8 @@ namespace RuneSkin.Tests
             Assert.Equal(24f, Sheet(l.WingL.End.X), 1);
             Assert.Equal(2447f, Sheet(l.WingR.Seg(0).X), 1);
             Assert.Equal(2955f, Sheet(l.WingR.End.X), 1);
-            Assert.Equal(3136f, Sheet(l.WingR.End.Right), 1);
+            // the right end = panel_food_end mirrored + the food wing's socket margin (user 2026-10-26): 233 sheet px wide
+            Assert.Equal(3188f, Sheet(l.WingR.End.Right), 1);
             // pieces butt edge to edge
             Assert.Equal(l.WingL.Inner.Right, l.CenterX, 3);
             Assert.Equal(l.WingL.Seg(0).Right, l.WingL.Inner.X, 3);
@@ -270,6 +272,47 @@ namespace RuneSkin.Tests
             Is("potion.end", P("potion.end.w"));
             for (var k = 0; k < Floats["count.hud.panel.food.arts"]; k++) Is("food.seg" + k, P("food.seg.w"));
             for (var k = 0; k < Floats["count.hud.panel.potion.arts"]; k++) Is("potion.seg" + k, P("potion.seg.w"));
+        }
+
+        // Right end = mirror of the left (user 2026-10-26: the row's own right medallion sat over the last potion cell, its
+        // strap under it): for any slot count the end never overlaps a cell and its strap is as far from the last potion
+        // cell as the left strap from the outermost food cell (1 screen px at 1080 = 1 art px).
+        [Theory]
+        [InlineData(1, 1)]
+        [InlineData(3, 4)]
+        [InlineData(4, 4)]
+        [InlineData(3, 2)]
+        [InlineData(1, 4)]
+        public void EndsMirrorEachOther(int food, int potions)
+        {
+            var i = In(food: food, potions: potions);
+            var l = StripMath.Compute(i);
+            Assert.True(l.Fits);
+            for (var k = 0; k < l.PotionShown; k++) Assert.True(l.WingR.End.X >= l.PotionLeft(k) + l.PotionCell - 0.001f, $"end over potion {k}");
+            for (var k = 0; k < l.FoodShown; k++) Assert.True(l.WingL.End.Right <= l.FoodLeft(k) + 0.001f, $"end over food {k}");
+            Assert.True(l.JointL > 0f);
+            Assert.True(Math.Abs(l.JointL - l.JointR) <= i.Unit, $"joint L {l.JointL} R {l.JointR}"); // within 1 art px
+        }
+
+        // Wing slots = capacity, empties included (user 2026-10-26): 0 eaten -> 3 sockets, MorgottTweaks 4th slot -> 4,
+        // never fewer than the filled ones.
+        [Theory]
+        [InlineData(3, 0, 3)]
+        [InlineData(3, 2, 3)]
+        [InlineData(4, 0, 4)]
+        [InlineData(4, 4, 4)]
+        [InlineData(3, 4, 4)]  // capacity shrank under eaten foods
+        [InlineData(0, 0, 0)]  // potion wing without quick slots
+        [InlineData(-1, 0, 0)]
+        public void WingSlotsAreTheCapacity(int capacity, int filled, int want) =>
+            Assert.Equal(want, StripMath.WingSlots(capacity, filled));
+
+        [Fact]
+        public void NoFoodEatenStillDrawsThreeSockets()
+        {
+            var l = StripMath.Compute(In(food: StripMath.WingSlots(StripMath.VanillaFoodSlots, 0)));
+            Assert.Equal(3, l.FoodShown);
+            Assert.True(l.WingL.Slots == 3 && l.WingL.X < l.CenterX);
         }
 
         private static string RepoRoot()

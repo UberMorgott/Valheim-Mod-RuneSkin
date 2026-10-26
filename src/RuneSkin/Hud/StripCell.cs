@@ -16,14 +16,14 @@ namespace RuneSkin.PlayerHud
     {
         public readonly RectTransform Root;
         public readonly Image Bowl;
-        private readonly Image _shadow, _glow, _select, _rim, _icon, _sweep, _ring, _mark, _durTrack, _durFill;
+        private readonly Image _shadow, _glow, _select, _rim, _hover, _icon, _sweep, _ring, _mark, _durTrack, _durFill;
         private readonly TMP_Text _key, _count, _timer;
         private readonly bool _round;
         private float _side = -1f, _dur = -1f;
         private Sprite _shownIcon;
         private string _shownKey;
         private int _shownCount = int.MinValue, _shownSeconds = int.MinValue;
-        private bool _shownGlow, _shownRim, _shownMark;
+        private bool _shownGlow, _shownRim, _shownMark, _shownHover;
         private Color _shownRimColor, _shownIconColor = Color.white;
         private bool _hasDur;
         private float _shownDurFill = -1f;
@@ -35,6 +35,9 @@ namespace RuneSkin.PlayerHud
         public float RarityAt;
         public bool RarityMagic, RaritySet;
         public Color RarityColor;
+
+        // The cell's pointer input (hover state + tooltip), cached by HudStrip.
+        public StripInput Input;
 
         public bool IsRound => _round;
 
@@ -55,12 +58,18 @@ namespace RuneSkin.PlayerHud
                 round ? Image.Type.Simple : Image.Type.Sliced, raycast: true);
             _rim = art.Image("Rim", Root, "sprite.hud.strip4.rim", "color.frame", Image.Type.Sliced);
             _rim.gameObject.SetActive(false);
+            // Hover frame = the inventory grid's hover look (role slot.cell spriteHover sprite.slot.cell.selected, the grid
+            // element's Button SpriteSwap): its lit border over the bowl, centre left open so the bowl / icon stay as they are.
+            _hover = art.Image("Hover", Root, round ? "sprite.hud.gp.ring" : "sprite.slot.cell.selected", "color.hud.strip.hover", round ? Image.Type.Simple : Image.Type.Sliced);
+            _hover.fillCenter = false;
+            _hover.gameObject.SetActive(false);
             // strip4 art: borders at their authored size (PPU 200 maps the 2x cuts onto the mockup's px); theme scale on top.
             var artScale = ThemeTokens.GetFloat("share.hud.strip4.art", 1f);
             art.Track(_shadow, artScale);
             art.Track(Bowl, artScale);
             art.Track(_rim, artScale);
             if (!round) art.Track(_select, artScale);
+            if (!round) art.Track(_hover, artScale);
             // No placeholder art in an empty cell (user 2026-10-26, mockup v2: only real items; the panel art carries the empty well).
             _icon = art.Image("Icon", Root, null, "color.frame", Image.Type.Simple);
             _icon.preserveAspect = true;
@@ -137,7 +146,9 @@ namespace RuneSkin.PlayerHud
             var bh = _round ? bw : h;
             var oy = (h - bh) / 2f; // disc centre above the cell centre (half the band)
             var side = Mathf.Min(bw, bh);
-            var halo = side * (ThemeTokens.GetFloat("share.hud.strip.glow", 1.375f) - 1f);
+            // strip_glow carries its whole falloff (alpha 0 at the sprite edge; cell = 0.52 of the sprite): 1.8 keeps the
+            // ring where the old tight cut (0.72, 1.3) drew it, without the old cut's hard square edge.
+            var halo = side * (ThemeTokens.GetFloat("share.hud.strip.glow", 1.8f) - 1f);
             Center(_glow.rectTransform, bw + halo, bh + halo, oy);
             var seat = side * ThemeTokens.GetFloat("share.hud.strip.seat", 0.08f);
             Center(_shadow.rectTransform, bw + seat, bh + seat, oy);
@@ -149,6 +160,7 @@ namespace RuneSkin.PlayerHud
             Center(Bowl.rectTransform, bw * artW, bh * artH, oy);
             var rimIn = 2f * side * ThemeTokens.GetFloat("share.hud.strip.rim.inset", 0.035f); // inside the metal rim
             Center(_rim.rectTransform, bw - rimIn, bh - rimIn, oy);
+            Center(_hover.rectTransform, bw * artW, bh * artH, oy);
             Center(_icon.rectTransform, side * ThemeTokens.GetFloat("share.hud.strip.icon", 0.72f), side * ThemeTokens.GetFloat("share.hud.strip.icon", 0.72f), oy);
             Center(_sweep.rectTransform, bw - side * 0.12f, bh - side * 0.12f, oy);
             var ringIn = 2f * (_round ? side * 0.06f : side * 0.04f);
@@ -228,6 +240,17 @@ namespace RuneSkin.PlayerHud
             _glow.gameObject.SetActive(on && _glow.sprite);
             _select.gameObject.SetActive(on && _select.sprite);
         }
+
+        // Pointer hover / gamepad cursor on the cell: the grid's white hover frame.
+        public void Hover(bool on)
+        {
+            if (on == _shownHover) return;
+            _shownHover = on;
+            _hover.gameObject.SetActive(on && _hover.sprite);
+        }
+
+        public bool Hovered => _shownHover;
+        public GameObject HoverObject => _hover.gameObject;
 
         public void Rim(bool on, Color c)
         {

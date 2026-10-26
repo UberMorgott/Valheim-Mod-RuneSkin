@@ -16,11 +16,22 @@ namespace RuneSkin.PlayerHud
     // (IDropHandler: the grid element's UIDragHandler makes it the drag source); a press-drag that starts on a strip cell
     // drops at the release on a grid element (OnEndDrag; vanilla PC handles only the second press, OnReleasedOn is touch).
     // Ability cells activate their slot on a left press while the inventory is closed.
-    public sealed class StripInput : MonoBehaviour, IPointerDownHandler, IDropHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
+    // Hover (pointer on the cell or its hit area): HudStrip draws the grid's hover frame and fills the cell's UITooltip with
+    // the vanilla item tooltip (InventoryGrid.CreateItemTooltip, InventoryGrid.cs:409-412: topic = m_shared.m_name, text =
+    // ItemData.GetTooltip()); vanilla HotkeyBar elements carry no UITooltip at all.
+    public sealed class StripInput : MonoBehaviour, IPointerDownHandler, IDropHandler, IBeginDragHandler, IDragHandler, IEndDragHandler,
+        IPointerEnterHandler, IPointerExitHandler
     {
         public int Hotbar = -1;
         public int Ability = -1;
         public int Potion = -1;
+        public int Food = -1;
+
+        // Pointer over this cell (directly or through its StripHit while the inventory is open).
+        public bool Hovered { get; private set; }
+        // The cell's tooltip (HudStrip.EnsureTooltip) and its writer: fills topic / text for this cell, false = nothing to show.
+        public UITooltip Tooltip;
+        public static System.Func<StripInput, bool> FillTooltip;
 
         // Potion cell: its player-grid position (EAQS quick cell), valid while HasCell.
         public Vector2i Cell;
@@ -65,6 +76,22 @@ namespace RuneSkin.PlayerHud
             if (Ability >= 0 && eventData.button == PointerEventData.InputButton.Left && !InventoryGui.IsVisible())
                 RuneSkin.Api.Providers.ActivateAbility(Ability, player);
         }
+
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            Hovered = true;
+            if (!Tooltip || ZInput.IsTouchActive()) return;
+            // text first, then the hover start (UITooltip.OnHoverStart shows nothing for an empty topic / text)
+            if (FillTooltip != null && FillTooltip(this)) Tooltip.OnHoverStart(eventData.pointerEnter ? eventData.pointerEnter : gameObject);
+        }
+
+        public void OnPointerExit(PointerEventData eventData)
+        {
+            Hovered = false;
+            if (Tooltip && UITooltip.m_current == Tooltip) UITooltip.HideTooltip();
+        }
+
+        private void OnDisable() => Hovered = false;
 
         private static InventoryGrid.Modifier Modifier()
         {

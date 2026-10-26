@@ -192,6 +192,17 @@ namespace RuneSkin.PlayerHud
             _number.richText = mainValue;
             _numberSize = _number.fontSize;
             _textColor = _number.color;
+            if (mainValue)
+            {
+                // shield value of its own (variant C): glyph + number in the shield colour, right end of the window
+                _shieldText = art.Text("ShieldValue", Root, "font.body", "color.hud.shield.glow", numberSize * ThemeTokens.GetFloat("share.hud.shield.text", 0.8f), TextAlignmentOptions.MidlineRight);
+                WorldHud.TextLook.ApplyHudNumber(_shieldText);
+                _shieldText.richText = false;
+                _shieldText.gameObject.SetActive(false);
+                _shieldGlyph = art.Image("ShieldGlyph", Root, "sprite.glyph.sub.shield", "color.hud.shield.glow", Image.Type.Simple);
+                _shieldGlyph.preserveAspect = true;
+                _shieldGlyph.gameObject.SetActive(false);
+            }
             _aux = art.Text("Aux", Root, "font.body", "color.hud.timer", ThemeTokens.GetFloat("size.hud.font.timer", 13f), TextAlignmentOptions.MidlineLeft);
             _aux.gameObject.SetActive(false);
             _paused = art.Image("Paused", Root, "sprite.hud.glyph.seal", "color.hud.glyph", Image.Type.Simple);
@@ -382,6 +393,7 @@ namespace RuneSkin.PlayerHud
             nr.anchoredPosition = new Vector2(_insetL, _insetB);
             nr.sizeDelta = new Vector2(l, _h);
             FitValue();
+            _shieldPlaced = false;
             var ar = _aux.rectTransform;
             ar.anchoredPosition = new Vector2(_insetL + 4f, _insetB);
             ar.sizeDelta = new Vector2(Mathf.Max(0f, l - 8f), _h);
@@ -545,22 +557,26 @@ namespace RuneSkin.PlayerHud
             }
             if (Plain) showAvail = false;
             var extra = showAvail ? avail : -1f;
-            var shieldShown = _main ? Mathf.Ceil(Mathf.Max(0f, _shieldValue)) : 0f;
-            var maxShown = _main ? Mathf.Ceil(max) : -1f;
-            if (Mathf.CeilToInt(cur) != Mathf.CeilToInt(_shownCur) || Mathf.CeilToInt(extra) != Mathf.CeilToInt(_shownExtra) || _shownCur < 0f || shieldShown != _shownShield || maxShown != _shownMaxLabel)
+            // Label value: the HP (HealthText for the health bar: the HP even while the fill shows the energy shield),
+            // else this bar's own cur / max; the shield has its own label (ShieldLabel, variant C).
+            var lc = _main && _hpText ? _lblHp : cur;
+            var lm = _main && _hpText ? _lblHpMax : max;
+            if (_main) ShieldLabel();
+            var tagShown = _main && _hpText && _lblTagged ? 1f : 0f;
+            var maxShown = _main ? Mathf.Ceil(lm) : -1f;
+            if (Mathf.CeilToInt(lc) != Mathf.CeilToInt(_shownCur) || Mathf.CeilToInt(extra) != Mathf.CeilToInt(_shownExtra) || _shownCur < 0f || tagShown != _shownShield || maxShown != _shownMaxLabel)
             {
-                // Health (0.20.1 shield text variant A): "cur/max +shield", the "+shield" in the neon shield outline's
-                // colour, hidden at 0; one rich-text string centred in the window as a whole.
-                if (_main) _number.text = HudMath.HealthLabel(cur, max, shieldShown, ColorUtility.ToHtmlStringRGB(ThemeTokens.GetColor("color.hud.shield.glow", new Color(0.36f, 0.91f, 0.95f))));
-                else if (showAvail) _number.SetText("{0}/{1}", Mathf.Ceil(cur), Mathf.Ceil(avail));
-                else _number.SetText("{0}", Mathf.Ceil(cur));
+                // Health: the HP value alone, centred ("HP cur/max" while the fill is the energy shield).
+                if (_main) _number.text = HudMath.HpText(lc, lm, tagShown > 0f);
+                else if (showAvail) _number.SetText("{0}/{1}", Mathf.Ceil(lc), Mathf.Ceil(avail));
+                else _number.SetText("{0}", Mathf.Ceil(lc));
                 FitValue();
                 _shownExtra = extra;
-                _shownShield = shieldShown;
+                _shownShield = tagShown;
                 _shownMaxLabel = maxShown;
             }
             else if (_fitPending) FitValue();
-            _shownCur = cur;
+            _shownCur = lc;
             _shownAvail = avail;
         }
 
@@ -879,6 +895,83 @@ namespace RuneSkin.PlayerHud
         public void FxResync() => _fxEvents.Resync();
         // Shield amount drawn over the health fill on the next Render (0 = none).
         public void SetShield(float amount) => _shieldValue = Mathf.Max(0f, amount);
+        // ---- health labels (variant C) -----------------------------------------------------------------------------
+        private TMP_Text _shieldText;
+        private Image _shieldGlyph;
+        private bool _hpText, _lblTagged, _shieldPlaced;
+        private float _lblHp, _lblHpMax, _lblShield, _lblShieldMax;
+        private string _shownShieldText;
+
+        // Label values of the HP bar for this frame (call before Render): the HP value (tagged "HP" while the fill shows
+        // the energy shield) and the shield value (poolMax > 0: "cur/max" of a shield pool, else the amount).
+        public void HealthText(float hpCur, float hpMax, bool tagged, float shield, float poolMax)
+        {
+            _hpText = true;
+            _lblHp = hpCur;
+            _lblHpMax = hpMax;
+            _lblTagged = tagged;
+            _lblShield = shield;
+            _lblShieldMax = poolMax;
+        }
+
+        public string ShieldValueText => _shieldText && _shieldText.gameObject.activeSelf ? _shieldText.text : "";
+
+        private void ShieldLabel()
+        {
+            if (!_shieldText) return;
+            var text = HudMath.ShieldText(_hpText ? _lblShield : _shieldValue, _hpText ? _lblShieldMax : 0f);
+            var on = text.Length > 0;
+            if (_shieldText.gameObject.activeSelf != on) _shieldText.gameObject.SetActive(on);
+            var glyph = on && _shieldGlyph.sprite;
+            if (_shieldGlyph.gameObject.activeSelf != glyph) _shieldGlyph.gameObject.SetActive(glyph);
+            if (!on) return;
+            if (text == _shownShieldText && _shieldPlaced) return;
+            _shownShieldText = text;
+            _shieldText.text = text;
+            // right end of the window, the glyph just left of the number; both centred on the window
+            var l = Mathf.Max(0f, _length);
+            var pad = ThemeTokens.GetFloat("size.hud.shield.text.pad", 10f);
+            var tr = _shieldText.rectTransform;
+            tr.anchorMin = tr.anchorMax = tr.pivot = Vector2.zero;
+            tr.anchoredPosition = new Vector2(_insetL, _insetB);
+            tr.sizeDelta = new Vector2(Mathf.Max(0f, l - pad), _h);
+            var w = _shieldText.GetPreferredValues(text).x;
+            var g = _h * ThemeTokens.GetFloat("share.hud.shield.glyph", 0.8f);
+            var gr = _shieldGlyph.rectTransform;
+            gr.anchorMin = gr.anchorMax = gr.pivot = Vector2.zero;
+            gr.sizeDelta = new Vector2(g, g);
+            gr.anchoredPosition = new Vector2(_insetL + l - pad - w - g - ThemeTokens.GetFloat("size.hud.shield.glyph.gap", 3f), _insetB + (_h - g) / 2f);
+            _shieldPlaced = true;
+        }
+        // Refused-action warning (DenyFeedback): the bar's capsule tinted color.hud.bar.deny at intensity x its alpha, over
+        // every fill layer of the window (created on first use, the last child). 0 hides it.
+        private Image _flash;
+        public float FlashAlpha => _flash && _flash.gameObject.activeSelf ? _flash.color.a : 0f;
+        public Color FlashColor => _flash ? _flash.color : Color.clear;
+
+        public void Flash(float intensity)
+        {
+            if (!(intensity > 0.001f))
+            {
+                if (_flash && _flash.gameObject.activeSelf) _flash.gameObject.SetActive(false);
+                return;
+            }
+            if (!_flash)
+            {
+                _flash = _art.Image("DenyFlash", _window, "sprite.hud.strip4.fill", "color.hud.bar.deny", Image.Type.Sliced);
+                var rt = _flash.rectTransform;
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.one;
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.offsetMin = rt.offsetMax = Vector2.zero;
+                _flash.raycastTarget = false;
+                if (_sheen) _flash.pixelsPerUnitMultiplier = _sheen.pixelsPerUnitMultiplier;
+            }
+            var c = ThemeTokens.GetColor("color.hud.bar.deny", new Color(1f, 0.35f, 0.1f, 0.85f));
+            c.a *= Mathf.Clamp01(intensity);
+            if (!_flash.gameObject.activeSelf) _flash.gameObject.SetActive(true);
+            if (_flash.color != c) _flash.color = c;
+        }
 
         // Small text left inside the window (ES recharge countdown) or hidden.
         public void Aux(int seconds)

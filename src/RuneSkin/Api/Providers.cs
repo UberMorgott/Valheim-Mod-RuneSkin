@@ -65,6 +65,9 @@ namespace RuneSkin.Api
 
         public static int AbilitySlotCount => Abilities.Count;
 
+        // Id of ability slot i (descriptor Id), null out of range.
+        public static string AbilityId(int i) => i >= 0 && i < Abilities.Count ? Abilities[i].D.Id : null;
+
         public static Action AddAbility(string owner, AbilitySlotDescriptor d)
         {
             var a = new Ability { Owner = owner, D = d };

@@ -8101,8 +8101,8 @@
       "name": "strip_glow",
       "file": "strip_glow.png",
       "size": [
-        176,
-        172
+        243,
+        239
       ],
       "border": {
         "left": 0,
@@ -8117,7 +8117,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.strip.glow",
-      "notes": "Track H selection glow mask: halo around a cell (cell = 0.72 of the sprite), tinted rune_glow, drawn outside the cell"
+      "notes": "Track H selection glow mask: halo around a cell (cell = 0.52 of the sprite), tinted rune_glow, drawn outside the cell; rect reaches 40 sheet px past the old cut so the falloff ends at alpha 0 inside the sprite (old cut ended at alpha 46: hard square edge)"
     },
     {
       "name": "strip_dur",
@@ -9203,7 +9203,7 @@
       "name": "panel_potion_end",
       "file": "panel_potion_end.png",
       "size": [
-        185,
+        237,
         324
       ],
       "border": {
@@ -9219,7 +9219,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "hud.panel.potion.end",
-      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice (+2 sheet px overlap each side, size.hud.panel.lap) x 2955..3136 - right wing end: round triquetra medallion + its strap; placed edge to edge by StripMath (size.hud.panel.*)",
+      "notes": "Bottom panel (user-approved mockup bottom-hud-center-v2, its food 3 / potion 4 row = panel_row.png, Codex clean of that row at 2x): full-height column slice (+2 sheet px overlap each side, size.hud.panel.lap) mirror of panel_food_end (x 24..257 flipped h, user 2026-10-26: the row's own right end x 2953.. had its strap inside potion seg3, under the last potion cell): medallion + strap + the 21 sheet px of the food wing's plate margin between its strap and its outermost socket, so the strap sits as far from the last potion cell as the left strap from the last food cell (StripMath.EndJoint); placed edge to edge by StripMath (size.hud.panel.*)",
       "atlas": "strip"
     }
   ]

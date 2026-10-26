@@ -173,19 +173,27 @@ namespace RuneSkin.PlayerHud
             public bool MoreCell;   // the last cell is the "+N" cell
         }
 
-        // Shield layer over the HP fill (user call 2026-10-22: one translucent layer ON the health bar, no rail):
-        // width = shield / max HP of the window, clamped to the window; no shield / no max = 0.
-        // HP bar label (0.20.1 shield text variant A): "cur/max", plus " +shield" in the shield glow colour (TMP rich
-        // text, hexRgb without '#') while a shield is up; one string so the bar centres the whole label. Values
-        // rounded up as the bar shows them; shield <= 0 (or NaN) drops the "+N" part entirely.
-        public static string HealthLabel(float cur, float max, float shield, string hexRgb)
+        // HP bar labels, variant C (Codex call 2026-10-26; user: "119/119" could not be told apart from the shield):
+        // the HP value "cur/max" centred ("HP cur/max" while the fill shows the Chaos Inoculation energy shield, so the
+        // centre never reads as the shield), the shield as its own number at the window's right end next to a shield
+        // glyph: "cur/max" for a pool with a max (the energy shield that carries the player, shown even at 0), else the
+        // amount; "" = no shield label. Values rounded up as the bar shows them.
+        public static string HpText(float cur, float max, bool tagged)
         {
             var c = (int)Math.Ceiling(Math.Max(0f, cur));
             var m = (int)Math.Ceiling(Math.Max(0f, max));
-            var s = shield > 0f && !float.IsInfinity(shield) ? (int)Math.Ceiling(shield) : 0;
-            return s > 0 ? $"{c}/{m} <color=#{hexRgb}>+{s}</color>" : $"{c}/{m}";
+            return tagged ? $"HP {c}/{m}" : $"{c}/{m}";
         }
 
+        public static string ShieldText(float shield, float poolMax)
+        {
+            var s = shield > 0f && !float.IsInfinity(shield) ? (int)Math.Ceiling(shield) : 0;
+            if (poolMax > 0f && !float.IsInfinity(poolMax)) return $"{s}/{(int)Math.Ceiling(poolMax)}";
+            return s > 0 ? s.ToString(System.Globalization.CultureInfo.InvariantCulture) : "";
+        }
+
+        // Shield layer over the HP fill (user call 2026-10-22: one translucent layer ON the health bar, no rail):
+        // width = shield / max HP of the window, clamped to the window; no shield / no max = 0.
         public static float ShieldOverlay(float shield, float maxHp, float windowPx)
         {
             if (!(shield > 0f) || !(maxHp > 0f) || !(windowPx > 0f) || float.IsInfinity(shield)) return 0f;

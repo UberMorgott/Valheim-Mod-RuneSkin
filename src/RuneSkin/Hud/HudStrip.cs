@@ -12,8 +12,8 @@ namespace RuneSkin.PlayerHud
     // food 3 / potion 4 row (Codex clean, art\src\kit\panel_row.png) cut into full-height column slices and laid edge to
     // edge by StripMath: centre = left end | hotbar run | one ability slice per ability cell | right end; each wing =
     // inner cap | one segment per slot (growing outward) | round end medallion. Hotbar = player inventory row 0 in 8
-    // cells, abilities 0..2 from the RuneSkin.API ability registry (guardian power, Epic Loot set skill), food = the
-    // eaten foods (vanilla Hud.UpdateFood), potions 0..N (capacity list "potions" = MorgottTweaks PotionSlotCount, else
+    // cells, abilities 0..2 from the RuneSkin.API ability registry (guardian power, Epic Loot set skill), food = one
+    // socket per food slot of the live capacity (eaten foods in reading order, the rest empty), potions 0..N (capacity list "potions" = MorgottTweaks PotionSlotCount, else
     // the active EAQS quick cells). Counts are polled every frame (pull providers, cheap) and the geometry is recomputed
     // only when one of them or the screen / config changed (LayoutKey); every cell write is change-only, cells are
     // pooled, nothing allocates per frame.
@@ -84,6 +84,7 @@ namespace RuneSkin.PlayerHud
                 var input = _hotbar[i].Root.gameObject.AddComponent<StripInput>();
                 input.Hotbar = i;
             }
+            StripInput.FillTooltip = TooltipFor;
         }
 
         public void SetActive(bool on)
@@ -96,9 +97,11 @@ namespace RuneSkin.PlayerHud
 
         public void Counts(Player p)
         {
-            // One food cell per eaten food, like vanilla Hud.UpdateFood (a bar per Player.GetFoods() entry, the rest hidden):
-            // the food wing grows from the bar block outward as foods are eaten (user 2026-10-26).
-            FoodCount = p.GetFoods().Count;
+            // One food cell per food SLOT of the current capacity, empty ones as bare sockets (user 2026-10-26 spec
+            // correction: 0 eaten = 3 empty sockets, never a vanished wing). Capacity = the "food" capacity list
+            // (MorgottTweaks FoodSlots.Max: 4th slot gem), else MorgottTweaks FoodSlots.Max read directly, else vanilla
+            // Player.m_maxFoods 3 (Player.cs:330); never fewer cells than eaten foods.
+            FoodCount = StripMath.WingSlots(FoodCapacity(p), p.GetFoods().Count);
             if (Time.unscaledTime >= _quickReadAt)
             {
                 _quickReadAt = Time.unscaledTime + 2f; // EAQS slot set changes only with its config / equipment
@@ -121,6 +124,13 @@ namespace RuneSkin.PlayerHud
                 n++;
             }
             AbilityCount = n;
+        }
+
+        private static int FoodCapacity(Player p)
+        {
+            if (Providers.TryCapacity("food", p, out var c) && c.Valid) return c.Count;
+            InfoScreens.StatsSources.Bind();
+            return InfoScreens.StatsSources.FoodSlots != null ? InfoScreens.StatsSources.FoodSlots(p) : StripMath.VanillaFoodSlots;
         }
 
         private int ActiveQuick()
@@ -154,6 +164,7 @@ namespace RuneSkin.PlayerHud
             SegW = P(side + ".seg.w", 0f),
             EndW = P(side + ".end.w", 0f),
             SlotY = P(side + ".slot.y", 0f),
+            EndJoint = P(side + ".end.joint", 0f),
             Arts = arts
         };
 
@@ -313,6 +324,7 @@ namespace RuneSkin.PlayerHud
                 // Press / drop on a potion cell = on its EAQS quick cell (StripInput; cell set by Fill). An empty potion
                 // slot keeps its cell (capacity, drop target, key label) with no placeholder art (Codex call 2026-10-26).
                 if (name == "Potion") c.Root.gameObject.AddComponent<StripInput>().Potion = list.Count;
+                if (name == "Food") c.Root.gameObject.AddComponent<StripInput>().Food = list.Count; // hover: tooltip only
                 list.Add(c);
             }
             for (var i = 0; i < list.Count; i++) list[i].SetActive(i < n);
@@ -348,8 +360,90 @@ namespace RuneSkin.PlayerHud
             }
             FoodCells(p);
             for (var i = 0; i < AbilityCount; i++) AbilityFill(_abilities[i], _abilityState[i]);
+            Hovers(pad, selected, quickSel);
         }
 
+        // ---- hover: frame + item tooltip ---------------------------------------------------------------------
+
+        // Hover frame on the hovered cell (pointer, or the gamepad hotbar / quick cursor while the inventory is open:
+        // HotkeyBar keeps its cursor in play, InventoryGrid shows its gamepad selection only in the open GUI) and its
+        // tooltip refreshed every frame like InventoryGrid.UpdateGui does for the hovered element (InventoryGrid.cs:361-364).
+        private void Hovers(bool pad, int selected, int quickSel)
+        {
+            var open = InventoryGui.IsVisible();
+            for (var i = 0; i < HotbarCells; i++) Hover(_hotbar[i], pad && open && i == selected);
+            for (var i = 0; i < _potions.Count && i < L.PotionShown; i++) Hover(_potions[i], pad && open && i == quickSel);
+            for (var i = 0; i < _food.Count && i < L.FoodShown; i++) Hover(_food[i], false);
+            for (var i = 0; i < _abilities.Count && i < AbilityCount; i++) Hover(_abilities[i], false);
+        }
+
+        private void Hover(StripCell c, bool padFocus)
+        {
+            var input = c.Input ? c.Input : c.Input = c.Root.GetComponent<StripInput>();
+            if (!input) return;
+            EnsureTooltip(input, c);
+            var on = input.Hovered || padFocus;
+            c.Hover(on);
+            if (on && input.Tooltip) TooltipFor(input);
+        }
+
+        // The grid element's own tooltip prefab (InventoryElement.m_tooltip.m_tooltipPrefab, as InventorySkin reads it),
+        // so the strip tooltip is the same instance kind TooltipAdapter restyles and lifts.
+        private static GameObject _tooltipPrefab;
+
+        private static void EnsureTooltip(StripInput input, StripCell c)
+        {
+            if (input.Tooltip) return;
+            if (!_tooltipPrefab)
+            {
+                var gui = InventoryGui.instance;
+                var element = gui && gui.m_playerGrid && gui.m_playerGrid.m_elementPrefab ? gui.m_playerGrid.m_elementPrefab.GetComponent<InventoryElement>() : null;
+                _tooltipPrefab = element && element.m_tooltip ? element.m_tooltip.m_tooltipPrefab : null;
+                if (!_tooltipPrefab) return;
+            }
+            var tip = input.gameObject.AddComponent<UITooltip>();
+            tip.m_tooltipPrefab = _tooltipPrefab;
+            tip.m_gamepadFocusObject = c.HoverObject; // gamepad: shown while the cell's hover frame is (UITooltip.LateUpdate)
+            input.Tooltip = tip;
+        }
+
+        // Topic / text of a cell's tooltip; false (cleared) for an empty cell.
+        private bool TooltipFor(StripInput input)
+        {
+            var p = Player.m_localPlayer;
+            var tip = input.Tooltip;
+            if (!tip) return false;
+            string topic = "", text = "";
+            if (p)
+            {
+                ItemDrop.ItemData item = null;
+                var inv = p.GetInventory();
+                if (input.Hotbar >= 0) item = input.Hotbar < inv.GetWidth() ? inv.GetItemAt(input.Hotbar, 0) : null;
+                else if (input.Potion >= 0) item = input.Potion < _quick.Count ? inv.GetItemAt(_quick[input.Potion].Pos.x, _quick[input.Potion].Pos.y) : null;
+                else if (input.Food >= 0)
+                {
+                    var foods = p.GetFoods();
+                    item = input.Food < foods.Count ? foods[input.Food].m_item : null;
+                }
+                else if (input.Ability >= 0 && Providers.AbilityId(input.Ability) == "guardian.power")
+                {
+                    // the guardian power: its status effect's name + tooltip (vanilla TextsDialog.AddActiveEffects style)
+                    p.GetGuardianPowerHUD(out var se, out _);
+                    if (se)
+                    {
+                        topic = se.m_name;
+                        text = se.GetTooltipString();
+                    }
+                }
+                if (item != null)
+                {
+                    topic = item.m_shared.m_name;
+                    text = item.GetTooltip();
+                }
+            }
+            tip.Set(topic, text);
+            return topic.Length > 0 || text.Length > 0;
+        }
         private static readonly string[] Digits = { "1", "2", "3", "4", "5", "6", "7", "8" };
         private static string KeyLabel(int i) => i < Digits.Length ? Digits[i] : null;
 

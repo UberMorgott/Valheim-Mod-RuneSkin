@@ -20,6 +20,8 @@ namespace RuneSkin.PlayerHud
             public float EndW;     // round end medallion cap
             public float SlotY;    // slot centre above the strip bottom
             public int Arts;       // distinct segment slices of the row (innermost first; food 3, potions 4)
+            public float EndJoint; // plate margin inside the end piece before its strap, from the inner edge (art px): the
+                                   // mirrored potion end carries the food wing's socket margin (food 0, potion 10.5)
         }
 
         public struct Input
@@ -75,6 +77,7 @@ namespace RuneSkin.PlayerHud
             public float PotionX, PotionCell, PotionH, PotionY;
             public bool Fits;                            // false: a wing count was clipped to the strip
             public int FoodShown, PotionShown, FoodMax, PotionMax; // slots drawn / that fit inside the strip
+            public float JointL, JointR;                 // outermost cell edge -> its end medallion's strap (units; 0 = no slots)
 
             // Left edge of food / potion cell i (reading order left -> right): the last food sits in the left wing's
             // innermost segment, the first potion in the right wing's.
@@ -188,9 +191,18 @@ namespace RuneSkin.PlayerHud
             o.PotionX = o.PotionShown > 0 ? o.PotionLeft(0) : innerR;
             o.DrawnLeft = Math.Min(o.CenterX, o.WingL.X);
             o.DrawnRight = Math.Max(o.CenterX + o.CenterW, o.WingR.Right);
+            // the ends mirror each other (user 2026-10-26): strap as far from the outermost food cell as from the last potion cell
+            o.JointL = o.FoodShown > 0 ? o.FoodLeft(0) - (o.WingL.End.Right - i.FoodArt.EndJoint * u) : 0f;
+            o.JointR = o.PotionShown > 0 ? o.WingR.End.X + i.PotionArt.EndJoint * u - (o.PotionLeft(o.PotionShown - 1) + o.PotionCell) : 0f;
             o.Fits = o.FoodShown == Math.Max(0, i.Food) && o.PotionShown == Math.Max(0, i.Potions);
             return o;
         }
+
+        // Wing slot count (user 2026-10-26): every slot of the current capacity, empty ones included; never fewer than the
+        // filled ones (a capacity that just shrank under eaten foods keeps them visible until they expire).
+        public const int VanillaFoodSlots = 3; // Player.m_maxFoods (Player.cs:330)
+
+        public static int WingSlots(int capacity, int filled) => Math.Max(Math.Max(0, capacity), Math.Max(0, filled));
 
         // Resource row (under the HP row): the present entries share the width evenly; weights animate 0..1 when an entry
         // appears / goes (eitr food eaten / expired) so the split slides instead of jumping. Writes x / width of entry i

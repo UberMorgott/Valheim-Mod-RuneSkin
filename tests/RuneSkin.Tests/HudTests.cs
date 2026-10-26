@@ -412,14 +412,55 @@ namespace RuneSkin.Tests
         public void ShieldOverlayWidth(float shield, float max, float window, float want) =>
             Assert.Equal(want, HudMath.ShieldOverlay(shield, max, window), 3);
 
+        // Variant C (2026-10-26): HP value alone, "HP " while the fill is the energy shield; shield label of its own.
         [Theory]
-        [InlineData(142f, 200f, 80f, "142/200 <color=#5CE8F2>+80</color>")]
-        [InlineData(141.2f, 200f, 79.1f, "142/200 <color=#5CE8F2>+80</color>")] // rounded up as the bar shows them
-        [InlineData(142f, 200f, 0f, "142/200")]                                  // no shield: "+N" gone entirely
-        [InlineData(142f, 200f, -3f, "142/200")]
-        [InlineData(142f, 200f, float.NaN, "142/200")]
-        public void HealthLabelShieldVariantA(float cur, float max, float shield, string want) =>
-            Assert.Equal(want, HudMath.HealthLabel(cur, max, shield, "5CE8F2"));
+        [InlineData(142f, 200f, false, "142/200")]
+        [InlineData(141.2f, 200f, false, "142/200")] // rounded up as the bar shows them
+        [InlineData(1f, 1f, true, "HP 1/1")]         // Chaos Inoculation: the centre never reads as the shield
+        public void HpTextVariantC(float cur, float max, bool tagged, string want) =>
+            Assert.Equal(want, HudMath.HpText(cur, max, tagged));
+
+        [Theory]
+        [InlineData(45f, 0f, "45")]
+        [InlineData(44.1f, 0f, "45")]
+        [InlineData(0f, 0f, "")]          // no shield: no label
+        [InlineData(-3f, 0f, "")]
+        [InlineData(float.NaN, 0f, "")]
+        [InlineData(119f, 119f, "119/119")] // energy shield pool carrying the player
+        [InlineData(0f, 119f, "0/119")]     // depleted pool still labelled
+        public void ShieldTextVariantC(float shield, float poolMax, string want) =>
+            Assert.Equal(want, HudMath.ShieldText(shield, poolMax));
+
+        // Refused-action pulse: 3 sin^2 humps over 0.6 s, a call while it runs restarts nothing (vanilla's NoStamina
+        // state gate), the sound gate shared at 0.6 s.
+        [Fact]
+        public void DenyFlashPulsesThreeTimesAndIgnoresRepeats()
+        {
+            var f = new RuneSkin.PlayerHud.DenyFlash(0.6f, 3);
+            Assert.Equal(0f, f.Intensity(0f));
+            Assert.True(f.Trigger(10f));
+            Assert.False(f.Trigger(10.3f));
+            Assert.Equal(1, f.Count);
+            Assert.Equal(0f, f.Intensity(10f), 3);
+            Assert.Equal(1f, f.Intensity(10.1f), 3);   // pulse 1 peak
+            Assert.Equal(0f, f.Intensity(10.2f), 3);   // between pulses
+            Assert.Equal(1f, f.Intensity(10.3f), 3);   // pulse 2
+            Assert.Equal(1f, f.Intensity(10.5f), 3);   // pulse 3
+            Assert.Equal(0f, f.Intensity(10.6f), 3);   // over
+            Assert.True(f.Active(10.59f));
+            Assert.False(f.Active(10.6f));
+            Assert.True(f.Trigger(10.6f));
+            Assert.Equal(2, f.Count);
+        }
+
+        [Fact]
+        public void DenySoundGateSharedCooldown()
+        {
+            var last = RuneSkin.PlayerHud.DenyFlash.NeverAt;
+            Assert.True(RuneSkin.PlayerHud.DenyFlash.Gate(ref last, 5f, 0.6f));
+            Assert.False(RuneSkin.PlayerHud.DenyFlash.Gate(ref last, 5.3f, 0.6f));
+            Assert.True(RuneSkin.PlayerHud.DenyFlash.Gate(ref last, 5.61f, 0.6f));
+        }
 
         [Theory]
         [InlineData(21.41f, 11.29f, -15.47f, 0.8001f, 1.6722f)] // run 20261024-134656 HP "180/180 +90": 26.76 px ink, 2.1 px low

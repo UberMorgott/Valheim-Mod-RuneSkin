@@ -400,6 +400,10 @@ namespace RuneSkin.PlayerHud
             _health.Tick(dt);
             if (esMain)
             {
+                // Chaos Inoculation: the fill is the energy shield; the centre still reads the HP ("HP 1/1"), the shield
+                // "cur/max" sits right with its glyph (variant C, user 2026-10-26: "119/119" read as HP).
+                _health.SetShield(0f);
+                _health.HealthText(hp, hpC, true, Mathf.Max(0f, es.Current), es.Max);
                 _health.Render(es.Current, es.Max, es.Available, _stripes, 0, _stripeKinds, "color.hud.es", overlaySprite, overlayColor, es.Inert, dt, es.Available < es.Max - 0.5f);
                 _health.Aux(0);
             }
@@ -409,7 +413,9 @@ namespace RuneSkin.PlayerHud
                 for (var i = 0; i < count; i++) _stripeKinds[i] = _stripes[i].Key < 0 ? (int)DotKind.Other : _stripes[i].Key;
                 // Shield = MorgottTweaks energy shield (provider pool) + vanilla staff shields (SE_Shield): the upper band
                 // of the HP window, label "HP + shield" (user calls 2026-10-22).
-                _health.SetShield((esOn ? Mathf.Max(0f, es.Current) : 0f) + VanillaShield(p));
+                var shield = (esOn ? Mathf.Max(0f, es.Current) : 0f) + VanillaShield(p);
+                _health.SetShield(shield);
+                _health.HealthText(hp, hpB, false, shield, 0f);
                 _health.Render(hp, hpB, hpC, _stripes, count, _stripeKinds, null, overlaySprite, overlayColor, false, dt, false);
             }
 
@@ -450,6 +456,11 @@ namespace RuneSkin.PlayerHud
                 _adrenaline.Render(ad, Mathf.Max(adMax, 1f), Mathf.Max(adMax, 1f), _stripes, 0, _stripeKinds, null, null, null, false, dt, false);
             }
             RowAnimate(dt); Plaque(converted ? eiState.ConversionTarget : null);
+            // refused-action pulses (vanilla's empty-bar flashes, DenyFeedback)
+            var now = DenyFeedback.Now;
+            _health.Flash(DenyFeedback.Health.Intensity(now));
+            _stamina.Flash(DenyFeedback.Stamina.Intensity(now));
+            _eitr.Flash(DenyFeedback.Eitr.Intensity(now));
         }
 
         private bool _adrenalineOn, _eitrOn;

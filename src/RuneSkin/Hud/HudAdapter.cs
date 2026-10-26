@@ -39,5 +39,32 @@ namespace RuneSkin.PlayerHud
             cluster.Feed(statusEffects);
             return false;
         }
+
+        // Vanilla's "not enough" signals (vanilla bars hidden, their animators run on): the warning pulse + error sound on
+        // RuneSkin's bars (DenyFeedback). Prefixes, so a vanilla animator fault never swallows the feedback.
+        [HarmonyPatch(typeof(global::Hud), nameof(global::Hud.StaminaBarEmptyFlash))]
+        [HarmonyPrefix]
+        private static void StaminaBarEmptyFlash_Prefix() => DenyFeedback.Deny(DenyFeedback.Stamina);
+
+        [HarmonyPatch(typeof(global::Hud), nameof(global::Hud.EitrBarEmptyFlash))]
+        [HarmonyPrefix]
+        private static void EitrBarEmptyFlash_Prefix() => DenyFeedback.Deny(DenyFeedback.Eitr);
+
+        // FlashHealthBar = attack health cost not covered (Attack.cs:400-404) or a max-health upgrade
+        // (Player.SetMaxHealth(float, bool), Player.cs:6152-6158): only the first is a refusal.
+        [HarmonyPatch(typeof(global::Hud), nameof(global::Hud.FlashHealthBar))]
+        [HarmonyPrefix]
+        private static void FlashHealthBar_Prefix()
+        {
+            if (!DenyFeedback.InMaxHealthUpgrade) DenyFeedback.Deny(DenyFeedback.Health);
+        }
+
+        [HarmonyPatch(typeof(global::Player), nameof(global::Player.SetMaxHealth), typeof(float), typeof(bool))]
+        [HarmonyPrefix]
+        private static void SetMaxHealth_Prefix() => DenyFeedback.InMaxHealthUpgrade = true;
+
+        [HarmonyPatch(typeof(global::Player), nameof(global::Player.SetMaxHealth), typeof(float), typeof(bool))]
+        [HarmonyFinalizer]
+        private static void SetMaxHealth_Finalizer() => DenyFeedback.InMaxHealthUpgrade = false;
     }
 }
