@@ -1,0 +1,10 @@
+Use the image_gen tool for ALL artwork pixels (python/PIL only for canvas size, cropping references, LANCZOS resizing and checks - never draw the glyph with code, no procedural tinting). Load with view_image:
+- D:\tmp\claude\E--DEV-Valheim\a74282c2-59fb-4857-a41f-2702a3e55a20\images\13.png (in-game screenshot of the Valheim inventory info-button row: five square buttons; the first FOUR are the vanilla icons = the STYLE REFERENCE: a raven, a valknut, a square knot, a trophy cup; the fifth, a full-colour green helmet, is the icon being REPLACED). Crop the four vanilla icons with PIL and view them enlarged.
+Task: one new icon for the fifth button, "character stats" (the RuneSkin character stats window), that reads as the fifth member of that vanilla set:
+- a flat monochrome GOLD / OCHRE glyph exactly like the four vanilla icons: the same single gold tone (sample it from them), the same subtle flat shading only (no gradients, no glow, no outline colour, no other colour), the same solid silhouette style, line weight and visual mass;
+- motif: a Norse warrior helmet seen from the front (rounded cap, nose guard, spectacle eye guards / brow ridge), a clear silhouette readable at 40 px; may sit on or before a small round rune-shield if it stays as simple as the raven / trophy;
+- centred, filling the canvas like the vanilla icons fill their boxes (about 80% of the height), no frame, no button background, no text.
+Background: solid pure magenta #FF00FF (it is keyed out), no shadow on the background, no anti-aliasing tint of magenta inside the glyph.
+Canvas 1024x1024. Verify with python and print: size; the mean RGB of the glyph pixels (non-magenta) next to the mean RGB of the four vanilla icons' gold pixels (must be within 12 per channel); the fraction of glyph pixels whose hue differs from the gold by more than 15 degrees (must be < 2%).
+No text, no captions, no watermark.
+Save PNG to: E:\DEV\Valheim\.worktrees\rs-menu-badge\art\src\kit\stats\stats-button-glyph.png

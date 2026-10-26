@@ -7745,7 +7745,7 @@
       "file": "stats_button.png",
       "size": [
         224,
-        280
+        224
       ],
       "border": {
         "left": 0,
@@ -7760,7 +7760,7 @@
       "imageType": "Simple",
       "fillCenter": true,
       "token": "stats.button",
-      "notes": "Codex 4x redraw of the stats-full-b card header icon (button), free-standing on magenta",
+      "notes": "inventory info-row stats button glyph: Codex flat monochrome gold Norse helmet matching the vanilla raven / valknut / knot / trophy icons (0.23.x, the full-colour helmet read foreign in the row), free-standing on magenta",
       "atlas": "hires"
     },
     {
