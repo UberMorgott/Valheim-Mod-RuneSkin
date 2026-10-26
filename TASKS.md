@@ -861,6 +861,14 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
 - [ ] Codex in-game notes: hotbar cells read double-framed (StripCell rarity rim / glow inside the art well), the empty 4th potion slot shows no key label (EAQS has 3 quick cells; capacity 4 from the provider), f1p1 / f2p3 end medallions a few px off the mockup's own rows 1-2 (the panel follows row 3).
 
 
+## 0.23.5 Crafting row: skinned progress bar + cancel button, amount stepper, own craft kit, VNEI wells
+
+- [x] Progress state (approved mockup craft-progress.png): vanilla GuiBar in craft_bar_trough / teal craft_bar_fill inside craft_bar_frame (width back via GuiBar.SetWidth), state text "<token> x N" centred on the bar in the craft label face + outline; cancel = vanilla m_craftCancelButton beside the bar on the craft plate (its onClick OnCraftCancelPressed untouched); black craft_button_panel plate hidden.
+- [x] Amount stepper [-][N][+] left of the craft button: drives vanilla multi-craft (m_multiCraftAmount + m_touchMultiCrafting in UpdateRecipe / OnCraftPressed prefixes), clamp 1..MaxAmount (HaveRequirements x N, CanAddItem, size.craft.amount.max 99), Shift = vanilla. ValheimPlus has no craft-amount feature.
+- [x] Own craft kit from Codex image gen (craftrow / craftbar2 / craftglyph sheets): craft_plate_*, craft_step_*, craft_field, craft_bar_frame/fill/trough, craft_glyph_anvil; button_* / bar_frame_action unchanged for other screens. Codex full side-by-side 8/10 (offline compare-craft-progress).
+- [x] Wells follow VNEI's hide of RecipeList / Decription (no well or seam under VNEI).
+- [x] Run 20261026-180755 41d-crafting-progress + ui-runeskin-vnei PASS 22/0 (harness tools cbb5587).
+- [ ] Shift label flicker not reproduced: simulated AltPlace Press() held 40/40 frames, label stable; the real-key path (Input System events) still to check live. Stepper > 1 not exercised in the run (test character max craftable = 1).
 ## 0.23.4 Bottom panel: strip hover tooltips, refused-action pulse, food sockets = capacity, soft glow, mirrored end, shield value
 
 - [x] Hover on every strip cell: the grid's hover frame + UITooltip with the grid element's prefab (vanilla ItemData.GetTooltip; guardian power SE tooltip); hit layer forwards enter/exit (8b6cd33).
