@@ -16,7 +16,6 @@ namespace RuneSkin.PlayerHud
     {
         public readonly RectTransform Root;
         public readonly Image Bowl;
-        private readonly Image _ghost;
         private readonly Image _shadow, _glow, _select, _rim, _icon, _sweep, _ring, _mark, _durTrack, _durFill;
         private readonly TMP_Text _key, _count, _timer;
         private readonly bool _round;
@@ -62,10 +61,7 @@ namespace RuneSkin.PlayerHud
             art.Track(Bowl, artScale);
             art.Track(_rim, artScale);
             if (!round) art.Track(_select, artScale);
-            // Faint silhouette of the slot kind (food bowl, flask, rune...) while the cell is empty (SetGhost).
-            _ghost = art.Image("Ghost", Root, null, "color.hud.strip.ghost", Image.Type.Simple);
-            _ghost.preserveAspect = true;
-            _ghost.enabled = false;
+            // No placeholder art in an empty cell (user 2026-10-26, mockup v2: only real items; the panel art carries the empty well).
             _icon = art.Image("Icon", Root, null, "color.frame", Image.Type.Simple);
             _icon.preserveAspect = true;
             _icon.enabled = false;
@@ -154,7 +150,6 @@ namespace RuneSkin.PlayerHud
             var rimIn = 2f * side * ThemeTokens.GetFloat("share.hud.strip.rim.inset", 0.035f); // inside the metal rim
             Center(_rim.rectTransform, bw - rimIn, bh - rimIn, oy);
             Center(_icon.rectTransform, side * ThemeTokens.GetFloat("share.hud.strip.icon", 0.72f), side * ThemeTokens.GetFloat("share.hud.strip.icon", 0.72f), oy);
-            Center(_ghost.rectTransform, side * ThemeTokens.GetFloat("share.hud.strip.ghost", 0.62f), side * ThemeTokens.GetFloat("share.hud.strip.ghost", 0.62f), oy);
             Center(_sweep.rectTransform, bw - side * 0.12f, bh - side * 0.12f, oy);
             var ringIn = 2f * (_round ? side * 0.06f : side * 0.04f);
             Center(_ring.rectTransform, bw - ringIn, bh - ringIn, oy);
@@ -196,17 +191,6 @@ namespace RuneSkin.PlayerHud
             if (Root.gameObject.activeSelf != on) Root.gameObject.SetActive(on);
         }
 
-        private string _ghostToken;
-
-        // Placeholder art of this slot kind (theme token; null = none).
-        public void SetGhost(HudArt art, string token)
-        {
-            if (token == _ghostToken) return;
-            _ghostToken = token;
-            art.Restyle(_ghost, token, "color.hud.strip.ghost", Image.Type.Simple);
-            _ghost.enabled = !_shownIcon && _ghost.sprite;
-        }
-
         public void Icon(Sprite s, Color tint)
         {
             if (s != _shownIcon)
@@ -214,7 +198,6 @@ namespace RuneSkin.PlayerHud
                 _shownIcon = s;
                 _icon.sprite = s;
                 _icon.enabled = s;
-                _ghost.enabled = !s && _ghost.sprite;
             }
             if (tint != _shownIconColor) { _shownIconColor = tint; _icon.color = tint; }
         }

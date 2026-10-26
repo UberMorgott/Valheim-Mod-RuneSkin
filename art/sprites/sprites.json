@@ -8280,29 +8280,6 @@
       "atlas": "hires"
     },
     {
-      "name": "strip4_rowdiv",
-      "file": "strip4_rowdiv.png",
-      "size": [
-        49,
-        81
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip4.rowdiv",
-      "notes": "Track H hud-4M3: knot between split resource bars, Codex 4x redraw",
-      "atlas": "hires"
-    },
-    {
       "name": "gauge_rage_tick",
       "file": "gauge_rage_tick.png",
       "size": [
@@ -8438,75 +8415,6 @@
       "fillCenter": true,
       "token": "hud.strip4.fill.rage",
       "notes": "Track H: rage (adrenaline) glossy capsule fill (optional row bar)",
-      "atlas": "hires"
-    },
-    {
-      "name": "strip4_ghost_food",
-      "file": "strip4_ghost_food.png",
-      "size": [
-        160,
-        144
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip4.ghost.food",
-      "notes": "Track H: empty food slot silhouette (white, tinted), Codex redraw",
-      "atlas": "hires"
-    },
-    {
-      "name": "strip4_ghost_potion",
-      "file": "strip4_ghost_potion.png",
-      "size": [
-        106,
-        163
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip4.ghost.potion",
-      "notes": "Track H: empty potion slot silhouette, Codex redraw",
-      "atlas": "hires"
-    },
-    {
-      "name": "strip4_ghost_ability",
-      "file": "strip4_ghost_ability.png",
-      "size": [
-        157,
-        156
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip4.ghost.ability",
-      "notes": "Track H: empty ability slot rune silhouette, Codex redraw",
       "atlas": "hires"
     },
     {
@@ -8760,29 +8668,6 @@
       "fillCenter": true,
       "token": "hud.strip6.medallion",
       "notes": "Track H 0.19 junction repaint (Codex STRICT EDIT of the strip5 piece, art/src/kit/strip6/prompt-*.txt; user 2026-10-23: no hard sprite cuts, closed knot terminations); medallion knot frame, closed edges, empty disc (glyph = sprite.ornament.triquetra)",
-      "atlas": "hires"
-    },
-    {
-      "name": "strip6_divider",
-      "file": "strip6_divider.png",
-      "size": [
-        42,
-        312
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip6.divider",
-      "notes": "Track H 0.19 junction repaint (Codex STRICT EDIT of the strip5 piece, art/src/kit/strip6/prompt-*.txt; user 2026-10-23: no hard sprite cuts, closed knot terminations); hotbar | ability divider pillar with closed knot finials top and bottom",
       "atlas": "hires"
     },
     {

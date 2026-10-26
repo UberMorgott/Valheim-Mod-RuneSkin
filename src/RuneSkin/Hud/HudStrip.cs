@@ -81,7 +81,6 @@ namespace RuneSkin.PlayerHud
             for (var i = 0; i < HotbarCells; i++)
             {
                 _hotbar[i] = new StripCell(_art, _front, "Hotbar" + i, CellKind.Hotbar);
-                _hotbar[i].SetGhost(_art, "sprite.hud.strip.ghost.hotbar");
                 var input = _hotbar[i].Root.gameObject.AddComponent<StripInput>();
                 input.Hotbar = i;
             }
@@ -250,17 +249,18 @@ namespace RuneSkin.PlayerHud
                 Show(_abilityArt[n], n < AbilityCount);
                 if (n < AbilityCount) Place(_abilityArt[n], new StripMath.Box(l.AbilityX0 + n * l.AbilitySliceW - l.CenterX, 0f, l.AbilitySliceW, l.Height));
             }
-            WingPieces(l.WingL, _wingL, _innerL, _endL, _segL, "sprite.hud.panel.food.seg", i.FoodArt.Arts);
-            WingPieces(l.WingR, _wingR, _innerR, _endR, _segR, "sprite.hud.panel.potion.seg", i.PotionArt.Arts);
+            WingPieces(l.WingL, l.WingH, _wingL, _innerL, _endL, _segL, "sprite.hud.panel.food.seg", i.FoodArt.Arts);
+            WingPieces(l.WingR, l.WingH, _wingR, _innerR, _endR, _segR, "sprite.hud.panel.potion.seg", i.PotionArt.Arts);
         }
 
         // Composed wing: inner cap, segments (pooled, each with its row slice StripMath.SegArt), end medallion.
-        private void WingPieces(in StripMath.WingRun r, RectTransform box, Image inner, Image end, List<Image> segs, string segToken, int arts)
+        private void WingPieces(in StripMath.WingRun r, float top, RectTransform box, Image inner, Image end, List<Image> segs, string segToken, int arts)
         {
             var on = r.Slots > 0;
             if (box.gameObject.activeSelf != on) box.gameObject.SetActive(on);
             if (!on) return;
-            Box(box, r.X, 0f, r.Right - r.X, r.Inner.H);
+            // the box = the wing's drawn extent (up to the end medallion's top); the full-height slices reach past it
+            Box(box, r.X, 0f, r.Right - r.X, top);
             Place(inner, Local(r.Inner, r.X));
             Place(end, Local(r.End, r.X));
             while (segs.Count < r.Slots)
@@ -295,7 +295,6 @@ namespace RuneSkin.PlayerHud
         private StripCell MakeAbility(int n)
         {
             var c = new StripCell(_art, _front, "Ability" + n, CellKind.Hotbar);
-            c.SetGhost(_art, "sprite.hud.strip.ghost.ability");
             c.Root.gameObject.AddComponent<StripInput>();
             return c;
         }
@@ -305,13 +304,9 @@ namespace RuneSkin.PlayerHud
             while (list.Count < n)
             {
                 var c = name == "Ability" ? MakeAbility(list.Count) : new StripCell(_art, _front, name + list.Count, kind);
-                if (name == "Food") c.SetGhost(_art, "sprite.hud.strip.ghost.food");
-                else if (name == "Potion")
-                {
-                    c.SetGhost(_art, "sprite.hud.strip.ghost.potion");
-                    // Press / drop on a potion cell = on its EAQS quick cell (StripInput; cell set by Fill).
-                    c.Root.gameObject.AddComponent<StripInput>().Potion = list.Count;
-                }
+                // Press / drop on a potion cell = on its EAQS quick cell (StripInput; cell set by Fill). An empty potion
+                // slot keeps its cell (capacity, drop target, key label) with no placeholder art (Codex call 2026-10-26).
+                if (name == "Potion") c.Root.gameObject.AddComponent<StripInput>().Potion = list.Count;
                 list.Add(c);
             }
             for (var i = 0; i < list.Count; i++) list[i].SetActive(i < n);
