@@ -381,8 +381,12 @@ namespace RuneSkin.PlayerHud
         {
             var f = StripMath.TargetFrame(l, T7Fn);
             FrameBottom = f.Bottom;
-            DrawnLeft = f.EndL.W > 0f ? f.EndL.X : l.BarsX;
-            DrawnRight = f.EndR.W > 0f ? f.EndR.Right : l.BarsX + l.BarsW;
+            // drawn extent = the union of every shown wing-side piece and the bar block (with no wing the block's inner
+            // diamonds and rail extensions still reach past its box)
+            DrawnLeft = Mathf.Min(l.BarsX, Mathf.Min(f.Knot2L.X, f.CapL.W > 0f ? f.CapL.X : l.BarsX));
+            DrawnRight = Mathf.Max(l.BarsX + l.BarsW, Mathf.Max(f.Knot2R.Right, f.CapR.W > 0f ? f.CapR.Right : l.BarsX + l.BarsW));
+            if (f.EndL.W > 0f) DrawnLeft = Mathf.Min(DrawnLeft, f.EndL.X);
+            if (f.EndR.W > 0f) DrawnRight = Mathf.Max(DrawnRight, f.EndR.Right);
             Place(_endL, f.EndL, false);
             // the right end medallion (run 20261023-175632: never placed, it sat at the strip origin over the left one)
             Place(_endR, f.EndR, !HasOwn("sprite.hud.strip7.end"));

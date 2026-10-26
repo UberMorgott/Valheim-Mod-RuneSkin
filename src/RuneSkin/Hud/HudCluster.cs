@@ -852,17 +852,12 @@ namespace RuneSkin.PlayerHud
             var leftGroup = buffsLeft ? _buffs : _strip;
             var rightGroup = buffsLeft ? _strip : _buffs;
             leftGroup.Upward = rightGroup.Upward = true;
-            leftGroup.AlignRight = false;
-            rightGroup.AlignRight = true;
+            // target panel (centre wings): the groups hug the hotbar block's sides, growing outward like the wings
+            leftGroup.AlignRight = HudStrip.Target;
+            rightGroup.AlignRight = !HudStrip.Target;
             var budget = rows * (cell + gap);
             leftGroup.Arrange(rowW, budget);
             rightGroup.Arrange(rowW, budget);
-            // target panel (centre wings): the groups hug the hotbar block's sides, growing outward like the wings
-            if (HudStrip.Target)
-            {
-                leftGroup.AlignRight = true;
-                rightGroup.AlignRight = false;
-            }
             var lp = new Vector2(HudStrip.Target ? SideLeft - leftGroup.Root.sizeDelta.x : inset, _statusBase);
             if (leftGroup.Root.anchoredPosition != lp) leftGroup.Root.anchoredPosition = lp;
             var rp = new Vector2(HudStrip.Target ? SideRight : _stripWidth - inset - rightGroup.Root.sizeDelta.x, _statusBase);
