@@ -66,6 +66,7 @@ namespace RuneSkin.ModScreens
                 var topic = root.Find("topic") ? root.Find("topic").GetComponent<Text>() : null;
                 if (topic) header.Mirror(topic);
                 else header.Text("Almanac");
+                header.Frame = PanelDecor.Of(bkg ? bkg : root);
                 header.Stretch();
             }
             ScreenRegistry.Register(root, () => Context(_root, ScreenId));

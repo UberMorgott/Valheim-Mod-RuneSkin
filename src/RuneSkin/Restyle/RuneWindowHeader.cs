@@ -215,28 +215,29 @@ namespace RuneSkin.Restyle
             var search = ThemeTokens.GetFloat("size.window.band", 64f);
             if (!h._source && h._static == null)
             {
-                var tmp = BandTitle<TMP_Text>(panel, search, h.transform);
+                var tmp = BandTitle<TMP_Text>(panel, search, h.transform, h._face);
                 if (tmp) h.Adopt(tmp);
                 else
                 {
-                    var legacy = BandTitle<Text>(panel, search, h.transform);
+                    var legacy = BandTitle<Text>(panel, search, h.transform, h._face);
                     if (legacy) h.Mirror(legacy);
                     else h.Text(fallback);
                 }
             }
+            h.Frame = PanelDecor.Of(panel) ?? PanelDecor.Of(moved); // the window's own stack (child panel or root)
             h.Stretch();
             return h;
         }
 
         // The largest non-empty text whose centre lies in the top band of the panel (panel-local units).
-        private static T BandTitle<T>(RectTransform panel, float height, Transform skip) where T : Graphic
+        private static T BandTitle<T>(RectTransform panel, float height, Transform skip, Transform face) where T : Graphic
         {
             T best = null;
             var bestSize = 0f;
             var r = panel.rect;
             foreach (var t in panel.GetComponentsInChildren<T>(true))
             {
-                if (!t || t.transform.IsChildOf(skip)) continue;
+                if (!t || t.transform.IsChildOf(skip) || face && t.transform.IsChildOf(face)) continue; // never its own title
                 string s;
                 float size;
                 if (t is TMP_Text tmp) { s = tmp.text; size = tmp.fontSize; }
@@ -393,6 +394,9 @@ namespace RuneSkin.Restyle
                 {
                     var f = d ? d.Frame : null;
                     if (!f || !f.enabled || !f.sprite || !f.isActiveAndEnabled || f.canvas == null || f.canvas.rootCanvas != root) continue;
+                    // Only a stack of this window (inside it, or on a host it lies in): never an unrelated window's frame.
+                    var host = d.transform.parent;
+                    if (window && host && !(host.IsChildOf(window) || window.IsChildOf(host))) continue;
                     var fr = WorldRect(f.rectTransform);
                     if (!fr.Contains(centre)) continue;
                     var ow = Mathf.Min(fr.xMax, win.xMax) - Mathf.Max(fr.xMin, win.xMin);
