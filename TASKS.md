@@ -24,6 +24,10 @@ Plan: side-session notes `ui-skin-engine-plan.md` (M0..M8). Art bundle + unity p
 ## Later
 
 - Settings family; Compendium entry to MorgottTweaks before AugaSkin retires
+- [ ] Unity packer crash (open, 2026-10-26, 0.25.1 worktree): `Unity.exe -batchmode -quit [-nographics] -projectPath unity
+  -executeMethod BuildBundles.Build` exits -1073741676, native crash in SpriteAtlas PackAtlasOnJob (BuildBundles.cs:237
+  BuildAtlas), also with Library copied from D:\tmp\runeskin-unity-library-good (2 tries). 0.25.1 (art unchanged vs
+  v0.25.0, `git diff v0.25.0 --stat -- art unity` empty) shipped the 0.25.0 bundle AAA86A96.
 
 ## M0 completion (2026-10-21)
 

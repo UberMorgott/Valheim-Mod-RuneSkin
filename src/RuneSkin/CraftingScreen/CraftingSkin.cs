@@ -1638,7 +1638,7 @@ namespace RuneSkin.CraftingScreen
         }
 
         // Glyph at the button's left (craft in the craft tab, upgrade otherwise) and the label in the span right of it
-        // (approved mockup craft-progress.png, idle: pad 0.18 h | anvil 0.58 h | gap 0.16 h | text centred | 0.26 h).
+        // (approved mockup craft-progress.png, idle: pad 0.18 h | anvil 0.58 h | 0.21 h | text | 0.21 h).
         // Root cause of 0.24.0 / 0.25.0 "anvil over the first letter": the glyph was placed from the label's
         // preferredWidth (clamped to the left edge for a wide label) while PlateLabelFit decided the glyph's side from
         // the drawn text bounds; a text already drawn under the glyph's centre made it no obstacle, so the label kept
@@ -1658,9 +1658,11 @@ namespace RuneSkin.CraftingScreen
             }
             var lead = CraftingMath.LeadGlyph(b, ThemeTokens.GetFloat("share.craft.glyph.pad", 0.18f), ThemeTokens.GetFloat("share.craft.glyph.size", 0.58f));
             if (_craftGlyph.enabled) Geo.Place(_canvas, _craftGlyph.rectTransform, lead);
+            // One pad on both sides of the text (share.craft.label.pad x h): centred in the span right of the glyph
+            // (layout check button-skew measures the text's gaps to that span; the mockup's 0.16 / 0.26 averaged).
+            var pad = ThemeTokens.GetFloat("share.craft.label.pad", 0.21f);
             if (label.TryGetComponent<PlateLabelFit>(out var fit) && !fit.Reverted)
-                fit.Lead(_craftGlyph.enabled ? _craftGlyph : null, ThemeTokens.GetFloat("share.craft.glyph.gap", 0.16f),
-                    ThemeTokens.GetFloat("share.craft.label.inset", 0.26f), singleLine: true);
+                fit.Lead(_craftGlyph.enabled ? _craftGlyph : null, pad, pad, singleLine: true);
         }
 
         // Places a graphic keeping its aspect (icons).
