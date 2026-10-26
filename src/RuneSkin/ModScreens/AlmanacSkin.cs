@@ -59,7 +59,8 @@ namespace RuneSkin.ModScreens
             // The window's one header (RuneWindowHeader) over the top band of bkg: Almanac's legacy "topic" title shown in
             // the rune face (mirrored), drag / double-click reset move the whole window (root).
             MovableWindow.Ensure(root, "almanac");
-            var header = RuneWindowHeader.Ensure(bkg ? bkg : root, "almanac", root);
+            // Under the always-active root (Almanac's transparent mode deactivates bkg, which would hide title and drag band).
+            var header = RuneWindowHeader.Ensure(root, "almanac", root);
             if (header)
             {
                 header.Fallback("Almanac");
