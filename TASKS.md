@@ -861,6 +861,16 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
 - [ ] Codex in-game notes: hotbar cells read double-framed (StripCell rarity rim / glow inside the art well), the empty 4th potion slot shows no key label (EAQS has 3 quick cells; capacity 4 from the provider), f1p1 / f2p3 end medallions a few px off the mockup's own rows 1-2 (the panel follows row 3).
 
 
+## 0.23.3 Live-report batch: menu badge / braid, save rows, unlock toast, stats window, stats icon
+- [x] Changelog "!" out of showChangelog's HorizontalLayoutGroup (no centre blink); MenuList/ornament crown braid off; save rows: one rendered readable floor (Readable.Units) + 9-slice cap inset (size.row.cap.pad); unlock toast icon + name centred; stats: no gear speed notes in combat, empty sub-lines take no space, cards rest on row tops, close back to the opener; stats button glyph in the vanilla gold icon style (Codex 8/10).
+- [x] Run 20261026-171856 (ui-runeskin-m5 / -m4 / -stats, harness tools a8253a0): every new / changed check PASS (m5-changelog-badge, m5-menu-column, m5-saves-inset/-stable, m5-layout, m4-unlock-row-*, stats-button-glyph, stats-combat-no-speed, stats-rows-whole/-even, stats-speed-breakdown, stats-back-esc/-key).
+- [ ] Pre-existing FAIL (also on unchanged code, run 20261026-102357): m4-bar-caps-1920x1080 / -2560x1440 problems=[bars=Stamina,Health] layout=strip-0.16 (run 20261026-171856).
+- [ ] Pre-existing FAIL: m4-maphint-inset-1920x1080 / -2560x1440 "no large-map UITooltip with text" (run 20261026-171856).
+- [ ] Pre-existing FAIL: overdraw-stats (1920x1080 + 2560x1440, the window covers the HUD it hides behind; run 20261026-171856).
+- [ ] Pre-existing FAIL: overdraw-texts (compendium: HUD keys / crosshair under the Texts_frame backing, active-effects socket under the tooltip; run 20261026-171856).
+- [ ] Pre-existing FAIL: overdraw-map (1920x1080 + 2560x1440, also runs 20261023-161531 / 20261026-102357; run 20261026-171856).
+- [ ] Pre-existing FAIL: m5-text-min settings stepper value 14.9 px (CommonSettings/InputLayout/GUIStepper/Value/Text; run 20261026-171058, passed in 20261026-171856).
+
 ## 0.23.2 Summon party frame: summon weapon only, top-left corner, 2x
 - [x] Shown only while a hand holds a summoning weapon (SummonFrames.HoldsSummoner: attack spawns a SpawnAbility with a tameable Character); top-left corner of the safe area (size.hud.party.x/.y 16/16), scale.hud.party 2; top-left notification moves below the grid (PartyMath.NotifyShift) (fd9a503).
 - [x] Tiles built / animated only while the grid is shown (24x NRE in MakeTile -> Outline under the hidden grid, run 20261026-164908) (05fe239).
