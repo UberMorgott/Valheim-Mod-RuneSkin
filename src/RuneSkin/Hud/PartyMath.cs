@@ -167,6 +167,21 @@ namespace RuneSkin.PlayerHud
             h = rows <= 0 ? 0f : rows * blockH + (rows - 1) * rowGap;
         }
 
+        // Grid origin (its top-left corner) in the parent's local units, parent anchor top-left, y up: the inset (x, y)
+        // reference px of a 1080p screen (scaled by `scale` = local units per reference px) measured from the safe area's
+        // top-left corner (safeLeft / safeTop screen px from the screen's left / top edge; `perPx` = local units per
+        // screen px). User 2026-10-26: the icon goes in the very top-left corner of the screen.
+        public static void Origin(float x, float y, float scale, float safeLeft, float safeTop, float perPx, out float ox, out float oy)
+        {
+            ox = Math.Max(0f, safeLeft) * perPx + x * scale;
+            oy = -(Math.Max(0f, safeTop) * perPx + y * scale);
+        }
+
+        // How far the top-left notification moves down (local units, >= 0) so its plate's top edge (where it sits with no
+        // shift, y up) stays `gap` below the grid's bottom edge (same space); 0 with no grid shown.
+        public static float NotifyShift(bool gridShown, float plateTop, float gridBottom, float gap) =>
+            gridShown && !float.IsNaN(plateTop) && !float.IsNaN(gridBottom) ? Math.Max(0f, plateTop - (gridBottom - gap)) : 0f;
+
         private static float Clamp01(float v) => float.IsNaN(v) ? 0f : Math.Max(0f, Math.Min(1f, v));
     }
 }

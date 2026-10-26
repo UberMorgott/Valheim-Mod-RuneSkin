@@ -144,10 +144,42 @@ namespace RuneSkin.Tests
         [Fact]
         public void Forty_summons_fit_above_the_chat_at_1080p()
         {
-            // Worst case: every stack distinct, capped at SummonFrames.MaxStacks (45) = 5 rows from y 244.
-            PartyMath.GridSize(45, 9, 44f, 6f, 54f, 6f, out var w, out var h);
-            Assert.True(244f + h <= 600f, $"bottom {244f + h}");
-            Assert.True(16f + w <= 480f, $"right {16f + w}");
+            // Worst case: every stack distinct, capped at SummonFrames.MaxStacks (45) = 5 rows from the top-left corner
+            // (y 16) at scale.hud.party 2 (user 2026-10-26: 2x bigger), row gap 4; left of the minimap (1615 at 1080p).
+            const float scale = 2f;
+            PartyMath.GridSize(45, 9, 44f, 6f, PartyMath.BlockHeight(44f, 3f, 4f), 4f, out var w, out var h);
+            Assert.True(16f + h * scale <= 600f, $"bottom {16f + h * scale}");
+            Assert.True(16f + w * scale <= 1600f, $"right {16f + w * scale}");
+        }
+
+        [Fact]
+        public void Origin_is_the_top_left_corner_inside_the_safe_area()
+        {
+            // 1080p, overlay canvas at lossy scale 1: 16 px from the screen's left and top edges.
+            PartyMath.Origin(16f, 16f, 1f, 0f, 0f, 1f, out var x, out var y);
+            Assert.Equal((16f, -16f), (x, y));
+            // 1440p, canvas lossy scale 2 (scale = 1440/1080/2, perPx 0.5), a 40 px notch on the left and 20 px on top.
+            PartyMath.Origin(16f, 16f, 1440f / 1080f / 2f, 40f, 20f, 0.5f, out x, out y);
+            Assert.Equal(20f + 16f * 1440f / 1080f / 2f, x, 3);
+            Assert.Equal(-(10f + 16f * 1440f / 1080f / 2f), y, 3);
+            // A negative safe inset never moves it off screen.
+            PartyMath.Origin(16f, 16f, 1f, -5f, -5f, 1f, out x, out y);
+            Assert.Equal((16f, -16f), (x, y));
+        }
+
+        [Theory]
+        [InlineData(false, 900f, 950f, 8f, 0f)] // no grid shown: notification stays
+        [InlineData(true, 900f, 950f, 8f, 0f)] // grid bottom above the plate: nothing to clear
+        [InlineData(true, 900f, 850f, 8f, 58f)] // grid reaches below the plate top: down by overlap + gap
+        [InlineData(true, 900f, 908f, 8f, 0f)] // exactly gap apart
+        public void Notification_clears_the_grid(bool shown, float plateTop, float gridBottom, float gap, float want) =>
+            Assert.Equal(want, PartyMath.NotifyShift(shown, plateTop, gridBottom, gap), 3);
+
+        [Fact]
+        public void Notification_shift_ignores_unmeasured_edges()
+        {
+            Assert.Equal(0f, PartyMath.NotifyShift(true, float.NaN, 100f, 8f));
+            Assert.Equal(0f, PartyMath.NotifyShift(true, 100f, float.NaN, 8f));
         }
 
         [Fact]
@@ -156,8 +188,11 @@ namespace RuneSkin.Tests
             using var s = typeof(ThemeSchema).Assembly.GetManifestResourceStream("RuneSkin.default-theme.json");
             using var r = new StreamReader(s!);
             var text = r.ReadToEnd();
-            foreach (var t in new[] { "size.hud.party.x", "size.hud.party.y", "size.hud.party.tile", "count.hud.party.columns", "time.hud.party.respawn" })
+            foreach (var t in new[] { "size.hud.party.x", "size.hud.party.y", "size.hud.party.tile", "count.hud.party.columns", "time.hud.party.respawn", "scale.hud.party", "size.message.notify.party.gap" })
                 Assert.Contains($"\"{t}\"", text);
+            // User 2026-10-26: top-left corner, 2x bigger.
+            Assert.Contains("{ \"token\": \"size.hud.party.y\", \"value\": 16 }", text);
+            Assert.Contains("{ \"token\": \"scale.hud.party\", \"value\": 2 }", text);
         }
     }
 }

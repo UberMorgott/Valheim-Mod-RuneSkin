@@ -39,6 +39,9 @@ namespace RuneSkin.WorldHud
         private GameObject _bannerFor;
         private string _centerText, _topText;
         private Vector2 _topBase;
+        // Notification pushed below the party frame (SummonFrames, top-left corner since 2026-10-26): current shift and
+        // the plate's top edge with no shift, both in the plate parent's local units.
+        private float _topShift, _plateTopRaw = float.NaN;
         private readonly HashSet<int> _unlocks = new HashSet<int>();
 
         public static void Attach(MessageHud hud)
@@ -92,7 +95,8 @@ namespace RuneSkin.WorldHud
                 top.fontSize = HudReadable(ThemeTokens.GetFloat("size.message.notify.font", top.fontSize));
                 _plate = Behind("RuneSkin_NotifyPlate", top.rectTransform, "sprite.hud.frame.small");
                 // Room for the icon left of the text (the vanilla icon sits under the line).
-                // ...and below the hotbar's summon frames (Codex r1: the plate overlapped them).
+                // ...and below the old hotbar summon frames (Codex r1); the top-left party frame since 2026-10-26 pushes
+                // the row further down per frame when it reaches it (ClearPartyFrame).
                 // The icon slot is added per message in TopLeft, only when the message has an icon.
                 top.rectTransform.anchoredPosition += new Vector2(0f, -ThemeTokens.GetFloat("size.message.notify.drop", 64f));
                 _topBase = top.rectTransform.anchoredPosition;
@@ -121,6 +125,7 @@ namespace RuneSkin.WorldHud
             try
             {
                 Center();
+                ClearPartyFrame();
                 TopLeft();
                 Banner();
                 Unlocks();
@@ -257,7 +262,7 @@ namespace RuneSkin.WorldHud
             var iconImg = _hud.m_messageIcon;
             var icon = iconImg && iconImg.enabled && iconImg.sprite && iconImg.gameObject.activeInHierarchy && iconImg.canvasRenderer.GetAlpha() > 0.01f ? iconImg.rectTransform : null;
             var slot = icon ? ThemeTokens.GetFloat("size.message.icon", 28f) + ThemeTokens.GetFloat("size.message.icon.gap", 10f) : 0f;
-            tr.anchoredPosition = _topBase + new Vector2(slot, 0f);
+            tr.anchoredPosition = _topBase + new Vector2(slot, -_topShift);
             // Rendered text bounds (the text rect is much taller than one line), not the rect; vertically the line's
             // ascender / descender box (glyph bounds shift with descenders, so the plate sat off-centre).
             t.ForceMeshUpdate();
@@ -298,6 +303,27 @@ namespace RuneSkin.WorldHud
             var (cy, h) = PlayHudMath.PlateSpan(bottom, top, Border(false), ThemeTokens.GetFloat("size.message.plate.vpad", 6f));
             rt.localPosition = new Vector3(cx, cy, 0f);
             rt.sizeDelta = new Vector2(w, h);
+            _plateTopRaw = cy + h * 0.5f + _topShift;
+        }
+
+        // Per frame: the notification row (text, icon, plate) moves down just enough to clear the shown party frame grid
+        // (PartyMath.NotifyShift); a changed shift re-lays the row out (TopLeft runs again for the same text).
+        private void ClearPartyFrame()
+        {
+            if (!_plate || !(_plate.rectTransform.parent is RectTransform parent)) return;
+            var gridBottom = float.NaN;
+            var shown = SummonFrames.GridScreenBottom(out var screenY);
+            if (shown)
+            {
+                var canvas = parent.GetComponentInParent<Canvas>();
+                var cam = canvas && canvas.rootCanvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.rootCanvas.worldCamera : null;
+                shown = RectTransformUtility.ScreenPointToLocalPointInRectangle(parent, new Vector2(0f, screenY), cam, out var local);
+                gridBottom = local.y;
+            }
+            var want = PartyMath.NotifyShift(shown, _plateTopRaw, gridBottom, ThemeTokens.GetFloat("size.message.notify.party.gap", 8f));
+            if (Mathf.Abs(want - _topShift) <= 0.5f) return;
+            _topShift = want;
+            _topText = null;
         }
 
         // frame_small 9-slice border (theme geometry at reference 100, Restyler.CanvasPpuFactor convention), sides or
@@ -538,7 +564,7 @@ namespace RuneSkin.WorldHud
         private void AlignUnlocks(List<GameObject> list)
         {
             var prefab = _hud.m_unlockMsgPrefab ? _hud.m_unlockMsgPrefab.transform as RectTransform : null;
-            var baseY = (prefab ? prefab.anchoredPosition.y : 0f) - ThemeTokens.GetFloat("size.message.unlock.drop", 72f);
+            var baseY = (prefab ? prefab.anchoredPosition.y : 0f) - ThemeTokens.GetFloat("size.message.unlock.drop", 72f) - _topShift;
             var plateH = 0f;
             foreach (var go in list)
                 if (go && go.transform.parent is RectTransform p0 && _unlockPlates.TryGetValue(go, out var pl) && pl)

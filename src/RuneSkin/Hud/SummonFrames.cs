@@ -25,10 +25,13 @@ namespace RuneSkin.PlayerHud
     // - Without mt_sum_ui: the loaded creatures that are this player's summons (vanilla's own test,
     //   Tameable.UnsummonMaxInstances, Tameable.cs:641-701: tamed, following this player by name; a summon prefab =
     //   unsummon distance or logout timer, Tameable.cs:30-32; a mt_sum_owner stamp of another player excludes it).
-    // Placement: child of Hud.m_rootObject (hidden with the HUD; Hud.SetVisible moves that root off screen), top-left at
-    // size.hud.party.x / .y reference px of a 1080p screen, scaled with the screen height; below the top-left
-    // notification, left of the minimap, above the chat; 9 per row (40 summons of 9 types = 5 rows max at 40 stacks).
-    // Hidden while the large map is open. Data refreshed 4x a second, sweep / timers / hover every frame.
+    // Placement: child of Hud.m_rootObject (hidden with the HUD; Hud.SetVisible moves that root off screen), in the
+    // screen's top-left corner (user 2026-10-26): size.hud.party.x / .y reference px of a 1080p screen from the safe
+    // area's top-left, the whole grid scaled by scale.hud.party (2: the 44 px mockup tile read too small live) and with
+    // the screen height; left of the minimap, above the chat; the top-left notification moves below it (MessageSkin
+    // ClearPartyFrame); 9 per row. Shown only while a hand holds a summoning weapon (HoldsSummoner; user 2026-10-26:
+    // no summon weapon, no icon) and the large map is closed. Data refreshed 4x a second, sweep / timers / hover every
+    // frame.
     public sealed class SummonFrames : MonoBehaviour
     {
         public const string RootName = "RuneSkin_SummonFrames";
@@ -65,6 +68,8 @@ namespace RuneSkin.PlayerHud
         private float _timer;
         private string _last;
         private int _hover = -1;
+        private bool _armed;
+        private readonly Vector3[] _corners = new Vector3[4];
 
         public static SummonFrames Instance { get; private set; }
         public static string Describe { get; private set; } = "";
@@ -105,7 +110,9 @@ namespace RuneSkin.PlayerHud
             var canvas = GetComponentInParent<Canvas>();
             if (canvas) _art.SyncPpu(canvas.rootCanvas.referencePixelsPerUnit);
             var mapOpen = Minimap.instance && Minimap.instance.m_mode == Minimap.MapMode.Large;
-            if (_grid.gameObject.activeSelf == mapOpen) _grid.gameObject.SetActive(!mapOpen);
+            _armed = HoldsSummoner(Player.m_localPlayer);
+            var show = _armed && !mapOpen;
+            if (_grid.gameObject.activeSelf != show) _grid.gameObject.SetActive(show);
             _timer -= Time.unscaledDeltaTime;
             if (_timer <= 0f)
             {
@@ -124,7 +131,67 @@ namespace RuneSkin.PlayerHud
             var now = ZNet.instance ? ZNet.instance.GetTimeSeconds() : 0d;
             var pulse = 0.65f + 0.35f * Mathf.Sin(Time.unscaledTime * Mathf.PI * 2f * F("rate.hud.party.pulse", 1f));
             for (var i = 0; i < _stacks.Count && i < _tiles.Count; i++) Animate(_tiles[i], _stacks[i], now, pulse);
-            Hover(canvas, mapOpen);
+            Hover(canvas, !show);
+        }
+
+        // ---- visibility
+
+        // A hand item whose attack summons a creature (Humanoid.RightItem / LeftItem, Humanoid.cs:149-151). Cached per
+        // SharedData (item definitions are shared and fixed after ObjectDB setup).
+        private static readonly Dictionary<ItemDrop.ItemData.SharedData, bool> SummonerCache = new Dictionary<ItemDrop.ItemData.SharedData, bool>();
+
+        public static bool HoldsSummoner(Humanoid h) => h && (IsSummoner(h.RightItem) || IsSummoner(h.LeftItem));
+
+        public static bool IsSummoner(ItemDrop.ItemData item)
+        {
+            var s = item?.m_shared;
+            if (s == null) return false;
+            if (SummonerCache.TryGetValue(s, out var known)) return known;
+            var result = SummonsCreature(s.m_spawnOnHit) || AttackSummons(s.m_attack) || AttackSummons(s.m_secondaryAttack);
+            SummonerCache[s] = result;
+            return result;
+        }
+
+        // Every object an attack instantiates and sets up as an IProjectile: the attack projectile (Attack.cs:887,
+        // FireProjectileBurst), its Projectile.m_spawnOnHit (Projectile.cs:109 / 804-808), the spawn-on-trigger
+        // (Attack.cs:135, instantiated :1091-1093 / :1502-1504) and the chance spawn-on-hit (Attack.cs:999-1001 /
+        // :1581-1583). Same test as MorgottTweaks EpicLootItemRequirements.AttackSummons (summon affix gating).
+        private static bool AttackSummons(Attack a)
+        {
+            if (a == null) return false;
+            var p = a.m_attackProjectile;
+            if (SummonsCreature(p)) return true;
+            var proj = p ? p.GetComponent<Projectile>() : null;
+            if (proj && SummonsCreature(proj.m_spawnOnHit)) return true;
+            if (SummonsCreature(a.m_spawnOnTrigger)) return true;
+            return a.m_spawnOnHitChance > 0f && SummonsCreature(a.m_spawnOnHit);
+        }
+
+        // A SpawnAbility (on the object or a child, Attack.cs:1583 GetComponentInChildren; SpawnAbility.cs:30
+        // m_spawnPrefab) spawning a tameable Character (Dead Raiser, Troll staff, mod summon staffs). A ward (Staff of
+        // Protection) spawns no Character.
+        private static bool SummonsCreature(GameObject go)
+        {
+            if (!go) return false;
+            var ability = go.GetComponentInChildren<SpawnAbility>(true);
+            if (!ability || ability.m_spawnPrefab == null) return false;
+            foreach (var prefab in ability.m_spawnPrefab)
+                if (prefab && prefab.GetComponent<Character>() && prefab.GetComponent<Tameable>())
+                    return true;
+            return false;
+        }
+
+        // Bottom edge of the shown grid in screen px (bottom-left origin) for MessageSkin; false when nothing is shown.
+        public static bool GridScreenBottom(out float y)
+        {
+            y = 0f;
+            var f = Instance;
+            if (!f || !f._grid || !f._grid.gameObject.activeInHierarchy || f._stacks.Count == 0) return false;
+            var canvas = f.GetComponentInParent<Canvas>();
+            var cam = canvas && canvas.rootCanvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.rootCanvas.worldCamera : null;
+            f._grid.GetWorldCorners(f._corners);
+            y = Mathf.Min(RectTransformUtility.WorldToScreenPoint(cam, f._corners[0]).y, RectTransformUtility.WorldToScreenPoint(cam, f._corners[2]).y);
+            return true;
         }
 
         // ---- data
@@ -237,8 +304,8 @@ namespace RuneSkin.PlayerHud
 
         // ---- layout
 
-        // Top-left at (x, y) reference px of a 1080p screen, scaled by screen height / 1080 (the root's local units are
-        // screen px / its lossy scale on an overlay canvas).
+        // Top-left at (x, y) reference px of a 1080p screen from the safe area's top-left, scaled by screen height / 1080
+        // (the root's local units are screen px / its lossy scale on an overlay canvas); tiles x scale.hud.party.
         private void Place()
         {
             var parent = _rt.parent as RectTransform;
@@ -250,10 +317,16 @@ namespace RuneSkin.PlayerHud
                 ls = canvas.rootCanvas.scaleFactor * Mathf.Abs(parent.lossyScale.x) / Mathf.Max(1e-6f, Mathf.Abs(canvas.rootCanvas.transform.lossyScale.x));
             if (!(ls > 0f)) return;
             var k = px / ls;
-            var want = new Vector2(F("size.hud.party.x", 16f) * k, -F("size.hud.party.y", 244f) * k);
+            var safe = Screen.safeArea;
+            PartyMath.Origin(F("size.hud.party.x", 16f), F("size.hud.party.y", 16f), k, safe.xMin, Screen.height - safe.yMax, 1f / ls, out var ox, out var oy);
+            var want = new Vector2(ox, oy);
             if ((_rt.anchoredPosition - want).sqrMagnitude > 0.01f) _rt.anchoredPosition = want;
-            var scale = new Vector3(k, k, 1f);
+            var g = Mathf.Max(0.1f, F("scale.hud.party", 2f));
+            var scale = new Vector3(k * g, k * g, 1f);
             if (_rt.localScale != scale) _rt.localScale = scale;
+            // The tooltip keeps its own reference size (a child of the scaled root).
+            var tipScale = new Vector3(1f / g, 1f / g, 1f);
+            if (_tip.localScale != tipScale) _tip.localScale = tipScale;
             PartyMath.GridSize(_stacks.Count, Columns, TileSize, Gap, BlockH, RowGap, out var w, out var h);
             var size = new Vector2(w, h);
             if (_rt.sizeDelta != size) { _rt.sizeDelta = size; _grid.sizeDelta = size; }
@@ -532,8 +605,8 @@ namespace RuneSkin.PlayerHud
             return go ? go.name : hash.ToString();
         }
 
-        // One line per shown icon (harness): index, prefab, pet, state, count, fills, shown parts and the icon's screen
-        // rect (x,y,w,h bottom-left origin, socket + bars). Machine-read: numbers in the invariant culture ("0.50", not the
+        // Header: stacks, units, armed (a summoning weapon in hand), grid shown, hover, tooltip. One line per icon
+        // (harness): index, prefab, pet, state, count, fills, shown parts and the icon's screen rect (x,y,w,h bottom-left origin, socket + bars). Machine-read: numbers in the invariant culture ("0.50", not the
         // game culture's "0,50" - run 20261024-192847, ru-RU: every fill parsed as NaN by the harness).
         public static string DebugState()
         {
@@ -552,7 +625,7 @@ namespace RuneSkin.PlayerHud
             var canvas = f.GetComponentInParent<Canvas>();
             var cam = canvas && canvas.rootCanvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.rootCanvas.worldCamera : null;
             var c = new Vector3[4];
-            sb.Append($"stacks={f._stacks.Count} units={f._units.Count} grid={f._grid.gameObject.activeInHierarchy} hover={f._hover} tip='{(f._tip.gameObject.activeInHierarchy ? f._tipText.text.Replace('\n', '|').Replace('\'', '`') : "-")}'");
+            sb.Append($"stacks={f._stacks.Count} units={f._units.Count} armed={(f._armed ? 1 : 0)} grid={f._grid.gameObject.activeInHierarchy} hover={f._hover} tip='{(f._tip.gameObject.activeInHierarchy ? f._tipText.text.Replace('\n', '|').Replace('\'', '`') : "-")}'");
             for (var i = 0; i < f._stacks.Count && i < f._tiles.Count; i++)
             {
                 var s = f._stacks[i];
