@@ -861,6 +861,10 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
 - [ ] Codex in-game notes: hotbar cells read double-framed (StripCell rarity rim / glow inside the art well), the empty 4th potion slot shows no key label (EAQS has 3 quick cells; capacity 4 from the provider), f1p1 / f2p3 end medallions a few px off the mockup's own rows 1-2 (the panel follows row 3).
 
 
+## 0.23.2 Summon party frame: summon weapon only, top-left corner, 2x
+- [x] Shown only while a hand holds a summoning weapon (SummonFrames.HoldsSummoner: attack spawns a SpawnAbility with a tameable Character); top-left corner of the safe area (size.hud.party.x/.y 16/16), scale.hud.party 2; top-left notification moves below the grid (PartyMath.NotifyShift) (fd9a503).
+- [x] Tiles built / animated only while the grid is shown (24x NRE in MakeTile -> Outline under the hidden grid, run 20261026-164908) (05fe239).
+- [x] Run 20261026-165459 ui-runeskin-party PASS 18/0 at 1080 + 1440 (hidden-unarmed, shown-armed, layout, overlap, groups, bars, states, tooltip; harness tools 44bb9af).
 ## 0.23.1 VNEI docked in crafting without its own window frame
 
 - [x] Window art its mod switched off (VNEI attach-to-crafting hides its dragHandler woodpanel) is no window: ForeignUi draws no panel stack / move band for it, image role skip; controls stay skinned (eeb3318).
