@@ -36,3 +36,12 @@ Work at high resolution (edit in sections if the aspect ratio is extreme and ass
 Verify with python and print: size; mean abs alpha difference vs the current sprite (must be < 1); mean luminance (0.299R+0.587G+0.114B) of opaque pixels for the current sprite and the result (the result must be clearly darker, about 0.55-0.75x the current); the variance of the 4-neighbour Laplacian of luminance over texels whose 3x3 neighbourhood has alpha >= 128 after a LANCZOS downscale by 0.72 (aim >= 3000).
 No text, no captions, no watermark.
 Save PNG (RGBA) to: D:\tmp\cx-runeskin\gen\strip7_bars.png
+
+--- pass 4 (2026-10-26, Codex review 7/10: mockup straps) ---
+Use the image_gen tool for ALL artwork pixels (image edit of the current v2 sprite; python/PIL only for canvas size, assembling generated sections, LANCZOS resizing, alpha copy and checks - never draw straps or ornament with code). Load with view_image:
+- E:\DEV\Valheim\RuneSkin\art\src\kit\strip7_bars.png (the CURRENT v2 sprite, 3008x256 RGBA: the BASE - keep its material, detail, outline, alpha footprint and every feature position)
+- D:\tmp\cx-runeskin\mockups\bottom-hud-center-v2.png and the crop D:\tmp\cx-runeskin\refs\v2-centre-2x.png (the user-APPROVED mockup: the leather strap design to match)
+Fix (Codex review: the sprite lacks the mockup's straps): the BAR BLOCK in the mockup has full vertical leather straps wrapping the whole frame height (from the top band over to the bottom band) at both ends, just inside the large end knots; the current straps are only short fragments on the bands. Make each end strap one continuous wrap over the top band, the side, and the bottom band, within x 200..320 on the left and x 2660..2800 on the right (fixed ends only), interior channel area stays transparent.
+Straps: dark-brown worn leather, stitched edges, small iron rivets, wrapping over the frame band (drawn ON the metal, inside the existing alpha footprint only). Do not change anything else; transparent interiors stay transparent; keep the 9-slice: nothing new in the stretched middle.
+Resize with LANCZOS to EXACTLY 3008x256, aligned 1:1; copy the current sprite's alpha channel onto the result as the last step. Verify with python and print size and mean abs alpha difference vs the current sprite (< 1).
+No text, no captions, no watermark. Save PNG (RGBA) to: D:\tmp\cx-runeskin\gen2\strip7_bars.png

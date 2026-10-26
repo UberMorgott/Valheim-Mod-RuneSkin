@@ -36,3 +36,21 @@ Work at high resolution (edit in sections if the aspect ratio is extreme and ass
 Verify with python and print: size; mean abs alpha difference vs the current sprite (must be < 1); mean luminance (0.299R+0.587G+0.114B) of opaque pixels for the current sprite and the result (the result must be clearly darker, about 0.55-0.75x the current); the variance of the 4-neighbour Laplacian of luminance over texels whose 3x3 neighbourhood has alpha >= 128 after a LANCZOS downscale by 0.72 (aim >= 3000).
 No text, no captions, no watermark.
 Save PNG (RGBA) to: D:\tmp\cx-runeskin\gen\strip7_block.png
+
+--- pass 4 (2026-10-26, Codex review 7/10: mockup straps) ---
+Use the image_gen tool for ALL artwork pixels (image edit of the current v2 sprite; python/PIL only for canvas size, assembling generated sections, LANCZOS resizing, alpha copy and checks - never draw straps or ornament with code). Load with view_image:
+- E:\DEV\Valheim\RuneSkin\art\src\kit\strip7_block.png (the CURRENT v2 sprite, 2688x392 RGBA: the BASE - keep its material, detail, outline, alpha footprint and every feature position)
+- D:\tmp\cx-runeskin\mockups\bottom-hud-center-v2.png and the crop D:\tmp\cx-runeskin\refs\v2-centre-2x.png (the user-APPROVED mockup: the leather strap design to match)
+Fix (Codex review: the sprite lacks the mockup's straps): the HOTBAR BLOCK in the mockup has a diagonal leather strap wrapped around EACH TOP CORNER (over the corner where the top band meets the side, next to the dragon crest) and short vertical straps at the lower corners. Add the two diagonal top-corner straps inside the fixed border areas (left x < 180, right x > 2508, top 92 px rows), matching the mockup.
+Straps: dark-brown worn leather, stitched edges, small iron rivets, wrapping over the frame band (drawn ON the metal, inside the existing alpha footprint only). Do not change anything else; transparent interiors stay transparent; keep the 9-slice: nothing new in the stretched middle.
+Resize with LANCZOS to EXACTLY 2688x392, aligned 1:1; copy the current sprite's alpha channel onto the result as the last step. Verify with python and print size and mean abs alpha difference vs the current sprite (< 1).
+No text, no captions, no watermark. Save PNG (RGBA) to: D:\tmp\cx-runeskin\gen2\strip7_block.png
+
+--- pass 4b (centre seam: continuous bands for the stretched 9-slice middle) ---
+Use the image_gen tool for ALL artwork pixels (image edit; python/PIL only for canvas size, assembling sections, LANCZOS resizing, alpha copy and checks - never draw ornament with code). Load with view_image:
+- D:\tmp\cx-runeskin\gen2\strip7_block_seam.png (2688x392 RGBA, the BASE: dark rune-metal hotbar block frame)
+- E:\DEV\Valheim\RuneSkin\art\src\kit\strip7_block.png (previous version, same problem) and git-era reference of a CONTINUOUS band: D:\tmp\claude\E--DEV-Valheim\a74282c2-59fb-4857-a41f-2702a3e55a20\scratchpad\old_block.png (older steel version: its top / bottom bands run straight and continuous across the middle - copy that STRUCTURE, not its steel colour)
+Problem: in the BASE, between x ~1240 and ~1450 the top frame band (and the teal inner line under it) sits a few px higher than on both sides, and the bottom band's teal line steps too: visible steps, because the image was painted in sections. This sprite is a 9-slice whose middle (x 180..2508) is STRETCHED in game, so the top band and the bottom band must be perfectly uniform horizontal strips across the whole middle: identical rows (measure the band rows and the teal line row at x 600 and reuse them everywhere), same knotwork rhythm, no steps, no patches.
+Task: repaint the top band strip and the bottom band strip over x 180..2508 as one continuous band each (generate a short seamless band segment with image_gen and tile/assemble it with PIL at the exact rows measured at x 600), keep the dark interior, keep the corners/crests/straps/gems (x < 180 and x > 2508) untouched.
+EXACTLY 2688x392; copy the BASE's alpha channel onto the result as the last step. Verify with python and print: size; mean abs alpha difference vs the base (< 1); for rows y 0..120 and y 300..392, the row index of the brightest teal line (max of G+B-R per column) at x = 400, 900, 1300, 1345, 1400, 1800, 2300 - all equal per band (+-1).
+No text, no watermark. Save PNG (RGBA) to: D:\tmp\cx-runeskin\gen2\strip7_block_seam2.png
