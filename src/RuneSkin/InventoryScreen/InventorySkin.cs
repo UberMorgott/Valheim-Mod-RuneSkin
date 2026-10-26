@@ -1294,7 +1294,10 @@ namespace RuneSkin.InventoryScreen
                 var r = pos.y - skipRow - s.RowScroll;
                 if (pos.y < skipRow || c < 0 || c >= cols || r < 0 || r >= shownRows)
                 {
+                    // hidden (hotbar row in the strip, scrolled out): scale 0 at the block origin, never left where vanilla
+                    // put it (run 20261026-193647 strip-clear-player-inv: the scale-0 hotbar row sat 500 px under the screen)
                     Geo.SetScale(e.transform, 0f);
+                    Geo.SetTopLeft((RectTransform)e.transform, Geo.World(_canvas, x0, y0));
                     continue;
                 }
                 Geo.SetScale(e.transform, scale);
@@ -1454,7 +1457,7 @@ namespace RuneSkin.InventoryScreen
                     if (!e) continue;
                     var rt = (RectTransform)e.transform;
                     Geo.SetScale(rt, shown ? cellScale : 0f);
-                    if (shown) Geo.SetTopLeft(rt, Geo.World(_canvas, cx, cy));
+                    Geo.SetTopLeft(rt, Geo.World(_canvas, cx, shown ? cy : o.DollCellsY + dy)); // hidden: in the doll, scale 0
                     HideLabel(e);
                     Glyph(e, entry.Glyph);
                     // Empty cell: its name in the tooltip (vanilla UpdateGui clears unused tooltips, InventoryGrid.cs:401-402).

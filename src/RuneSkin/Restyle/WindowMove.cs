@@ -283,9 +283,28 @@ namespace RuneSkin.Restyle
             if (eventData.button != PointerEventData.InputButton.Left || string.IsNullOrEmpty(Id) || !WindowMove.Enabled) return;
             _dragging = true;
             _start = eventData.position;
+            RaiseWindow(Window);
             _startOffset = WindowMove.Offset(Id);
             // Start from what is shown (a stored offset beyond the current bounds is clamped on screen).
             if (WindowMoveProbe.TryApplied(Id, out var applied)) _startOffset = applied;
+        }
+
+        // The dragged inventory-screen window draws (and takes the pointer) above the screen's other windows: dragged over
+        // crafting it stayed under it, its header unreachable (run 20261026-193647: reset double-click hit crafting).
+        // Only the screen's own window roots (m_player with the container in it, m_info, m_crafting) swap places; split
+        // dialog, tooltips and the drag icon keep theirs.
+        private static void RaiseWindow(Transform window)
+        {
+            var gui = InventoryGui.instance;
+            if (!gui || !window) return;
+            Transform top = null;
+            foreach (var root in new Transform[] { gui.m_player, gui.m_info, gui.m_crafting })
+                if (root && (window == root || window.IsChildOf(root))) top = root;
+            if (!top || !top.parent) return;
+            var max = top.GetSiblingIndex();
+            foreach (var root in new Transform[] { gui.m_player, gui.m_info, gui.m_crafting })
+                if (root && root.parent == top.parent) max = Mathf.Max(max, root.GetSiblingIndex());
+            if (top.GetSiblingIndex() != max) top.SetSiblingIndex(max);
         }
 
         public void OnDrag(PointerEventData eventData)
