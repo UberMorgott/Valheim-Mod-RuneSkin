@@ -28,6 +28,7 @@ namespace RuneSkin.PlayerHud
         private readonly Image _wingL, _wingR, _bars, _block, _divider, _railL, _railR, _knotL, _knotR, _endL, _endR, _knot2L, _knot2R;
         // centre wings (target panel): tip / segments / outer end pieces per side (pre-cut wing art, StripMath.Wing)
         private Image _tipPieceL, _tipPieceR, _outerPieceL, _outerPieceR;
+        private readonly RectTransform _wingBoxL, _wingBoxR;
         private readonly List<Image> _segL = new List<Image>(4), _segR = new List<Image>(4);
         private readonly Image _field, _stubL, _stubR, _capL, _capR, _tipL, _tipR;
 
@@ -83,13 +84,18 @@ namespace RuneSkin.PlayerHud
             // block-tip caps (target crops: rail glint + bead) over the rail ends, under the inner diamonds and the block tips
             _tipL = Piece("TipCapLeft", _back, "sprite.hud.strip7.tipcap", Image.Type.Simple);
             _tipR = Piece("TipCapRight", _back, Own("sprite.hud.strip7.tipcap"), Image.Type.Simple);
-            _wingL = Piece("WingLeft", _back, "sprite.hud.strip4.wing", Image.Type.Sliced);
-            _wingR = Piece("WingRight", _back, ThemeTokens.GetSprite("sprite.hud.strip4.wing.r") ? "sprite.hud.strip4.wing.r" : "sprite.hud.strip4.wing", Image.Type.Sliced);
-            // centre wings (user 2026-10-26): composed from the pre-cut wing pieces, drawn where the whole wing was
-            _tipPieceL = Piece("WingLeftTip", _back, "sprite.hud.strip7.wing.tip", Image.Type.Simple);
-            _tipPieceR = Piece("WingRightTip", _back, "sprite.hud.strip7.wing.r.tip", Image.Type.Simple);
-            _outerPieceL = Piece("WingLeftOuter", _back, "sprite.hud.strip7.wing.outer", Image.Type.Simple);
-            _outerPieceR = Piece("WingRightOuter", _back, "sprite.hud.strip7.wing.r.outer", Image.Type.Simple);
+            // centre wings (target panel, user 2026-10-26): "WingLeft" / "WingRight" = a box over the composed wing whose
+            // children are the pre-cut pieces (tip, segments, outer end); the whole-wing images serve the hud-4M3 strip
+            _wingL = Piece(Target ? "WingLeftWhole" : "WingLeft", _back, "sprite.hud.strip4.wing", Image.Type.Sliced);
+            _wingR = Piece(Target ? "WingRightWhole" : "WingRight", _back, ThemeTokens.GetSprite("sprite.hud.strip4.wing.r") ? "sprite.hud.strip4.wing.r" : "sprite.hud.strip4.wing", Image.Type.Sliced);
+            _wingBoxL = HudArt.Rect(Target ? "WingLeft" : "WingLeftParts", _back);
+            _wingBoxR = HudArt.Rect(Target ? "WingRight" : "WingRightParts", _back);
+            _tipPieceL = Piece("Tip", _wingBoxL, "sprite.hud.strip7.wing.tip", Image.Type.Simple);
+            _tipPieceR = Piece("Tip", _wingBoxR, "sprite.hud.strip7.wing.r.tip", Image.Type.Simple);
+            _outerPieceL = Piece("Outer", _wingBoxL, "sprite.hud.strip7.wing.outer", Image.Type.Simple);
+            _outerPieceR = Piece("Outer", _wingBoxR, "sprite.hud.strip7.wing.r.outer", Image.Type.Simple);
+            _wingBoxL.gameObject.SetActive(Target);
+            _wingBoxR.gameObject.SetActive(Target);
             _endL = Piece("EndLeft", _back, "sprite.hud.strip7.end", Image.Type.Simple);
             _endR = Piece("EndRight", _back, Own("sprite.hud.strip7.end"), Image.Type.Simple);
             // the wing-tip diamonds over the rail run and the wing's tip stub (target: the diamond sits on top)
@@ -98,7 +104,7 @@ namespace RuneSkin.PlayerHud
             // small diamonds at the bar-block end of each rail run (target: diamonds at both rail ends)
             _knot2L = Piece("Knot2Left", _back, "sprite.hud.strip7.knot2", Image.Type.Simple);
             _knot2R = Piece("Knot2Right", _back, Own("sprite.hud.strip7.knot2"), Image.Type.Simple);
-            foreach (var img in new[] { _capL, _capR, _stubL, _stubR, _railL, _railR, _tipL, _tipR, _knotL, _knotR, _endL, _endR, _knot2L, _knot2R, _tipPieceL, _tipPieceR, _outerPieceL, _outerPieceR }) img.gameObject.SetActive(Target);
+            foreach (var img in new[] { _capL, _capR, _stubL, _stubR, _railL, _railR, _tipL, _tipR, _knotL, _knotR, _endL, _endR, _knot2L, _knot2R }) img.gameObject.SetActive(Target);
             // always built like the other target pieces (run 20261023-191817: created only when the sprite resolved at
             // construction -> never built in game, the scene showed between the HP and stamina channels)
             // own tint token (color.hud.strip7.field): the 0.20.0 field art read ~27 % lighter than the target's metal (mean
@@ -352,28 +358,24 @@ namespace RuneSkin.PlayerHud
         };
 
         // Composed wing: tip, segments (pooled), outer end on their StripMath.Wing boxes; nothing for 0 slots.
-        private void WingPieces(in StripMath.WingRun r, Image tip, Image outer, List<Image> segs, string segToken, string name)
+        private void WingPieces(in StripMath.WingRun r, RectTransform box, Image tip, Image outer, List<Image> segs, string segToken)
         {
             var on = r.Slots > 0;
-            Show(tip, on);
-            Show(outer, on);
-            if (on)
-            {
-                Place(tip, r.Tip, false);
-                Place(outer, r.Outer, false);
-            }
-            while (segs.Count < r.Segs)
-            {
-                var img = Piece(name + "Seg" + segs.Count, _back, segToken, Image.Type.Simple);
-                img.transform.SetSiblingIndex(tip.transform.GetSiblingIndex()); // under the end medallions and diamonds
-                segs.Add(img);
-            }
+            if (box.gameObject.activeSelf != on) box.gameObject.SetActive(on);
+            if (!on) return;
+            Box(box, r.X, 0f, r.Right - r.X, r.Tip.H, false);
+            // child boxes relative to the wing box (its pivot / anchors at the bottom-left)
+            Place(tip, Local(r.Tip, r.X), false);
+            Place(outer, Local(r.Outer, r.X), false);
+            while (segs.Count < r.Segs) segs.Add(Piece("Seg" + segs.Count, box, segToken, Image.Type.Simple));
             for (var j = 0; j < segs.Count; j++)
             {
                 Show(segs[j], j < r.Segs);
-                if (j < r.Segs) Place(segs[j], r.Seg(j), false);
+                if (j < r.Segs) Place(segs[j], Local(r.Seg(j), r.X), false);
             }
         }
+
+        private static StripMath.Box Local(in StripMath.Box b, float x0) => new StripMath.Box(b.X - x0, b.Y, b.W, b.H);
 
         private void TargetFrame(in StripMath.Layout l)
         {
@@ -389,8 +391,8 @@ namespace RuneSkin.PlayerHud
             // the whole-wing pieces give way to the composed wings
             Show(_wingL, false);
             Show(_wingR, false);
-            WingPieces(l.WingL, _tipPieceL, _outerPieceL, _segL, "sprite.hud.strip7.wing.seg", "WingLeft");
-            WingPieces(l.WingR, _tipPieceR, _outerPieceR, _segR, "sprite.hud.strip7.wing.r.seg", "WingRight");
+            WingPieces(l.WingL, _wingBoxL, _tipPieceL, _outerPieceL, _segL, "sprite.hud.strip7.wing.seg");
+            WingPieces(l.WingR, _wingBoxR, _tipPieceR, _outerPieceR, _segR, "sprite.hud.strip7.wing.r.seg");
             Place(_knotL, f.KnotL, false);
             Place(_knotR, f.KnotR, !HasOwn("sprite.hud.strip7.knot"));
             Place(_railL, f.RailL, false);

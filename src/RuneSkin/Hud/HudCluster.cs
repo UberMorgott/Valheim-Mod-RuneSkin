@@ -627,7 +627,7 @@ namespace RuneSkin.PlayerHud
             }
             Status();
             _clear.Tick(_hud, _root);
-            var cells = _strip.CellCount + _buffs.CellCount + _summonParented;
+            var cells = _strip.CellCount + _buffs.CellCount;
             if (cells != _floorCells)
             {
                 _floorCells = cells;
@@ -635,7 +635,7 @@ namespace RuneSkin.PlayerHud
             }
         }
 
-        private int _floorCells = -1, _summonParented;
+        private int _floorCells = -1;
 
         // Geometry pass (inputs changed): strip layout, bars, scale and screen placement.
         private void Relayout()
@@ -923,30 +923,6 @@ namespace RuneSkin.PlayerHud
 
         // Strip hotbar cell i (harness, drop tests).
         public RectTransform HotbarCell(int i) => _hudStrip?.HotbarRect(i);
-
-        // Summon frames ride in the buff side area (SummonFrames.Place): parented to the strip root on first call.
-        public bool PlaceSummons(RectTransform rt, float h)
-        {
-            if (!_root || _stripKey == int.MinValue) return false;
-            if (rt.parent != _root)
-            {
-                rt.SetParent(_root, false);
-                _summonParented++; // its texts get the readable floor on the next Arrange
-            }
-            rt.anchorMin = rt.anchorMax = Vector2.zero;
-            rt.pivot = new Vector2(0f, 1f);
-            // In the buff side area (mockup hud-3: side groups above the strip), over the buff rows.
-            var buffsLeft = (Plugin.BuffSide?.Value ?? "Left") != "Right";
-            var inset = ThemeTokens.GetFloat("size.hud.strip.knot", 70f) + ThemeTokens.GetFloat("size.hud.status.pad", 6f);
-            var k = ThemeTokens.GetFloat("share.hud.summon.strip", 0.7f);
-            var x = HudStrip.Target ? (buffsLeft ? SideLeft - rt.sizeDelta.x * k : SideRight) : buffsLeft ? inset : _stripWidth - inset - rt.sizeDelta.x;
-            var want = new Vector2(x, _statusBase + _buffs.Root.sizeDelta.y + ThemeTokens.GetFloat("size.hud.gap", 5f) * 4f + h * ThemeTokens.GetFloat("share.hud.summon.strip", 0.7f));
-            if ((rt.anchoredPosition - want).sqrMagnitude > 0.25f) rt.anchoredPosition = want;
-            // Smaller than the status cells and kept above the buff rows (lead review: the summon row cluttered the buffs).
-            var scale = new Vector3(k, k, 1f);
-            if (rt.localScale != scale) rt.localScale = scale;
-            return true;
-        }
 
         private static Vector3 ScreenToWorld(RectTransform plane, Vector2 screen)
         {

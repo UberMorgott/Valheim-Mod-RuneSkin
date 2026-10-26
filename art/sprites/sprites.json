@@ -8602,6 +8602,144 @@
       "atlas": "hires"
     },
     {
+      "name": "strip7_wing_l_tip",
+      "file": "strip7_wing_l_tip.png",
+      "size": [
+        272,
+        190
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip7.wing.tip",
+      "notes": "Centre wings (user 2026-10-26, mockup bottom-hud-center-v2): pre-cut piece of the wing art at the separator edges (theme size.hud.strip7.wing*.cut.*), composed per slot count by StripMath.Wing - left tip: inner pointed end + the innermost slot area",
+      "atlas": "strip"
+    },
+    {
+      "name": "strip7_wing_l_seg",
+      "file": "strip7_wing_l_seg.png",
+      "size": [
+        207,
+        190
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip7.wing.seg",
+      "notes": "Centre wings (user 2026-10-26, mockup bottom-hud-center-v2): pre-cut piece of the wing art at the separator edges (theme size.hud.strip7.wing*.cut.*), composed per slot count by StripMath.Wing - left segment: strap separator + one slot area, repeated outward",
+      "atlas": "strip"
+    },
+    {
+      "name": "strip7_wing_l_outer",
+      "file": "strip7_wing_l_outer.png",
+      "size": [
+        110,
+        190
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip7.wing.outer",
+      "notes": "Centre wings (user 2026-10-26, mockup bottom-hud-center-v2): pre-cut piece of the wing art at the separator edges (theme size.hud.strip7.wing*.cut.*), composed per slot count by StripMath.Wing - left outer end under the end medallion",
+      "atlas": "strip"
+    },
+    {
+      "name": "strip7_wing_r_tip",
+      "file": "strip7_wing_r_tip.png",
+      "size": [
+        256,
+        190
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip7.wing.r.tip",
+      "notes": "Centre wings (user 2026-10-26, mockup bottom-hud-center-v2): pre-cut piece of the wing art at the separator edges (theme size.hud.strip7.wing*.cut.*), composed per slot count by StripMath.Wing - right tip: inner pointed end + the innermost slot area",
+      "atlas": "strip"
+    },
+    {
+      "name": "strip7_wing_r_seg",
+      "file": "strip7_wing_r_seg.png",
+      "size": [
+        192,
+        190
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip7.wing.r.seg",
+      "notes": "Centre wings (user 2026-10-26, mockup bottom-hud-center-v2): pre-cut piece of the wing art at the separator edges (theme size.hud.strip7.wing*.cut.*), composed per slot count by StripMath.Wing - right segment: strap separator + one slot area, repeated outward",
+      "atlas": "strip"
+    },
+    {
+      "name": "strip7_wing_r_outer",
+      "file": "strip7_wing_r_outer.png",
+      "size": [
+        134,
+        190
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.strip7.wing.r.outer",
+      "notes": "Centre wings (user 2026-10-26, mockup bottom-hud-center-v2): pre-cut piece of the wing art at the separator edges (theme size.hud.strip7.wing*.cut.*), composed per slot count by StripMath.Wing - right outer end (curved knot + the part under the end medallion)",
+      "atlas": "strip"
+    },
+    {
       "name": "strip7_wing_l",
       "file": "strip7_wing_l.png",
       "size": [
@@ -8967,144 +9105,6 @@
       "fillCenter": true,
       "token": "hud.strip7.knot_s_r",
       "notes": "Target panel: 4x piece knot-small-r by the mockup agent (exact crop of the user's screenshot), 0.72 = 2.88 sprite px per target px",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_icon_hp",
-      "file": "strip7_icon_hp.png",
-      "size": [
-        78,
-        52
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.icon_hp",
-      "notes": "Target panel: 4x piece icon-heart by the mockup agent (exact crop of the user's screenshot), 0.72 = 2.88 sprite px per target px",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_icon_st",
-      "file": "strip7_icon_st.png",
-      "size": [
-        78,
-        55
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.icon_st",
-      "notes": "Target panel: 4x piece icon-lightning by the mockup agent (exact crop of the user's screenshot), 0.72 = 2.88 sprite px per target px",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_icon_ei",
-      "file": "strip7_icon_ei.png",
-      "size": [
-        86,
-        55
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.icon_ei",
-      "notes": "Target panel: 4x piece icon-eitr-socket by the mockup agent (exact crop of the user's screenshot), 0.72 = 2.88 sprite px per target px",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_socket_hp",
-      "file": "strip7_socket_hp.png",
-      "size": [
-        184,
-        184
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.socket_hp",
-      "notes": "0.20.1: whole round pool socket (ring + glyph), Codex strip7_sockets.prompt.txt; replaces the cut strip7_icon_hp crop",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_socket_st",
-      "file": "strip7_socket_st.png",
-      "size": [
-        184,
-        184
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.socket_st",
-      "notes": "0.20.1: whole round pool socket (ring + glyph), Codex strip7_sockets.prompt.txt; replaces the cut strip7_icon_st crop",
-      "atlas": "strip"
-    },
-    {
-      "name": "strip7_socket_ei",
-      "file": "strip7_socket_ei.png",
-      "size": [
-        184,
-        184
-      ],
-      "border": {
-        "left": 0,
-        "bottom": 0,
-        "right": 0,
-        "top": 0
-      },
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "imageType": "Simple",
-      "fillCenter": true,
-      "token": "hud.strip7.socket_ei",
-      "notes": "0.20.1: whole round pool socket (ring + glyph), Codex strip7_sockets.prompt.txt; replaces the cut strip7_icon_ei crop",
       "atlas": "strip"
     },
     {

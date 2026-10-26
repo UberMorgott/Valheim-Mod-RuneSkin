@@ -165,7 +165,7 @@ namespace RuneSkin.Tests
 
         // Shipped wing art cuts (theme size.hud.strip7.wing*.src / cut / slot, art px of strip7_wing_l / _r).
         internal static readonly StripMath.WingCut CutL = new StripMath.WingCut { W = 1032f, H = 264f, Tip = 654f, Seg = 366f, Outer = 153f, SlotTip = 810f, SlotSeg = 534f, InnerRight = true };
-        internal static readonly StripMath.WingCut CutR = new StripMath.WingCut { W = 1096f, H = 264f, Tip = 362f, Seg = 629f, Outer = 910f, SlotTip = 239f, SlotSeg = 507f };
+        internal static readonly StripMath.WingCut CutR = new StripMath.WingCut { W = 1096f, H = 264f, Tip = 355f, Seg = 622f, Outer = 910f, SlotTip = 236f, SlotSeg = 503f };
 
         private static void Centre(ref StripMath.Input i)
         {
@@ -252,12 +252,12 @@ namespace RuneSkin.Tests
             Assert.Equal(500f - ((1032f - 654f) + (654f - 534f)) * s, r.SlotCenter(1), 3);
             Assert.Equal(r.SlotCenter(1) - (654f - 366f) * s, r.SlotCenter(2), 3);
             var q = StripMath.Wing(CutR, 2, 100f, 95f);
-            Assert.Equal(100f + 239f * s, q.SlotCenter(0), 3);
-            Assert.Equal(100f + 507f * s, q.SlotCenter(1), 3);
-            Assert.Equal(100f + (362f + 267f + 186f) * s, q.Right, 3);
+            Assert.Equal(100f + 236f * s, q.SlotCenter(0), 3);
+            Assert.Equal(100f + 503f * s, q.SlotCenter(1), 3);
+            Assert.Equal(100f + (355f + 267f + 186f) * s, q.Right, 3);
             // source columns of the pre-cut pieces (cuts.json strip7_wing_*_tip / _seg / _outer)
             Assert.Equal((654f, 378f, 366f, 288f, 0f, 153f), (r.TipSrc, r.TipSrcW, r.SegSrc, r.SegSrcW, r.OuterSrc, r.OuterSrcW));
-            Assert.Equal((0f, 362f, 362f, 267f, 910f, 186f), (q.TipSrc, q.TipSrcW, q.SegSrc, q.SegSrcW, q.OuterSrc, q.OuterSrcW));
+            Assert.Equal((0f, 355f, 355f, 267f, 910f, 186f), (q.TipSrc, q.TipSrcW, q.SegSrc, q.SegSrcW, q.OuterSrc, q.OuterSrcW));
         }
 
         // Counts clip to WingMax and to the strip (end medallion inside): a narrow strip shows fewer slots, never off-screen.
