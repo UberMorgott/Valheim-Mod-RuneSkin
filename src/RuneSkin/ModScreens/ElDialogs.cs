@@ -39,7 +39,7 @@ namespace RuneSkin.ModScreens
     //      (ElDialogMath.Stack / ButtonHeight); the description view gives up that height (it scrolls).
     //   4. Width (user 2026-10-27 "надо их пошире сделать, но с моим интерфейсом, чтобы всё влезло"): Epic Loot's 380-unit
     //      frame is the real limit (245 px buttons at 720p), so the frame itself widens until the widest choice label
-    //      fits one line at its own size plus the drawn side borders (craft result: the tooltip's widest line), at most
+    //      fits one line at the dialog's body size (its description's 18; fixed, no auto-size) plus the drawn side borders (craft result: the tooltip's widest line), at most
     //      ElDialogMath.MaxFrameWidth and the safe area minus a margin, shifted back inside it (ElDialogMath.FrameWidth /
     //      ShiftInto); a label still wider wraps. The side borders come from the cloned panel stack's Frame layer, bound
     //      by name on the clone (PanelDecor.Frame: the clone's private reference was null -> "side insets 10/10").
@@ -246,11 +246,12 @@ namespace RuneSkin.ModScreens
             var scroll = Column(frame);
             if (!scroll) return;
             var floor = ThemeTokens.GetFloat("size.text.fit.min", 12f);
-            // The frame widens so the widest label shows on one line at its own size (user 2026-10-27 "надо их пошире
+            // The frame widens so the widest label shows on one line at the body size (user 2026-10-27 "надо их пошире
             // сделать ... чтобы всё влезло": 380-unit frame, 245 px buttons at 720p); the description view stretches with
             // it (Epic Loot anchors it 0..1), the choices take the new inner width below.
             var need = ElDialogMath.ElWidth;
-            foreach (var rt in Active) need = Mathf.Max(need, LabelWidth(rt, floor));
+            var body = BodySize(dialog);
+            foreach (var rt in Active) need = Mathf.Max(need, LabelWidth(rt, body));
             SideInsets(frame, dialog, out var left, out var right, out var art);
             Widen(frame, need, left, right);
             SideInsets(frame, dialog, out left, out right, out art);
@@ -260,12 +261,12 @@ namespace RuneSkin.ModScreens
             var width = ElDialogMath.InnerWidth(fr.width, left, right);
             var centre = fr.center.x + (left - right) * 0.5f;
             if (Logged.Add(dialog.GetInstanceID()))
-                Plugin.Log.LogInfo($"[RuneSkin] el dialog {dialog.name}: frame {fr.width:0.#}x{fr.height:0.#} scale {frame.lossyScale.x:0.###}, widest label {need:0.#}, frame art {art}, description view {col.width:0.#} wide " +
+                Plugin.Log.LogInfo($"[RuneSkin] el dialog {dialog.name}: frame {fr.width:0.#}x{fr.height:0.#} scale {frame.lossyScale.x:0.###}, widest label {need:0.#} at body {body:0.#}, frame art {art}, description view {col.width:0.#} wide " +
                     $"(anchors {scroll.anchorMin}-{scroll.anchorMax} sizeDelta {scroll.sizeDelta}), side insets {left:0.#}/{right:0.#} -> choices {width:0.#}");
             var vpad = ChoiceVPad;
             var heights = new float[Active.Count];
             for (var i = 0; i < Active.Count; i++)
-                heights[i] = Label(Active[i], width, floor, vpad);
+                heights[i] = Label(Active[i], width, body, floor, vpad);
             var stack = ElDialogMath.Stack(fr.height, fr.yMax - col.yMax, heights, CapBand(frame, dialog), ElDialogMath.ElGap, 80f);
             for (var i = 0; i < Active.Count; i++)
             {
@@ -313,7 +314,7 @@ namespace RuneSkin.ModScreens
         }
 
         // One label across its button; returns the button height it needs (Epic Loot's 40, or more for two lines at the floor).
-        private static float Label(RectTransform button, float width, float floor, float vpad)
+        private static float Label(RectTransform button, float width, float body, float floor, float vpad)
         {
             var label = button.GetComponentInChildren<TMP_Text>(true);
             if (!label) return ElDialogMath.ElHeight;
@@ -328,28 +329,21 @@ namespace RuneSkin.ModScreens
                 if (lr.offsetMin != min) lr.offsetMin = min;
                 if (lr.offsetMax != max) lr.offsetMax = max;
             }
-            var top = label.enableAutoSizing ? Mathf.Max(label.fontSizeMax, floor) : Mathf.Max(label.fontSize, floor);
-            if (!label.enableAutoSizing || Mathf.Abs(label.fontSizeMin - floor) > 0.01f || Mathf.Abs(label.fontSizeMax - top) > 0.01f)
-            {
-                label.fontSizeMax = top;
-                label.fontSizeMin = floor;
-                label.enableAutoSizing = true;
-            }
-            // Height of the label wrapped in the text width at the floor size (auto-size off for the measure only).
+            // Fixed size, no auto-size (run 20261027-183350: auto-size from the label's fontSizeMax drew them at 24.7,
+            // bigger than the description): the dialog's body size when the label fits one line there, else shrunk on
+            // that line down to the readable floor, below it the floor and wrapped (ElDialogMath.LabelSize).
             var textW = width - 2f * hpad - label.margin.x - label.margin.z;
-            // One line whenever it fits at the floor (auto-size then shrinks it on that line, never wraps it to keep a
-            // bigger size); only a label wider than the screen-capped frame wraps.
-            var wrap = textW > 1f && !string.IsNullOrEmpty(label.text) && ElDialogMath.OneLine(Unwrapped(label, floor), textW)
-                ? TextWrappingModes.NoWrap
-                : TextWrappingModes.Normal;
+            if (label.enableAutoSizing) label.enableAutoSizing = false;
+            if (textW <= 1f || string.IsNullOrEmpty(label.text))
+            {
+                if (Mathf.Abs(label.fontSize - body) > 0.01f) label.fontSize = body;
+                return ElDialogMath.ElHeight;
+            }
+            var size = ElDialogMath.LabelSize(body, Mathf.Min(floor, body), Unwrapped(label, body), textW, out var wrapped);
+            var wrap = wrapped ? TextWrappingModes.Normal : TextWrappingModes.NoWrap;
             if (label.textWrappingMode != wrap) label.textWrappingMode = wrap;
-            if (textW <= 1f || string.IsNullOrEmpty(label.text)) return ElDialogMath.ElHeight;
-            var size = label.fontSize;
-            label.enableAutoSizing = false;
-            label.fontSize = floor;
+            if (Mathf.Abs(label.fontSize - size) > 0.01f) label.fontSize = size;
             var need = label.GetPreferredValues(label.text, textW, 0f).y + label.margin.y + label.margin.w;
-            label.fontSize = size;
-            label.enableAutoSizing = true;
             return ElDialogMath.ButtonHeight(ElDialogMath.ElHeight, need, vpad);
         }
 
@@ -398,13 +392,23 @@ namespace RuneSkin.ModScreens
             return (plate ? TextInset.SliceBorder(plate).x : 0f) + ThemeTokens.GetFloat("size.row.cap.pad", 6f);
         }
 
-        // Button width that shows the label on one line at its top size (Label: max(Epic Loot's size, floor)).
-        private static float LabelWidth(RectTransform button, float floor)
+        // Button width that shows the label on one line at the dialog's body size (the size Label draws it at).
+        private static float LabelWidth(RectTransform button, float body)
         {
             var label = button.GetComponentInChildren<TMP_Text>(true);
             if (!label || string.IsNullOrEmpty(label.text)) return 0f;
-            var top = label.enableAutoSizing ? Mathf.Max(label.fontSizeMax, floor) : Mathf.Max(label.fontSize, floor);
-            return Unwrapped(label, top) + 2f * LabelPad(button) + label.margin.x + label.margin.z;
+            return Unwrapped(label, body) + 2f * LabelPad(button) + label.margin.x + label.margin.z;
+        }
+
+        private static Type _augType;
+
+        // The dialog's body text size: its description's (Epic Loot sets 18, ConvertToScrollingDescription), else 18.
+        private static float BodySize(Transform dialog)
+        {
+            _augType = _augType ?? AccessTools.TypeByName(AugmentDialog);
+            var d = dialog && _augType != null ? dialog.GetComponent(_augType) : null;
+            var desc = d ? Field(d.GetType(), "Description")?.GetValue(d) as TMP_Text : null;
+            return desc && desc.fontSize > 1f ? desc.fontSize : ElDialogMath.ElBodySize;
         }
 
         // The label's one-line width at size (auto-size off for the measure only).

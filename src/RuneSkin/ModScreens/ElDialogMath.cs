@@ -73,6 +73,23 @@ namespace RuneSkin.ModScreens
         // A label stays on one line (no wrap) when its unwrapped width at the readable floor fits its text width.
         public static bool OneLine(float floorWidth, float textWidth) => floorWidth <= textWidth + 0.5f;
 
+        // Epic Loot's description font size (CraftSuccessDialog.ConvertToScrollingDescription: fontSize 18): the dialog's
+        // body text, and the choice labels' size - a label never reads bigger than the description it sits under.
+        public const float ElBodySize = 18f;
+
+        // A choice label's fixed size (no auto-size): the body size when its one-line width there (widthAtBody) fits the
+        // text width; else shrunk on one line in proportion (TMP glyph advance is linear in the size) down to the readable
+        // floor; below the floor it stays at the floor and wraps.
+        public static float LabelSize(float body, float floor, float widthAtBody, float textWidth, out bool wrap)
+        {
+            wrap = false;
+            if (widthAtBody <= 0f || widthAtBody <= textWidth + 0.5f) return body;
+            var s = body * Math.Max(0f, textWidth) / widthAtBody;
+            if (s >= floor) return (float)Math.Floor(s * 10f) / 10f;
+            wrap = true;
+            return floor;
+        }
+
         // Button height for a label that needs textNeeded (at the readable floor, wrapped in the button's text width):
         // Epic Loot's height, or the label plus its vertical padding when it needs more (no clipping).
         public static float ButtonHeight(float baseHeight, float textNeeded, float vpad) =>

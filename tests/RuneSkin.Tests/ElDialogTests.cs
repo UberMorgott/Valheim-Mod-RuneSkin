@@ -101,6 +101,36 @@ namespace RuneSkin.Tests
         public void OneLineWhenTheFloorFits(float floorWidth, float textWidth, bool one) =>
             Assert.Equal(one, ElDialogMath.OneLine(floorWidth, textWidth));
 
+        // Run 20261027-183350 (0.25.15): labels auto-sized from Jotunn's fontSizeMax ("widest label 1694.6 / 2412.1 /
+        // 2089.2" units) - the frame always hit 760 and '(сохранить) Магический клинок +8,5 [5-12,5]' drew at 24.7 on one
+        // line in a 748 button (text width ~716 after the plate insets), bigger than the description's 18. At the body
+        // size 18 that label is at most 716 x 18 / 24.7 = 521.8 wide: it keeps 18 on one line, and the frame sizes to it.
+        private const float RunTextW = 716f, RunSize = 24.7f, RunInsets = 32f;
+
+        [Fact]
+        public void RealLabelKeepsTheBodySizeAndSizesTheFrame()
+        {
+            var at18 = RunTextW * ElDialogMath.ElBodySize / RunSize;
+            Assert.Equal(ElDialogMath.ElBodySize, ElDialogMath.LabelSize(ElDialogMath.ElBodySize, 12f, at18, at18, out var wrap), 3);
+            Assert.False(wrap);
+            var frame = ElDialogMath.FrameWidth(at18 + RunInsets, 6f, 6f, 1872f);
+            Assert.InRange(frame, ElDialogMath.ElFrameWidth, ElDialogMath.MaxFrameWidth - 1f); // no longer pinned at the cap
+            Assert.Equal(565.8f, frame, 1);
+            // The label is never drawn above the body size, whatever its own fontSizeMax was.
+            Assert.True(ElDialogMath.LabelSize(ElDialogMath.ElBodySize, 12f, at18 * 0.5f, RunTextW, out _) <= ElDialogMath.ElBodySize);
+        }
+
+        [Theory]
+        [InlineData(500f, 716f, 18f, false)]   // fits at the body size
+        [InlineData(900f, 716f, 14.3f, false)] // capped frame: shrunk on one line (18 x 716 / 900 = 14.32)
+        [InlineData(1400f, 716f, 12f, true)]   // would need 9.2: the floor, wrapped
+        [InlineData(0f, 716f, 18f, false)]     // empty
+        public void LabelShrinksOnOneLineThenWrapsAtTheFloor(float widthAt18, float textW, float size, bool wrap)
+        {
+            Assert.Equal(size, ElDialogMath.LabelSize(18f, 12f, widthAt18, textW, out var w), 3);
+            Assert.Equal(wrap, w);
+        }
+
         [Fact]
         public void GrownButtonsPushTheStackUp()
         {
