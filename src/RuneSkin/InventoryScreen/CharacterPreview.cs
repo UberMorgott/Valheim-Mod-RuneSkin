@@ -27,7 +27,8 @@ namespace RuneSkin.InventoryScreen
     // - lifecycle: built once per local player - prewarmed while the inventory is closed (Prewarm, called by
     //   InventorySkin every frame: the first frame with a live local player, i.e. behind the spawn's loading screen),
     //   else on the first open - and kept: a close only PARKS it (rig deactivated: no camera, lights, animator or cloth
-    //   work; the render texture's GPU memory released, the object kept), the next open re-activates the rig. A
+    //   work; the render texture kept created: re-allocating it per open was the remaining intermittent open spike,
+    //   EnsureTexture), the next open re-activates the rig. A
     //   rebuild per open (instantiate the player prefab, strip it, 4 animator warm-up steps, SetupVisEquipment of every
     //   worn item, 2 x Resources.FindObjectsOfTypeAll<Material / Mesh> material-ownership windows, a new MSAA render
     //   texture) was the Tab hitch (user 2026-10-27: "window not optimized"). Torn down (camera, clone, lights, render
@@ -62,6 +63,8 @@ namespace RuneSkin.InventoryScreen
         public bool Live => _clone && _rig && _rig.activeSelf && _rt && _rt.IsCreated();
         // Harness contract: a close parks the clone instead of tearing it down (builds stay flat over open / close cycles).
         public static bool KeepsClone => true;
+        // Harness contract: a park keeps the render texture created (at most one created RuneSkinPreview texture after a close).
+        public static bool KeepsTexture => true;
         public RenderTexture Texture => _rt;
         public GameObject Clone => _clone;
         public int Layer => _layer;
@@ -182,8 +185,8 @@ namespace RuneSkin.InventoryScreen
             Park("prewarmed");
         }
 
-        // Deactivates the rig (camera, lights, animators, cloth stop) and releases the render texture's GPU memory; the
-        // clone, its materials and the texture object are kept for the next open.
+        // Deactivates the rig (camera, lights, animators, cloth stop); the clone, its materials and the render texture
+        // (GPU memory included, EnsureTexture) are kept for the next open.
         private void Park(string why)
         {
             if (_rig && _rig.activeSelf)
@@ -191,7 +194,6 @@ namespace RuneSkin.InventoryScreen
                 _rig.SetActive(false);
                 Note("park " + why);
             }
-            if (_rt && _rt.IsCreated()) _rt.Release();
             if (_image) _image.enabled = false;
         }
 
@@ -234,8 +236,7 @@ namespace RuneSkin.InventoryScreen
             var px = ScreenSize();
             var size = PreviewMath.TextureSize(px.x, px.y, 1f);
             if (size.W <= 0) return;
-            if (!_rt || PreviewMath.NeedsResize(_rt.width, _rt.height, size.W, size.H)) MakeTexture(size.W, size.H);
-            else if (!_rt.IsCreated()) _rt.Create(); // released by Park
+            EnsureTexture(size.W, size.H);
             if (_applied != _revision) Refresh();
             _image.enabled = true;
             Frame();
@@ -245,6 +246,16 @@ namespace RuneSkin.InventoryScreen
                 _alphaChecked = true;
                 CheckAlpha();
             }
+        }
+
+        // The texture at the image's pixel size. A park keeps its GPU memory (KeepsTexture): releasing it on every close
+        // made each open re-allocate the 4x MSAA colour + depth surfaces and their resolve target, a driver allocation
+        // whose cost varied per open (run 20261027-224537: CharacterPreview.LateUpdate +4.9 ms on 3 of 10 re-opens, its
+        // timed internals flat). Freed only on a resize or teardown (player change / logout / destroy).
+        private void EnsureTexture(int w, int h)
+        {
+            if (!_rt || PreviewMath.NeedsResize(_rt.width, _rt.height, w, h)) MakeTexture(w, h);
+            else if (!_rt.IsCreated()) _rt.Create(); // lost with the device (Unity re-creates on use; explicit here)
         }
 
         // On-screen pixel size of the image (any canvas mode / scale): the texture matches the pixels it covers.
@@ -559,7 +570,7 @@ namespace RuneSkin.InventoryScreen
                 RenderSettings.ambientIntensity = 1f;
                 foreach (var l in _rigLights)
                     if (l) l.enabled = true;
-                _camera.Render();
+                DrawCamera();
             }
             finally
             {
@@ -574,6 +585,10 @@ namespace RuneSkin.InventoryScreen
                 RenderSettings.ambientIntensity = ambientIntensity;
             }
         }
+
+        // The camera's render alone (culling, skinning, draw submission): its own method so the harness times it apart from
+        // the light / fog / ambient swap around it (rp-open-hitch inner attribution).
+        private void DrawCamera() => _camera.Render();
 
         // Once per session: shaders that write alpha 0 for opaque surfaces would leave the transparent-cleared texture
         // invisible on the RawImage; then the preview clears to an opaque theme colour instead.
