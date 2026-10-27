@@ -42,6 +42,37 @@ namespace RuneSkin.ModScreens
         public static float InnerWidth(float frameWidth, float left, float right) =>
             Math.Max(ElWidth, frameWidth - Math.Max(0f, left) - Math.Max(0f, right));
 
+        // Epic Loot's dialog frame width (AugmentHelper.CreateDialog / CraftSuccessDialog.Create: 380 x 550).
+        public const float ElFrameWidth = 380f;
+
+        // Least gap between the widened frame and the safe area's side edges (frame units).
+        public const float ScreenMargin = 24f;
+
+        // Frame width that shows the widest content on one line: content width + the frame's side insets (left / right,
+        // frame units), never narrower than Epic Loot's 380, never wider than the room on screen (maxWidth; at least 380:
+        // a screen narrower than Epic Loot's own frame keeps its frame and the labels wrap).
+        public static float FrameWidth(float contentWidth, float left, float right, float maxWidth)
+        {
+            var want = Math.Max(0f, contentWidth) + Math.Max(0f, left) + Math.Max(0f, right);
+            return Math.Max(ElFrameWidth, Math.Min(want, Math.Min(maxWidth, MaxFrameWidth)));
+        }
+
+        // Readable line length: a sentence-long tooltip line in the craft result wraps instead of a screen-wide box
+        // (twice Epic Loot's frame; the longest augment label needs far less).
+        public const float MaxFrameWidth = 2f * ElFrameWidth;
+
+        // Shift (x, frame units) that keeps [xMin, xMax] inside [lo, hi]; centred when it is wider than the room.
+        public static float ShiftInto(float xMin, float xMax, float lo, float hi)
+        {
+            if (xMax - xMin >= hi - lo) return (lo + hi) * 0.5f - (xMin + xMax) * 0.5f;
+            if (xMin < lo) return lo - xMin;
+            if (xMax > hi) return hi - xMax;
+            return 0f;
+        }
+
+        // A label stays on one line (no wrap) when its unwrapped width at the readable floor fits its text width.
+        public static bool OneLine(float floorWidth, float textWidth) => floorWidth <= textWidth + 0.5f;
+
         // Button height for a label that needs textNeeded (at the readable floor, wrapped in the button's text width):
         // Epic Loot's height, or the label plus its vertical padding when it needs more (no clipping).
         public static float ButtonHeight(float baseHeight, float textNeeded, float vpad) =>

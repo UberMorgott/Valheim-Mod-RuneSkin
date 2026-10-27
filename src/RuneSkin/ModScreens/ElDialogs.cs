@@ -37,6 +37,12 @@ namespace RuneSkin.ModScreens
     //      300, run 20261027-170958 sized them to the description view, which measured narrower than 300); each label
     //      fills its button, wraps, auto-sizes to the readable floor and grows its button past two lines
     //      (ElDialogMath.Stack / ButtonHeight); the description view gives up that height (it scrolls).
+    //   4. Width (user 2026-10-27 "надо их пошире сделать, но с моим интерфейсом, чтобы всё влезло"): Epic Loot's 380-unit
+    //      frame is the real limit (245 px buttons at 720p), so the frame itself widens until the widest choice label
+    //      fits one line at its own size plus the drawn side borders (craft result: the tooltip's widest line), at most
+    //      ElDialogMath.MaxFrameWidth and the safe area minus a margin, shifted back inside it (ElDialogMath.FrameWidth /
+    //      ShiftInto); a label still wider wraps. The side borders come from the cloned panel stack's Frame layer, bound
+    //      by name on the clone (PanelDecor.Frame: the clone's private reference was null -> "side insets 10/10").
     public static class ElDialogs
     {
         public const string AugmentDialog = "EpicLoot.Crafting.AugmentChoiceDialog";
@@ -165,9 +171,56 @@ namespace RuneSkin.ModScreens
         {
             Each(unit, d =>
             {
-                if (d.GetType().FullName == AugmentDialog && Field(d.GetType(), "EffectChoiceButtons")?.GetValue(d) is List<Button> buttons)
+                var t = d.GetType();
+                if (t.FullName == AugmentDialog && Field(t, "EffectChoiceButtons")?.GetValue(d) is List<Button> buttons)
                     Choices(d.transform, buttons);
+                else if (t.FullName == SuccessDialog && Field(t, "Frame")?.GetValue(d) is RectTransform frame && Field(t, "Description")?.GetValue(d) is TMP_Text desc)
+                    Success(d.transform, frame, desc);
             });
+        }
+
+        // Craft result: the frame widens so the item tooltip's widest line shows on one line (Epic Loot's description
+        // stretches across the frame, CraftSuccessDialog.ConvertToScrollingDescription), within the screen.
+        private static void Success(Transform dialog, RectTransform frame, TMP_Text desc)
+        {
+            if (!frame || !desc || string.IsNullOrEmpty(desc.text)) return;
+            var widest = 0f;
+            foreach (var line in desc.text.Split('\n'))
+                if (line.Length > 0) widest = Mathf.Max(widest, desc.GetPreferredValues(line).x);
+            if (widest <= 0f) return;
+            var fr = frame.rect;
+            var d = RectIn(desc.rectTransform, frame);
+            var left = Mathf.Max(0f, d.xMin - fr.xMin) + desc.margin.x;
+            var right = Mathf.Max(0f, fr.xMax - d.xMax) + desc.margin.z;
+            var w = Widen(frame, widest, left, right);
+            if (Logged.Add(dialog.GetInstanceID()))
+                Plugin.Log.LogInfo($"[RuneSkin] el dialog {dialog.name}: widest description line {widest:0.#}, insets {left:0.#}/{right:0.#} -> frame {w:0.#} (scale {frame.lossyScale.x:0.###})");
+        }
+
+        // The frame at the width its content needs (ElDialogMath.FrameWidth: Epic Loot's 380 up to the safe area minus
+        // ElDialogMath.ScreenMargin), moved back inside the safe area when the wider frame runs past it. Returns the width.
+        private static float Widen(RectTransform frame, float content, float left, float right)
+        {
+            SafeX(frame, out var lo, out var hi);
+            var w = ElDialogMath.FrameWidth(content, left, right, hi - lo);
+            if (Mathf.Abs(frame.rect.width - w) > 0.5f) frame.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, w);
+            var fr = frame.rect;
+            var dx = ElDialogMath.ShiftInto(fr.xMin, fr.xMax, lo, hi);
+            if (Mathf.Abs(dx) > 0.5f) frame.position += frame.TransformVector(new Vector3(dx, 0f, 0f));
+            return w;
+        }
+
+        // Screen.safeArea's left / right edge in the frame's local units, inset by ElDialogMath.ScreenMargin.
+        private static void SafeX(RectTransform frame, out float lo, out float hi)
+        {
+            var canvas = frame.GetComponentInParent<Canvas>();
+            var root = canvas ? canvas.rootCanvas : null;
+            var cam = root && root.renderMode != RenderMode.ScreenSpaceOverlay ? root.worldCamera : null;
+            var s = Screen.safeArea;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(frame, new Vector2(s.xMin, s.center.y), cam, out var a);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(frame, new Vector2(s.xMax, s.center.y), cam, out var b);
+            lo = Mathf.Min(a.x, b.x) + ElDialogMath.ScreenMargin;
+            hi = Mathf.Max(a.x, b.x) - ElDialogMath.ScreenMargin;
         }
 
         // Label inset from the button's top / bottom edge (frame units).
@@ -192,16 +245,23 @@ namespace RuneSkin.ModScreens
             if (!frame || Active.Count == 0) return;
             var scroll = Column(frame);
             if (!scroll) return;
+            var floor = ThemeTokens.GetFloat("size.text.fit.min", 12f);
+            // The frame widens so the widest label shows on one line at its own size (user 2026-10-27 "надо их пошире
+            // сделать ... чтобы всё влезло": 380-unit frame, 245 px buttons at 720p); the description view stretches with
+            // it (Epic Loot anchors it 0..1), the choices take the new inner width below.
+            var need = ElDialogMath.ElWidth;
+            foreach (var rt in Active) need = Mathf.Max(need, LabelWidth(rt, floor));
+            SideInsets(frame, dialog, out var left, out var right, out var art);
+            Widen(frame, need, left, right);
+            SideInsets(frame, dialog, out left, out right, out art);
             var fr = frame.rect;
             var col = RectIn(scroll, frame);
             // Above the caps the row runs between the frame art's drawn side borders (+ row pad): the whole inner width.
-            SideInsets(frame, dialog, out var left, out var right);
             var width = ElDialogMath.InnerWidth(fr.width, left, right);
             var centre = fr.center.x + (left - right) * 0.5f;
             if (Logged.Add(dialog.GetInstanceID()))
-                Plugin.Log.LogInfo($"[RuneSkin] el dialog {dialog.name}: frame {fr.width:0.#}x{fr.height:0.#} scale {frame.lossyScale.x:0.###}, description view {col.width:0.#} wide " +
-                                   $"(anchors {scroll.anchorMin}-{scroll.anchorMax} sizeDelta {scroll.sizeDelta}), side insets {left:0.#}/{right:0.#} -> choices {width:0.#}");
-            var floor = ThemeTokens.GetFloat("size.text.fit.min", 12f);
+                Plugin.Log.LogInfo($"[RuneSkin] el dialog {dialog.name}: frame {fr.width:0.#}x{fr.height:0.#} scale {frame.lossyScale.x:0.###}, widest label {need:0.#}, frame art {art}, description view {col.width:0.#} wide " +
+                    $"(anchors {scroll.anchorMin}-{scroll.anchorMax} sizeDelta {scroll.sizeDelta}), side insets {left:0.#}/{right:0.#} -> choices {width:0.#}");
             var vpad = ChoiceVPad;
             var heights = new float[Active.Count];
             for (var i = 0; i < Active.Count; i++)
@@ -226,10 +286,12 @@ namespace RuneSkin.ModScreens
 
         // Left / right inset of the row from the frame edges (frame units): the panel stack's frame art edge + its
         // 9-slice side border + size.row.cap.pad; without a stack Epic Loot's own content inset (10, its scroll view).
-        private static void SideInsets(RectTransform frame, Transform dialog, out float left, out float right)
+        private static void SideInsets(RectTransform frame, Transform dialog, out float left, out float right, out string where)
         {
             var fr = frame.rect;
-            var art = Decor(frame, dialog)?.Frame;
+            var decor = Decor(frame, dialog);
+            var art = decor ? decor.Frame : null;
+            where = !decor ? "none (no panel stack)" : !art ? $"{decor.transform.parent.name}: no Frame layer" : !art.enabled ? $"{decor.transform.parent.name}: Frame off" : $"{decor.transform.parent.name}/{PanelDecor.ChildName}/Frame";
             if (!art || !art.enabled)
             {
                 left = right = 10f;
@@ -255,8 +317,7 @@ namespace RuneSkin.ModScreens
         {
             var label = button.GetComponentInChildren<TMP_Text>(true);
             if (!label) return ElDialogMath.ElHeight;
-            var plate = button.TryGetComponent<Button>(out var b) ? b.targetGraphic as Image : null;
-            var hpad = (plate ? TextInset.SliceBorder(plate).x : 0f) + ThemeTokens.GetFloat("size.row.cap.pad", 6f);
+            var hpad = LabelPad(button);
             var lr = label.rectTransform;
             if (lr.parent == button)
             {
@@ -267,7 +328,6 @@ namespace RuneSkin.ModScreens
                 if (lr.offsetMin != min) lr.offsetMin = min;
                 if (lr.offsetMax != max) lr.offsetMax = max;
             }
-            if (label.textWrappingMode != TextWrappingModes.Normal) label.textWrappingMode = TextWrappingModes.Normal;
             var top = label.enableAutoSizing ? Mathf.Max(label.fontSizeMax, floor) : Mathf.Max(label.fontSize, floor);
             if (!label.enableAutoSizing || Mathf.Abs(label.fontSizeMin - floor) > 0.01f || Mathf.Abs(label.fontSizeMax - top) > 0.01f)
             {
@@ -277,6 +337,12 @@ namespace RuneSkin.ModScreens
             }
             // Height of the label wrapped in the text width at the floor size (auto-size off for the measure only).
             var textW = width - 2f * hpad - label.margin.x - label.margin.z;
+            // One line whenever it fits at the floor (auto-size then shrinks it on that line, never wraps it to keep a
+            // bigger size); only a label wider than the screen-capped frame wraps.
+            var wrap = textW > 1f && !string.IsNullOrEmpty(label.text) && ElDialogMath.OneLine(Unwrapped(label, floor), textW)
+                ? TextWrappingModes.NoWrap
+                : TextWrappingModes.Normal;
+            if (label.textWrappingMode != wrap) label.textWrappingMode = wrap;
             if (textW <= 1f || string.IsNullOrEmpty(label.text)) return ElDialogMath.ElHeight;
             var size = label.fontSize;
             label.enableAutoSizing = false;
@@ -317,7 +383,41 @@ namespace RuneSkin.ModScreens
                 var decor = PanelDecor.Of(c);
                 if (decor) return decor;
             }
-            return null;
+            // Deeper panel art under the frame (a nested backdrop): the widest stack there.
+            PanelDecor best = null;
+            foreach (var d in frame.GetComponentsInChildren<PanelDecor>(true))
+                if (d && d.transform.parent is RectTransform h && (!best || h.rect.width > ((RectTransform)best.transform.parent).rect.width))
+                    best = d;
+            return best;
+        }
+
+        // The label's horizontal inset in its button: the plate's 9-slice side border + size.row.cap.pad.
+        private static float LabelPad(RectTransform button)
+        {
+            var plate = button.TryGetComponent<Button>(out var b) ? b.targetGraphic as Image : null;
+            return (plate ? TextInset.SliceBorder(plate).x : 0f) + ThemeTokens.GetFloat("size.row.cap.pad", 6f);
+        }
+
+        // Button width that shows the label on one line at its top size (Label: max(Epic Loot's size, floor)).
+        private static float LabelWidth(RectTransform button, float floor)
+        {
+            var label = button.GetComponentInChildren<TMP_Text>(true);
+            if (!label || string.IsNullOrEmpty(label.text)) return 0f;
+            var top = label.enableAutoSizing ? Mathf.Max(label.fontSizeMax, floor) : Mathf.Max(label.fontSize, floor);
+            return Unwrapped(label, top) + 2f * LabelPad(button) + label.margin.x + label.margin.z;
+        }
+
+        // The label's one-line width at size (auto-size off for the measure only).
+        private static float Unwrapped(TMP_Text label, float size)
+        {
+            var auto = label.enableAutoSizing;
+            var was = label.fontSize;
+            label.enableAutoSizing = false;
+            label.fontSize = size;
+            var w = label.GetPreferredValues(label.text).x;
+            label.fontSize = was;
+            label.enableAutoSizing = auto;
+            return w;
         }
 
         // rt's rect in space's local units.

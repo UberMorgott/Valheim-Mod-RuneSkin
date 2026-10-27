@@ -67,6 +67,40 @@ namespace RuneSkin.Tests
             Assert.True(h - 2f * 3f >= need - 0.001f);
         }
 
+        // The frame widens to the widest label (one line at its size) + the drawn side borders; Epic Loot's 380 is the
+        // floor, MaxFrameWidth / the safe area the ceiling (1280x720 at GUI scale 0.667: 1920 units, minus margins).
+        [Theory]
+        [InlineData(470f, 14f, 14f, 1872f, 498f)]  // longest augment label at its size: frame grows to fit it
+        [InlineData(300f, 14f, 14f, 1872f, 380f)]  // short labels keep Epic Loot's frame
+        [InlineData(900f, 14f, 14f, 1872f, 760f)]  // sentence-long line: readable cap, it wraps
+        [InlineData(470f, 14f, 14f, 420f, 420f)]   // narrow screen: the safe area caps it
+        [InlineData(470f, 14f, 14f, 200f, 380f)]   // narrower than Epic Loot's own frame: kept, labels wrap
+        public void FrameFitsTheWidestLabel(float content, float left, float right, float room, float want)
+        {
+            var w = ElDialogMath.FrameWidth(content, left, right, room);
+            Assert.Equal(want, w, 3);
+            Assert.True(w >= ElDialogMath.ElFrameWidth);
+            // A grown, uncapped frame gives the choices exactly the label's width.
+            if (content + left + right <= System.Math.Min(room, ElDialogMath.MaxFrameWidth) && w > ElDialogMath.ElFrameWidth)
+                Assert.Equal(content, ElDialogMath.InnerWidth(w, left, right), 3);
+        }
+
+        [Theory]
+        [InlineData(-249f, 249f, -936f, 936f, 0f)]      // centred, fits
+        [InlineData(-1000f, -500f, -936f, 936f, 64f)]   // past the left edge: moved right
+        [InlineData(700f, 1000f, -936f, 936f, -64f)]    // past the right edge: moved left
+        [InlineData(-1000f, 1000f, -936f, 936f, 0f)]    // wider than the room: centred on it
+        [InlineData(0f, 2000f, -936f, 936f, -1000f)]
+        public void FrameStaysInsideTheSafeArea(float xMin, float xMax, float lo, float hi, float want) =>
+            Assert.Equal(want, ElDialogMath.ShiftInto(xMin, xMax, lo, hi), 3);
+
+        [Theory]
+        [InlineData(330f, 446f, true)]  // fits one line at the floor
+        [InlineData(446.4f, 446f, true)] // sub-pixel rounding
+        [InlineData(500f, 446f, false)] // wider than the capped frame: wraps
+        public void OneLineWhenTheFloorFits(float floorWidth, float textWidth, bool one) =>
+            Assert.Equal(one, ElDialogMath.OneLine(floorWidth, textWidth));
+
         [Fact]
         public void GrownButtonsPushTheStackUp()
         {

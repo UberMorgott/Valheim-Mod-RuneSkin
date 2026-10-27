@@ -77,7 +77,16 @@ namespace RuneSkin.Restyle
         public static readonly HashSet<PanelDecor> All = new HashSet<PanelDecor>();
 
         // The frame layer (9-slice border art) of this stack.
-        public Image Frame => _frame;
+        // Bound by name on a cloned stack (Rebind): Epic Loot's dialogs clone the restyled variant dialog, and the clone's
+        // stack had no frame reference, so ElDialogs measured no drawn border (log "side insets 10/10", run 20261027-174931).
+        public Image Frame
+        {
+            get
+            {
+                if (!_frame) _frame = transform.Find("Frame")?.GetComponent<Image>();
+                return _frame;
+            }
+        }
 
         // The opaque backing quad (glass stacks only; null otherwise).
         public RectTransform Backing => _backing;
