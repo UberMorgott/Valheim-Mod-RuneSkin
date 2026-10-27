@@ -471,7 +471,9 @@ namespace RuneSkin.InventoryScreen
 
         private void Park()
         {
-            foreach (var t in new Transform[] { _gui.m_player, _gui.m_crafting, _gui.m_container, _gui.m_info })
+            // _decor = RuneSkin's own panel stacks (inventory hosts + the crafting host, CraftingSkin): they stay active
+            // while closed like the panels (re-activating them on every open re-enabled their graphics) and park with them.
+            foreach (var t in new Transform[] { _decor, _gui.m_player, _gui.m_crafting, _gui.m_container, _gui.m_info })
                 if (t && t.gameObject.activeSelf)
                 {
                     RenderGate.Set(t.gameObject, ParkOwner, true);

@@ -557,7 +557,11 @@ namespace RuneSkin.CraftingScreen
         {
             if (!InventoryGui.IsVisible() || !_crafting.gameObject.activeInHierarchy)
             {
-                if (_host && _host.gameObject.activeSelf) _host.gameObject.SetActive(false);
+                // Closed: the host stays active, fades out with the screen and is parked with it (InventorySkin.Park gates
+                // RuneSkinInventory, its parent). Deactivating it here dropped the crafting frame the frame Hide ran (before
+                // the 0.15 s fade) and re-enabled its graphics in the next open frame (Apply). Only a crafting panel that
+                // left the hierarchy takes its frame with it.
+                if (_host && _host.gameObject.activeSelf && !_crafting.gameObject.activeInHierarchy) _host.gameObject.SetActive(false);
                 return;
             }
             _frameReady = true;
