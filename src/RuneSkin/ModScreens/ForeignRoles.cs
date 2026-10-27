@@ -107,6 +107,8 @@ namespace RuneSkin.ModScreens
         {
             if (family == OwnershipRegistry.EpicLootEnchanting || family == OwnershipRegistry.EpicLootBoard || family == OwnershipRegistry.EpicLootTemper)
             {
+                // Epic Loot's augment / craft result dialogs (clones of the vanilla variant dialog) inside the window.
+                ElDialogs.Roles(ctx, root);
                 foreach (var tabs in root.GetComponentsInChildren<TabHandler>(true))
                     foreach (var tab in tabs.m_tabs)
                         if (tab != null && tab.m_button && tab.m_button.targetGraphic is Image tg && !ctx.AdapterRoles.ContainsKey(tg))
@@ -266,6 +268,7 @@ namespace RuneSkin.ModScreens
         // Tab glyphs of the M7 kit left of the label, only where the plate leaves room beside the centred label.
         public static void After(Transform unit, string family)
         {
+            if (family == OwnershipRegistry.EpicLootEnchanting || family == OwnershipRegistry.EpicLootBoard) ElDialogs.After(unit);
             if (family == OwnershipRegistry.EpicLootEnchanting)
             {
                 // Uniform tab grid: column inside its mask, every tab the same cell (icon, caption, lock badge).

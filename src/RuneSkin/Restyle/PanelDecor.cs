@@ -215,7 +215,27 @@ namespace RuneSkin.Restyle
 
         // Inset the host's content needs so nothing runs under a corner cap (ref px, host space): the largest cap
         // keep-out (theme "clear.<asset>", PanelMath.CapInset) minus how far the stack reaches beyond the host.
-        public float ContentInset() => _fitted ? 0f : CapClearance(ThemeTokens.GetFloat(PadToken, 0f));
+        public float ContentInset()
+        {
+            Rebind();
+            return _fitted ? 0f : CapClearance(ThemeTokens.GetFloat(PadToken, 0f));
+        }
+
+        // Instantiate copies the stack's objects but not these private references (not serialized): the stack of a
+        // cloned decorated host (Epic Loot clones the restyled vanilla variant dialog, ElDialogs) had no corners and so
+        // no keep-out. Bound again by name, once, from the clone's own children.
+        private void Rebind()
+        {
+            if (_corners != null) return;
+            var self = transform;
+            _backing = self.Find("Backing") as RectTransform;
+            _glass = self.Find("Glass") as RectTransform;
+            _plaque = self.Find("Plaque") as RectTransform;
+            if (!_frame) _frame = self.Find("Frame")?.GetComponent<Image>();
+            _caps = self.parent ? self.parent.Find(CapsName) as RectTransform : null;
+            if (!_caps) return;
+            _corners = new[] { _caps.Find("CornerTL") as RectTransform, _caps.Find("CornerTR") as RectTransform, _caps.Find("CornerBL") as RectTransform, _caps.Find("CornerBR") as RectTransform };
+        }
 
         // THE window content inset (canvas units of `canvas`) of the panel stack on `host` (0 = no stack): every owner
         // that lays a window's inner content out keeps it at least this far from the host's left / right / bottom edges

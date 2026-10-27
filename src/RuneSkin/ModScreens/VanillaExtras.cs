@@ -29,11 +29,7 @@ namespace RuneSkin.ModScreens
             if (gui.m_achievementsElementPrefab && !gui.m_achievementsElementPrefab.transform.IsChildOf(gui.transform))
                 Form(gui.m_achievementsElementPrefab.transform, "InventoryExtras.AchievementRow", OwnershipRegistry.InventoryExtras, (ctx, r) => Icons(ctx, r), panels: false);
             if (gui.m_variantDialog)
-                Form(gui.m_variantDialog.transform, "InventoryExtras.Variant", OwnershipRegistry.InventoryExtras, (ctx, r) =>
-                {
-                    Icons(ctx, r);
-                    PopupSkin.Backdrops(ctx, r);
-                });
+                Form(gui.m_variantDialog.transform, "InventoryExtras.Variant", OwnershipRegistry.InventoryExtras, VariantRoles);
             if (gui.m_dragItemPrefab)
                 Form(gui.m_dragItemPrefab.transform, "InventoryExtras.DragItem", OwnershipRegistry.InventoryExtras, (ctx, r) =>
                 {
@@ -50,6 +46,13 @@ namespace RuneSkin.ModScreens
             m.ScreenId = id;
             m.Owner = "RuneSkin";
             GameScreenKit.Form(root, id, family, roles, panels);
+        }
+
+        // The variant dialog's roles; also those of Epic Loot's clones of it inside its windows (ElDialogs.Roles).
+        internal static void VariantRoles(Classify.ScreenContext ctx, Transform r)
+        {
+            Icons(ctx, r);
+            PopupSkin.Backdrops(ctx, r);
         }
 
         // Item / achievement icons inside the rows keep their art.

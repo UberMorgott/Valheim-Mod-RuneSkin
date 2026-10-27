@@ -57,6 +57,7 @@
     <Compile Include="..\..\src\RuneSkin\GameScreens\GameScreenMath.cs" Link="Linked\GameScreenMath.cs" />
     <Compile Include="..\..\src\RuneSkin.API\SkinFamilies.cs" Link="Linked\SkinFamilies.cs" />
     <Compile Include="..\..\src\RuneSkin\ModScreens\ForeignMath.cs" Link="Linked\ForeignMath.cs" />
+    <Compile Include="..\..\src\RuneSkin\ModScreens\ElDialogMath.cs" Link="Linked\ElDialogMath.cs" />
     <Compile Include="..\..\src\RuneSkin\Screens\PreWorld\PreWorldMath.cs" Link="Linked\PreWorldMath.cs" />
     <Compile Include="..\..\src\RuneSkin\Hud\EffectTaxonomy.cs" Link="Linked\EffectTaxonomy.cs" />
     <Compile Include="..\..\src\RuneSkin\Hud\ResourceCheck.cs" Link="Linked\ResourceCheck.cs" />

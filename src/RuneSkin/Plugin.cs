@@ -296,6 +296,7 @@ namespace RuneSkin
             // (their own runtime hooks), set up before the class patches that read their state.
             ModScreens.AlmanacAdapter.Harmony = _harmony;
             Screens.TooltipAdapter.Harmony = _harmony;
+            ModScreens.ElDialogs.Harmony = _harmony;
             ModScreens.ForeignUi.Init(gameObject, _harmony, _modUiOptOut.Value);
             ModScreens.JotunnHook.Init(_harmony);
             ModScreens.ImguiFonts.Init(gameObject, _harmony);
