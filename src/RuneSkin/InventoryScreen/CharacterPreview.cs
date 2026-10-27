@@ -58,6 +58,10 @@ namespace RuneSkin.InventoryScreen
         public GameObject Clone => _clone;
         public int Layer => _layer;
         public float Yaw => _yaw;
+        // Share of the stage height the body is framed to (figure box / stage, Place) and the framed body height in
+        // metres (autotest preview-framed: projects feet and BodyH through the camera).
+        public float FigureShare => _share;
+        public static float FramedBodyHeight => BodyH;
 
         // World point far from any playable area (worlds span about +-10500 m on x/z, terrain below ~1000 m).
         private static readonly Vector3 Origin = new Vector3(0f, 12000f, 0f);
