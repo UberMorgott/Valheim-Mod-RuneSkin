@@ -1,8 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\..\Valheim.props" />
-
+  <!-- LangVersion, determinism, PathMap, embedded PDB, SourceLink off, ValheimDir/ManagedDir/BepInExCoreDir,
+       polyfills, the game's BepInEx + 0Harmony references and the publicizer come from build\Valheim.Build.props. -->
   <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <ValheimPlugin>true</ValheimPlugin>
+    <ValheimUsePublicizer>true</ValheimUsePublicizer>
     <AssemblyName>RuneSkin</AssemblyName>
     <RootNamespace>RuneSkin</RootNamespace>
     <!-- Keep in sync with Plugin.Version. -->
@@ -10,10 +13,6 @@
     <!-- Plugin internals are not public API; XML docs are required on RuneSkin.API only. -->
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.2" PrivateAssets="all" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\RuneSkin.API\RuneSkin.API.csproj" />
@@ -24,70 +23,62 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="0Harmony">
-      <HintPath>$(BepInExCoreDir)\0Harmony.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="BepInEx">
-      <HintPath>$(BepInExCoreDir)\BepInEx.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
     <Reference Include="assembly_valheim">
-      <HintPath>$(ValheimManagedDir)\assembly_valheim.dll</HintPath>
+      <HintPath>$(ManagedDir)\assembly_valheim.dll</HintPath>
       <Publicize>true</Publicize>
       <Private>false</Private>
     </Reference>
     <Reference Include="assembly_guiutils">
-      <HintPath>$(ValheimManagedDir)\assembly_guiutils.dll</HintPath>
+      <HintPath>$(ManagedDir)\assembly_guiutils.dll</HintPath>
       <Publicize>true</Publicize>
       <Private>false</Private>
     </Reference>
     <Reference Include="gui_framework">
-      <HintPath>$(ValheimManagedDir)\gui_framework.dll</HintPath>
+      <HintPath>$(ManagedDir)\gui_framework.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="assembly_utils">
-      <HintPath>$(ValheimManagedDir)\assembly_utils.dll</HintPath>
+      <HintPath>$(ManagedDir)\assembly_utils.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.AnimationModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.AnimationModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.AnimationModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.AssetBundleModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.AssetBundleModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.AssetBundleModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.JSONSerializeModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.JSONSerializeModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.JSONSerializeModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.TextRenderingModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.TextRenderingModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.UI.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.UI.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.IMGUIModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.IMGUIModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.IMGUIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UIModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.UIModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.UIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Unity.TextMeshPro">
-      <HintPath>$(ValheimManagedDir)\Unity.TextMeshPro.dll</HintPath>
+      <HintPath>$(ManagedDir)\Unity.TextMeshPro.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>

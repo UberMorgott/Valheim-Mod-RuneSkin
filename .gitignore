@@ -23,6 +23,8 @@ crashlytics-build.properties
 
 # Generic build outputs anywhere
 [Bb]uild/
+# Canonical Valheim.Build files (valbuild sync) are tracked.
+!/build/
 [Tt]emp/
 [Ll]ogs/
 

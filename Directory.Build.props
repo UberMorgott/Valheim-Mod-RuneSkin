@@ -1,16 +1,12 @@
 <Project>
-  <!-- Reproducible across checkout paths: a worktree or copy of one commit builds a byte-identical DLL
-       (autotest deploy-hash layer, pack hash). PathMap rewrites the repo root in PDB/CallerFilePath strings;
-       SourceLink off because the commit SHA would fold into the deterministic MVID. -->
+  <!-- Shared Valheim build settings (SDK pin is global.json). build\Valheim.Build.props, build\Polyfills.cs.txt
+       and global.json are canonical copies from UberMorgott/Valheim-Tools-Autotest valbuild/: never edit them
+       here, run `valbuild sync .`; `valbuild check .` (quality-gate) fails on drift. -->
+  <Import Project="$(MSBuildThisFileDirectory)build\Valheim.Build.props" />
+
+  <!-- RuneSkin-wide (the canonical props leave these per repo). TargetFramework is set in each csproj. -->
   <PropertyGroup>
-    <Deterministic>true</Deterministic>
-    <PathMap>$(MSBuildThisFileDirectory)=/_/</PathMap>
-    <EnableSourceLink>false</EnableSourceLink>
-    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
-    <TargetFramework>net472</TargetFramework>
-    <LangVersion>10</LangVersion>
     <Nullable>disable</Nullable>
-    <DebugType>embedded</DebugType>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- CS1591 only on the plugin: its internals are not public API (set in RuneSkin.csproj). -->
