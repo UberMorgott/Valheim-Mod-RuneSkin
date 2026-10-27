@@ -221,6 +221,16 @@ namespace RuneSkin.Restyle
             return _fitted ? 0f : CapClearance(ThemeTokens.GetFloat(PadToken, 0f));
         }
 
+        // Corner caps TL, TR, BL, BR (null when the stack has none).
+        public RectTransform[] CornerCaps
+        {
+            get
+            {
+                Rebind();
+                return _corners;
+            }
+        }
+
         // Instantiate copies the stack's objects but not these private references (not serialized): the stack of a
         // cloned decorated host (Epic Loot clones the restyled vanilla variant dialog, ElDialogs) had no corners and so
         // no keep-out. Bound again by name, once, from the clone's own children.

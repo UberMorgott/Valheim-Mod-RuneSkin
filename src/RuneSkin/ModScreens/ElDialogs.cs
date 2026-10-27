@@ -6,6 +6,7 @@ using RuneSkin.Api;
 using RuneSkin.Classify;
 using RuneSkin.Ownership;
 using RuneSkin.Restyle;
+using RuneSkin.Theme;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -30,8 +31,11 @@ namespace RuneSkin.ModScreens
     //      dialog as a "nested root" (Restyler.ExcludedBy) and the Jotunn choice buttons (GUIManager.CreateButton,
     //      AugmentHelper.cs:88) kept Jotunn's brown plates and Epic Loot's font, truncated at 300 wide. The stale mark
     //      leaves; the dialog is part of its window's unit and gets the variant dialog's roles there (ForeignRoles.Precise).
-    //   3. The choice buttons take the frame's inner width (ElDialogMath.ChoiceWidth, after the unit pass: the panel
-    //      stack's corner-cap keep-out is known then); their labels fit through TextInset.
+    //   3. The choice stack (after the unit pass: the panel stack's corner caps exist then) moves above the bottom corner
+    //      caps and takes Epic Loot's content column width (its description scroll view: 360 of the 380 frame, 300 before;
+    //      run 20261027-165655 truncated "(сохранить) Урон по оглушенному врагу +7,5% [3,5-10,5]" at 300); each label
+    //      fills its button, wraps, auto-sizes to the readable floor and grows its button past two lines
+    //      (ElDialogMath.Stack / ButtonHeight); the description view gives up that height (it scrolls).
     public static class ElDialogs
     {
         public const string AugmentDialog = "EpicLoot.Crafting.AugmentChoiceDialog";
@@ -160,32 +164,143 @@ namespace RuneSkin.ModScreens
         {
             Each(unit, d =>
             {
-                if (d.GetType().FullName != AugmentDialog || !(Field(d.GetType(), "EffectChoiceButtons")?.GetValue(d) is List<Button> buttons)) return;
-                foreach (var b in buttons)
-                {
-                    if (!b || !(b.transform is RectTransform rt) || !(rt.parent is RectTransform frame)) continue;
-                    var w = ElDialogMath.ChoiceWidth(rt.rect.width, frame.rect.width, KeepOut(frame, d.transform));
-                    if (Mathf.Abs(rt.rect.width - w) > 0.5f) rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, w);
-                }
+                if (d.GetType().FullName == AugmentDialog && Field(d.GetType(), "EffectChoiceButtons")?.GetValue(d) is List<Button> buttons)
+                    Choices(d.transform, buttons);
             });
         }
 
-        // Corner-cap keep-out of the panel stack on the frame or an ancestor up to the dialog, in frame units.
-        private static float KeepOut(RectTransform frame, Transform dialog)
+        // Label inset from the button's top / bottom edge (frame units).
+        private const float ChoiceVPad = 3f;
+
+        private static readonly List<RectTransform> Active = new List<RectTransform>(8);
+        private static readonly Vector3[] Corners4 = new Vector3[4];
+
+        // The choice stack: as wide as Epic Loot's own content column (the description scroll view), above the bottom
+        // corner caps; each label fills its button (inset by the plate's 9-slice border), wraps, auto-sizes down to the
+        // readable floor, and its button grows when two lines at the floor still need more; the description view gives
+        // up the height the stack takes.
+        private static void Choices(Transform dialog, List<Button> buttons)
+        {
+            Active.Clear();
+            RectTransform frame = null;
+            foreach (var b in buttons)
+                if (b && b.gameObject.activeSelf && b.transform is RectTransform rt && rt.parent is RectTransform f)
+                {
+                    frame = frame ? frame : f;
+                    if (f == frame) Active.Add(rt);
+                }
+            if (!frame || Active.Count == 0) return;
+            var scroll = Column(frame);
+            if (!scroll) return;
+            var fr = frame.rect;
+            var col = RectIn(scroll, frame);
+            var width = col.width;
+            var floor = ThemeTokens.GetFloat("size.text.fit.min", 12f);
+            var vpad = ChoiceVPad;
+            var heights = new float[Active.Count];
+            for (var i = 0; i < Active.Count; i++)
+                heights[i] = Label(Active[i], width, floor, vpad);
+            var stack = ElDialogMath.Stack(fr.height, fr.yMax - col.yMax, heights, CapBand(frame, dialog), ElDialogMath.ElGap, 80f);
+            for (var i = 0; i < Active.Count; i++)
+            {
+                var rt = Active[i];
+                var h = heights[i];
+                if (Mathf.Abs(rt.rect.width - width) > 0.5f) rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
+                if (Mathf.Abs(rt.rect.height - h) > 0.5f) rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, h);
+                // Pivot position in the frame's space (anchor-agnostic): column centre, the stack's bottom edge.
+                var p = new Vector3(col.center.x + (rt.pivot.x - 0.5f) * width, fr.yMin + stack.Bottoms[i] + rt.pivot.y * h, rt.localPosition.z);
+                if ((rt.localPosition - p).sqrMagnitude > 0.01f) rt.localPosition = p;
+            }
+            if (Mathf.Abs(scroll.rect.height - stack.ScrollHeight) > 0.5f)
+                scroll.SetInsetAndSizeFromParentEdge(RectTransform.Edge.Top, fr.yMax - col.yMax, stack.ScrollHeight);
+            Active.Clear();
+        }
+
+        // Epic Loot's description scroll view (CraftSuccessDialog.ConvertToScrollingDescription under the frame).
+        private static RectTransform Column(RectTransform frame)
+        {
+            foreach (Transform c in frame)
+                if (c.TryGetComponent<ScrollRect>(out _)) return (RectTransform)c;
+            return null;
+        }
+
+        // One label across its button; returns the button height it needs (Epic Loot's 40, or more for two lines at the floor).
+        private static float Label(RectTransform button, float width, float floor, float vpad)
+        {
+            var label = button.GetComponentInChildren<TMP_Text>(true);
+            if (!label) return ElDialogMath.ElHeight;
+            var plate = button.TryGetComponent<Button>(out var b) ? b.targetGraphic as Image : null;
+            var hpad = (plate ? TextInset.SliceBorder(plate).x : 0f) + ThemeTokens.GetFloat("size.row.cap.pad", 6f);
+            var lr = label.rectTransform;
+            if (lr.parent == button)
+            {
+                if (lr.anchorMin != Vector2.zero) lr.anchorMin = Vector2.zero;
+                if (lr.anchorMax != Vector2.one) lr.anchorMax = Vector2.one;
+                var min = new Vector2(hpad, vpad);
+                var max = new Vector2(-hpad, -vpad);
+                if (lr.offsetMin != min) lr.offsetMin = min;
+                if (lr.offsetMax != max) lr.offsetMax = max;
+            }
+            if (label.textWrappingMode != TextWrappingModes.Normal) label.textWrappingMode = TextWrappingModes.Normal;
+            var top = label.enableAutoSizing ? Mathf.Max(label.fontSizeMax, floor) : Mathf.Max(label.fontSize, floor);
+            if (!label.enableAutoSizing || Mathf.Abs(label.fontSizeMin - floor) > 0.01f || Mathf.Abs(label.fontSizeMax - top) > 0.01f)
+            {
+                label.fontSizeMax = top;
+                label.fontSizeMin = floor;
+                label.enableAutoSizing = true;
+            }
+            // Height of the label wrapped in the text width at the floor size (auto-size off for the measure only).
+            var textW = width - 2f * hpad - label.margin.x - label.margin.z;
+            if (textW <= 1f || string.IsNullOrEmpty(label.text)) return ElDialogMath.ElHeight;
+            var size = label.fontSize;
+            label.enableAutoSizing = false;
+            label.fontSize = floor;
+            var need = label.GetPreferredValues(label.text, textW, 0f).y + label.margin.y + label.margin.w;
+            label.fontSize = size;
+            label.enableAutoSizing = true;
+            return ElDialogMath.ButtonHeight(ElDialogMath.ElHeight, need, vpad);
+        }
+
+        // Top edge of the bottom corner caps over the frame's bottom edge, in frame units (0 without a panel stack).
+        private static float CapBand(RectTransform frame, Transform dialog)
+        {
+            var decor = Decor(frame, dialog);
+            var corners = decor ? decor.CornerCaps : null;
+            if (corners == null || corners.Length < 4) return 0f;
+            var band = 0f;
+            for (var i = 2; i < 4; i++)
+            {
+                var c = corners[i];
+                if (!c || !c.TryGetComponent<Image>(out var img) || !img.enabled || !img.sprite || !c.gameObject.activeInHierarchy) continue;
+                band = Mathf.Max(band, RectIn(c, frame).yMax - frame.rect.yMin);
+            }
+            return band;
+        }
+
+        // The panel stack on the frame, an ancestor up to the dialog, or the frame's own panel art (PanelSwap child).
+        private static PanelDecor Decor(RectTransform frame, Transform dialog)
         {
             for (var p = (Transform)frame; p; p = p.parent)
             {
                 var decor = PanelDecor.Of(p);
-                if (decor) return decor.ContentInset() * p.lossyScale.x / Mathf.Max(frame.lossyScale.x, 1e-6f);
+                if (decor) return decor;
                 if (p == dialog) break;
             }
-            // The frame's own panel art carries the stack (PanelSwap child).
             foreach (Transform c in frame)
             {
                 var decor = PanelDecor.Of(c);
-                if (decor) return decor.ContentInset() * c.lossyScale.x / Mathf.Max(frame.lossyScale.x, 1e-6f);
+                if (decor) return decor;
             }
-            return 0f;
+            return null;
+        }
+
+        // rt's rect in space's local units.
+        private static Rect RectIn(RectTransform rt, Transform space)
+        {
+            rt.GetWorldCorners(Corners4);
+            var a = space.InverseTransformPoint(Corners4[0]);
+            var b = space.InverseTransformPoint(Corners4[2]);
+            return Rect.MinMaxRect(Mathf.Min(a.x, b.x), Mathf.Min(a.y, b.y), Mathf.Max(a.x, b.x), Mathf.Max(a.y, b.y));
         }
     }
 
