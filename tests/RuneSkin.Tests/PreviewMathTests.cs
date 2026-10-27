@@ -84,6 +84,21 @@ namespace RuneSkin.Tests
         }
 
         [Fact]
+        public void FitHeightKeepsNearExtremesInsideThePerspectiveView()
+        {
+            var tan = Math.Tan(15.0 * Math.PI / 180.0);
+            const float near = 0.3f;
+            var (d, cy) = PreviewMath.FitHeight(0f, 2f, 0.8f, 30f, 0.06f, 0.03f, 0.5f, near);
+            // a foot / helmet point `near` in front of the figure plane projects exactly onto the margins
+            double Project(double y, double depth) => 0.5 + (y - cy) / (2.0 * depth * tan);
+            Assert.Equal(0.03, Project(0.0, d - near), 3);
+            Assert.Equal(0.94, Project(2.0, d - near), 3);
+            // points on or behind the plane land inside the margins
+            Assert.True(Project(0.0, d) > 0.03 && Project(2.0, d) < 0.94);
+            Assert.Equal(PreviewMath.FitHeight(0f, 2f, 0.8f, 30f, 0.06f, 0.03f, 0.5f), PreviewMath.FitHeight(0f, 2f, 0.8f, 30f, 0.06f, 0.03f, 0.5f, -1f));
+        }
+
+        [Fact]
         public void FitHeightNeverShrinksForWideSpansOnlyForTheCoreWidth()
         {
             var tan = Math.Tan(15.0 * Math.PI / 180.0);

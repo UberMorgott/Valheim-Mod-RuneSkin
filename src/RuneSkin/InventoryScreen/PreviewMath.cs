@@ -46,10 +46,15 @@ namespace RuneSkin.InventoryScreen
         // shares of the view left free above the head and under the feet. Height first: a held weapon or shield wider
         // than the view overflows sideways instead of shrinking the body (user 2026-10-28: "the character fills the
         // window, not small in the centre"); only `coreW` (shoulder width) is kept inside a very narrow view.
+        // `near` = how far the extreme points (feet, helmet) may stand in front of the figure plane (their horizontal
+        // radius around the turn axis): perspective draws a nearer point further from the view centre, so the span is fit
+        // at that depth and the camera stands `near` further back (run 20261028-004636: feet turned toward the camera
+        // projected 1-2.5% below the image without it).
         // Returns the camera distance from the figure plane and the camera's (and view centre's) height.
         public static (float Distance, float CenterY) FitHeight(float yMin, float yMax, float aspect, float vFovDeg,
-            float top, float bottom, float coreW)
+            float top, float bottom, float coreW, float near = 0f)
         {
+            if (!(near > 0f)) near = 0f;
             var tan = Math.Tan(Math.Max(1f, Math.Min(170f, vFovDeg)) * Math.PI / 360.0);
             if (!(aspect > 0f)) aspect = 1f;
             if (float.IsNaN(yMin) || float.IsNaN(yMax) || yMax - yMin < MinSpan) yMax = yMin + MinSpan;
@@ -61,7 +66,7 @@ namespace RuneSkin.InventoryScreen
             var d = Math.Max(byH, byW);
             var viewH = 2.0 * d * tan;
             // feet `bottom` above the view's lower edge (a width-bound view only grows above the head)
-            return ((float)d, (float)(yMin - bottom * viewH + viewH * 0.5));
+            return ((float)(d + near), (float)(yMin - bottom * viewH + viewH * 0.5));
         }
 
         // Shortest height span FitHeight frames (no renderer bounds yet / a degenerate box).
