@@ -502,6 +502,12 @@ namespace RuneSkin.InventoryScreen
             foreach (var go in _parked)
                 if (go) RenderGate.Set(go, ParkOwner, false);
             _parked.Clear();
+            WakeIdled();
+        }
+
+        // The idled behaviours' OnEnable back (own method: rp-open-hitch times it apart from the gate removal).
+        private void WakeIdled()
+        {
             foreach (var b in _idled)
                 if (b) b.enabled = true;
             _idled.Clear();
