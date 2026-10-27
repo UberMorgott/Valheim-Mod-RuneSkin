@@ -503,7 +503,13 @@ namespace RuneSkin.InventoryScreen
             return InventoryWindowsMath.FromStrip(l, input, abilities, originX, ppu, top, Screen.height, scale);
         }
 
-        private Inventory ContainerInventory() => _gui.m_currentContainer ? _gui.m_currentContainer.GetInventory() : null;
+        // The inventory m_container shows: vanilla UpdateContainer (InventoryGui.cs:703-704) activates m_container and feeds
+        // m_containerGrid, and that pair is the container's state, not m_currentContainer: mods show their own inventory
+        // in it with no Container (EpicLoot SocketsUI: UpdateContainer prefix fills the grid with the item's socket
+        // inventory, m_currentContainer stays null). Reading m_currentContainer sized that window 0x0 (no chest box),
+        // so the socket panel never appeared and its caption sat at its prefab spot over the hotbar (user 2026-10-27).
+        private Inventory ContainerInventory() =>
+            _gui.m_container && _gui.m_container.gameObject.activeSelf && _gui.m_containerGrid ? _gui.m_containerGrid.GetInventory() : null;
 
         // AdventureBackpacks opens a worn backpack without a chest as InventoryGui.Show(player's own Container)
         // (fork PlayerExtensions.OpenBackpack): m_container then shows the backpack.
