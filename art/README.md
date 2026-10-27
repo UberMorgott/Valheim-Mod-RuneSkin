@@ -225,10 +225,11 @@ from B. Codex final: 10 of 10 groups 8/10 (tab_* redraw kept out of scope: share
 - Kit `hdr_plinth.png` (+ prompt): `plinth_cap_left` (plain strip rails, short knot, carved triquetra terminal, plinth wall),
   `plinth_cell` (one per header action, mullion centre to mullion centre, socket inner 182/261 of the height),
   `plinth_cap_right` (= the header's right end cap), `button_hdr_normal/hover/pressed` (approved variant B frame, no glyph).
-  Sheet strip y 218..421 = plate height, plinth y 190..451: height share 1.29 (`share.win.plinth.height`).
-  Stone graded to header_plaque_v2 (`stone` [0.7, 0.62, 0.72] plinth, [0.6, 0.7] buttons).
+  Sheet v2 (deeper bevel, wider straps, narrower terminal; prompt `hdr_plinth_v2.prompt.txt`): strip y 215..425 = plate height,
+  plinth crop y 184..461: height share 1.32 (`share.win.plinth.height`); the left cap's rails squashed onto the plate rails.
+  Stone graded toward header_plaque_v2 (`stone` [0.65, 0.8, 0.75] plinth, cap [0.7, 0.68, 0.75], [0.6, 0.7] buttons).
 - `header_plaque_open` = header_plaque_v2 with the right knot block + end cap replaced by the plain rail columns (`clone`):
   RuneWindowHeader swaps it in while the window has header actions; the plate ends under the left cap's faded strip part
   (`share.win.plinth.join`).
 - Kit `hdr_glyphs.png`: `glyph_act_sort` (now variant B: bars + down triangle), `glyph_act_sort_mode`, `glyph_act_layout`.
-- Review: mockups + final compare in `docs/mockups/header-buttons/integrated/` (Codex 8/10 at 1x).
+- Review: mockups + final compare in `docs/mockups/header-buttons/integrated/` (Codex 9/10 at 1x).

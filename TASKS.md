@@ -936,4 +936,4 @@ Pre-existing / foreign (not windows-v2):
 - User: header buttons lay pasted over the plate's right knot. Approved mockup docs/mockups/header-buttons/integrated/plinth-1x.png.
 - RuneWindowHeader.Actions(n): plate swaps to header_plaque_open and ends under plinth_cap_left (terminal), one plinth_cell per action, plinth_cap_right = header end cap (WindowHeaderMath.PlinthLayout, tests); player grid header places its ActionBar in PlinthRow (role action.button.header = button_hdr_* + GlyphStates: hover / pressed glyph cyan, pressed sinks).
 - Glyphs variant B: glyph_act_sort (redrawn), glyph_act_sort_mode (MorgottTweaks sort.mode now passes glyph.action.sort_mode), glyph_act_layout.
-- Offline compare at 1x vs mockup: Codex 7 -> 8/10 (final-compare-*.png). In-game: ui-runeskin-m2 -Checks inv-header-plinth (harness 5c9e167) + visual check pending (lead token).
+- Offline compare at 1x vs mockup: Codex 7 -> 8 -> 9/10 (final-compare-*.png; sheet v2: deeper plinth bevel, wider straps, narrower terminal). In-game: ui-runeskin-m2 -Checks inv-header-plinth (harness 5c9e167) + visual check pending (lead token).
