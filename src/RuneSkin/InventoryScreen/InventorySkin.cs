@@ -560,7 +560,7 @@ namespace RuneSkin.InventoryScreen
 
         public void OnHide()
         {
-            if (_ghost && !_ghostClosing) _ghostHiddenBy = Caller();
+            if (_ghost && !_ghostClosing) _ghostHiddenBy = Caller() + PlayerState();
             if (_preview) _preview.Close();
             RestoreQuickBar();
             ClearBand();
@@ -769,6 +769,15 @@ namespace RuneSkin.InventoryScreen
                 _gui.m_closeInventoryEffects = _closeFx;
             }
             _silenced = false;
+        }
+
+        // The InventoryGui.Update close predicates at the hide (InventoryGui.cs:513): which one vanilla saw (run
+        // 20261028-004731: hidden after 2 frames by InventoryGui.Update).
+        private static string PlayerState()
+        {
+            var p = Player.m_localPlayer;
+            if (!p) return " (no local player)";
+            return $" (dead={p.IsDead()} intro={p.InIntro()} sleeping={p.m_sleeping} cinematic={CinematicsManager.IsPlaying()} cutscene={p.InCutscene()} teleporting={p.IsTeleporting()})";
         }
 
         // Who hid the ghost open (log only): the first stack frames above InventoryGui.Hide outside Harmony / RuneSkin.
