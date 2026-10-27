@@ -760,19 +760,30 @@ namespace RuneSkin.CraftingScreen
             var icon = _gui.m_craftingStationIcon && _gui.m_craftingStationIcon.gameObject.activeInHierarchy && _gui.m_craftingStationIcon.sprite ? _gui.m_craftingStationIcon : null;
             var level = _gui.m_craftingStationLevelRoot;
             var levelOn = level && level.gameObject.activeInHierarchy;
-            header.Place(_canvas, o.Header, icon, levelOn ? o.Header.H * Restyle.WindowHeaderMath.IconShare : 0f);
+            // Star at least big enough for a readable digit (floor.text.number.px on screen): the shared header's aux slot
+            // alone (0.8 x size.win.header) left a ~8 px digit box at 720p, shorter than one line at the auto-size floor,
+            // and TMP's Ellipsis overflow dropped the only line - the star showed no level.
+            var floor = ThemeTokens.GetFloat("floor.text.number.px", 14f) / Mathf.Max(0.01f, _rootCanvas ? _rootCanvas.scaleFactor : 1f);
+            header.Place(_canvas, o.Header, icon, levelOn ? CraftingMath.LevelSide(o.Header.H * Restyle.WindowHeaderMath.IconShare, floor) : 0f);
             if (icon) icon.preserveAspect = true;
             if (levelOn)
             {
-                var b = header.AuxBox;
+                var b = CraftingMath.LevelBadge(header.AuxBox, floor, out var size);
                 Geo.Place(_canvas, level, b);
-                if (_gui.m_craftingStationLevel)
-                {
-                    // Digit in the star's round recess (badge_level_star: centre (76,75) of 150x144 = the middle).
-                    Geo.Place(_canvas, _gui.m_craftingStationLevel.rectTransform, CraftingMath.Inset(b, b.W * 0.27f, b.H * 0.27f));
-                    Label(_gui.m_craftingStationLevel, TextAlignmentOptions.Center, b.H * 0.42f, 12f);
-                }
+                if (_gui.m_craftingStationLevel) LevelDigit(_gui.m_craftingStationLevel, b, size);
             }
+        }
+
+        // Digit centred on the star (its round recess: centre (76,75) of 150x144 = the middle), a fixed size that never
+        // auto-shrinks and an overflow mode that never drops the line (vanilla sets only the text, InventoryGui.cs:1480).
+        private void LevelDigit(TMP_Text digit, Box star, float size)
+        {
+            Geo.Place(_canvas, digit.rectTransform, star);
+            if (digit.alignment != TextAlignmentOptions.Center) digit.alignment = TextAlignmentOptions.Center;
+            if (digit.textWrappingMode != TextWrappingModes.NoWrap) digit.textWrappingMode = TextWrappingModes.NoWrap;
+            if (digit.overflowMode != TextOverflowModes.Overflow) digit.overflowMode = TextOverflowModes.Overflow;
+            if (digit.enableAutoSizing) digit.enableAutoSizing = false;
+            if (Mathf.Abs(digit.fontSize - size) > 0.1f) digit.fontSize = size;
         }
         private void Tabs(CraftingLayout o)
         {
