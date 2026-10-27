@@ -364,6 +364,23 @@ namespace RuneSkin.CraftingScreen
 
         public static Box Inset(Box b, float x, float y) => new Box(b.X + x, b.Y + y, Math.Max(0f, b.W - 2f * x), Math.Max(0f, b.H - 2f * y));
 
+        // Station level digit size as a share of the star badge side: the digit (cap height ~0.7 em) sits in the star's
+        // round recess (badge_level_star: ~0.47 of the side, centred).
+        public const float LevelFontShare = 0.55f;
+
+        // Station level star in the header aux slot: `slotH` tall by default, grown so its digit is at least `floorUnits`
+        // (the readable number floor in canvas units) - the shared window header (size.win.header) made the slot so small
+        // at 720p that no digit line fitted. Square, centred on `slot`; `side` is also the aux width to reserve.
+        public static Box LevelBadge(Box slot, float floorUnits, out float fontSize)
+        {
+            var side = LevelSide(slot.H, floorUnits);
+            fontSize = side * LevelFontShare;
+            return new Box(slot.X + (slot.W - side) / 2f, slot.Y + (slot.H - side) / 2f, side, side);
+        }
+
+        // Side of the level star for a `slotH` slot and a `floorUnits` digit floor (the aux width the header reserves).
+        public static float LevelSide(float slotH, float floorUnits) => Math.Max(Math.Max(0f, slotH), Math.Max(0f, floorUnits) / LevelFontShare);
+
         // Requirement amount "have/need" (ValheimPlus CraftFromChest rewrites the label so; vanilla writes only "need"),
         // read without substrings (this runs per requirement cell per frame). Spaces around the numbers allowed.
         public static bool TryParseHaveNeed(string s, out int have, out int need)

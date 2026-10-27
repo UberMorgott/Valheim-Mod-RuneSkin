@@ -249,5 +249,32 @@ namespace RuneSkin.Tests
         [InlineData(150, 99)]
         public void LargestOkFindsTheLimit(int limit, int want) =>
             Assert.Equal(want, CraftingMath.LargestOk(99, n => n <= limit));
+
+        // Live 0.25.11 at 1280x720: header 40 x 0.8 = 32-unit slot, root canvas scale ~0.56 -> star ~18 px, digit box
+        // ~8 px: no line fitted and the star showed no level. The star grows until its digit meets the readable floor.
+        [Theory]
+        [InlineData(32f, 0.5625f)]
+        [InlineData(32f, 1f)]
+        [InlineData(64f, 1f)]
+        public void LevelDigitNeverBelowReadableFloor(float slotH, float scale)
+        {
+            var floor = 14f / scale;
+            var slot = new Box(500f, 40f, CraftingMath.LevelSide(slotH, floor), slotH);
+            var star = CraftingMath.LevelBadge(slot, floor, out var size);
+            Assert.True(size >= floor - 0.001f, $"digit {size} under floor {floor}");
+            Assert.True(star.H >= slotH - 0.001f);
+            Assert.Equal(star.W, star.H, 3);
+            Assert.Equal(slot.X + slot.W / 2f, star.X + star.W / 2f, 3);
+            Assert.Equal(slot.Y + slot.H / 2f, star.Y + star.H / 2f, 3);
+            Assert.Equal(slot.W, star.W, 3); // the reserved aux width is exactly the star
+        }
+
+        [Fact]
+        public void LevelStarKeepsSlotSizeWhenDigitAlreadyReadable()
+        {
+            var star = CraftingMath.LevelBadge(new Box(0f, 0f, 64f, 64f), 14f, out var size);
+            Assert.Equal(64f, star.W, 3);
+            Assert.Equal(64f * CraftingMath.LevelFontShare, size, 3);
+        }
     }
 }
