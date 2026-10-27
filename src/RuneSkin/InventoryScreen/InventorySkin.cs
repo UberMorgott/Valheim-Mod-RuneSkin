@@ -986,12 +986,27 @@ namespace RuneSkin.InventoryScreen
                     if (text.alignment != TextAlignmentOptions.MidlineLeft) text.alignment = TextAlignmentOptions.MidlineLeft;
                     if (text.textWrappingMode != TextWrappingModes.NoWrap) text.textWrappingMode = TextWrappingModes.NoWrap;
                     if (text.overflowMode != TextOverflowModes.Ellipsis) text.overflowMode = TextOverflowModes.Ellipsis;
-                    // Value at ~45% of the strip height (mockup), never below the body floor.
-                    var size = Mathf.Max(rt.rect.height * 0.5f, ThemeTokens.GetFloat("floor.text.body.px", 16f) / Mathf.Max(0.01f, _rootCanvas.scaleFactor));
+                    var size = StatValueSize(rt.rect.height);
                     if (text.enableAutoSizing) text.enableAutoSizing = false;
                     if (Mathf.Abs(text.fontSize - size) > 0.1f) text.fontSize = size;
                 }
             }
+        }
+
+        // Value font size of a stat plate: ~half the strip height (mockup), never below the body floor (screen px).
+        private float StatValueSize(float plateH) =>
+            Mathf.Max(plateH * 0.5f, ThemeTokens.GetFloat("floor.text.body.px", 16f) / Mathf.Max(0.01f, _rootCanvas.scaleFactor));
+
+        // Width the plate's value text needs at StatValueSize(plateH), measured on its widest digits ("0" for every digit,
+        // so a weight change in play does not outgrow the plate between layout passes).
+        private float StatValueWidth(Transform plate, float plateH)
+        {
+            var text = plate ? plate.GetComponentInChildren<TMP_Text>(true) : null;
+            if (!text || string.IsNullOrEmpty(text.text)) return 0f;
+            var probe = System.Text.RegularExpressions.Regex.Replace(text.text, "[0-9]", "0");
+            var size = StatValueSize(plateH);
+            var w = text.GetPreferredValues(probe, float.PositiveInfinity, float.PositiveInfinity).x;
+            return text.fontSize > 0.01f ? w * size / text.fontSize : w;
         }
 
         // Chest / backpack window: the window's one header (RuneWindowHeader: glyph in the icon slot, the container name
@@ -1028,8 +1043,9 @@ namespace RuneSkin.InventoryScreen
             var weightPlate = DirectChild(panel, weight);
             if (weightPlate)
             {
-                var pw = Mathf.Min(ThemeTokens.GetFloat("size.inv.plate.weight.dock", 110f) * k, Mathf.Max(0f, actions.W - actionsW - _tokens.Gap * k));
                 var ph = Mathf.Min(actions.H, ThemeTokens.GetFloat("size.win.header", 40f) * k * WindowHeaderMath.IconShare);
+                var pw = InventoryMath.StatPlateWidth(ThemeTokens.GetFloat("size.inv.plate.weight.dock", 110f) * k, ph,
+                    StatValueWidth(weightPlate, ph), Mathf.Max(0f, actions.W - actionsW - _tokens.Gap * k));
                 StatPlate(weightPlate, new Box(actions.X, actions.Y + (actions.H - ph) / 2f, pw, ph));
             }
             var head = RuneWindowHeader.Ensure(panel, backpack ? WindowMove.Backpack : WindowMove.Chest);

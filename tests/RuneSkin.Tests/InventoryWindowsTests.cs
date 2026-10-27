@@ -593,5 +593,16 @@ namespace RuneSkin.Tests
                 Assert.True(c.Description.Bottom <= c.Requirements.Y + 0.01f, at);
             }
         }
+
+        // Dock weight plate (run 20261027-105618: AB weight text "1…" at 1280x720): the token width grows until the value fits,
+        // never past the action row's room; a roomy token stays as it is.
+        [Fact]
+        public void StatPlateWidth_GrowsToFitTheValue_WithinTheRoom()
+        {
+            Assert.Equal(110f, InventoryMath.StatPlateWidth(110f, 24f, 40f, 300f));
+            Assert.Equal(24f + 4f + 90f + 12f, InventoryMath.StatPlateWidth(73f, 24f, 90f, 300f));
+            Assert.Equal(100f, InventoryMath.StatPlateWidth(73f, 24f, 90f, 100f));
+            Assert.Equal(0f, InventoryMath.StatPlateWidth(73f, 24f, 90f, -5f));
+        }
     }
 }
