@@ -108,6 +108,13 @@ namespace RuneSkin.Restyle
             return Math.Min(room, (lineH - viewH) * 0.5f);
         }
 
+        // Reach of the line boxes of a two-line list row (server rows): each text box starts at the row midline (the edge
+        // its text is aligned to) and reaches outward almost a whole row, so one line fits at any size the readable floor
+        // can raise it to (an Ellipsis / Truncate text taller than its box is dropped whole by TMP:
+        // TextMeshProUGUI.GenerateTextMesh, vertical overflow with no ellipsis candidate on the first line), while the
+        // box centre (midline +- reach / 2) stays inside the row (TextInset.Row measures only texts centred on their row).
+        public static float MidlineLineReach(float rowH, float pad) => Math.Max(0f, rowH - Math.Max(0.5f, pad));
+
         // Padding side raised to the frame keep-out (ContentInset): never lowered.
         public static int RaiseSide(int side, int inset) => Math.Max(side, inset);
 

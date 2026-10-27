@@ -528,12 +528,24 @@ namespace RuneSkin.PreWorld
             right -= players + 8f;
             Place(row, "version", new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(right - version, 0f), new Vector2(right, 0f), sub + 2f, TextAlignmentOptions.MidlineRight);
             right -= version + 12f;
-            Place(row, "name", new Vector2(0f, 0.5f), new Vector2(1f, 1f), new Vector2(16f, 0f), new Vector2(right, -3f), font, TextAlignmentOptions.BottomLeft);
-            Place(row, "modifiers", new Vector2(0f, 0f), new Vector2(1f, 0.5f), new Vector2(16f, 3f), new Vector2(right, 0f), sub, TextAlignmentOptions.TopLeft);            // Long names / modifier summaries end in an ellipsis inside their column (run 20261022-205726: a long name
-            // ran over the version column); the half-row line box holds a whole line, so TMP keeps it.
+            // Name above the midline (bottom-aligned on it), modifiers below it (top-aligned on it). The boxes reach out
+            // from the midline almost a whole row (LayoutMath.MidlineLineReach): the old half-row boxes (23 units) were
+            // shorter than one name line once the readable floor raised it (16 px at GUI scale 0.77 = 20.8 units, line
+            // ~28), and TMP's Ellipsis drops a first line that overflows vertically - server names gone, blinking while
+            // TextInset.FitTruncated and ReadableSweep alternated (user report 2026-10-27, Сообщество tab).
+            var reach = LayoutMath.MidlineLineReach(h, 2f);
+            Place(row, "name", new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(16f, 0f), new Vector2(right, reach), font, TextAlignmentOptions.BottomLeft);
+            Place(row, "modifiers", new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(16f, -reach), new Vector2(right, 0f), sub, TextAlignmentOptions.TopLeft);
+            // Long names / modifier summaries end in an ellipsis inside their column (run 20261022-205726: a long name
+            // ran over the version column); vertically their boxes hold a whole line, so TMP keeps it.
+            // The boxes reach into the neighbour rows: not raycast targets, or a later row's name box would take the
+            // clicks on the row above it (the row's bkg image is the button's hit area).
             foreach (var n in new[] { "name", "modifiers" })
                 if (row.Find(n) is Transform tn && tn.TryGetComponent<TMP_Text>(out var tt))
+                {
                     tt.overflowMode = TextOverflowModes.Ellipsis;
+                    tt.raycastTarget = false;
+                }
             if (row.Find("selected") is Transform sel && sel.TryGetComponent<Image>(out var selImg))
             {
                 selImg.color = Color.white;

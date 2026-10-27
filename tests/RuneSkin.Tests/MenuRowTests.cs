@@ -100,5 +100,29 @@ namespace RuneSkin.Tests
             Assert.Equal(10.5f, d, 3);
             Assert.Equal(18.5f, b, 3);
         }
+
+        // Server rows (52 units): the name line box reaches 50 up from the midline. The readable floor at GUI scale 0.77
+        // (16 px = 20.83 units, line x1.362 = 28.4) did not fit the old half-row box (26 - 3 = 23): TMP's Ellipsis
+        // dropped the whole name. The new box holds it down to GUI scale 0.5 (32.05 units, line 43.7), and the box
+        // centre (midline + 25) stays inside the row (half 26), so TextInset.Row still places it.
+        [Fact]
+        public void ServerNameLineBoxHoldsTheReadableFloorLine()
+        {
+            const float rowH = 52f, lineFactor = 1.362f;
+            var reach = LayoutMath.MidlineLineReach(rowH, 2f);
+            Assert.Equal(50f, reach, 3);
+            float Floor(float guiScale) => LayoutMath.ReadableUnits(16f, guiScale * 720f / 1080f, 720f);
+            Assert.True(Floor(0.77f) * lineFactor > rowH * 0.5f - 3f); // the old box: dropped
+            Assert.True(Floor(0.77f) * lineFactor <= reach);
+            Assert.True(Floor(0.5f) * lineFactor <= reach);
+            Assert.True(reach * 0.5f < rowH * 0.5f);
+        }
+
+        [Fact]
+        public void MidlineLineReachNeverNegative()
+        {
+            Assert.Equal(0f, LayoutMath.MidlineLineReach(1f, 2f), 3);
+            Assert.Equal(51.5f, LayoutMath.MidlineLineReach(52f, 0f), 3);
+        }
     }
 }
