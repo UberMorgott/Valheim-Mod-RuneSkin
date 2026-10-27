@@ -1509,7 +1509,9 @@ namespace RuneSkin.InventoryScreen
             var fits = figure.W >= d.Cell;
             if (_backdrop) Show(_backdrop, fits ? figure : default);
             var live = _preview && !_preview.Failed;
-            if (_preview) _preview.Place(_canvas, fits && live ? Move(o.DollPreview, _dollOff) : default);
+            // live preview: the texture covers the whole alcove (weapons / shield / cape never cut at a narrow image
+            // edge), the body framed to the figure box's height inside it
+            if (_preview) _preview.Place(_canvas, fits && live ? figure : default, Move(o.DollPreview, _dollOff));
             if (_silhouette) Show(_silhouette, fits && !live ? Move(o.DollPreview, _dollOff) : default);
 
             PlaceQuickCells(grid);

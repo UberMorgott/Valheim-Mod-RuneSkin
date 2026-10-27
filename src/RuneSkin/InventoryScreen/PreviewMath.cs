@@ -42,15 +42,22 @@ namespace RuneSkin.InventoryScreen
             curW <= 0 || curH <= 0 || Math.Abs(curW - wantW) > slack || Math.Abs(curH - wantH) > slack;
 
         // Camera distance that fits a standing body (height x width metres) with `pad` margin (share of the size) in a
-        // view of vertical field of view `vFovDeg` and aspect w/h: the tighter of the height and width fits.
-        public static float Distance(float bodyH, float bodyW, float aspect, float vFovDeg, float pad)
+        // view of vertical field of view `vFovDeg` and aspect w/h: the tighter of the height and width fits. `share` =
+        // part of the view height the body takes (figure box height over the rendered stage height, Share): the body
+        // stays that tall on screen whatever the stage around it, the width fit still keeps `bodyW` inside the stage.
+        public static float Distance(float bodyH, float bodyW, float aspect, float vFovDeg, float pad, float share = 1f)
         {
             var tan = Math.Tan(Math.Max(1f, Math.Min(170f, vFovDeg)) * Math.PI / 360.0);
             if (!(aspect > 0f)) aspect = 1f;
-            var byH = bodyH * 0.5 * (1.0 + pad) / tan;
+            if (!(share > 0f) || share > 1f) share = 1f;
+            var byH = bodyH * 0.5 * (1.0 + pad) / (tan * share);
             var byW = bodyW * 0.5 * (1.0 + pad) / (tan * aspect);
             return (float)Math.Max(byH, byW);
         }
+
+        // Share of the stage height the figure box takes (both canvas units), in (0, 1]; no figure = the whole stage.
+        public static float Share(float figureH, float stageH) =>
+            figureH > 0f && stageH > 0f ? Math.Min(1f, figureH / stageH) : 1f;
 
         // Yaw after a horizontal drag of dx pixels (degrees per pixel), wrapped to [0, 360).
         public static float Yaw(float yaw, float dx, float degPerPixel)

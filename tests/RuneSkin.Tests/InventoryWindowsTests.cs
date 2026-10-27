@@ -207,6 +207,29 @@ namespace RuneSkin.Tests
         }
 
         [Fact]
+        public void PreviewFigureFollowsTheInventoryCellScale()
+        {
+            // 2026-10-27 user report: the figure kept its size when the GUI scale / screen changed the inventory around it.
+            // The figure box is the cap times the slot cell over its token (skin scale and any strip squeeze), so its
+            // ratio to the grid cell holds wherever the alcove has room; on screen it grows with the GUI scale.
+            var t = Theme();
+            foreach (var (w, h, gui) in new[] { (1920f, 1080f, 1f), (2560f, 1440f, 1.2f), (1280f, 1024f, 1f), (1600f, 900f, 0.9f) })
+            {
+                var sc = At(w, h, gui);
+                var o = Run(sc, t: t);
+                var expected = Math.Min(o.DollFigure.H, t.PreviewMaxH * o.Player.Cell / t.GridCell);
+                Assert.True(Math.Abs(o.DollPreview.H - expected) < 0.05f || o.DollPreview.W >= o.DollFigure.W - 0.05f, $"{w}x{h} gui {gui}: {o.DollPreview} figure {o.DollFigure} cell {o.Player.Cell}");
+                Assert.True(o.DollPreview.Inside(o.DollFigure), $"{w}x{h}");
+            }
+            // room in the alcove at both: the figure on screen (units x canvas scale) grows with the GUI scale
+            var a = Run(At(2560f, 1440f, 0.9f), t: t);
+            var b = Run(At(2560f, 1440f, 1f), t: t);
+            Assert.True(a.DollPreview.H < a.DollFigure.H && b.DollPreview.H < b.DollFigure.H, $"{a.DollFigure} {b.DollFigure}");
+            var sa = Math.Min(2560f / 1920f, 1440f / 1080f);
+            Assert.Equal(1f / 0.9f, b.DollPreview.H * sa / (a.DollPreview.H * sa * 0.9f), 2);
+        }
+
+        [Fact]
         public void DollOverflowScrollsInsideInventoryNeverMoves()
         {
             var sc = At(1920f, 1080f);

@@ -81,6 +81,29 @@ namespace RuneSkin.Tests
         }
 
         [Fact]
+        public void FigureShareKeepsTheBodyHeightInsideALargerStage()
+        {
+            var tan = Math.Tan(15.0 * Math.PI / 180.0);
+            // Stage twice the figure height: the body takes half the view height (camera twice as far).
+            var share = PreviewMath.Share(150f, 300f);
+            Assert.Equal(0.5f, share, 4);
+            Assert.Equal((float)(2.0 / tan), PreviewMath.Distance(2f, 2.2f, 1.5f, 30f, 0f, share), 3);
+            // Projected body height / view height == share (what lands on screen = the figure box).
+            var d = PreviewMath.Distance(2f, 2.2f, 1.5f, 30f, 0f, share);
+            Assert.Equal(share, (float)(2.0 / (2.0 * d * tan)), 3);
+            // The span still fits a narrow stage: width bound wins, the body only gets smaller, never cut.
+            var narrow = PreviewMath.Distance(2f, 2.2f, 0.4f, 30f, 0f, share);
+            Assert.True(2.2 <= 2.0 * narrow * tan * 0.4 + 1e-3);
+            // Figure taller than the stage / no figure: whole stage.
+            // Tiny share: camera far back (CharacterPreview moves its far plane with the distance).
+            Assert.True(PreviewMath.Distance(2f, 2.2f, 1f, 30f, 0.06f, PreviewMath.Share(10f, 300f)) > 30f);
+            Assert.Equal(1f, PreviewMath.Share(400f, 300f));
+            Assert.Equal(1f, PreviewMath.Share(0f, 300f));
+            Assert.Equal(1f, PreviewMath.Share(100f, 0f));
+            Assert.Equal(PreviewMath.Distance(2f, 1.2f, 0.66f, 30f, 0f), PreviewMath.Distance(2f, 1.2f, 0.66f, 30f, 0f, 7f), 3);
+        }
+
+        [Fact]
         public void DragTurnsAndWraps()
         {
             Assert.Equal(350f, PreviewMath.Yaw(0f, 20f, 0.5f), 3);

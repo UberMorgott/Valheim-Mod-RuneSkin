@@ -9,8 +9,8 @@ using UnityEngine.UI;
 namespace RuneSkin.InventoryScreen
 {
     // Live 3D preview of the local player in the inventory (replaces the carved silhouette). Self-contained: a RawImage
-    // placed by its host (Place(box) in canvas units; the box comes from a theme rect, PreviewMath.Place) that owns
-    // everything behind it while the inventory is open:
+    // placed by its host (Place(stage, figure) in canvas units: the image covers the stage, the body is framed to the
+    // figure box's height inside it) that owns everything behind it while the inventory is open:
     // - clone: the vanilla character-select approach (FejdStartup.SetupCharacterPreview: player prefab instantiated
     //   with ZNetView.m_forceDisableInit, so its ZNetView destroys itself in Awake and never gets a ZDO), but stripped
     //   BEFORE activation to visuals only (no Player / Character / AI / Rigidbody / colliders / audio / sfx / lights;
@@ -61,7 +61,9 @@ namespace RuneSkin.InventoryScreen
 
         // World point far from any playable area (worlds span about +-10500 m on x/z, terrain below ~1000 m).
         private static readonly Vector3 Origin = new Vector3(0f, 12000f, 0f);
-        private const float BodyH = 2.0f, BodyW = 1.2f, CenterY = 0.98f, Pad = 0.04f, Fov = 30f, DegPerPixel = 0.45f;
+        // BodyH: standing height framed to the figure box; SpanW: width that must stay inside the stage (sword in hand,
+        // shield, cape, back weapons: the old 1.2 m body width cut them at the image edge, 2026-10-27 user report).
+        private const float BodyH = 2.0f, SpanW = 2.2f, CenterY = 0.98f, Pad = 0.06f, Fov = 30f, DegPerPixel = 0.45f;
 
         private RawImage _image;
         private RectTransform _rect;
@@ -71,7 +73,7 @@ namespace RuneSkin.InventoryScreen
         private RenderTexture _rt;
         private Player _player;
         private int _layer = -1, _applied = -1;
-        private float _yaw;
+        private float _yaw, _share = 1f;
         private bool _placed, _hidden, _failed, _alphaChecked;
         // Runtime materials created while this component built / refreshed the clone (destroyed on teardown).
         private readonly List<Material> _owned = new List<Material>();
@@ -108,9 +110,10 @@ namespace RuneSkin.InventoryScreen
 
         public bool Failed => _failed;
 
-        // Host placement: the box (canvas units, top-left origin); an empty box only hides the image while the
-        // inventory stays open (the clone is kept: no rebuild on a transient layout state).
-        public void Place(RectTransform canvas, Box box)
+        // Host placement: the stage the image covers and the figure box the body is framed to (canvas units, top-left
+        // origin; same canvas, so the body follows the GUI / skin scale with the layout); an empty stage only hides the
+        // image while the inventory stays open (the clone is kept: no rebuild on a transient layout state).
+        public void Place(RectTransform canvas, Box box, Box figure)
         {
             if (_failed || !IsOpen())
             {
@@ -118,7 +121,8 @@ namespace RuneSkin.InventoryScreen
                 return;
             }
             _placed = true;
-            _hidden = box.IsEmpty;
+            _hidden = box.IsEmpty || figure.IsEmpty;
+            _share = PreviewMath.Share(figure.H, box.H);
             if (!gameObject.activeSelf) gameObject.SetActive(true);
             if (!_hidden) Geo.Place(canvas, _rect, box);
         }
@@ -456,8 +460,9 @@ namespace RuneSkin.InventoryScreen
         {
             _clone.transform.localRotation = Quaternion.Euler(0f, _yaw, 0f);
             var aspect = _rt.height > 0 ? (float)_rt.width / _rt.height : 1f;
-            var d = PreviewMath.Distance(BodyH, BodyW, aspect, Fov, Pad);
+            var d = PreviewMath.Distance(BodyH, SpanW, aspect, Fov, Pad, _share);
             _camera.aspect = aspect;
+            _camera.farClipPlane = d + 10f; // a small figure share puts the camera far back
             _camera.transform.position = Origin + new Vector3(0f, CenterY, d);
             _camera.transform.rotation = Quaternion.LookRotation(Vector3.back);
             var clear = ThemeTokens.GetColor("color.inv.preview.clear", new Color(0f, 0f, 0f, 0f));

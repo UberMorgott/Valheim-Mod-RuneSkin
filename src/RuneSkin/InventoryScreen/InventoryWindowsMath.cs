@@ -253,9 +253,13 @@ namespace RuneSkin.InventoryScreen
             var fx = o.DollLeftX + cell + figGap;
             var fr = o.DollRightX - figGap;
             o.DollFigure = new Box(fx, o.DollContent.Y, Math.Max(0f, fr - fx), o.DollContent.H);
-            // live preview: a portrait box, never taller than the preview cap (user: smaller than the mockup's figure,
-            // close to the old in-game size), centred in the alcove
-            var ph = Math.Min(o.DollFigure.H, t.PreviewMaxH * k);
+            // live preview figure: a portrait box, never taller than the preview cap (user: smaller than the mockup's
+            // figure, close to the old in-game size), centred in the alcove. The cap scales with the slot cell the whole
+            // inventory is built on (hotbar cell over its size.slot token: skin scale and any strip squeeze), not with
+            // the skin scale alone: a squeezed inventory kept a full-size figure (2026-10-27 user report). The live
+            // preview renders into the whole alcove (DollFigure) and frames the body to this box's height there.
+            var unit = t.GridCell > 0f && h.Cell > 0f ? h.Cell / t.GridCell : k;
+            var ph = Math.Min(o.DollFigure.H, t.PreviewMaxH * unit);
             var pw = Math.Min(o.DollFigure.W, ph * Math.Max(0f, t.DollFigureAspect));
             if (pw < ph * t.DollFigureAspect && t.DollFigureAspect > 0f) ph = pw / t.DollFigureAspect;
             o.DollPreview = new Box(o.DollFigure.X + (o.DollFigure.W - pw) / 2f, o.DollFigure.Y + (o.DollFigure.H - ph) / 2f, pw, ph);
