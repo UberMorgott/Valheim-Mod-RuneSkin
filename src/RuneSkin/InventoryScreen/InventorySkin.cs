@@ -438,15 +438,23 @@ namespace RuneSkin.InventoryScreen
         private void Fade()
         {
             if (!_gui || !_gui.m_animator) return;
-            if (!_fade) _fade = _gui.GetComponent<CanvasGroup>() ?? _gui.gameObject.AddComponent<CanvasGroup>();
+            if (!_fade)
+            {
+                _fade = _gui.GetComponent<CanvasGroup>() ?? _gui.gameObject.AddComponent<CanvasGroup>();
+                if (!_fade.interactable) _fade.interactable = true; // an older build's closed state
+            }
             var want = _gui.m_animator.GetBool(AnimVisible);
             if (want && _parked.Count > 0) Unpark();
             var dur = Mathf.Max(0f, Plugin.PanelFade?.Value ?? 0.15f);
             var target = want ? 1f : 0f;
             _alpha = dur <= 0f ? target : Mathf.MoveTowards(_alpha, target, Time.unscaledDeltaTime / dur);
+            // Every CanvasGroup property write broadcasts OnCanvasGroupChanged to every component under InventoryGui,
+            // inactive ones included (Unity 6000.0.75 probe: ~0.25 ms per 1000 Images per write), and Selectable's handler
+            // walks its parents (Selectable.ParentGroupAllowsInteraction). Only the input block is toggled: interactable is
+            // never cleared (vanilla Hide leaves its Selectables interactable, InventoryGui.cs:1055-1061; its Update takes no
+            // input while hidden) - flipping it also re-ran every Selectable's state transition on each open and close.
             if (!Mathf.Approximately(_fade.alpha, _alpha)) _fade.alpha = _alpha;
             if (_fade.blocksRaycasts != want) _fade.blocksRaycasts = want;
-            if (_fade.interactable != want) _fade.interactable = want;
             if (want) return;
             if (_alpha > 0f)
             {
