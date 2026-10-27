@@ -480,6 +480,7 @@ namespace RuneSkin.InventoryScreen
                     _parked.Add(t.gameObject);
                     Idle(t);
                 }
+            Compat.FadePark.ParkEaqsPool(_gui); // EAQS's unused-cell pool out of the fade group (FadePark)
         }
 
         private void Idle(Transform root)

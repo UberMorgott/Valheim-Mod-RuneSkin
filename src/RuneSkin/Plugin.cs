@@ -297,6 +297,7 @@ namespace RuneSkin
             ModScreens.AlmanacAdapter.Harmony = _harmony;
             Screens.TooltipAdapter.Harmony = _harmony;
             ModScreens.ElDialogs.Harmony = _harmony;
+            Compat.FadePark.Harmony = _harmony;
             ModScreens.ForeignUi.Init(gameObject, _harmony, _modUiOptOut.Value);
             ModScreens.JotunnHook.Init(_harmony);
             ModScreens.ImguiFonts.Init(gameObject, _harmony);

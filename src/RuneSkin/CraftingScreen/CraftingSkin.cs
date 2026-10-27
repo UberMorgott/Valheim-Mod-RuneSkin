@@ -77,6 +77,7 @@ namespace RuneSkin.CraftingScreen
             BuildOwn();
             ScreenRegistry.Register(_crafting, Context);
             ScreenRegistry.Restyle(_crafting);
+            Compat.FadePark.Attach(gui); // VNEI's hidden browser out of the inventory's fade group
             Plugin.Log.LogInfo("[RuneSkin] crafting column attached");
         }
 
@@ -763,6 +764,13 @@ namespace RuneSkin.CraftingScreen
             if (_vneiSetSize == null) return;
             var ui = vnei.GetComponent(_vneiType);
             if (!ui) return;
+            // VNEI(Clone) itself stays active on every tab; its browser is `root`, shown and hidden by BaseUI.SetVisibility
+            // (MainVneiHandler.SetTabActive / SetTabInactive). Hidden (or parked out of the fade group, FadePark) its grid
+            // size is not seen: fitted when the browser shows. Fitting it every crafting frame re-ran SetSize -> RebuildSize
+            // -> SearchUI.RebuildCells (destroys and instantiates all X x Y item cells) whenever the open frames gave the
+            // body another whole-cell count.
+            var browser = _vneiRoot.GetValue(ui) as RectTransform;
+            if (!browser || !browser.gameObject.activeInHierarchy) return;
             // Canvas units per VNEI local unit (its own scale chain).
             var u = vnei.lossyScale.x / Mathf.Max(Geo.WorldPerUnit(_canvas), 1e-6f);
             if (u <= 0f) return;
@@ -776,11 +784,11 @@ namespace RuneSkin.CraftingScreen
                     _vneiUi = ui;
                     _vneiCells = (x, y);
                 }
-                if (_vneiRoot.GetValue(ui) is RectTransform root && root != vnei)
+                if (browser != vnei)
                 {
                     var w = (x * 50f + 10f) * u;
                     var h = (y * 50f + 100f) * u;
-                    Geo.Place(_canvas, root, new Box(area.X + (area.W - w) / 2f, area.Y, w, h));
+                    Geo.Place(_canvas, browser, new Box(area.X + (area.W - w) / 2f, area.Y, w, h));
                 }
             }
             catch (Exception e)

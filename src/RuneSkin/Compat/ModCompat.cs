@@ -16,6 +16,9 @@ namespace RuneSkin.Compat
         // ---- Equipment and Quick Slots (randyknapp): doll cells read from its slot table
         public const string EaqsGuid = "randyknapp.mods.equipmentandquickslots";
         public const string EaqsSlotsType = "EquipmentAndQuickSlots.Slots";
+        // Its pool of unused cells (EquipmentPanel.InventoryGrid_UpdateGui_RelocateSlotElements.EnsureHiddenRoot: an inactive RectTransform under
+        // m_player, kept by its static reference, cells parked into it by ParkHiddenCell).
+        public const string EaqsHiddenRoot = "EaqsHiddenSlotRoot";
 
         // ---- VNEI (MSchmoecker): item browser docked over the crafting body
         public const string VneiGuid = "com.maxsch.valheim.vnei";

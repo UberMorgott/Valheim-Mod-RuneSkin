@@ -41,6 +41,7 @@
     <Compile Include="..\..\src\RuneSkin\Restyle\LabelFit.cs" Link="Linked\LabelFit.cs" />
     <Compile Include="..\..\src\RuneSkin\Restyle\LayoutMath.cs" Link="Linked\LayoutMath.cs" />
     <Compile Include="..\..\src\RuneSkin\Restyle\RenderGateMath.cs" Link="Linked\RenderGateMath.cs" />
+    <Compile Include="..\..\src\RuneSkin\Compat\FadeParkMath.cs" Link="Linked\FadeParkMath.cs" />
     <Compile Include="..\..\src\RuneSkin\Restyle\WindowMoveMath.cs" Link="Linked\WindowMoveMath.cs" />
     <Compile Include="..\..\src\RuneSkin\Restyle\WindowHeaderMath.cs" Link="Linked\WindowHeaderMath.cs" />
     <Compile Include="..\..\src\RuneSkin\Restyle\MarkMath.cs" Link="Linked\MarkMath.cs" />
