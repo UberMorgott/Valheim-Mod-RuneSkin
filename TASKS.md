@@ -931,3 +931,9 @@ Pre-existing / foreign (not windows-v2):
 ## 0.24.0 (2026-10-26) - windows-v2 released
 - One RuneWindowHeader on every window (v2 rune-metal plate, Codex 8/10), per-window positions (inventory block as one), corner-cap content inset on every window, large map as one window (fixed side panel, maximize / restore, fitted map image), stats header on the painted plaque, mod-window close buttons in the header, stats Escape read first (HarmonyPriority.First).
 - Run 20261026-190758 (ui-runeskin-windows, m2, m3, stats, info, m4, 41d): every windows / header / corner / map / stats-back check PASS; corner-clear-info-CharacterStats caps=0 waived (harness n/a fix tools ba8e9ff). Pre-existing / foreign FAILs as listed in the windows-v2 section above (grid-cells-chest-large-1280x720 identical in 20261024-175034, tips-*, icon-alpha VT_Fox_head (Vaettir), m4-bar-caps, m4-maphint-inset, overdraw-*). Bundle 016DBA6F.
+
+## Integrated action header (2026-10-27, feat-header-buttons-b) - variant A plinth, buttons variant B
+- User: header buttons lay pasted over the plate's right knot. Approved mockup docs/mockups/header-buttons/integrated/plinth-1x.png.
+- RuneWindowHeader.Actions(n): plate swaps to header_plaque_open and ends under plinth_cap_left (terminal), one plinth_cell per action, plinth_cap_right = header end cap (WindowHeaderMath.PlinthLayout, tests); player grid header places its ActionBar in PlinthRow (role action.button.header = button_hdr_* + GlyphStates: hover / pressed glyph cyan, pressed sinks).
+- Glyphs variant B: glyph_act_sort (redrawn), glyph_act_sort_mode (MorgottTweaks sort.mode now passes glyph.action.sort_mode), glyph_act_layout.
+- Offline compare at 1x vs mockup: Codex 7 -> 8/10 (final-compare-*.png). In-game: ui-runeskin-m2 -Checks inv-header-plinth (harness 5c9e167) + visual check pending (lead token).

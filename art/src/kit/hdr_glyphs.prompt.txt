@@ -1,0 +1,5 @@
+Icon mask sheet for a game UI. Look first at E:\DEV\Valheim\RuneSkin\docs\mockups\header-buttons\sheet-b.png (top row): the three icons drawn as silver inlay on the buttons are the target shapes.
+Output ONE image 1536x1024, pure black #000000 background. Three icons in pure flat WHITE (#FFFFFF, no gradient, no texture, no shading, no outline, no glow), each centred in its third of the image, each about 360x360 px, with at least 80 px of black around each. Bold, chunky, readable at 20 px: thick strokes (about 40 px), gaps between parts at least 30 px wide.
+1 SORT: three horizontal bars stacked, decreasing length top to bottom (full, 3/4, 1/2 width, rounded square ends), with a solid downward-pointing triangle beside the lowest bar on the right.
+2 SORT MODE: two thick curved arrows forming a circle (clockwise, arrowheads at about 1 o'clock and 7 o'clock), with a small solid triquetra knot in the centre clearly separated from the arrows.
+3 RESET LAYOUT: four thick L-shaped corner brackets at the corners of a square, opening inward, around a solid centre square, all separated by clear gaps.

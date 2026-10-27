@@ -552,6 +552,204 @@
       "notes": "window header plate 620x86 (RuneWindowHeader on every window): v2 dark rune-metal (mockup bottom-hud-center-v2), knotwork end blocks with teal triquetra gems (fixed 230 px borders), thin teal inlay along both rails, flat dark centre field (x 232..388 column-identical, stretched), title text_header; Codex image edit of the old ctrl2 plaque, prompt header_plaque_v2.prompt.txt"
     },
     {
+      "name": "header_plaque_open",
+      "file": "header_plaque_open.png",
+      "size": [
+        620,
+        86
+      ],
+      "border": {
+        "left": 230,
+        "bottom": 24,
+        "right": 24,
+        "top": 24
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Tiled",
+      "fillCenter": true,
+      "token": "plaque.header.open",
+      "notes": "header_plaque with an OPEN right end (integrated action header, variant A plinth, user 2026-10-27): left knot block identical, the right knot block + end cap replaced by the plain rail columns (clone of x 464..776), so the plate runs under plinth_cap_left whose terminal ends the knot; RuneWindowHeader swaps it in while the window has header actions"
+    },
+    {
+      "name": "plinth_cap_left",
+      "file": "plinth_cap_left.png",
+      "size": [
+        222,
+        104
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "plinth.cap.left",
+      "notes": "action plinth left cap (variant A): plain strip rails (sheet strip y 218..421 = the plate height; plinth y 190..451, height share 1.29), short mirrored knot ending in a carved terminal with a cyan triquetra, the plinth's left wall up to half a mullion; the plate runs under its left share.win.plinth.join (alpha fade 70 px = its plain strip part, so the plate rails show through); stone graded to header_plaque_v2 (field #101518)"
+    },
+    {
+      "name": "plinth_cell",
+      "file": "plinth_cell.png",
+      "size": [
+        90,
+        104
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "plinth.cell",
+      "notes": "action plinth cell, one per header action: half mullion, recessed square socket (inner 182/261 of the height = the button), half mullion; cells repeat seamlessly (cut mullion centre to mullion centre)"
+    },
+    {
+      "name": "plinth_cap_right",
+      "file": "plinth_cap_right.png",
+      "size": [
+        36,
+        104
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "plinth.cap.right",
+      "notes": "action plinth right cap = the header's right end cap (half mullion + knot column with a cyan triquetra)"
+    },
+    {
+      "name": "button_hdr_normal",
+      "file": "button_hdr_normal.png",
+      "size": [
+        84,
+        80
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "button.header.normal",
+      "notes": "header action button (approved variant B, sheet-b.png row 1) frame only: leather straps top-left / bottom-right, triquetra gems, empty glass face; glyph separate (glyph_act_*, tint color.action.glyph)"
+    },
+    {
+      "name": "button_hdr_hover",
+      "file": "button_hdr_hover.png",
+      "size": [
+        84,
+        80
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "button.header.hover",
+      "notes": "header action button hover: cyan inner rim; glyph tint color.action.glyph.hover (GlyphStates)"
+    },
+    {
+      "name": "button_hdr_pressed",
+      "file": "button_hdr_pressed.png",
+      "size": [
+        84,
+        80
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "button.header.pressed",
+      "notes": "header action button pressed: darker inset face, cyan rim; glyph cyan + share.action.glyph.pressed"
+    },
+    {
+      "name": "glyph_act_sort_mode",
+      "file": "glyph_act_sort_mode.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.action.sort_mode",
+      "notes": "panel action: sort mode cycle (two circular arrows around a triquetra, variant B); white mask, tint color.action.glyph"
+    },
+    {
+      "name": "glyph_act_layout",
+      "file": "glyph_act_layout.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "glyph.action.layout",
+      "notes": "panel action: reset window layout (four inward corner brackets around a centre square, variant B); white mask"
+    },
+    {
       "name": "knot",
       "file": "knot.png",
       "size": [

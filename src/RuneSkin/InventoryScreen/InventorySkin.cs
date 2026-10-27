@@ -758,9 +758,27 @@ namespace RuneSkin.InventoryScreen
             head.Text("$runeskin_win_inventory");
             var k = _input.SkinScale;
             var size = Mathf.Min(_tokens.FooterH * k * 0.8f, band.H);
-            var actionsW = Bar(_gui.m_player, PanelKind.Player, Player.m_localPlayer.GetInventory(), null, null, default, size);
-            head.Place(_canvas, band, null, actionsW);
-            Bar(_gui.m_player, PanelKind.Player, Player.m_localPlayer.GetInventory(), null, null, head.AuxBox, size);
+            var inv = Player.m_localPlayer.GetInventory();
+            Bar(_gui.m_player, PanelKind.Player, inv, null, null, default, size);
+            // The actions sit in the header's stone plinth (integrated header variant A, user 2026-10-27: buttons pasted
+            // over the plate's right knot looked stuck on): the plate's knot ends in the plinth's terminal, one plinth
+            // cell per action, the variant-B button art in each.
+            var bar = _bars[_gui.m_player];
+            head.Actions(bar.Count);
+            head.Place(_canvas, band, null, 0f);
+            if (head.PlinthRow(_canvas, out var row, out var bs, out var gap))
+            {
+                bar.ButtonRole(ActionBar.HeaderRole); // no-op once set (Codex review: no per-frame role flip)
+                Bar(_gui.m_player, PanelKind.Player, inv, null, null, row, bs, gap);
+            }
+            else
+            {
+                // No plinth art (theme without it): the old aux-slot row.
+                bar.ButtonRole(ActionBar.DefaultRole);
+                head.Actions(0);
+                head.Place(_canvas, band, null, bar.Width(size, _tokens.Gap / 2f));
+                Bar(_gui.m_player, PanelKind.Player, inv, null, null, head.AuxBox, size);
+            }
         }
 
         // Doll window header band (m_info): the character name in the window header on top, the info tabs (texts, skills,
@@ -1847,15 +1865,16 @@ namespace RuneSkin.InventoryScreen
 
         // ---------------------------------------------------------------- actions
 
-        private float Bar(RectTransform panel, PanelKind kind, Inventory inventory, Button takeAll, Button stackAll, Box box, float size = 0f)
+        private float Bar(RectTransform panel, PanelKind kind, Inventory inventory, Button takeAll, Button stackAll, Box box, float size = 0f, float gap = -1f)
         {
             if (!panel) return 0f;
             if (!_bars.TryGetValue(panel, out var bar) || bar == null)
                 _bars[panel] = bar = new ActionBar(panel, kind, _tooltipPrefab);
             bar.Sync(kind, inventory, takeAll, stackAll);
             if (!(size > 0f)) size = _tokens.FooterH * _input.SkinScale * 0.8f;
-            var w = bar.Width(size, _tokens.Gap / 2f);
-            if (!box.IsEmpty) bar.Place(_canvas, box, size, _tokens.Gap / 2f);
+            if (!(gap >= 0f)) gap = _tokens.Gap / 2f;
+            var w = bar.Width(size, gap);
+            if (!box.IsEmpty) bar.Place(_canvas, box, size, gap);
             return w;
         }
 

@@ -373,7 +373,22 @@ namespace RuneSkin.Restyle
             // frame. Header-local units.
             FrameLocal(rt, out var fl, out var fr, out var ft);
             WindowHeaderMath.PlateInFrame(plateInset, titleLeft, titleRight, fl, fr, out var pl, out var pr, out var tl, out var tr);
-            if (Plate) Inside(Plate.rectTransform, pl, pr, ft, 0f);
+            var plinth = ArrangePlinth(r.width, r.height - ft, pr);
+            if (!plinth.IsEmpty)
+            {
+                // The plate ends under the plinth's left cap (its right knot replaced by the cap's terminal); the title
+                // stays centred and clear of the plinth.
+                pr = Mathf.Max(pr, r.width - plinth.PlateEnd);
+                var clear = WindowHeaderMath.TitleClearOfPlinth(r.width, plinth, r.height * WindowHeaderMath.GapShare);
+                tl = Mathf.Max(tl, clear);
+                tr = Mathf.Max(tr, clear);
+            }
+            if (Plate)
+            {
+                var plateSprite = ThemeTokens.GetSprite(plinth.IsEmpty ? "sprite.plaque.header" : "sprite.plaque.header.open") ?? ThemeTokens.GetSprite("sprite.plaque.header");
+                if (plateSprite && Plate.sprite != plateSprite) Plate.sprite = plateSprite;
+                Inside(Plate.rectTransform, pl, pr, ft, 0f);
+            }
             if (_auxShare > 0f)
             {
                 var s = r.height * WindowHeaderMath.IconShare;
@@ -405,6 +420,93 @@ namespace RuneSkin.Restyle
             Inside(Title.rectTransform, tl, tr, ft, 0f);
             if (Mathf.Abs(Title.fontSize - want) > 0.05f) Title.fontSize = want;
             _ = _iconShare;
+        }
+
+        // ---------------------------------------------------------------- action plinth
+
+        // Action buttons the window shows in its header (0 = none): the plate's right knot then ends in the plinth's
+        // left-cap terminal and the plinth holds one cell per action (integrated header variant A, user 2026-10-27).
+        public int PlinthCells { get; private set; }
+        public WindowHeaderMath.Plinth PlinthLocal { get; private set; }
+        private Image _capLeft, _capRight;
+        private readonly System.Collections.Generic.List<Image> _cells = new System.Collections.Generic.List<Image>();
+
+        public RuneWindowHeader Actions(int count)
+        {
+            PlinthCells = Mathf.Max(0, count);
+            return this;
+        }
+
+        private static float Aspect(Image img) =>
+            img && img.sprite && img.sprite.rect.height > 0f ? img.sprite.rect.width / img.sprite.rect.height : 0f;
+
+        // Plinth pieces in the face (after the plate, under the title and the window's buttons); local units, origin = the
+        // header rect's lower-left corner, plate = [0, h) high, right edge `width - plateRight`.
+        private WindowHeaderMath.Plinth ArrangePlinth(float width, float plateH, float plateRight)
+        {
+            var want = PlinthCells;
+            if (want > 0 && _face && !_capLeft)
+            {
+                _capLeft = PlinthPiece("RuneSkinPlinthCapL", "decor.plinth.cap.left");
+                _capRight = PlinthPiece("RuneSkinPlinthCapR", "decor.plinth.cap.right");
+            }
+            while (want > _cells.Count && _face) _cells.Add(PlinthPiece("RuneSkinPlinthCell" + _cells.Count, "decor.plinth.cell"));
+            var p = want > 0 && _capLeft && _capRight && _cells.Count > 0 && _capLeft.sprite && _capRight.sprite && _cells[0].sprite
+                ? WindowHeaderMath.PlinthLayout(width - plateRight, 0f, plateH, want,
+                    ThemeTokens.GetFloat("share.win.plinth.height", 1.29f), Aspect(_capLeft), Aspect(_cells[0]), Aspect(_capRight),
+                    ThemeTokens.GetFloat("share.win.plinth.button", 0.8f), ThemeTokens.GetFloat("share.win.plinth.join", 0.3f))
+                : default;
+            PlinthLocal = p;
+            Show(_capLeft, !p.IsEmpty, p.CapLeftX, p.Y, p.CapLeftW, p.H);
+            Show(_capRight, !p.IsEmpty, p.CapRightX, p.Y, p.CapRightW, p.H);
+            for (var i = 0; i < _cells.Count; i++) Show(_cells[i], !p.IsEmpty && i < p.Cells, p.CellX(i), p.Y, p.CellW, p.H);
+            if (_face && _capLeft && Title && Title.transform.parent == _face) Title.transform.SetAsLastSibling();
+            return p;
+        }
+
+        private Image PlinthPiece(string name, string role)
+        {
+            var img = new GameObject(name, typeof(RectTransform)).AddComponent<Image>();
+            img.rectTransform.SetParent(_face, false);
+            img.raycastTarget = false;
+            var m = DollCell.Mark(img, role, "window header action plinth (RuneWindowHeader)");
+            m.Outcome = Restyler.Apply(img, m, ThemeTokens.Role(role)) ? Outcome.Styled : Outcome.Degraded;
+            img.enabled = false;
+            if (Plate) img.transform.SetSiblingIndex(Plate.transform.GetSiblingIndex() + 1 + _cells.Count + (_capLeft ? 1 : 0));
+            return img;
+        }
+
+        private static void Show(Image img, bool on, float x, float y, float w, float h)
+        {
+            if (!img) return;
+            if (img.enabled != on) img.enabled = on;
+            if (!on) return;
+            var rt = img.rectTransform;
+            if (rt.anchorMin != Vector2.zero) rt.anchorMin = Vector2.zero;
+            if (rt.anchorMax != Vector2.zero) rt.anchorMax = Vector2.zero;
+            if (rt.pivot != Vector2.zero) rt.pivot = Vector2.zero;
+            var pos = new Vector2(x, y);
+            if ((rt.anchoredPosition - pos).sqrMagnitude > 0.0001f) rt.anchoredPosition = pos;
+            var size = new Vector2(w, h);
+            if ((rt.sizeDelta - size).sqrMagnitude > 0.0001f) rt.sizeDelta = size;
+            if (rt.localScale != Vector3.one) rt.localScale = Vector3.one;
+        }
+
+        // The plinth's button row in canvas units (first button's left to the last's right, button size, gap between
+        // buttons), for the owner's action bar. False without a laid-out plinth.
+        public bool PlinthRow(RectTransform canvas, out Box row, out float size, out float gap)
+        {
+            row = default;
+            size = gap = 0f;
+            var p = PlinthLocal;
+            if (p.IsEmpty || !canvas || _cells.Count == 0 || !_cells[0] || !_cells[0].enabled || !(p.CellW > 0f)) return false;
+            var cell = Geo.BoxOf(canvas, _cells[0].rectTransform);
+            var k = cell.W / p.CellW;
+            if (!(k > 0f)) return false;
+            size = p.Button * k;
+            gap = (p.CellW - p.Button) * k;
+            row = new Box(cell.X + (cell.W - size) / 2f, cell.Y + (cell.H - size) / 2f, p.Cells * size + (p.Cells - 1) * gap, size);
+            return true;
         }
 
         // Face on the band's rect (same parent), drawn right after the window's panel stack.

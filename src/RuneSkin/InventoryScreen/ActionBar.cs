@@ -20,6 +20,75 @@ namespace RuneSkin.InventoryScreen
             public Button Button;
             public InventoryRegistry.Action Action; // null = vanilla button
             public int Order;
+            public Image Background, Glyph; // own buttons only
+        }
+
+        // Button art of the own buttons: "action.button" (panel action rows), "action.button.header" (the buttons sit in
+        // a window header's plinth: variant-B frame states + per-state glyph tint, GlyphStates).
+        private string _buttonRole = DefaultRole;
+        public const string DefaultRole = "action.button", HeaderRole = "action.button.header";
+
+        public void ButtonRole(string role)
+        {
+            if (string.IsNullOrEmpty(role) || !ThemeTokens.HasRole(role)) role = DefaultRole;
+            if (role == _buttonRole) return;
+            _buttonRole = role;
+            foreach (var e in _own)
+            {
+                if (!e.Background) continue;
+                var mark = DollCell.Mark(e.Background, role, "registered panel action button");
+                mark.Outcome = Restyler.Apply(e.Background, mark, ThemeTokens.Role(role)) ? Outcome.Styled : Outcome.Degraded;
+                Header(e);
+            }
+        }
+
+        private void Header(Entry e)
+        {
+            if (!e.Rect || !e.Glyph) return;
+            var states = e.Rect.GetComponent<GlyphStates>();
+            if (_buttonRole == HeaderRole)
+            {
+                if (!states) states = e.Rect.gameObject.AddComponent<GlyphStates>();
+                states.Glyph = e.Glyph;
+                states.enabled = true;
+                states.Apply();
+                GlyphBox(e.Glyph, ThemeTokens.GetFloat("share.action.glyph.header", 0.56f)); // inside the variant-B glass face
+            }
+            else if (states)
+            {
+                states.enabled = false;
+                var mark = e.Glyph.GetComponent<SkinMark>();
+                if (mark) mark.Outcome = Restyler.Apply(e.Glyph, mark, ThemeTokens.Role(mark.Role)) ? Outcome.Styled : Outcome.Degraded;
+                e.Glyph.rectTransform.localScale = Vector3.one;
+                GlyphBox(e.Glyph, DefaultGlyphShare);
+            }
+        }
+
+        private const float DefaultGlyphShare = 0.64f;
+
+        // Glyph rect = the centred `share` of its button.
+        private static void GlyphBox(Image glyph, float share)
+        {
+            var rt = glyph.rectTransform;
+            var lo = (1f - Mathf.Clamp01(share)) / 2f;
+            var min = new Vector2(lo, lo);
+            var max = new Vector2(1f - lo, 1f - lo);
+            if (rt.anchorMin != min) rt.anchorMin = min;
+            if (rt.anchorMax != max) rt.anchorMax = max;
+            if (rt.offsetMin != Vector2.zero) rt.offsetMin = Vector2.zero;
+            if (rt.offsetMax != Vector2.zero) rt.offsetMax = Vector2.zero;
+        }
+
+        // Shown buttons.
+        public int Count
+        {
+            get
+            {
+                var n = 0;
+                foreach (var e in _entries)
+                    if (e.Rect && e.Rect.gameObject.activeSelf) n++;
+                return n;
+            }
         }
 
         private readonly RectTransform _panel;
@@ -77,19 +146,21 @@ namespace RuneSkin.InventoryScreen
             rt.SetParent(_panel, false);
             rt.pivot = new Vector2(0.5f, 0.5f);
             var bg = go.AddComponent<Image>();
-            var mark = DollCell.Mark(bg, "action.button", "registered panel action button");
-            mark.Outcome = Restyler.Apply(bg, mark, ThemeTokens.Role("action.button")) ? Outcome.Styled : Outcome.Degraded;
+            // Button first: the role's sprite states (hover / pressed) bind only to a Selectable whose target is this image.
             var button = go.AddComponent<Button>();
             button.targetGraphic = bg;
+            var mark = DollCell.Mark(bg, _buttonRole, "registered panel action button");
+            mark.Outcome = Restyler.Apply(bg, mark, ThemeTokens.Role(_buttonRole)) ? Outcome.Styled : Outcome.Degraded;
             var glyphRole = !string.IsNullOrEmpty(a.D.GlyphToken) && ThemeTokens.HasRole(a.D.GlyphToken) ? a.D.GlyphToken : "glyph.action.generic";
-            AddGlyph(rt, glyphRole, a.D.Glyph ? a.D.Glyph : (a.D.GlyphToken != null ? ThemeTokens.GetSprite(a.D.GlyphToken) : null));
+            var glyph = AddGlyph(rt, glyphRole, a.D.Glyph ? a.D.Glyph : (a.D.GlyphToken != null ? ThemeTokens.GetSprite(a.D.GlyphToken) : null));
             Tooltip(go, SlotNames.Get(a.D.TooltipKey ?? a.D.Id));
-            var entry = new Entry { Rect = rt, Button = button, Action = a, Order = a.D.Order };
+            var entry = new Entry { Rect = rt, Button = button, Action = a, Order = a.D.Order, Background = bg, Glyph = glyph };
+            Header(entry);
             button.onClick.AddListener(() => Invoke(entry));
             return entry;
         }
 
-        private static void AddGlyph(RectTransform parent, string role, Sprite sprite)
+        private static Image AddGlyph(RectTransform parent, string role, Sprite sprite)
         {
             var image = new GameObject("RuneSkinGlyph", typeof(RectTransform)).AddComponent<Image>();
             var rt = image.rectTransform;
@@ -103,6 +174,7 @@ namespace RuneSkin.InventoryScreen
             mark.Outcome = Restyler.Apply(image, mark, ThemeTokens.Role(role)) ? Outcome.Styled : Outcome.Degraded;
             if (sprite) { image.sprite = sprite; mark.Outcome = Outcome.Styled; }
             image.enabled = image.sprite;
+            return image;
         }
 
         private void Tooltip(GameObject go, string topic)
@@ -155,6 +227,8 @@ namespace RuneSkin.InventoryScreen
                     var tip = e.Rect.GetComponent<UITooltip>();
                     var reason = enabled || a.D.DisabledReasonFor == null ? "" : InventoryRegistry.Guard(a, a.D.DisabledReasonFor, inv, "") ?? "";
                     if (tip) tip.m_text = reason;
+                    var states = e.Rect.GetComponent<GlyphStates>();
+                    if (states && states.enabled) states.Apply(); // disabled = normal glyph at once (Codex review)
                 }
                 if (!keysAllowed || consumed || !enabled || string.IsNullOrEmpty(a.D.InputButton)) continue;
                 if (ZInput.GetButtonDown(a.D.InputButton))

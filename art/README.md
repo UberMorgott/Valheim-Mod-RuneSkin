@@ -31,7 +31,7 @@ Review aids (not part of the build, output in `art/review/`, git-ignored):
 
 Every sprite pixel comes from Codex image gen (`cx.ps1 -NoSession -Img "<prompt>" -To <file>`), prompts kept next to
 the sheets as `src/kit/*.prompt.txt`. The Go tool is mechanical only: crop, magenta / luminance key, resize,
-9-slice assembly (corners kept, mid segments made periodic by cross-fade for Tiled), mirror, tone/leather grading, magenta-spill fixes (`despill`, `flatEnds`), `bold` (alpha max-filter), `fadeV`, `hole` (ring hole -> mask),
+9-slice assembly (corners kept, mid segments made periodic by cross-fade for Tiled), mirror, tone/leather/stone grading (`stone` [gray, bright, glow]: only low-chroma stone, cyan glow keeps its hue), magenta-spill fixes (`despill`, `flatEnds`), `bold` (alpha max-filter), `fadeV`, `hole` (ring hole -> mask),
 alpha fades, transparent bar windows. New art = new kit sheet + `cuts.json` entry, never drawn in code.
 Style targets and palette: `STYLE.md`.
 
@@ -220,3 +220,15 @@ from B. Codex final: 10 of 10 groups 8/10 (tab_* redraw kept out of scope: share
 - Hamingja bleed-out: popup + ember serif title + `bar_frame_action` + `bar_fill` tint #8f989f (worn silver) + timer; surrender
   `button_normal` "[E] ..." only when Hamingja offers it. Ally markers: `plate_marker` (name, distance / timer, slim
   `bar_skill_trough`/`bar_skill_fill`), off-screen = `arrow_marker` (points left; flip/rotate) on the edge side; downed = `glyph_death`.
+## Integrated action header (2026-10-27, variant A plinth)
+
+- Kit `hdr_plinth.png` (+ prompt): `plinth_cap_left` (plain strip rails, short knot, carved triquetra terminal, plinth wall),
+  `plinth_cell` (one per header action, mullion centre to mullion centre, socket inner 182/261 of the height),
+  `plinth_cap_right` (= the header's right end cap), `button_hdr_normal/hover/pressed` (approved variant B frame, no glyph).
+  Sheet strip y 218..421 = plate height, plinth y 190..451: height share 1.29 (`share.win.plinth.height`).
+  Stone graded to header_plaque_v2 (`stone` [0.7, 0.62, 0.72] plinth, [0.6, 0.7] buttons).
+- `header_plaque_open` = header_plaque_v2 with the right knot block + end cap replaced by the plain rail columns (`clone`):
+  RuneWindowHeader swaps it in while the window has header actions; the plate ends under the left cap's faded strip part
+  (`share.win.plinth.join`).
+- Kit `hdr_glyphs.png`: `glyph_act_sort` (now variant B: bars + down triangle), `glyph_act_sort_mode`, `glyph_act_layout`.
+- Review: mockups + final compare in `docs/mockups/header-buttons/integrated/` (Codex 8/10 at 1x).

@@ -145,6 +145,50 @@ namespace RuneSkin.Restyle
             fontSize = h * FontShare;
         }
 
+        // Header action plinth (integrated variant A, user 2026-10-27: the buttons lay pasted over the plate's right knot):
+        // the plate's knot ends in a carved terminal (left cap), a raised stone plinth holds one cell per action, the
+        // header's right end cap closes it. Header-local units (x right, y up); every piece keeps its sprite aspect at the
+        // plinth height (heightShare x the plate height, centred on the plate). The plate ends under the left cap's strip
+        // part (joinShare of its width), so no plate knot or end cap runs under a button.
+        public readonly struct Plinth
+        {
+            public readonly float CapLeftX, CapLeftW, CellsX, CellW, CapRightX, CapRightW, Y, H, Button, PlateEnd;
+            public readonly int Cells;
+
+            public Plinth(float capLeftX, float capLeftW, float cellsX, float cellW, int cells, float capRightX, float capRightW, float y, float h, float button, float plateEnd)
+            {
+                CapLeftX = capLeftX; CapLeftW = capLeftW; CellsX = cellsX; CellW = cellW; Cells = cells; CapRightX = capRightX;
+                CapRightW = capRightW; Y = y; H = h; Button = button; PlateEnd = plateEnd;
+            }
+
+            public bool IsEmpty => Cells <= 0 || !(H > 0f);
+            public float CellX(int i) => CellsX + i * CellW;
+            // Button rect of cell i: square, centred in the cell (x, y = lower-left corner).
+            public float ButtonX(int i) => CellX(i) + (CellW - Button) / 2f;
+            public float ButtonY => Y + (H - Button) / 2f;
+            public float Width => CapLeftW + Cells * CellW + CapRightW;
+        }
+
+        public static Plinth PlinthLayout(float plateRight, float plateBottom, float plateH, int cells, float heightShare,
+            float capLeftAspect, float cellAspect, float capRightAspect, float buttonShare, float joinShare)
+        {
+            if (cells <= 0 || !(plateH > 0f) || !(heightShare > 0f)) return default;
+            var h = plateH * heightShare;
+            var capR = Math.Max(0f, capRightAspect) * h;
+            var cell = Math.Max(0f, cellAspect) * h;
+            var capL = Math.Max(0f, capLeftAspect) * h;
+            var capRx = plateRight - capR;
+            var cellsX = capRx - cells * cell;
+            var capLx = cellsX - capL;
+            var y = plateBottom + (plateH - h) / 2f;
+            var button = Math.Min(cell, h) * Math.Max(0f, Math.Min(1f, buttonShare));
+            var plateEnd = capLx + capL * Math.Max(0f, Math.Min(1f, joinShare));
+            return new Plinth(capLx, capL, cellsX, cell, cells, capRx, capR, y, h, button, plateEnd);
+        }
+
+        // Title inset that keeps a centred title clear of the plinth (symmetric, so the title centre stays the band centre).
+        public static float TitleClearOfPlinth(float width, Plinth p, float gap) => p.IsEmpty ? 0f : Math.Max(0f, width - p.CapLeftX + gap);
+
         // Offset during a drag: the offset at drag start plus the pointer travel (screen px, y up) in canvas units (y down).
         public static void DragOffset(float startDx, float startDy, float fromX, float fromY, float toX, float toY, float scale, out float dx, out float dy)
         {

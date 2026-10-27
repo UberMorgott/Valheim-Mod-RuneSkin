@@ -172,5 +172,43 @@ namespace RuneSkin.Tests
             Assert.Equal("Merchant Panel", ForeignMath.WindowTitle("EpicLoot.Adventure.MerchantPanel", "x"));
             Assert.Equal("mod.id", ForeignMath.WindowTitle("", "mod.id"));
         }
+
+        // Integrated action header (variant A plinth, 2026-10-27): right cap flush with the plate's right edge, one cell
+        // per action leftwards, the left cap before them; the plate ends under the left cap; buttons centred in cells.
+        [Fact]
+        public void Plinth_RightAlignedCellsAndPlateEndsUnderTheLeftCap()
+        {
+            var p = WindowHeaderMath.PlinthLayout(400f, 0f, 30f, 3, 1.3f, 2f, 0.9f, 0.4f, 0.8f, 0.3f);
+            Assert.False(p.IsEmpty);
+            Assert.Equal(39f, p.H, 3);
+            Assert.Equal(-4.5f, p.Y, 3); // centred on the plate: protrudes evenly above and below
+            Assert.Equal(400f, p.CapRightX + p.CapRightW, 3);
+            Assert.Equal(p.CapRightX, p.CellX(3), 3);
+            Assert.Equal(p.CellsX, p.CapLeftX + p.CapLeftW, 3);
+            Assert.Equal(0.9f * 39f, p.CellW, 3);
+            Assert.Equal(p.CapLeftX + 0.3f * p.CapLeftW, p.PlateEnd, 3);
+            Assert.True(p.PlateEnd < p.CellsX); // no plate under a button
+            Assert.Equal(0.8f * p.CellW, p.Button, 3);
+            Assert.Equal(p.CellX(1) + (p.CellW - p.Button) / 2f, p.ButtonX(1), 3);
+            Assert.Equal(p.Y + (p.H - p.Button) / 2f, p.ButtonY, 3);
+            Assert.Equal(p.CapLeftW + 3 * p.CellW + p.CapRightW, p.Width, 3);
+        }
+
+        [Fact]
+        public void Plinth_EmptyWithoutActionsOrPlate()
+        {
+            Assert.True(WindowHeaderMath.PlinthLayout(400f, 0f, 30f, 0, 1.3f, 2f, 0.9f, 0.4f, 0.8f, 0.3f).IsEmpty);
+            Assert.True(WindowHeaderMath.PlinthLayout(400f, 0f, 0f, 3, 1.3f, 2f, 0.9f, 0.4f, 0.8f, 0.3f).IsEmpty);
+            Assert.Equal(0f, WindowHeaderMath.TitleClearOfPlinth(400f, default, 5f));
+        }
+
+        [Fact]
+        public void Plinth_TitleClearsTheWholePlinth()
+        {
+            var p = WindowHeaderMath.PlinthLayout(390f, 0f, 30f, 2, 1.3f, 2f, 0.9f, 0.4f, 0.8f, 0.3f);
+            var inset = WindowHeaderMath.TitleClearOfPlinth(400f, p, 6f);
+            Assert.Equal(400f - p.CapLeftX + 6f, inset, 3);
+            Assert.True(400f - inset < p.CapLeftX); // title right edge left of the plinth
+        }
     }
 }

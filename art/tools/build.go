@@ -57,6 +57,7 @@ type Cut struct {
 	// ClearWindow: output rect made transparent except leather (bar windows: fill shows through, strap stays on top)
 	ClearWindow []int        `json:"clearWindow,omitempty"`
 	Leather     [2]float64   `json:"leather,omitempty"`     // leather-only grade: saturation keep, brightness
+	Stone       [3]float64   `json:"stone,omitempty"`       // stone-only grade: desaturate amount, brightness, glow brightness (0 = 1); cyan glow (high chroma) keeps its hue, leather (r > b) untouched
 	Fade        [2]int       `json:"fade,omitempty"`        // alpha ramp at the left/right ends (px)
 	FadeV       [2]int       `json:"fadeV,omitempty"`       // alpha ramp at the top/bottom ends (px)
 	Flip        string       `json:"flip,omitempty"`        // mirror the crop: h | v | hv
@@ -306,8 +307,35 @@ func renderCut(c Cut) *image.NRGBA {
 	if c.Norm {
 		normAlpha(img)
 	}
+	if c.Stone[1] > 0 {
+		stoneGrade(img, c.Stone[0], c.Stone[1], c.Stone[2])
+	}
 	adjust(img, c.Alpha, c.Gray, c.Bright)
 	return img
+}
+
+// stoneGrade desaturates and darkens the stone of a sheet painted lighter / more teal than the kit it joins: weight 1 on
+// low-chroma pixels, fading to 0 between chroma 40 and 90 (the cyan rune glow keeps its hue, dimmed by glow); warm pixels
+// (leather, r > b) are left alone.
+func stoneGrade(img *image.NRGBA, gray, bright, glow float64) {
+	if glow == 0 {
+		glow = 1
+	}
+	for i := 0; i < len(img.Pix); i += 4 {
+		r, g, b := float64(img.Pix[i]), float64(img.Pix[i+1]), float64(img.Pix[i+2])
+		if r > b+4 {
+			continue
+		}
+		mx := math.Max(r, math.Max(g, b))
+		mn := math.Min(r, math.Min(g, b))
+		w := 1 - math.Max(0, math.Min(1, (mx-mn-40)/50))
+		l := 0.2126*r + 0.7152*g + 0.0722*b
+		k := 1 + (bright-1)*w + (glow-1)*(1-w)
+		gw := gray * w
+		img.Pix[i] = uint8(math.Max(0, math.Min(255, (r+(l-r)*gw)*k)))
+		img.Pix[i+1] = uint8(math.Max(0, math.Min(255, (g+(l-g)*gw)*k)))
+		img.Pix[i+2] = uint8(math.Max(0, math.Min(255, (b+(l-b)*gw)*k)))
+	}
 }
 
 // sectorMask clears every pixel outside pie sector index of count around the image centre (angles clockwise from
