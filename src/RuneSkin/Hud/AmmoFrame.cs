@@ -154,6 +154,9 @@ namespace RuneSkin.PlayerHud
             _icon = _art.Image("Icon", _rt, null, "color.frame", Image.Type.Simple);
             _icon.preserveAspect = true;
             _plate = _art.Image("Plate", _rt, "sprite.hud.ammo.plate", "color.frame", Image.Type.Sliced);
+            // Sliced ends at the sprite's authored density: 576 px = 144 units (4 px a unit); at 200 PPU a sprite px is
+            // 0.5 / scale units (HudArt.Track), so scale 0.5 (scale 1 drew the knotwork ends twice as wide).
+            _art.Track(_plate, 0.5f);
             _plateRt = _plate.rectTransform;
             _name = _art.Text("Name", _plateRt, "font.body.bold", "color.hud.text", F("size.hud.ammo.name", 10f), TextAlignmentOptions.Left);
             _name.overflowMode = TextOverflowModes.Ellipsis;
