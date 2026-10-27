@@ -485,6 +485,7 @@ namespace RuneSkin.InventoryScreen
                 h = h * 31 + (c != null ? c.GetHashCode() ^ (c.GetWidth() * 101 + c.GetHeight()) : 0);
                 h = h * 31 + (ContainerIsBackpack() ? 7 : 0);
                 h = h * 31 + (_packInventory != null ? _packInventory.GetHashCode() ^ (_packInventory.GetWidth() * 101 + _packInventory.GetHeight()) : 0);
+                h = h * 31 + _packHeaderNeed.GetHashCode();
                 DollSideCounts(out var dl, out var dr);
                 h = h * 31 + dl * 97 + dr;
                 h = h * 31 + SidePlateCount();
@@ -571,6 +572,7 @@ namespace RuneSkin.InventoryScreen
             i.ChestH = chest?.GetHeight() ?? 0;
             i.BackpackW = pack?.GetWidth() ?? 0;
             i.BackpackH = pack?.GetHeight() ?? 0;
+            i.BackpackHeaderW = pack != null ? _packHeaderNeed : 0f;
             DollSideCounts(out i.DollLeft, out i.DollRight);
             i.SidePlates = SidePlateCount();
             ReadTokens();
@@ -1059,7 +1061,18 @@ namespace RuneSkin.InventoryScreen
             else head.Fallback(fallback).Text(fallback);
             var hh = Mathf.Min(WindowHeaderMath.HeaderHeight(ThemeTokens.GetFloat("size.win.header", 40f), k), row.H);
             head.Place(_canvas, new Box(row.X, row.Y, row.W, hh), glyph && glyph.enabled ? glyph : null); // top-aligned (name row too)
+            // The backpack window is as wide as its header needs for the full title (next layout, InputHash): the AB names
+            // ("Ранец Уровень 1" .. "Небывалый рюкзак исследователя Уровень 5") were cut to "Ранец Уро…" in the 3-column
+            // window (run 20261027-145423). Half-unit steps keep the layout from recomputing on float noise.
+            if (backpack)
+            {
+                var band = head.TitleBandNeed();
+                _packHeaderNeed = band > 0f ? Mathf.Ceil((band + 2f * pad) * 2f) / 2f : 0f;
+            }
         }
+
+        // Backpack window width its header needs (ArrangeContainer -> WindowsInput.BackpackHeaderW), canvas units.
+        private float _packHeaderNeed;
 
         // Panel header glyph (chest / backpack), one per panel, role swapped when the panel changes kind.
         private static Image HeaderGlyph(RectTransform panel, string role)

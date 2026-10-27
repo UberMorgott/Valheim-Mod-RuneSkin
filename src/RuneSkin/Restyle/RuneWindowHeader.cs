@@ -55,6 +55,20 @@ namespace RuneSkin.Restyle
 
         public string TitleText => Title ? Title.text : "";
 
+        // Last Arrange (header-local units): the title's width at the header's one size, the frame keep-outs; band width of
+        // the last Place (canvas units).
+        private float _natural, _keepL, _keepR, _bandW;
+
+        // Band width (canvas units) this placed header needs to show its current title in full at the fitted title size
+        // (WindowHeaderMath.BandForTitle with the keep-outs measured on it); 0 before the first placement / without a title.
+        public float TitleBandNeed()
+        {
+            var r = ((RectTransform)transform).rect;
+            if (!(_bandW > 0f) || !(r.width > 0f) || !(r.height > 0f) || !(_natural > 0f)) return 0f;
+            var need = WindowHeaderMath.BandForTitle(_natural, r.height, _hasIcon, _auxShare * r.height, _keepL, _keepR);
+            return need * _bandW / r.width;
+        }
+
         // The header's own title text (fitted by Arrange only; other text fitters keep off it).
         public static bool IsTitle(TMP_Text text) => text && text.name == TitleName && text.transform.parent && text.transform.parent.name == FaceName;
 
@@ -207,6 +221,7 @@ namespace RuneSkin.Restyle
             _hasIcon = icon;
             _iconShare = icon ? 1f : 0f;
             _auxShare = auxW > 0f && band.H > 0f ? auxW / band.H : 0f;
+            _bandW = band.W;
             Arrange();
             if (icon) Geo.Place(canvas, icon.rectTransform, IconBox);
         }
@@ -373,15 +388,19 @@ namespace RuneSkin.Restyle
             // One size on every header; only a title wider than its room steps down (never below 60 %), after the empty
             // side's centring reserve gave up what it can (WindowHeaderMath.FreeEmptySide).
             var want = fontSize;
+            _natural = 0f;
+            _keepL = fl;
+            _keepR = fr;
             if (!string.IsNullOrEmpty(Title.text))
             {
                 var at = Title.fontSize > 0.5f ? Title.fontSize : fontSize;
                 var natural = Title.GetPreferredValues(Title.text, 100000f, 100000f).x * fontSize / at;
+                _natural = natural;
                 WindowHeaderMath.FreeEmptySide(r.width, r.height, pl, pr, _hasIcon, _auxShare > 0f, natural, ref tl, ref tr);
                 var room = Mathf.Max(0f, r.width - tl - tr);
                 // a zero / negative room is still a cut title (the 3-column AB backpack before 0.25.9 had -18 units and
                 // drew at full size, unmeasured): step down whenever it does not fit
-                want = WindowHeaderMath.FitFont(fontSize, natural, room, 0.6f); // long chest names (run 20261026-182632: "Сундук из че…" at 75 %)
+                want = WindowHeaderMath.FitFont(fontSize, natural, room, WindowHeaderMath.TitleMinShare); // long chest names (run 20261026-182632: "Сундук из че…" at 75 %)
             }
             Inside(Title.rectTransform, tl, tr, ft, 0f);
             if (Mathf.Abs(Title.fontSize - want) > 0.05f) Title.fontSize = want;

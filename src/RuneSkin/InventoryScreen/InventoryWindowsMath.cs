@@ -61,6 +61,9 @@ namespace RuneSkin.InventoryScreen
         // Player grid rows shown in the window (inventory rows under the strip's hotbar row), columns = inventory width.
         public int GridW = 8, GridH = 3;
         public int ChestW, ChestH, BackpackW, BackpackH;
+        // Backpack window width its header needs for the current backpack's full title at the fitted (smallest) title size
+        // (RuneWindowHeader.TitleBandNeed + the panel pads, canvas units); 0 = not measured yet.
+        public float BackpackHeaderW;
         // Equipment cells of the doll per side (InventoryWindowsMath.DollSide: armour left, jewellery / light / mods right).
         public int DollLeft = 5, DollRight = 4;
         // Side column entries (trash, armour, weight, coins: whatever is present).
@@ -343,9 +346,11 @@ namespace RuneSkin.InventoryScreen
             if (hasPack)
             {
                 o.BackpackGrid = Grid(i.BackpackW, i.BackpackH, packRows, roomW, h, t, k);
-                // at least the backpack minimum (its weight plate's room, never past the column's room), grown leftwards:
-                // the right edge stays on the centre column, the cells centre in the wider view (ContainerGridView)
-                var w = Math.Max(ContainerW(o.BackpackGrid.VisibleColumns, h.Pitch, h.Gap, o.BackpackGrid.ScrollV, t, k), Math.Min(t.BackpackMinW * k, roomW));
+                // at least the backpack minimum (its weight plate's room) and the width its header needs for the full title
+                // (AB names up to "Небывалый рюкзак исследователя Уровень 5"), never past the column's room, grown
+                // leftwards: the right edge stays on the centre column, the cells centre in the wider view (ContainerGridView)
+                var w = Math.Max(ContainerW(o.BackpackGrid.VisibleColumns, h.Pitch, h.Gap, o.BackpackGrid.ScrollV, t, k),
+                    Math.Min(Math.Max(t.BackpackMinW * k, i.BackpackHeaderW), roomW));
                 var ph = H(o.BackpackGrid.VisibleRows);
                 o.Backpack = new Box(roomRight - w, y - ph, w, ph);
             }

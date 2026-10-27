@@ -1,5 +1,6 @@
 using System;
 using RuneSkin.InventoryScreen;
+using RuneSkin.Restyle;
 using RuneSkin.PlayerHud;
 using Xunit;
 
@@ -79,9 +80,10 @@ namespace RuneSkin.Tests
             };
         }
 
-        private static WindowsLayout Run(Screen sc, int chestW = 0, int chestH = 0, int packW = 0, int packH = 0, int gridW = 8, int gridH = 3, int doll = 9, int plates = 4, InventoryTokens t = null) =>
+        private static WindowsLayout Run(Screen sc, int chestW = 0, int chestH = 0, int packW = 0, int packH = 0, int gridW = 8, int gridH = 3, int doll = 9, int plates = 4, InventoryTokens t = null, float packHeaderW = 0f) =>
             InventoryWindowsMath.Compute(new WindowsInput
             {
+                BackpackHeaderW = packHeaderW,
                 CanvasW = sc.W / sc.S,
                 CanvasH = sc.H / sc.S,
                 PhysPerUnit = sc.S,
@@ -631,6 +633,44 @@ namespace RuneSkin.Tests
             Assert.True(Box(big1080) >= big1080, $"{Box(big1080)} < {big1080}");
             // "999.9/999" at 720p (111 units) still needs ~27 more units: ellipsis there (out of option A's scope)
             Assert.True(Box(4.623f * 24f) < 4.623f * 24f);
+        }
+
+        // AB backpack titles in full (run 20261027-145423: "Ранец Уро…" in the 316 window). Natural widths at the header size 20
+        // = Valheim Norsebold SDF TMP advances (glyph + character tables of the game font asset, point size 120; measured
+        // offline, all names "<name> <Level> 5" from AB Translations English + Russian): longest RU "Небывалый рюкзак
+        // исследователя Уровень 5" 318.5, EN "Frostbound Haversack Level 5" 206.3, shortest "Ранец Уровень 5" 114.3. Frame keep-out
+        // 82 a side, header 40 with the backpack glyph, pads 12 (run 20261027-144717: plate 128 in band 292). The window
+        // grows leftwards to the header's need, within the column at 720p and 1440p, and the title then fits at >= 60 %.
+        [Theory]
+        [InlineData(1280f, 720f, 318.5f)]
+        [InlineData(2560f, 1440f, 318.5f)]
+        [InlineData(1280f, 720f, 206.3f)]
+        [InlineData(2560f, 1440f, 206.3f)]
+        [InlineData(1280f, 720f, 114.3f)]
+        public void AbBackpackHeader_FullTitleFits(float w, float h, float natural)
+        {
+            var t = Theme();
+            const float hh = 40f, keep = 82f, pad = 12f;
+            var need = WindowHeaderMath.BandForTitle(natural, hh, true, 0f, keep, keep) + 2f * pad;
+            var sc = At(w, h);
+            foreach (var (cw, ch) in new[] { (0, 0), (8, 4) })
+            {
+                var o = Run(sc, cw, ch, 3, 1, t: t, packHeaderW: need);
+                var at = $"{w}x{h} chest {cw}x{ch} title {natural}";
+                Assert.False(o.BackpackFolded, at);
+                var roomW = o.Inventory.X - t.Gap - t.Margin;
+                Assert.True(need <= roomW + 0.01f, $"{at}: need {need} > column {roomW}"); // stop condition of the brief
+                Assert.Equal(Math.Max(need, t.BackpackMinW), o.Backpack.W, 2);
+                Assert.Equal(o.Inventory.X - t.Gap, o.Backpack.Right, 2); // grown leftwards only
+                // the header placed in that window: the title box holds the title at the fitted size
+                var band = o.Backpack.W - 2f * pad;
+                WindowHeaderMath.LocalSlots(band, hh, true, 0f, out var inset, out var l0, out var r0, out var font);
+                WindowHeaderMath.PlateInFrame(inset, l0, r0, keep, keep, out var pl, out var pr, out var tl, out var tr);
+                WindowHeaderMath.FreeEmptySide(band, hh, pl, pr, true, false, natural, ref tl, ref tr);
+                var room = band - tl - tr;
+                var size = WindowHeaderMath.FitFont(font, natural, room, WindowHeaderMath.TitleMinShare);
+                Assert.True(natural * size / font <= room + 0.01f, $"{at}: title {natural * size / font} in room {room}");
+            }
         }
 
         // The backpack minimum grows the window leftwards only: right edge on the centre column, never past the room.

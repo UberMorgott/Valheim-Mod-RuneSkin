@@ -49,8 +49,9 @@ namespace RuneSkin.Tests
 
         // AB 3-column backpack (window 316 = size.inv.backpack.min, band 316 - 2 x 12 pad = 292, header 40, frame keep-out
         // 82 a side -> plate 128 as drawn in run 20261027-144717, header glyph left, no aux): the centred title room was 8
-        // units -> '…' at 60 %. Its title ("Рюкзак" ~72 units at size 20) must keep a readable box at 720p and 1440p
-        // (canvas scale 0.667 / 1.333): >= 16 screen px wide and fitted above the 60 % floor.
+        // units -> '…' at 60 %. A short title (72 units at size 20) gets the empty side's reserve and keeps a readable box at
+        // 720p and 1440p (canvas scale 0.667 / 1.333): >= 16 screen px wide and fitted above the 60 % floor. Full AB names
+        // need a wider window: InventoryWindowsTests.AbBackpackHeader_FullTitleFits.
         [Theory]
         [InlineData(0.6667f)]
         [InlineData(1.3333f)]

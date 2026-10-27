@@ -79,6 +79,24 @@ namespace RuneSkin.Restyle
             if (!leftSlot && deficit > 0f) titleLeft -= Math.Min(deficit, Math.Max(0f, titleLeft - (plateLeft + edge)));
         }
 
+        // Smallest title size as a share of the header's one size (FitFont floor).
+        public const float TitleMinShare = 0.6f;
+
+        // Band width a header needs to show a title of `natural` width (at the header's one size) in full at the fitted
+        // size (TitleMinShare), with the frame keep-outs measured on it: the slotted side keeps its slot past the plate
+        // inset (PlateInFrame), a slotless side only its edge inset (FreeEmptySide); +1 unit against rounding.
+        public static float BandForTitle(float natural, float h, bool icon, float auxW, float keepLeft, float keepRight)
+        {
+            if (!(natural > 0f) || !(h > 0f)) return 0f;
+            var inset = h * PlateInsetShare;
+            var p = Math.Max(inset, Math.Max(keepLeft, keepRight));
+            var slotted = Math.Max(TitleSide(h, icon, auxW), p + TitleSide(h, icon, auxW) - inset);
+            var bare = p + h * (InsetShare - PlateInsetShare);
+            var left = icon ? slotted : bare;
+            var right = auxW > 0f ? slotted : bare;
+            return left + right + natural * TitleMinShare + 1f;
+        }
+
         // Title size: the header's one size, stepped down only when the title is wider than its room (never below
         // minShare of it).
         public static float FitFont(float size, float naturalWidth, float room, float minShare)
