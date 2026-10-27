@@ -93,6 +93,11 @@ namespace RuneSkin.InventoryScreen
         private int _layer = -1, _applied = -1;
         private float _yaw, _yMin = float.NaN, _yMax = float.NaN;
         private readonly List<Renderer> _renderers = new List<Renderer>();
+        private readonly List<Vector3> _verts = new List<Vector3>();
+        // Posed height span (MeasureHeight), the equipment revision it was measured for and the bake scratch mesh.
+        private int _measuredFor = int.MinValue;
+        private float _posedLo, _posedHi;
+        private Mesh _bake;
         private bool _placed, _hidden, _failed, _alphaChecked;
         // Runtime materials created while this component built / refreshed the clone (destroyed on teardown).
         private readonly List<Material> _owned = new List<Material>();
@@ -432,6 +437,12 @@ namespace RuneSkin.InventoryScreen
             _rigLights.Clear();
             _applied = -1;
             _yMin = _yMax = float.NaN; // next build snaps its framing
+            _measuredFor = int.MinValue;
+            if (_bake)
+            {
+                Destroy(_bake);
+                _bake = null;
+            }
         }
 
         // Runtime materials / meshes on the clone's renderers (PreviewOwnership: not in the pre-build baseline) are the
@@ -557,31 +568,64 @@ namespace RuneSkin.InventoryScreen
             _camera.backgroundColor = clear;
         }
 
-        // World height span of the clone's drawn meshes (body, armour, hair, helmet, held / back items; the renderer AABBs
-        // Unity keeps for culling, no vertex read): feet .. top of head or helmet. Relative to the rig origin; yaw turns
-        // about the vertical axis and leaves it unchanged. No drawn mesh yet: 0 .. BodyH.
+        // World height span of the clone's drawn meshes in the current pose (body, armour, hair, helmet, held / back
+        // items): feet .. top of head or helmet, relative to the rig origin; yaw turns about the vertical axis and leaves it
+        // unchanged. Skinned meshes are baked (BakeMesh) — their culling AABB is the rest-pose localBounds, ~14% of the
+        // height looser than the idle pose (run 20261028-003302: figure 77% of the alcove for 91% framed). Measured once
+        // per build / equipment refresh (MeasuredFor), cached between: idle sway never moves the camera. Static meshes:
+        // world AABB. No drawn mesh: 0 .. BodyH.
         private void MeasureHeight(out float lo, out float hi)
         {
+            if (_measuredFor == _applied && _clone)
+            {
+                lo = _posedLo;
+                hi = _posedHi;
+                return;
+            }
+            _measuredFor = _applied;
             lo = float.MaxValue;
             hi = float.MinValue;
+            if (!_bake) _bake = new Mesh { name = "RuneSkinPreviewBake" };
             _clone.GetComponentsInChildren(false, _renderers);
             foreach (var r in _renderers)
             {
-                if (!r || !r.enabled || !(r is MeshRenderer || r is SkinnedMeshRenderer)) continue;
-                var b = r.bounds;
-                if (b.size.sqrMagnitude <= 0f) continue;
-                lo = Mathf.Min(lo, b.min.y);
-                hi = Mathf.Max(hi, b.max.y);
+                if (!r || !r.enabled) continue;
+                if (r is SkinnedMeshRenderer s)
+                {
+                    if (!s.sharedMesh) continue;
+                    s.BakeMesh(_bake, true); // unscaled local space: localToWorldMatrix applies the scale once
+                    _bake.GetVertices(_verts);
+                    var m = s.transform.localToWorldMatrix;
+                    foreach (var v in _verts)
+                    {
+                        var y = m.MultiplyPoint3x4(v).y;
+                        if (y < lo) lo = y;
+                        if (y > hi) hi = y;
+                    }
+                }
+                else if (r is MeshRenderer)
+                {
+                    var b = r.bounds;
+                    if (b.size.sqrMagnitude <= 0f) continue;
+                    lo = Mathf.Min(lo, b.min.y);
+                    hi = Mathf.Max(hi, b.max.y);
+                }
             }
             _renderers.Clear();
+            _verts.Clear();
+            _bake.Clear();
             if (lo > hi)
             {
                 lo = 0f;
                 hi = BodyH;
-                return;
             }
-            lo -= Origin.y;
-            hi -= Origin.y;
+            else
+            {
+                lo -= Origin.y;
+                hi -= Origin.y;
+            }
+            _posedLo = lo;
+            _posedHi = hi;
         }
 
         // Time of day / weather independent: world directional lights off, rig lights on, fog off, flat ambient for this render only.
