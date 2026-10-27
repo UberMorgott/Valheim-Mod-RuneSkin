@@ -79,7 +79,7 @@ namespace RuneSkin.InventoryScreen
         // The figure (live renderer bounds, feet .. helmet) fills the whole alcove height: Top / Bottom = view shares
         // free above the head / under the feet; CoreW = shoulder width kept inside a very narrow alcove (held weapons and
         // shields may overflow sideways, never shrink the figure: user 2026-10-28). BodyH = span before any bounds.
-        private const float BodyH = 2.0f, Top = 0.06f, Bottom = 0.03f, CoreW = 0.8f, Fov = 30f, DegPerPixel = 0.45f;
+        private const float BodyH = 2.0f, Top = 0.05f, Bottom = 0.025f, CoreW = 0.8f, Fov = 30f, DegPerPixel = 0.45f;
         // Framing ease (1/s) and the bounds change ignored (m): equip changes glide, idle sway does not move the camera.
         private const float EaseRate = 10f, Deadband = 0.01f;
 
@@ -91,15 +91,15 @@ namespace RuneSkin.InventoryScreen
         private RenderTexture _rt;
         private Player _player;
         private int _layer = -1, _applied = -1;
-        private float _yaw, _yMin = float.NaN, _yMax = float.NaN, _near = float.NaN;
+        private float _yaw, _yMin = float.NaN, _yMax = float.NaN, _nearLo = float.NaN, _nearHi = float.NaN;
         private readonly List<Renderer> _renderers = new List<Renderer>();
         private readonly List<Vector3> _verts = new List<Vector3>();
         // Posed height span (MeasureHeight), the equipment revision it was measured for and the bake scratch mesh.
         private int _measuredFor = int.MinValue;
-        private float _posedLo, _posedHi, _posedNear;
+        private float _posedLo, _posedHi, _posedNearLo, _posedNearHi;
         private readonly List<Vector3> _points = new List<Vector3>();
         // Share of the height span at each end whose points' depth counts for the perspective fit (feet, helmet).
-        private const float ExtremeBand = 0.12f;
+        private const float ExtremeBand = 0.04f;
         private Mesh _bake;
         private bool _placed, _hidden, _failed, _alphaChecked;
         // Runtime materials created while this component built / refreshed the clone (destroyed on teardown).
@@ -439,7 +439,7 @@ namespace RuneSkin.InventoryScreen
             _worldLights.Clear();
             _rigLights.Clear();
             _applied = -1;
-            _yMin = _yMax = _near = float.NaN; // next build snaps its framing
+            _yMin = _yMax = _nearLo = _nearHi = float.NaN; // next build snaps its framing
             _measuredFor = int.MinValue;
             if (_bake)
             {
@@ -557,12 +557,13 @@ namespace RuneSkin.InventoryScreen
         {
             _clone.transform.localRotation = Quaternion.Euler(0f, _yaw, 0f);
             var aspect = _rt.height > 0 ? (float)_rt.width / _rt.height : 1f;
-            MeasureHeight(out var lo, out var hi, out var near);
+            MeasureHeight(out var lo, out var hi, out var nearLo, out var nearHi);
             var dt = Time.unscaledDeltaTime;
             _yMin = PreviewMath.Smooth(_yMin, lo, dt, EaseRate, Deadband);
             _yMax = PreviewMath.Smooth(_yMax, hi, dt, EaseRate, Deadband);
-            _near = PreviewMath.Smooth(_near, near, dt, EaseRate, Deadband);
-            var (d, cy) = PreviewMath.FitHeight(_yMin, _yMax, aspect, Fov, Top, Bottom, CoreW, _near);
+            _nearLo = PreviewMath.Smooth(_nearLo, nearLo, dt, EaseRate, Deadband);
+            _nearHi = PreviewMath.Smooth(_nearHi, nearHi, dt, EaseRate, Deadband);
+            var (d, cy) = PreviewMath.FitHeight(_yMin, _yMax, aspect, Fov, Top, Bottom, CoreW, _nearLo, _nearHi);
             _camera.aspect = aspect;
             _camera.farClipPlane = d + 10f;
             _camera.transform.position = Origin + new Vector3(0f, cy, d);
@@ -577,22 +578,23 @@ namespace RuneSkin.InventoryScreen
         // unchanged. Skinned meshes are baked (BakeMesh) — their culling AABB is the rest-pose localBounds, ~14% of the
         // height looser than the idle pose (run 20261028-003302: figure 77% of the alcove for 91% framed). Measured once
         // per build / equipment refresh (MeasuredFor), cached between: idle sway never moves the camera. Static meshes:
-        // world AABB. No drawn mesh: 0 .. BodyH.
-        // `near`: horizontal radius (around the turn axis) of the points in the lowest / highest ExtremeBand of the span
-        // (feet, helmet): the depth they reach toward the camera at any yaw (PreviewMath.FitHeight).
-        private void MeasureHeight(out float lo, out float hi, out float near)
+        // mesh vertices (AABB corners when the mesh is not readable). No drawn mesh: 0 .. BodyH.
+        // `nearLo` / `nearHi`: horizontal radius (around the turn axis) of the points in the lowest / highest
+        // ExtremeBand of the span (feet / helmet): the depth they reach toward the camera at any yaw (FitHeight).
+        private void MeasureHeight(out float lo, out float hi, out float nearLo, out float nearHi)
         {
             if (_measuredFor == _applied && _clone)
             {
                 lo = _posedLo;
                 hi = _posedHi;
-                near = _posedNear;
+                nearLo = _posedNearLo;
+                nearHi = _posedNearHi;
                 return;
             }
             _measuredFor = _applied;
             lo = float.MaxValue;
             hi = float.MinValue;
-            near = 0f;
+            nearLo = nearHi = 0f;
             if (!_bake) _bake = new Mesh { name = "RuneSkinPreviewBake" };
             _clone.GetComponentsInChildren(false, _renderers);
             foreach (var r in _renderers)
@@ -604,6 +606,12 @@ namespace RuneSkin.InventoryScreen
                     s.BakeMesh(_bake, true); // unscaled local space: localToWorldMatrix applies the scale once
                     _bake.GetVertices(_verts);
                     var m = s.transform.localToWorldMatrix;
+                    foreach (var v in _verts) _points.Add(m.MultiplyPoint3x4(v) - Origin);
+                }
+                else if (r is MeshRenderer && r.TryGetComponent<MeshFilter>(out var mf) && mf.sharedMesh && mf.sharedMesh.isReadable)
+                {
+                    mf.sharedMesh.GetVertices(_verts);
+                    var m = r.transform.localToWorldMatrix;
                     foreach (var v in _verts) _points.Add(m.MultiplyPoint3x4(v) - Origin);
                 }
                 else if (r is MeshRenderer)
@@ -628,8 +636,10 @@ namespace RuneSkin.InventoryScreen
             {
                 var band = (hi - lo) * ExtremeBand;
                 foreach (var p in _points)
-                    if (p.y <= lo + band || p.y >= hi - band)
-                        near = Mathf.Max(near, Mathf.Sqrt(p.x * p.x + p.z * p.z));
+                {
+                    if (p.y <= lo + band) nearLo = Mathf.Max(nearLo, Mathf.Sqrt(p.x * p.x + p.z * p.z));
+                    if (p.y >= hi - band) nearHi = Mathf.Max(nearHi, Mathf.Sqrt(p.x * p.x + p.z * p.z));
+                }
             }
             _renderers.Clear();
             _verts.Clear();
@@ -637,7 +647,8 @@ namespace RuneSkin.InventoryScreen
             _bake.Clear();
             _posedLo = lo;
             _posedHi = hi;
-            _posedNear = near;
+            _posedNearLo = nearLo;
+            _posedNearHi = nearHi;
         }
 
         // Time of day / weather independent: world directional lights off, rig lights on, fog off, flat ambient for this render only.

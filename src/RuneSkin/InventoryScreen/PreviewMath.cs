@@ -46,27 +46,29 @@ namespace RuneSkin.InventoryScreen
         // shares of the view left free above the head and under the feet. Height first: a held weapon or shield wider
         // than the view overflows sideways instead of shrinking the body (user 2026-10-28: "the character fills the
         // window, not small in the centre"); only `coreW` (shoulder width) is kept inside a very narrow view.
-        // `near` = how far the extreme points (feet, helmet) may stand in front of the figure plane (their horizontal
-        // radius around the turn axis): perspective draws a nearer point further from the view centre, so the span is fit
-        // at that depth and the camera stands `near` further back (run 20261028-004636: feet turned toward the camera
-        // projected 1-2.5% below the image without it).
+        // `nearLo` / `nearHi` = how far the lowest / highest points (feet, helmet) may stand in front of the figure plane
+        // (their horizontal radius around the turn axis): perspective draws a nearer point further from the view centre,
+        // so each end is fit exactly at the depth it can reach (run 20261028-004636: feet turned toward the camera
+        // projected 1-2.5% below the image without it; run 20261028-005522: one shared worst depth left 81-83%).
         // Returns the camera distance from the figure plane and the camera's (and view centre's) height.
         public static (float Distance, float CenterY) FitHeight(float yMin, float yMax, float aspect, float vFovDeg,
-            float top, float bottom, float coreW, float near = 0f)
+            float top, float bottom, float coreW, float nearLo = 0f, float nearHi = 0f)
         {
-            if (!(near > 0f)) near = 0f;
+            if (!(nearLo > 0f)) nearLo = 0f;
+            if (!(nearHi > 0f)) nearHi = 0f;
             var tan = Math.Tan(Math.Max(1f, Math.Min(170f, vFovDeg)) * Math.PI / 360.0);
             if (!(aspect > 0f)) aspect = 1f;
             if (float.IsNaN(yMin) || float.IsNaN(yMax) || yMax - yMin < MinSpan) yMax = yMin + MinSpan;
             top = Math.Max(0f, Math.Min(0.4f, top));
             bottom = Math.Max(0f, Math.Min(0.4f, bottom));
-            var fill = 1.0 - top - bottom;
-            var byH = (yMax - yMin) / fill * 0.5 / tan;
-            var byW = Math.Max(0f, coreW) * 0.5 / (tan * aspect);
+            double lo = 0.5 - bottom, hi = 0.5 - top;
+            // feet on the bottom margin at depth d - nearLo, head on the top margin at depth d - nearHi:
+            // cy - yMin = lo * 2tan (d - nearLo), yMax - cy = hi * 2tan (d - nearHi)
+            var byH = ((yMax - yMin) / (2.0 * tan) + lo * nearLo + hi * nearHi) / (lo + hi);
+            var byW = Math.Max(0f, coreW) * 0.5 / (tan * aspect) + Math.Max(nearLo, nearHi);
             var d = Math.Max(byH, byW);
-            var viewH = 2.0 * d * tan;
-            // feet `bottom` above the view's lower edge (a width-bound view only grows above the head)
-            return ((float)(d + near), (float)(yMin - bottom * viewH + viewH * 0.5));
+            // feet on the bottom margin (a width-bound view only grows above the head)
+            return ((float)d, (float)(yMin + lo * 2.0 * tan * (d - nearLo)));
         }
 
         // Shortest height span FitHeight frames (no renderer bounds yet / a degenerate box).

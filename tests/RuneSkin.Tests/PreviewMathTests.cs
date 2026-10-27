@@ -87,15 +87,15 @@ namespace RuneSkin.Tests
         public void FitHeightKeepsNearExtremesInsideThePerspectiveView()
         {
             var tan = Math.Tan(15.0 * Math.PI / 180.0);
-            const float near = 0.3f;
-            var (d, cy) = PreviewMath.FitHeight(0f, 2f, 0.8f, 30f, 0.06f, 0.03f, 0.5f, near);
-            // a foot / helmet point `near` in front of the figure plane projects exactly onto the margins
+            const float nearLo = 0.3f, nearHi = 0.15f;
+            var (d, cy) = PreviewMath.FitHeight(0f, 2f, 0.8f, 30f, 0.06f, 0.03f, 0.5f, nearLo, nearHi);
+            // the foot `nearLo` and the helmet `nearHi` in front of the figure plane project exactly onto their margins
             double Project(double y, double depth) => 0.5 + (y - cy) / (2.0 * depth * tan);
-            Assert.Equal(0.03, Project(0.0, d - near), 3);
-            Assert.Equal(0.94, Project(2.0, d - near), 3);
+            Assert.Equal(0.03, Project(0.0, d - nearLo), 3);
+            Assert.Equal(0.94, Project(2.0, d - nearHi), 3);
             // points on or behind the plane land inside the margins
             Assert.True(Project(0.0, d) > 0.03 && Project(2.0, d) < 0.94);
-            Assert.Equal(PreviewMath.FitHeight(0f, 2f, 0.8f, 30f, 0.06f, 0.03f, 0.5f), PreviewMath.FitHeight(0f, 2f, 0.8f, 30f, 0.06f, 0.03f, 0.5f, -1f));
+            Assert.Equal(PreviewMath.FitHeight(0f, 2f, 0.8f, 30f, 0.06f, 0.03f, 0.5f), PreviewMath.FitHeight(0f, 2f, 0.8f, 30f, 0.06f, 0.03f, 0.5f, -1f, float.NaN));
         }
 
         [Fact]
