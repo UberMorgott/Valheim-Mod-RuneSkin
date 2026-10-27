@@ -754,7 +754,7 @@ namespace RuneSkin.CraftingScreen
             if (!_vneiLooked)
             {
                 _vneiLooked = true;
-                _vneiType = HarmonyLib.AccessTools.TypeByName(ModCompat.VneiBaseUi);
+                _vneiType = RuneSkin.Compat.TypeLookup.ByName(ModCompat.VneiBaseUi);
                 if (_vneiType != null)
                 {
                     _vneiSetSize = HarmonyLib.AccessTools.Method(_vneiType, "SetSize", new[] { typeof(bool), typeof(int), typeof(int) });
@@ -814,6 +814,14 @@ namespace RuneSkin.CraftingScreen
         // The window's one header (RuneWindowHeader: drag / double-click reset, position persisted): station icon in the
         // icon slot, the station name centred (rune face, mirrored from m_craftingStationName), the level star in the aux
         // slot - the same band, plate and title as every other window.
+        // Closed, behind the spawn's loading screen (InventorySkin.PrewarmHeaders): the header built by the same idempotent
+        // Ensure Header calls each open frame, so the first open only fills and places it.
+        public void PrewarmHeader()
+        {
+            if (_crafting) Restyle.RuneWindowHeader.Ensure(_crafting, Restyle.WindowMove.Crafting);
+            VneiLookup(); // VNEI's BaseUI members resolved ahead of the first Apply too
+        }
+
         private void Header(CraftingLayout o)
         {
             var header = Restyle.RuneWindowHeader.Ensure(_crafting, Restyle.WindowMove.Crafting);

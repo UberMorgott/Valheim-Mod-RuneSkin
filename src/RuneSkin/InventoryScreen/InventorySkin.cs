@@ -393,6 +393,8 @@ namespace RuneSkin.InventoryScreen
             Fade();
             if (_preview) _preview.Prewarm(); // closed: the doll's clone built ahead of the first open (CharacterPreview)
             if (_gui && _gui.m_animator) PrewarmGrid(); // closed: the player grid's cells built + styled ahead of the first open
+            if (_gui && _gui.m_animator) PrewarmBackpack(); // closed: the backpack panel restyled ahead of the first open
+            if (_gui && _gui.m_animator) PrewarmHeaders(); // closed: the window headers built ahead of the first open
             if (!_frameReady || _layout == null) return;
             _frameReady = false;
             if (!InventoryGui.IsVisible()) return;
@@ -620,17 +622,55 @@ namespace RuneSkin.InventoryScreen
             {
                 _packPanel = panel;
                 _packGrid = panel ? panel.GetComponentInChildren<InventoryGrid>(true) : null;
-                if (panel && ScreenRegistry.RootOf(panel) != panel)
-                {
-                    var p = (Transform)panel;
-                    if (panel.TryGetComponent<Image>(out var own)) own.enabled = false;
-                    foreach (var child in Children.Of(panel))
-                        if (IsVanillaBackground(child) && child.TryGetComponent<Image>(out var image)) image.enabled = false;
-                    ScreenRegistry.Register(p, () => Context(p, ScreenId + ".Backpack"));
-                    ScreenRegistry.Restyle(p);
-                }
+                if (panel) AdoptBackpack(panel);
             }
             _packInventory = _packPanel ? AbApi.Inventory() ?? (_packGrid ? _packGrid.GetInventory() : null) : null;
+        }
+
+        // The backpack panel as a RuneSkin screen: vanilla backgrounds off, registered and restyled once per panel.
+        private void AdoptBackpack(RectTransform panel)
+        {
+            if (ScreenRegistry.RootOf(panel) == panel) return;
+            var p = (Transform)panel;
+            if (panel.TryGetComponent<Image>(out var own)) own.enabled = false;
+            foreach (var child in Children.Of(panel))
+                if (IsVanillaBackground(child) && child.TryGetComponent<Image>(out var image)) image.enabled = false;
+            ScreenRegistry.Register(p, () => Context(p, ScreenId + ".Backpack"));
+            ScreenRegistry.Restyle(p);
+        }
+
+        // Closed (behind the spawn's loading screen, like PrewarmGrid): the AdventureBackpacks fork builds its panel while
+        // the inventory is closed (BackpackPanel.Prewarm), so its restyle (Restyler walks inactive children too) runs here,
+        // not in the first open's FindBackpack (rp-open-cold run 20261028-000356: "diag Inventory.Backpack" in frame #0).
+        // FindBackpack still takes the panel only while it is shown; the adopted panel is then skipped (RootOf). Once.
+        private bool _packPrewarmed;
+
+        private void PrewarmBackpack()
+        {
+            if (_packPrewarmed || !Player.m_localPlayer || _gui.m_animator.GetBool(AnimVisible)) return;
+            var panel = InventoryRegistry.Panel("inventory.backpack");
+            if (!panel) panel = AbApi.Panel();
+            if (!panel) return;
+            _packPrewarmed = true;
+            AdoptBackpack(panel); // the panel is inactive while closed: its new frame components run nothing until shown
+        }
+
+        // Closed, once, behind the spawn's loading screen: the window headers of the inventory screen (RuneWindowHeader:
+        // drag band, face, plate, title - GameObjects + TMP text) built by the same idempotent Ensure the open frames call
+        // (PlayerHeader, InfoHeader, CraftingSkin.Header), so the first open only fills and places them. Built under the
+        // parked panels (RenderGate: nothing drawn); their frame components idle with the rest until Unpark.
+        private bool _headersPrewarmed;
+
+        private void PrewarmHeaders()
+        {
+            if (_headersPrewarmed || !Player.m_localPlayer || _gui.m_animator.GetBool(AnimVisible)) return;
+            _headersPrewarmed = true;
+            if (_gui.m_player) RuneWindowHeader.Ensure(_gui.m_player, WindowMove.InventoryGrid);
+            if (_gui.m_info) RuneWindowHeader.Ensure(_gui.m_info, WindowMove.Doll);
+            if (CraftingScreen.CraftingSkin.Instance) CraftingScreen.CraftingSkin.Instance.PrewarmHeader();
+            if (_parked.Count > 0)
+                foreach (var go in _parked)
+                    if (go) Idle(go.transform);
         }
 
         private void RefreshEaqs()

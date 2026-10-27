@@ -93,9 +93,9 @@ namespace RuneSkin.ModScreens
             _patched = true;
             var post = new HarmonyMethod(typeof(ElDialogs), nameof(Created_Postfix));
             // No Epic Loot (or one without these builders): nothing clones the variant dialog.
-            var helper = AccessTools.TypeByName(AugmentHelper);
+            var helper = RuneSkin.Compat.TypeLookup.ByName(AugmentHelper);
             if (helper != null) Patch(helper, "CreateAugmentChoiceDialog", post);
-            var success = AccessTools.TypeByName(SuccessDialog);
+            var success = RuneSkin.Compat.TypeLookup.ByName(SuccessDialog);
             if (success != null) Patch(success, "Create", post);
         }
 
@@ -405,7 +405,7 @@ namespace RuneSkin.ModScreens
         // The dialog's body text size: its description's (Epic Loot sets 18, ConvertToScrollingDescription), else 18.
         private static float BodySize(Transform dialog)
         {
-            _augType = _augType ?? AccessTools.TypeByName(AugmentDialog);
+            _augType = _augType ?? RuneSkin.Compat.TypeLookup.ByName(AugmentDialog);
             var d = dialog && _augType != null ? dialog.GetComponent(_augType) : null;
             var desc = d ? Field(d.GetType(), "Description")?.GetValue(d) as TMP_Text : null;
             return desc && desc.fontSize > 1f ? desc.fontSize : ElDialogMath.ElBodySize;

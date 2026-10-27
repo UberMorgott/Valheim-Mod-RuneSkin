@@ -44,7 +44,7 @@ namespace RuneSkin.Compat
         {
             if (_tried || Harmony == null) return;
             _tried = true;
-            var type = AccessTools.TypeByName(ModCompat.VneiBaseUi);
+            var type = RuneSkin.Compat.TypeLookup.ByName(ModCompat.VneiBaseUi);
             if (type == null) return; // no VNEI
             var set = AccessTools.Method(type, "SetVisibility", new[] { typeof(bool) });
             var root = AccessTools.Field(type, "root");

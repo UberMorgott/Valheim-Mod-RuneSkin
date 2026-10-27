@@ -24,7 +24,7 @@ namespace RuneSkin.Compat
         {
             if (_tried || harmony == null) return;
             _tried = true;
-            var type = AccessTools.TypeByName(TypeName);
+            var type = RuneSkin.Compat.TypeLookup.ByName(TypeName);
             if (type == null) return; // no Epic Loot (or one without the scroll box): nothing rewrites the padding
             var layOut = AccessTools.Method(type, "LayOut", new[] { typeof(float), typeof(float) });
             var fit = AccessTools.Method(type, "Fit");

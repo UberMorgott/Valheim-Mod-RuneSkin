@@ -35,7 +35,7 @@ namespace RuneSkin.PlayerHud
             _tried = true;
             try
             {
-                var ext = AccessTools.TypeByName("EpicLoot.ItemDataExtensions");
+                var ext = RuneSkin.Compat.TypeLookup.ByName("EpicLoot.ItemDataExtensions");
                 if (ext == null) return false;
                 var item = typeof(ItemDrop.ItemData);
                 _isMagic = Static<Func<ItemDrop.ItemData, bool>>(ext.GetMethod("IsMagic", new[] { item }));
@@ -55,10 +55,10 @@ namespace RuneSkin.PlayerHud
 
         private static void InitAbilities()
         {
-            _controllerType = AccessTools.TypeByName("EpicLoot.Abilities.AbilityController");
-            var ability = AccessTools.TypeByName("EpicLoot.Abilities.Ability");
-            var def = AccessTools.TypeByName("EpicLoot.Abilities.AbilityDefinition");
-            var main = AccessTools.TypeByName("EpicLoot.EpicLoot");
+            _controllerType = RuneSkin.Compat.TypeLookup.ByName("EpicLoot.Abilities.AbilityController");
+            var ability = RuneSkin.Compat.TypeLookup.ByName("EpicLoot.Abilities.Ability");
+            var def = RuneSkin.Compat.TypeLookup.ByName("EpicLoot.Abilities.AbilityDefinition");
+            var main = RuneSkin.Compat.TypeLookup.ByName("EpicLoot.EpicLoot");
             if (_controllerType == null || ability == null || def == null) return;
             var c = Expression.Parameter(typeof(Component), "c");
             var i = Expression.Parameter(typeof(int), "i");

@@ -42,11 +42,11 @@ namespace RuneSkin.InfoScreens
             FoodSlots = Make<Func<Player, int>>("MorgottTweaks.FoodSlots", "Max");
             PotionSlots = Make<Func<Player, int>>("MorgottTweaks.PotionSlotCount", "Max");
             PotionsActive = Make<Func<Player, int>>("MorgottTweaks.PotionSlotCount", "Active");
-            var enabled = AccessTools.TypeByName("MorgottTweaks.PotionSlotCount")?.GetProperty("Enabled", BindingFlags.Public | BindingFlags.Static)?.GetGetMethod();
+            var enabled = RuneSkin.Compat.TypeLookup.ByName("MorgottTweaks.PotionSlotCount")?.GetProperty("Enabled", BindingFlags.Public | BindingFlags.Static)?.GetGetMethod();
             PotionSlotsEnabled = enabled != null ? (Func<bool>)Delegate.CreateDelegate(typeof(Func<bool>), enabled, false) : null;
             EnergyShield = Make<EnergyShieldGet>("MorgottTweaks.EnergyShieldInfo", "TryGet");
             ArmorResistance = Make<ArmorResistanceStep>("MorgottTweaks.ArmorResistance", "ApplyResistance");
-            ResourceAffixes = _elTotal != null && AccessTools.TypeByName("MorgottTweaks.ResourceAffixesModule") != null;
+            ResourceAffixes = _elTotal != null && RuneSkin.Compat.TypeLookup.ByName("MorgottTweaks.ResourceAffixesModule") != null;
             Plugin.Log.LogInfo($"[RuneSkin] stats sources: EpicLoot={EpicLoot} resist={ElResistance != null} night={ElNight != null} " +
                                $"foodSlots={FoodSlots != null} potionSlots={PotionSlots != null} potionsActive={PotionsActive != null} " +
                                $"energyShield={EnergyShield != null} armorCurve={ArmorResistance != null}");
@@ -68,7 +68,7 @@ namespace RuneSkin.InfoScreens
         // Public static method `name` of `typeName` as delegate T (exact parameter list), else null.
         private static T Make<T>(string typeName, string name) where T : Delegate
         {
-            var type = AccessTools.TypeByName(typeName);
+            var type = RuneSkin.Compat.TypeLookup.ByName(typeName);
             if (type == null) return null;
             // The delegate's signature (its Invoke method), found by scanning: no literal-name lookup on the generic T.
             var invoke = Array.Find(typeof(T).GetMethods(), m => m.Name == nameof(Action.Invoke));

@@ -33,7 +33,7 @@ namespace RuneSkin.InventoryScreen
 
         private static bool Resolve()
         {
-            var slotsType = AccessTools.TypeByName(ModCompat.EaqsSlotsType);
+            var slotsType = RuneSkin.Compat.TypeLookup.ByName(ModCompat.EaqsSlotsType);
             _slots = slotsType == null ? null : AccessTools.Field(slotsType, "slots");
             var slotType = _slots?.FieldType.GetElementType();
             if (slotType == null) return Missing();

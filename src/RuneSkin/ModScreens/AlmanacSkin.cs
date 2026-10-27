@@ -115,7 +115,7 @@ namespace RuneSkin.ModScreens
         private void FormPanel()
         {
             if (_form) return;
-            var panel = AccessTools.TypeByName(ModCompat.AlmanacPanelType);
+            var panel = RuneSkin.Compat.TypeLookup.ByName(ModCompat.AlmanacPanelType);
             var field = panel != null ? AccessTools.Field(panel, "formPanel") : null;
             if (field == null || !field.IsStatic) return;
             if (!(field.GetValue(null) is Component form) || !form) return;
@@ -130,7 +130,7 @@ namespace RuneSkin.ModScreens
         {
             if (_patched) return;
             _patched = true;
-            var panel = AccessTools.TypeByName(ModCompat.AlmanacPanelType);
+            var panel = RuneSkin.Compat.TypeLookup.ByName(ModCompat.AlmanacPanelType);
             if (panel == null) { Plugin.Log.LogWarning("[RuneSkin] Almanac present without Almanac.UI.AlmanacPanel: new elements stay unstyled until reopened"); return; }
             var postfix = new HarmonyMethod(typeof(AlmanacSkin), nameof(Refresh_Postfix)) { priority = Priority.Last };
             var count = 0;

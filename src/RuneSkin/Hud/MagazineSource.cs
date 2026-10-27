@@ -78,7 +78,7 @@ namespace RuneSkin.PlayerHud
             if (_bound) return;
             _bound = true;
             // Version probe: an older MorgottTweaks (or none) has no CrossbowMagazine -> no magazine readout.
-            var type = AccessTools.TypeByName(MagazineContract.TypeName);
+            var type = RuneSkin.Compat.TypeLookup.ByName(MagazineContract.TypeName);
             if (type == null)
             {
                 Plugin.Log.LogInfo("[RuneSkin] crossbow magazine source: MorgottTweaks.CrossbowMagazine absent (no magazine readout)");

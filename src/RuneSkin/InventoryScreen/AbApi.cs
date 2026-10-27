@@ -20,7 +20,7 @@ namespace RuneSkin.InventoryScreen
         {
             if (_resolved) return;
             _resolved = true;
-            var api = AccessTools.TypeByName(ModCompat.AbApiType);
+            var api = RuneSkin.Compat.TypeLookup.ByName(ModCompat.AbApiType);
             var panel = api?.GetMethod("GetBackpackPanel", BindingFlags.Public | BindingFlags.Static, null, Type.EmptyTypes, null);
             var inventory = api?.GetMethod("GetBackpackPanelInventory", BindingFlags.Public | BindingFlags.Static, null, Type.EmptyTypes, null);
             if (panel != null && panel.ReturnType == typeof(RectTransform))
