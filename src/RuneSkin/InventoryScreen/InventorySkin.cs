@@ -389,6 +389,7 @@ namespace RuneSkin.InventoryScreen
         private void LateUpdate()
         {
             Fade();
+            if (_preview) _preview.Prewarm(); // closed: the doll's clone built ahead of the first open (CharacterPreview)
             if (!_frameReady || _layout == null) return;
             _frameReady = false;
             if (!InventoryGui.IsVisible()) return;

@@ -24,12 +24,17 @@ namespace RuneSkin.InventoryScreen
     //   rim lights culling only that layer); while it renders, the world's directional lights, fog and ambient are
     //   swapped for the rig's and restored right after: the preview looks the same at any time of day / weather.
     // - drag on the image turns the clone; the idle animation runs on the clone's Animator (no events, no root motion).
-    // - lifecycle: built when the inventory shows, torn down (camera, clone, lights, render texture, runtime materials
-    //   and meshes made while building) when it hides, the player changes / logs out, or this component is destroyed. A disable
-    //   while the inventory stays open (an ancestor toggled for a frame, e.g. by the panel animation when a close is
-    //   reverted mid-transition) keeps the clone: tearing down there rebuilt it on the re-enable (in-game run
-    //   20261022-181305: 11 builds in 10 open / close cycles). LiveClones / LiveTextures count what exists and
-    //   History lists the last builds / teardowns with their reason (autotest leak check).
+    // - lifecycle: built once per local player - prewarmed while the inventory is closed (Prewarm, called by
+    //   InventorySkin every frame: the first frame with a live local player, i.e. behind the spawn's loading screen),
+    //   else on the first open - and kept: a close only PARKS it (rig deactivated: no camera, lights, animator or cloth
+    //   work; the render texture's GPU memory released, the object kept), the next open re-activates the rig. A
+    //   rebuild per open (instantiate the player prefab, strip it, 4 animator warm-up steps, SetupVisEquipment of every
+    //   worn item, 2 x Resources.FindObjectsOfTypeAll<Material / Mesh> material-ownership windows, a new MSAA render
+    //   texture) was the Tab hitch (user 2026-10-27: "window not optimized"). Torn down (camera, clone, lights, render
+    //   texture, runtime materials and meshes) only when the player changes / logs out or this component is destroyed.
+    //   A disable while the inventory stays open (an ancestor toggled for a frame) keeps the rig live. LiveClones /
+    //   LiveTextures count what exists and History lists the last builds / parks / teardowns with their reason
+    //   (autotest leak check; KeepsClone tells the harness this contract).
     public sealed class CharacterPreview : MonoBehaviour, IBeginDragHandler, IDragHandler
     {
         public static CharacterPreview Instance { get; private set; }
@@ -53,7 +58,10 @@ namespace RuneSkin.InventoryScreen
             Events.Enqueue($"f{Time.frameCount} {what}");
         }
 
-        public bool Live => _clone && _rt;
+        // The clone survives a close (parked, header): Live = rig active with a created texture (shown / showable now).
+        public bool Live => _clone && _rig && _rig.activeSelf && _rt && _rt.IsCreated();
+        // Harness contract: a close parks the clone instead of tearing it down (builds stay flat over open / close cycles).
+        public static bool KeepsClone => true;
         public RenderTexture Texture => _rt;
         public GameObject Clone => _clone;
         public int Layer => _layer;
@@ -139,22 +147,62 @@ namespace RuneSkin.InventoryScreen
             return gui && gui.m_animator && gui.m_animator.GetBool(VisibleHash);
         }
 
-        // Hides and frees everything (inventory closed).
+        // Hides the image and parks the clone (inventory closed).
         public void Close() => Close("inventory hidden");
 
         private void Close(string why)
         {
             _placed = false;
-            Teardown(why);
+            Park(why);
             if (gameObject.activeSelf) gameObject.SetActive(false);
         }
 
         private void Awake() => Instance = this;
 
-        // Closed (or no longer placed): free now. Still open: a transient disable, the clone is kept (header).
+        // Closed (or no longer placed): park now. Still open: a transient disable, the rig stays live (header).
         private void OnDisable()
         {
-            if (!_placed || !IsOpen()) Teardown("disabled");
+            if (!_placed || !IsOpen()) Park("disabled");
+        }
+
+        // Inventory closed: build (and dress) the clone ahead of the first open, then park it. Called every frame by
+        // InventorySkin (this object is inactive while closed); a no-op once built for the current player. Skipped while
+        // this component is disabled (autotest control batch) or the preview failed.
+        public void Prewarm()
+        {
+            if (!enabled || _failed || IsOpen()) return;
+            var player = Player.m_localPlayer;
+            if (!player || player.IsDead()) return;
+            if (_clone && _player == player) return;
+            if (_clone) Teardown("player changed");
+            if (!Build(player)) return;
+            Refresh();
+            Note("prewarm");
+            Park("prewarmed");
+        }
+
+        // Deactivates the rig (camera, lights, animators, cloth stop) and releases the render texture's GPU memory; the
+        // clone, its materials and the texture object are kept for the next open.
+        private void Park(string why)
+        {
+            if (_rig && _rig.activeSelf)
+            {
+                _rig.SetActive(false);
+                Note("park " + why);
+            }
+            if (_rt && _rt.IsCreated()) _rt.Release();
+            if (_image) _image.enabled = false;
+        }
+
+        // Next open: the parked rig back on, the world's directional lights re-read (the set Render swaps out).
+        private void Unpark()
+        {
+            if (!_rig || _rig.activeSelf) return;
+            _rig.SetActive(true);
+            _worldLights.Clear();
+            foreach (var l in FindObjectsByType<Light>(FindObjectsSortMode.None))
+                if (l && l.type == LightType.Directional && !l.transform.IsChildOf(_rig.transform)) _worldLights.Add(l);
+            Note("unpark");
         }
 
         private void OnDestroy()
@@ -173,6 +221,7 @@ namespace RuneSkin.InventoryScreen
             }
             if (_clone && _player != player) Teardown("player changed");
             if (!_clone && !Build(player)) return;
+            Unpark();
             if (_hidden)
             {
                 _image.enabled = false;
@@ -185,6 +234,7 @@ namespace RuneSkin.InventoryScreen
             var size = PreviewMath.TextureSize(px.x, px.y, 1f);
             if (size.W <= 0) return;
             if (!_rt || PreviewMath.NeedsResize(_rt.width, _rt.height, size.W, size.H)) MakeTexture(size.W, size.H);
+            else if (!_rt.IsCreated()) _rt.Create(); // released by Park
             if (_applied != _revision) Refresh();
             _image.enabled = true;
             Frame();
@@ -250,6 +300,7 @@ namespace RuneSkin.InventoryScreen
                     animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
                     animator.applyRootMotion = false;
                     animator.fireEvents = false; // the receivers (CharacterAnimEvent) are stripped
+                    animator.keepAnimatorStateOnDisable = true; // a park / unpark resumes the idle loop (no spawn pose)
                     foreach (var p in animator.parameters)
                         if (p.type == AnimatorControllerParameterType.Bool && (p.name == "onGround" || p.name == "wakeup"))
                             animator.SetBool(p.nameHash, p.name == "onGround");
@@ -397,7 +448,6 @@ namespace RuneSkin.InventoryScreen
         {
             _applied = _revision;
             if (!_vis || !_player) return;
-            var before = MaterialIds();
             try
             {
                 _player.SetupVisEquipment(_vis, false);
@@ -405,7 +455,11 @@ namespace RuneSkin.InventoryScreen
                 Strip(_clone, build: false);
                 SetLayer(_clone.transform, _layer);
             }
-            finally { Adopt(before); }
+            // The body materials were instanced at Build (VisEquipment's Renderer.material(s) getters reuse them,
+            // VisEquipment.cs:636-700, :1025-1125); what a refresh can add are the new item instances' Renderer.material
+            // copies ("(Instance)", on the clone): collected from it, no scene-wide FindObjectsOfTypeAll window (four full
+            // object-table scans on every open after an equipment change).
+            finally { CollectRuntimeMaterials(_clone); }
             Refreshes++;
         }
 
