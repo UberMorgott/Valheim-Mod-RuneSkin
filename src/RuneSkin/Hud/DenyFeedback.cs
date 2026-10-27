@@ -79,20 +79,36 @@ namespace RuneSkin.PlayerHud
                 if (!p || !e.m_enabled) continue;
                 var sfx = p.GetComponentInChildren<ZSFX>(true); // ZSFX drives the AudioSource
                 if (!sfx) continue;
-                // Only the ZSFX's own object, and only if it carries no visuals: a composite fx prefab (vanilla
-                // fx_UpgradeStation_Fail = red spark burst + sound) instantiated whole at the head drew a red lightning on
-                // the player at every empty-bar refusal.
+                // Only the ZSFX's own object, and only if it is sound and nothing else. The whole composite prefab used to be
+                // spawned at the head: vanilla fx_UpgradeStation_Fail (bundle c4210710) = lightning particles + lights +
+                // child AOE_AREA, an Aoe of 60 lightning, radius 2.42, m_hitFriendly - a real red lightning strike that took
+                // the player's health at every empty-bar refusal.
                 var go = sfx.gameObject;
-                // (Renderer covers particles too: every ParticleSystem draws through its ParticleSystemRenderer)
-                if (go.GetComponentInChildren<Renderer>(true) || go.GetComponentInChildren<Light>(true))
+                var foreign = Foreign(go);
+                if (foreign != null)
                 {
-                    Plugin.Log.LogInfo($"[RuneSkin] deny sound: skip {p.name} (carries visuals)");
+                    Plugin.Log.LogInfo($"[RuneSkin] deny sound: skip {p.name} ({foreign})");
                     continue;
                 }
                 _sound = go;
                 return true;
             }
             return false;
+        }
+
+        // First component under `go` that is not part of a plain sound object (Transform, AudioSource, ZSFX,
+        // TimedDestruction, ZNetView), as "Object/Type"; null = sound only. Allow-list, so visuals (renderers, lights),
+        // colliders, Aoe / damage and any other behaviour are all rejected.
+        private static string Foreign(GameObject go)
+        {
+            foreach (var c in go.GetComponentsInChildren<Component>(true))
+            {
+                // AudioSource by name: the project does not reference UnityEngine.AudioModule
+                if (!c || c is Transform || c is ZSFX || c is TimedDestruction || c is ZNetView ||
+                    c.GetType().FullName == "UnityEngine.AudioSource") continue;
+                return c.gameObject.name + "/" + c.GetType().Name;
+            }
+            return null;
         }
     }
 }
