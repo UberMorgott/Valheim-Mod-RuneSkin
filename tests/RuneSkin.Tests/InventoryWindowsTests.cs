@@ -604,5 +604,22 @@ namespace RuneSkin.Tests
             Assert.Equal(100f, InventoryMath.StatPlateWidth(73f, 24f, 90f, 100f));
             Assert.Equal(0f, InventoryMath.StatPlateWidth(73f, 24f, 90f, -5f));
         }
+
+        // Offline sim of the AB backpack panel (run 20261027-111356 log: backpack (269.9,205.1,289.6,223.8), 3 columns, the
+        // same canvas box at every resolution; skin scale 1, three 38.4 glyph actions at gap 8): the room left of the actions
+        // is under the 110 token, so the plate is room-capped and 80c9cb6's growth cannot change it. The value box (room -
+        // socket 32 - 12) holds 58.4 units: "12.5/40" at the 720p body floor (16 px / 0.667 = 24 units) needs ~3.5 em.
+        [Fact]
+        public void AbBackpackDock_WeightPlate_IsRoomLimited()
+        {
+            var t = new InventoryTokens();
+            var actions = InventoryMath.ActionRow(new Box(269.9f, 205.1f, 289.6f, 223.8f), t, 1f);
+            var glyphs = 3f * t.FooterH * 0.8f + 2f * (t.Gap / 2f);
+            var room = actions.W - glyphs - t.Gap;
+            Assert.Equal(102.4f, room, 1);
+            Assert.Equal(room, InventoryMath.StatPlateWidth(110f, 32f, 84f, room), 3);
+            Assert.True(room - 32f - 12f < 3.5f * 24f);
+            Assert.True(room - 32f - 12f >= 3.5f * 16f);
+        }
     }
 }

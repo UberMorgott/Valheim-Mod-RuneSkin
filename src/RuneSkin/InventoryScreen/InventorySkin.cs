@@ -1009,6 +1009,21 @@ namespace RuneSkin.InventoryScreen
             return text.fontSize > 0.01f ? w * size / text.fontSize : w;
         }
 
+        // Diagnostic (AB weight cut to '1…' at 1280x720): one line per panel whenever the dock weight plate's inputs change.
+        private readonly Dictionary<RectTransform, string> _plateFitLog = new Dictionary<RectTransform, string>();
+        private void LogPlateFit(RectTransform panel, RectTransform plate, float tokenW, float room, float textW, float ph, float pw,
+            float panelW, float actionsRowW, float actionsW)
+        {
+            var text = plate.GetComponentInChildren<TMP_Text>(true);
+            var line = string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                "[RuneSkin] dock weight plate {0}: text '{1}' size {2:0.#} pref {3:0.#} box {4:0.#} | pw {5:0.#} token {6:0.#} room {7:0.#} ph {8:0.#} | panel {9:0.#} actions {10:0.#} glyphs {11:0.#} cap {12:0.#} scale {13:0.###}",
+                panel.name, text ? text.text : "", text ? text.fontSize : 0f, textW, text ? text.rectTransform.rect.width : 0f,
+                pw, tokenW, room, ph, panelW, actionsRowW, actionsW, _tokens.PanelCapInset, _rootCanvas.scaleFactor);
+            if (_plateFitLog.TryGetValue(panel, out var last) && last == line) return;
+            _plateFitLog[panel] = line;
+            Plugin.Log.LogInfo(line);
+        }
+
         // Chest / backpack window: the window's one header (RuneWindowHeader: glyph in the icon slot, the container name
         // centred in the rune face (mirrored) over the plate's whole width; drag moves this window), grid top-aligned under
         // it (view = visible rows; columns past the room scroll sideways), the action row at the bottom: weight plate left,
@@ -1044,9 +1059,12 @@ namespace RuneSkin.InventoryScreen
             if (weightPlate)
             {
                 var ph = Mathf.Min(actions.H, ThemeTokens.GetFloat("size.win.header", 40f) * k * WindowHeaderMath.IconShare);
-                var pw = InventoryMath.StatPlateWidth(ThemeTokens.GetFloat("size.inv.plate.weight.dock", 110f) * k, ph,
-                    StatValueWidth(weightPlate, ph), Mathf.Max(0f, actions.W - actionsW - _tokens.Gap * k));
+                var tokenW = ThemeTokens.GetFloat("size.inv.plate.weight.dock", 110f) * k;
+                var room = Mathf.Max(0f, actions.W - actionsW - _tokens.Gap * k);
+                var textW = StatValueWidth(weightPlate, ph);
+                var pw = InventoryMath.StatPlateWidth(tokenW, ph, textW, room);
                 StatPlate(weightPlate, new Box(actions.X, actions.Y + (actions.H - ph) / 2f, pw, ph));
+                LogPlateFit(panel, weightPlate, tokenW, room, textW, ph, pw, box.W, actions.W, actionsW);
             }
             var head = RuneWindowHeader.Ensure(panel, backpack ? WindowMove.Backpack : WindowMove.Chest);
             if (!head) return;
