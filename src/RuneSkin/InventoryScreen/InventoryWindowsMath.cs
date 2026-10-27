@@ -62,7 +62,7 @@ namespace RuneSkin.InventoryScreen
         public int GridW = 8, GridH = 3;
         public int ChestW, ChestH, BackpackW, BackpackH;
         // Equipment cells of the doll per side (InventoryWindowsMath.DollSide: armour left, jewellery / light / mods right).
-        public int DollLeft = 6, DollRight = 3;
+        public int DollLeft = 5, DollRight = 4;
         // Side column entries (trash, armour, weight, coins: whatever is present).
         public int SidePlates = 4;
     }
@@ -402,13 +402,13 @@ namespace RuneSkin.InventoryScreen
         }
 
         // Doll side of a slot by its glyph (stable whatever else is registered, Codex review: cells never jump sides when
-        // the count changes): body equipment left (mockup inv-layout-A: helmet, chest, legs, back, belt, necklace),
-        // rings, light and every other / mod slot right.
+        // the count changes): body equipment left (helmet, chest, legs, back, belt), jewellery right from the top (necklace
+        // above the rings, user 2026-10-27), then light and every other / mod slot.
         public static int DollSide(string glyph)
         {
             switch (glyph)
             {
-                case "head": case "chest": case "legs": case "back": case "belt": case "neck": return 0;
+                case "head": case "chest": case "legs": case "back": case "belt": return 0;
                 default: return 1;
             }
         }

@@ -133,7 +133,8 @@ namespace RuneSkin.InventoryScreen
         }
 
         // Doll placement of an EAQS cell: glyph type + order (layout A, inventory-layout.md section 9: 3x3 storage
-        // helmet, back, light / chest, belt, necklace / legs, ring, ring; other custom cells append).
+        // helmet, back, light / chest, belt, necklace / legs, ring, ring; other custom cells append). The doll column / row
+        // comes from InventoryWindowsMath.DollSide / DollRank (necklace: right column, top).
         public static void Describe(string id, out string glyph, out int order, out string tooltipKey)
         {
             switch (id)

@@ -242,9 +242,11 @@ namespace RuneSkin.Tests
             Assert.True(many.DollCellsY + many.DollGrid.ViewH <= many.DollContent.Bottom + 0.01f);
             Assert.True(many.DollGrid.Cell >= 0.8f * many.Player.Cell - 0.01f);
             // sides by slot kind, stable whatever else is registered: body left, jewellery / light / mods right
-            foreach (var g in new[] { "head", "chest", "legs", "back", "belt", "neck" }) Assert.Equal(0, InventoryWindowsMath.DollSide(g));
-            foreach (var g in new[] { "ring", "light", "generic", null }) Assert.Equal(1, InventoryWindowsMath.DollSide(g));
-            Assert.True(InventoryWindowsMath.DollRank("head") < InventoryWindowsMath.DollRank("neck"));
+            foreach (var g in new[] { "head", "chest", "legs", "back", "belt" }) Assert.Equal(0, InventoryWindowsMath.DollSide(g));
+            foreach (var g in new[] { "neck", "ring", "light", "generic", null }) Assert.Equal(1, InventoryWindowsMath.DollSide(g));
+            Assert.True(InventoryWindowsMath.DollRank("head") < InventoryWindowsMath.DollRank("belt"));
+            // necklace heads the right column, above the rings (user 2026-10-27)
+            Assert.True(InventoryWindowsMath.DollRank("neck") < InventoryWindowsMath.DollRank("ring"));
             Assert.True(InventoryWindowsMath.DollRank("ring") < InventoryWindowsMath.DollRank("light") && InventoryWindowsMath.DollRank("light") < InventoryWindowsMath.DollRank("generic"));
         }
 
@@ -384,8 +386,8 @@ namespace RuneSkin.Tests
             var plates = new System.Collections.Generic.List<object>();
             for (var n = 0; n < 4; n++) plates.Add(B(o.SidePlate(n)));
             var doll = new System.Collections.Generic.List<object>();
-            var left = new[] { "head", "chest", "legs", "back", "belt", "neck" };
-            var right = new[] { "ring", "ring", "light" };
+            var left = new[] { "head", "chest", "legs", "back", "belt" };
+            var right = new[] { "neck", "ring", "ring", "light" };
             for (var r = 0; r < left.Length; r++) doll.Add(new { Glyph = left[r], Box = B(new Box(o.DollLeftX, o.DollCellsY + r * o.DollGrid.Pitch, o.DollGrid.Cell, o.DollGrid.Cell)) });
             for (var r = 0; r < right.Length; r++) doll.Add(new { Glyph = right[r], Box = B(new Box(o.DollRightX, o.DollCellsY + r * o.DollGrid.Pitch, o.DollGrid.Cell, o.DollGrid.Cell)) });
             object Container(Box box, WindowGrid g)
