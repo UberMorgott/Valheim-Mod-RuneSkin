@@ -31,7 +31,7 @@ namespace RuneSkin.CraftingScreen
         private InventoryGui _gui;
         private RectTransform _crafting, _canvas, _host;
         private Canvas _rootCanvas;
-        private Image _listWell, _detailWell, _craftGlyph, _progressFrame;
+        private Image _listWell, _detailWell, _vneiWell, _craftGlyph, _progressFrame;
         private Button _minus, _plus;
         private TMP_InputField _amountField;
         private TMP_Text _amountText;
@@ -132,6 +132,8 @@ namespace RuneSkin.CraftingScreen
             var detail = _crafting.Find("Decription");
             _listWell = OwnImage(Prefix + "ListWell", "craft.well", "recipe list well (frame_inset)", 0);
             _detailWell = OwnImage(Prefix + "DetailWell", "craft.well", "detail well (frame_inset)", detail ? detail.GetSiblingIndex() : 1);
+            _vneiWell = OwnImage(Prefix + "VneiWell", "craft.well", "VNEI browser well (frame_inset)", 0);
+            _vneiWell.enabled = false;
             // Craft / upgrade glyph left of the craft button's label (art: glyph_act_craft / _upgrade on button_*).
             if (_gui.m_craftButton)
             {
@@ -667,9 +669,15 @@ namespace RuneSkin.CraftingScreen
             WellShown(_listWell, !recipeList || recipeList.gameObject.activeSelf);
             WellShown(_detailWell, !detailRoot || detailRoot.gameObject.activeSelf);
             var vnei = _crafting.Find(ModCompat.VneiPanel) as RectTransform;
-            if (!vnei || !vnei.gameObject.activeSelf) return;
+            var vneiUp = vnei && vnei.gameObject.activeSelf;
+            // Docked, VNEI switches its own woodpanel off (MainVneiHandler.CreateBaseUI) and the two wells are hidden
+            // above, so only the panel glass (fill_glass, alpha 0.9) was left behind its grid: the world showed through.
+            // One opaque well spans VNEI's whole body instead, like the list/detail wells on the craft tab.
+            WellShown(_vneiWell, vneiUp);
+            if (!vneiUp) return;
             var top = o.Search.IsEmpty ? o.List.Y : o.Search.Y;
             var area = new Box(o.List.X, top, o.Detail.Right - o.List.X, o.ButtonRow.Bottom - top);
+            if (_vneiWell) Geo.Place(_canvas, _vneiWell.rectTransform, area);
             Geo.Place(_canvas, vnei, area);
             VneiFit(vnei, area);
         }
