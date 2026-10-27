@@ -623,6 +623,11 @@ namespace RuneSkin.GameScreens
                 // Search field focus glow (button_glow under searchField): vanilla highlight art, kept.
                 foreach (var img in r.GetComponentsInChildren<Image>(true))
                     if (img.name == "glow" && img.sprite && img.sprite.name.StartsWith("button_glow", StringComparison.Ordinal)) ctx.Role(img, "content", "search field focus glow (vanilla)");
+                // The topic list content (m_listRoot, sprite-less full-stretch Image) is a transparent hit area, not a
+                // screen dim: as scrim it painted a dark plate that ShowText's FocusOnCurrentLevel -> SnapTo
+                // (TextsDialog.cs:87-99,199) shifts and the left ScrollRect clamps back on every topic switch (blink).
+                if (d.m_listRoot && d.m_listRoot.TryGetComponent<Image>(out var listHit))
+                    ctx.Role(listHit, "skip", "topic list content hit area (vanilla, transparent; not a screen dim)");
                 var row = d.m_elementPrefab ? d.m_elementPrefab.transform : null;
                 foreach (var b in r.GetComponentsInChildren<Button>(true))
                 {
