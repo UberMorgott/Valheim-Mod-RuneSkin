@@ -374,13 +374,7 @@ namespace RuneSkin.CraftingScreen
                 else if (IsTab(t, out var tabTarget)) ctx.Role(image, tabTarget ? (IsCategory(t) ? "craft.category" : "craft.tab") : t.name == "Selected" ? "skip" : "content",
                     tabTarget ? "crafting tab button (selected = interactable off: sprite disabled state)" : "tab child");
                 else if (t.name == ModCompat.MtCraftSearch && image.GetComponent<Selectable>()) ctx.Role(image, "craft.search", "CraftingFilter search field");
-                else if (Row(t, out var row))
-                {
-                    if (t.name == "bkg" && t.parent == row) ctx.Role(image, CanCraft(row) ? "craft.row" : "craft.row.unavailable", "recipe row strip (canCraft from m_availableRecipes)");
-                    else if (t.name == "selected" && t.parent == row) ctx.Role(image, "craft.row.selected", "recipe row selected rim (SetRecipe toggles it)");
-                    else if (image.GetComponentInParent<Button>(true) && image.GetComponentInParent<Button>(true).targetGraphic == image) ctx.Role(image, "craft.row", "recipe row button");
-                    else ctx.Role(image, "content", "recipe row icon / durability / magic background");
-                }
+                else if (Row(t, out var row)) RowImage(ctx, image, row);
                 else if (IsRequirementCell(t)) ctx.Role(image, MissingShown(t.gameObject) ? "craft.socket.missing" : "craft.socket", "requirement socket (m_recipeRequirementList cell)");
                 else if (_gui.m_minStationLevelIcon && t == _gui.m_minStationLevelIcon.transform.parent && t.parent == Requirements()) ctx.Role(image, "craft.socket", "required station level: its own requirement socket (level, parent of MinLevel)");
                 else if (_gui.m_minStationLevelIcon && t == _gui.m_minStationLevelIcon.transform) ctx.Role(image, "content", "required station level icon (MinLevel, shows the station's icon)");
@@ -398,12 +392,57 @@ namespace RuneSkin.CraftingScreen
                 else if (_gui.m_craftingStationName && text == _gui.m_craftingStationName) ctx.Role(text, "text.header", "station title (serif, no plaque)");
                 else if (_gui.m_craftingStationLevel && text == _gui.m_craftingStationLevel) ctx.Role(text, "craft.level", "station level digit on the star badge (text_active)");
                 else if (IsTab(t, out _)) ctx.Role(text, "craft.tab.label", "tab label");
-                else if (Row(t, out _)) ctx.Role(text, "text.body", "recipe row name / quality (body sans, mockup-1)");
+                else if (Row(t, out _)) ctx.Role(text, CraftingMath.RowTextRole, RowTextReason);
                 else if (CancelLabel() == text) ctx.Role(text, "skip", "craft cancel label: the craft label's face (ProgressCue)");
                 else if (_gui.m_craftCancelButton && t.IsChildOf(_gui.m_craftCancelButton.transform)) ctx.Role(text, "skip", "craft cancel gamepad hint (vanilla, kept as is)");
                 else if (_gui.m_craftProgressPanel && t.parent == _gui.m_craftProgressPanel) ctx.Role(text, "skip", "craft progress state text: craft label face + outline (ProgressCue)");
                 else if (IsAmountPart(t)) ctx.Role(text, "skip", "craft amount stepper text: craft label face (BuildAmount)");
             }
+            return ctx;
+        }
+
+        private const string RowTextReason = "recipe row name / quality (body sans, mockup-1)";
+
+        // One recipe row image's role (CraftingMath.RowImageRole): the same rule for the full pass and the per-row pass.
+        private void RowImage(ScreenContext ctx, Image image, Transform row)
+        {
+            var t = image.transform;
+            var child = t.parent == row;
+            var button = image.GetComponentInParent<Button>(true);
+            var target = button && button.targetGraphic == image;
+            var n = t.name;
+            var canCraft = !child || n != "bkg" || CanCraft(row); // m_availableRecipes scan for the strip only
+            ctx.Role(image, CraftingMath.RowImageRole(n, child, target, canCraft), CraftingMath.RowImageReason(n, child, target));
+        }
+
+        // The rows' own context: exactly the roles Context() gives a row's graphics (rows are leaves of the crafting root:
+        // no earlier Context() rule matches inside a row), without rebuilding the whole crafting root's context - that
+        // walked every graphic of m_crafting (~1500 with VNEI's pool) with name / parent tests on each open.
+        private readonly List<Graphic> _rowGraphics = new List<Graphic>(64);
+
+        private ScreenContext RowContext(List<InventoryGui.RecipeDataPair> rows)
+        {
+            var ctx = new ScreenContext(ScreenId, OwnershipRegistry.Crafting);
+            for (var n = 0; n < rows.Count; n++)
+            {
+                var e = rows[n].InterfaceElement;
+                if (!e) continue;
+                var row = e.transform;
+                _rowGraphics.Clear();
+                row.GetComponentsInChildren(true, _rowGraphics);
+                foreach (var g in _rowGraphics)
+                {
+                    if (!g) continue;
+                    if (g is Image image)
+                    {
+                        if (image.GetComponent<SkinMark>() is SkinMark m && m.Internal) continue;
+                        RowImage(ctx, image, row);
+                    }
+                    else if (g is TMP_Text text) ctx.Role(text, CraftingMath.RowTextRole, RowTextReason);
+                    else if (!(g is TMP_SubMeshUI)) ctx.Role(g, "content", g.GetType().Name + " (input caret / mod graphic, kept)");
+                }
+            }
+            _rowGraphics.Clear();
             return ctx;
         }
 
@@ -1011,11 +1050,13 @@ namespace RuneSkin.CraftingScreen
                 _gui.m_recipeEnsureVisible.CenterOnItem((RectTransform)rows[sel].InterfaceElement.transform);
         }
 
-        // InventoryGui.UpdateRecipeList (InventoryGui.cs:1150-1157) destroys and re-instantiates every row: only those get
-        // the root's classification pass (same context, same exclusions as ScreenRegistry.Restyle(_crafting)).
+        // InventoryGui.UpdateRecipeList (InventoryGui.cs:1150-1157) destroys and re-instantiates every row from
+        // m_recipeElementPrefab, which the root pass styled at attach: each clone carries the template's marks (Style keeps
+        // a same-role, same-revision mark and only ensures its layout components), so the per-row state left is the strip's
+        // craftable / unavailable role. Classified with the rows' own context (RowContext), not the whole root's.
         private void RestyleRows(List<InventoryGui.RecipeDataPair> rows)
         {
-            var ctx = ScreenRegistry.ContextOf(_crafting);
+            var ctx = RowContext(rows);
             if (ctx == null) return;
             for (var n = 0; n < rows.Count; n++)
                 if (rows[n].InterfaceElement) Restyler.RestyleSubtree(rows[n].InterfaceElement.transform, _crafting, ctx);

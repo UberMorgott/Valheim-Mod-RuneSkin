@@ -73,6 +73,25 @@ namespace RuneSkin.CraftingScreen
 
     public static class CraftingMath
     {
+        // Recipe row roles (rows = clones of InventoryGui.m_recipeElementPrefab): the strip "bkg" follows canCraft, the
+        // "selected" rim its own role, the row button's target graphic the row plate, everything else (icon, durability,
+        // magic background) vanilla content; the row texts body sans.
+        public const string RowTextRole = "text.body";
+
+        public static string RowImageRole(string name, bool childOfRow, bool buttonTarget, bool canCraft)
+        {
+            if (childOfRow && name == "bkg") return canCraft ? "craft.row" : "craft.row.unavailable";
+            if (childOfRow && name == "selected") return "craft.row.selected";
+            return buttonTarget ? "craft.row" : "content";
+        }
+
+        public static string RowImageReason(string name, bool childOfRow, bool buttonTarget)
+        {
+            if (childOfRow && name == "bkg") return "recipe row strip (canCraft from m_availableRecipes)";
+            if (childOfRow && name == "selected") return "recipe row selected rim (SetRecipe toggles it)";
+            return buttonTarget ? "recipe row button" : "recipe row icon / durability / magic background";
+        }
+
         public static CraftingLayout Compute(CraftingInput i, CraftingTokens t)
         {
             var o = new CraftingLayout();
