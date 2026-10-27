@@ -259,8 +259,9 @@ namespace RuneSkin.InventoryScreen
             // live preview figure: a portrait box, never taller than the preview cap (user: smaller than the mockup's
             // figure, close to the old in-game size), centred in the alcove. The cap scales with the slot cell the whole
             // inventory is built on (hotbar cell over its size.slot token: skin scale and any strip squeeze), not with
-            // the skin scale alone: a squeezed inventory kept a full-size figure (2026-10-27 user report). The live
-            // preview renders into the whole alcove (DollFigure) and frames the body to this box's height there.
+            // the skin scale alone: a squeezed inventory kept a full-size figure (2026-10-27 user report). This box is
+            // the silhouette's; the live preview renders into the whole alcove (DollFigure) and frames the body to the
+            // alcove's full height (CharacterPreview.Frame, user 2026-10-28).
             var unit = t.GridCell > 0f && h.Cell > 0f ? h.Cell / t.GridCell : k;
             var ph = Math.Min(o.DollFigure.H, t.PreviewMaxH * unit);
             var pw = Math.Min(o.DollFigure.W, ph * Math.Max(0f, t.DollFigureAspect));

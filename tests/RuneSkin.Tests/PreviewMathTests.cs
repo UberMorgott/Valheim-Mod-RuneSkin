@@ -67,40 +67,55 @@ namespace RuneSkin.Tests
         }
 
         [Fact]
-        public void CameraFitsHeightOnTallViewsAndWidthOnNarrowOnes()
+        public void FitHeightFillsTheViewHeightWithTheMargins()
         {
             var tan = Math.Tan(15.0 * Math.PI / 180.0);
-            // Portrait 0.66: height bound (2 m body, 1.2 m wide: 1.2 / 0.66 = 1.82 < 2).
-            Assert.Equal((float)(1.0 / tan), PreviewMath.Distance(2f, 1.2f, 0.66f, 30f, 0f), 3);
-            // Very narrow 0.4: width bound.
-            Assert.Equal((float)(0.6 / (tan * 0.4)), PreviewMath.Distance(2f, 1.2f, 0.4f, 30f, 0f), 3);
-            // Padding pushes the camera back proportionally.
-            Assert.Equal(PreviewMath.Distance(2f, 1.2f, 0.66f, 30f, 0f) * 1.1f, PreviewMath.Distance(2f, 1.2f, 0.66f, 30f, 0.1f), 3);
-            // Bad aspect falls back to square.
-            Assert.Equal(PreviewMath.Distance(2f, 1.2f, 1f, 30f, 0f), PreviewMath.Distance(2f, 1.2f, 0f, 30f, 0f), 3);
+            var spans = new[] { (0f, 1.85f), (0f, 2.05f), (-0.02f, 2.4f) };
+            foreach (var aspect in new[] { 0.5f, 0.66f, 1f, 1.8f })
+                foreach (var (y0, y1) in spans)
+                {
+                    var (d, cy) = PreviewMath.FitHeight(y0, y1, aspect, 30f, 0.06f, 0.03f, 0.5f);
+                    var viewH = 2.0 * d * tan;
+                    var lo = cy - viewH / 2.0;
+                    // feet 3% above the lower edge, head 6% under the upper edge: the figure takes 91% of the height
+                    Assert.Equal(0.03, (y0 - lo) / viewH, 3);
+                    Assert.Equal(0.94, (y1 - lo) / viewH, 3);
+                }
         }
 
         [Fact]
-        public void FigureShareKeepsTheBodyHeightInsideALargerStage()
+        public void FitHeightNeverShrinksForWideSpansOnlyForTheCoreWidth()
         {
             var tan = Math.Tan(15.0 * Math.PI / 180.0);
-            // Stage twice the figure height: the body takes half the view height (camera twice as far).
-            var share = PreviewMath.Share(150f, 300f);
-            Assert.Equal(0.5f, share, 4);
-            Assert.Equal((float)(2.0 / tan), PreviewMath.Distance(2f, 2.2f, 1.5f, 30f, 0f, share), 3);
-            // Projected body height / view height == share (what lands on screen = the figure box).
-            var d = PreviewMath.Distance(2f, 2.2f, 1.5f, 30f, 0f, share);
-            Assert.Equal(share, (float)(2.0 / (2.0 * d * tan)), 3);
-            // The span still fits a narrow stage: width bound wins, the body only gets smaller, never cut.
-            var narrow = PreviewMath.Distance(2f, 2.2f, 0.4f, 30f, 0f, share);
-            Assert.True(2.2 <= 2.0 * narrow * tan * 0.4 + 1e-3);
-            // Figure taller than the stage / no figure: whole stage.
-            // Tiny share: camera far back (CharacterPreview moves its far plane with the distance).
-            Assert.True(PreviewMath.Distance(2f, 2.2f, 1f, 30f, 0.06f, PreviewMath.Share(10f, 300f)) > 30f);
-            Assert.Equal(1f, PreviewMath.Share(400f, 300f));
-            Assert.Equal(1f, PreviewMath.Share(0f, 300f));
-            Assert.Equal(1f, PreviewMath.Share(100f, 0f));
-            Assert.Equal(PreviewMath.Distance(2f, 1.2f, 0.66f, 30f, 0f), PreviewMath.Distance(2f, 1.2f, 0.66f, 30f, 0f, 7f), 3);
+            // A portrait view: the height fit stands whatever a weapon spans sideways (no width input but the core).
+            var (d, _) = PreviewMath.FitHeight(0f, 2f, 0.5f, 30f, 0f, 0f, 0.6f);
+            Assert.Equal((float)(1.0 / tan), d, 3);
+            // A very narrow view: the core width bounds, feet still anchored at the bottom margin.
+            var (dn, cyn) = PreviewMath.FitHeight(0f, 2f, 0.2f, 30f, 0.06f, 0.03f, 0.6f);
+            Assert.Equal((float)(0.3 / (tan * 0.2)), dn, 3);
+            var viewH = 2.0 * dn * tan;
+            Assert.Equal(0.03, (0.0 - (cyn - viewH / 2.0)) / viewH, 3);
+            // Bad aspect falls back to square; a degenerate span frames MinSpan.
+            Assert.Equal(PreviewMath.FitHeight(0f, 2f, 1f, 30f, 0f, 0f, 0f), PreviewMath.FitHeight(0f, 2f, 0f, 30f, 0f, 0f, 0f));
+            Assert.Equal(PreviewMath.FitHeight(1f, 1f + PreviewMath.MinSpan, 1f, 30f, 0f, 0f, 0f), PreviewMath.FitHeight(1f, 1f, 1f, 30f, 0f, 0f, 0f));
+            Assert.Equal(PreviewMath.FitHeight(0f, PreviewMath.MinSpan, 1f, 30f, 0f, 0f, 0f), PreviewMath.FitHeight(0f, float.NaN, 1f, 30f, 0f, 0f, 0f));
+        }
+
+        [Fact]
+        public void SmoothSnapsFirstEasesLaterAndIgnoresJitter()
+        {
+            Assert.Equal(1.9f, PreviewMath.Smooth(float.NaN, 1.9f, 0.016f, 10f, 0.01f));
+            Assert.Equal(1.9f, PreviewMath.Smooth(1.9f, 1.905f, 0.016f, 10f, 0.01f)); // inside the deadband
+            var v = PreviewMath.Smooth(1.9f, 2.3f, 0.016f, 10f, 0.01f);
+            Assert.True(v > 1.9f && v < 2.3f);
+            // frame-rate independent: two 8 ms steps == one 16 ms step
+            var two = PreviewMath.Smooth(PreviewMath.Smooth(1.9f, 2.3f, 0.008f, 10f, 0f), 2.3f, 0.008f, 10f, 0f);
+            Assert.Equal(PreviewMath.Smooth(1.9f, 2.3f, 0.016f, 10f, 0f), two, 4);
+            // converges within a second at rate 10
+            var c = 1.9f;
+            for (var i = 0; i < 60; i++) c = PreviewMath.Smooth(c, 2.3f, 1f / 60f, 10f, 0.01f);
+            Assert.True(Math.Abs(c - 2.3f) <= 0.01f);
+            Assert.Equal(2.3f, PreviewMath.Smooth(1.9f, 2.3f, 0f, 10f, 0.01f));
         }
 
         [Fact]

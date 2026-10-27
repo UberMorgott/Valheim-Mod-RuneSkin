@@ -41,23 +41,42 @@ namespace RuneSkin.InventoryScreen
         public static bool NeedsResize(int curW, int curH, int wantW, int wantH, int slack = 2) =>
             curW <= 0 || curH <= 0 || Math.Abs(curW - wantW) > slack || Math.Abs(curH - wantH) > slack;
 
-        // Camera distance that fits a standing body (height x width metres) with `pad` margin (share of the size) in a
-        // view of vertical field of view `vFovDeg` and aspect w/h: the tighter of the height and width fits. `share` =
-        // part of the view height the body takes (figure box height over the rendered stage height, Share): the body
-        // stays that tall on screen whatever the stage around it, the width fit still keeps `bodyW` inside the stage.
-        public static float Distance(float bodyH, float bodyW, float aspect, float vFovDeg, float pad, float share = 1f)
+        // Level camera (looking along -z, no tilt: verticals stay straight) that fits the figure's world height span
+        // [yMin, yMax] (live renderer bounds: feet .. helmet / raised weapon) to the whole view height, `top` / `bottom`
+        // shares of the view left free above the head and under the feet. Height first: a held weapon or shield wider
+        // than the view overflows sideways instead of shrinking the body (user 2026-10-28: "the character fills the
+        // window, not small in the centre"); only `coreW` (shoulder width) is kept inside a very narrow view.
+        // Returns the camera distance from the figure plane and the camera's (and view centre's) height.
+        public static (float Distance, float CenterY) FitHeight(float yMin, float yMax, float aspect, float vFovDeg,
+            float top, float bottom, float coreW)
         {
             var tan = Math.Tan(Math.Max(1f, Math.Min(170f, vFovDeg)) * Math.PI / 360.0);
             if (!(aspect > 0f)) aspect = 1f;
-            if (!(share > 0f) || share > 1f) share = 1f;
-            var byH = bodyH * 0.5 * (1.0 + pad) / (tan * share);
-            var byW = bodyW * 0.5 * (1.0 + pad) / (tan * aspect);
-            return (float)Math.Max(byH, byW);
+            if (float.IsNaN(yMin) || float.IsNaN(yMax) || yMax - yMin < MinSpan) yMax = yMin + MinSpan;
+            top = Math.Max(0f, Math.Min(0.4f, top));
+            bottom = Math.Max(0f, Math.Min(0.4f, bottom));
+            var fill = 1.0 - top - bottom;
+            var byH = (yMax - yMin) / fill * 0.5 / tan;
+            var byW = Math.Max(0f, coreW) * 0.5 / (tan * aspect);
+            var d = Math.Max(byH, byW);
+            var viewH = 2.0 * d * tan;
+            // feet `bottom` above the view's lower edge (a width-bound view only grows above the head)
+            return ((float)d, (float)(yMin - bottom * viewH + viewH * 0.5));
         }
 
-        // Share of the stage height the figure box takes (both canvas units), in (0, 1]; no figure = the whole stage.
-        public static float Share(float figureH, float stageH) =>
-            figureH > 0f && stageH > 0f ? Math.Min(1f, figureH / stageH) : 1f;
+        // Shortest height span FitHeight frames (no renderer bounds yet / a degenerate box).
+        public const float MinSpan = 0.5f;
+
+        // Frame-rate independent ease of a framed value towards its measured target (equip changes, idle sway): changes
+        // under `deadband` metres are ignored (no breathing jitter), NaN current = first measure (snap).
+        public static float Smooth(float current, float target, float dt, float rate, float deadband)
+        {
+            if (float.IsNaN(current)) return target;
+            var delta = target - current;
+            if (Math.Abs(delta) <= deadband) return current;
+            if (!(dt > 0f) || !(rate > 0f)) return target;
+            return current + delta * (float)(1.0 - Math.Exp(-rate * dt));
+        }
 
         // Yaw after a horizontal drag of dx pixels (degrees per pixel), wrapped to [0, 360).
         public static float Yaw(float yaw, float dx, float degPerPixel)

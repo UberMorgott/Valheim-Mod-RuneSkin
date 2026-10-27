@@ -69,16 +69,19 @@ namespace RuneSkin.InventoryScreen
         public GameObject Clone => _clone;
         public int Layer => _layer;
         public float Yaw => _yaw;
-        // Share of the stage height the body is framed to (figure box / stage, Place) and the framed body height in
-        // metres (autotest preview-framed: projects feet and BodyH through the camera).
-        public float FigureShare => _share;
-        public static float FramedBodyHeight => BodyH;
+        // Share of the stage height the framed figure takes (1 - top - bottom margin) and the framed figure height in
+        // metres (smoothed live renderer bounds, Frame).
+        public float FigureShare => 1f - Top - Bottom;
+        public static float FramedBodyHeight => Instance && !float.IsNaN(Instance._yMax) ? Instance._yMax - Instance._yMin : BodyH;
 
         // World point far from any playable area (worlds span about +-10500 m on x/z, terrain below ~1000 m).
         private static readonly Vector3 Origin = new Vector3(0f, 12000f, 0f);
-        // BodyH: standing height framed to the figure box; SpanW: width that must stay inside the stage (sword in hand,
-        // shield, cape, back weapons: the old 1.2 m body width cut them at the image edge, 2026-10-27 user report).
-        private const float BodyH = 2.0f, SpanW = 2.2f, CenterY = 0.98f, Pad = 0.06f, Fov = 30f, DegPerPixel = 0.45f;
+        // The figure (live renderer bounds, feet .. helmet) fills the whole alcove height: Top / Bottom = view shares
+        // free above the head / under the feet; CoreW = shoulder width kept inside a very narrow alcove (held weapons and
+        // shields may overflow sideways, never shrink the figure: user 2026-10-28). BodyH = span before any bounds.
+        private const float BodyH = 2.0f, Top = 0.06f, Bottom = 0.03f, CoreW = 0.8f, Fov = 30f, DegPerPixel = 0.45f;
+        // Framing ease (1/s) and the bounds change ignored (m): equip changes glide, idle sway does not move the camera.
+        private const float EaseRate = 10f, Deadband = 0.01f;
 
         private RawImage _image;
         private RectTransform _rect;
@@ -88,7 +91,8 @@ namespace RuneSkin.InventoryScreen
         private RenderTexture _rt;
         private Player _player;
         private int _layer = -1, _applied = -1;
-        private float _yaw, _share = 1f;
+        private float _yaw, _yMin = float.NaN, _yMax = float.NaN;
+        private readonly List<Renderer> _renderers = new List<Renderer>();
         private bool _placed, _hidden, _failed, _alphaChecked;
         // Runtime materials created while this component built / refreshed the clone (destroyed on teardown).
         private readonly List<Material> _owned = new List<Material>();
@@ -126,9 +130,10 @@ namespace RuneSkin.InventoryScreen
 
         public bool Failed => _failed;
 
-        // Host placement: the stage the image covers and the figure box the body is framed to (canvas units, top-left
-        // origin; same canvas, so the body follows the GUI / skin scale with the layout); an empty stage only hides the
-        // image while the inventory stays open (the clone is kept: no rebuild on a transient layout state).
+        // Host placement: the stage the image covers (canvas units, top-left origin; same canvas, so the body follows the
+        // GUI / skin scale with the layout). The body is framed to the whole stage height (Frame); the figure box only
+        // gates visibility. An empty stage only hides the image while the inventory stays open (the clone is kept: no
+        // rebuild on a transient layout state).
         public void Place(RectTransform canvas, Box box, Box figure)
         {
             if (_failed || !IsOpen())
@@ -138,7 +143,6 @@ namespace RuneSkin.InventoryScreen
             }
             _placed = true;
             _hidden = box.IsEmpty || figure.IsEmpty;
-            _share = PreviewMath.Share(figure.H, box.H);
             if (!gameObject.activeSelf) gameObject.SetActive(true);
             if (!_hidden) Geo.Place(canvas, _rect, box);
         }
@@ -427,6 +431,7 @@ namespace RuneSkin.InventoryScreen
             _worldLights.Clear();
             _rigLights.Clear();
             _applied = -1;
+            _yMin = _yMax = float.NaN; // next build snaps its framing
         }
 
         // Runtime materials / meshes on the clone's renderers (PreviewOwnership: not in the pre-build baseline) are the
@@ -538,14 +543,45 @@ namespace RuneSkin.InventoryScreen
         {
             _clone.transform.localRotation = Quaternion.Euler(0f, _yaw, 0f);
             var aspect = _rt.height > 0 ? (float)_rt.width / _rt.height : 1f;
-            var d = PreviewMath.Distance(BodyH, SpanW, aspect, Fov, Pad, _share);
+            MeasureHeight(out var lo, out var hi);
+            var dt = Time.unscaledDeltaTime;
+            _yMin = PreviewMath.Smooth(_yMin, lo, dt, EaseRate, Deadband);
+            _yMax = PreviewMath.Smooth(_yMax, hi, dt, EaseRate, Deadband);
+            var (d, cy) = PreviewMath.FitHeight(_yMin, _yMax, aspect, Fov, Top, Bottom, CoreW);
             _camera.aspect = aspect;
-            _camera.farClipPlane = d + 10f; // a small figure share puts the camera far back
-            _camera.transform.position = Origin + new Vector3(0f, CenterY, d);
+            _camera.farClipPlane = d + 10f;
+            _camera.transform.position = Origin + new Vector3(0f, cy, d);
             _camera.transform.rotation = Quaternion.LookRotation(Vector3.back);
             var clear = ThemeTokens.GetColor("color.inv.preview.clear", new Color(0f, 0f, 0f, 0f));
             if (_opaqueClear) clear.a = 1f;
             _camera.backgroundColor = clear;
+        }
+
+        // World height span of the clone's drawn meshes (body, armour, hair, helmet, held / back items; the renderer AABBs
+        // Unity keeps for culling, no vertex read): feet .. top of head or helmet. Relative to the rig origin; yaw turns
+        // about the vertical axis and leaves it unchanged. No drawn mesh yet: 0 .. BodyH.
+        private void MeasureHeight(out float lo, out float hi)
+        {
+            lo = float.MaxValue;
+            hi = float.MinValue;
+            _clone.GetComponentsInChildren(false, _renderers);
+            foreach (var r in _renderers)
+            {
+                if (!r || !r.enabled || !(r is MeshRenderer || r is SkinnedMeshRenderer)) continue;
+                var b = r.bounds;
+                if (b.size.sqrMagnitude <= 0f) continue;
+                lo = Mathf.Min(lo, b.min.y);
+                hi = Mathf.Max(hi, b.max.y);
+            }
+            _renderers.Clear();
+            if (lo > hi)
+            {
+                lo = 0f;
+                hi = BodyH;
+                return;
+            }
+            lo -= Origin.y;
+            hi -= Origin.y;
         }
 
         // Time of day / weather independent: world directional lights off, rig lights on, fog off, flat ambient for this render only.
