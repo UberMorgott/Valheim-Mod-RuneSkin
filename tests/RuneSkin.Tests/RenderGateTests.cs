@@ -8,6 +8,17 @@ namespace RuneSkin.Tests
     public class RenderGateTests
     {
         [Fact]
+        public void FadeWritesEndValuesAtOnceAndStepsAtMost60Hz()
+        {
+            const float step = RenderGateMath.FadeWriteInterval;
+            Assert.True(RenderGateMath.FadeWrite(0.9f, 1f, 1f, 0f));        // reached the target: written the same frame
+            Assert.True(RenderGateMath.FadeWrite(0.1f, 0f, 0f, 0f));        // faded out: written (park reads 0)
+            Assert.False(RenderGateMath.FadeWrite(0.2f, 0.25f, 1f, step * 0.5f)); // fast frames: held under one 60 Hz period
+            Assert.True(RenderGateMath.FadeWrite(0.2f, 0.25f, 1f, step));   // 60 fps and slower: every frame
+            Assert.False(RenderGateMath.FadeWrite(1f, 1f, 1f, 10f));        // settled: no write
+            Assert.True(RenderGateMath.FadeWrite(0f, 0.05f, 1f, float.PositiveInfinity)); // first step of an open
+        }
+        [Fact]
         public void FirstOwnerConcealsLastOwnerReveals()
         {
             var l = new GateLedger<int>();

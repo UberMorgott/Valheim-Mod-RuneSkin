@@ -428,6 +428,7 @@ namespace RuneSkin.InventoryScreen
         // closed inventory still costs no per-frame RuneSkin work). Input stays blocked by the fade group.
         private CanvasGroup _fade;
         private float _alpha;
+        private float _alphaWrittenAt = float.NegativeInfinity;
         private const string ParkOwner = "inventory.parked";
         private readonly List<GameObject> _parked = new List<GameObject>(4);
         private readonly List<Behaviour> _idled = new List<Behaviour>(256);
@@ -453,7 +454,12 @@ namespace RuneSkin.InventoryScreen
             // walks its parents (Selectable.ParentGroupAllowsInteraction). Only the input block is toggled: interactable is
             // never cleared (vanilla Hide leaves its Selectables interactable, InventoryGui.cs:1055-1061; its Update takes no
             // input while hidden) - flipping it also re-ran every Selectable's state transition on each open and close.
-            if (!Mathf.Approximately(_fade.alpha, _alpha)) _fade.alpha = _alpha;
+            var now = Time.unscaledTime;
+            if (RenderGateMath.FadeWrite(_fade.alpha, _alpha, target, now - _alphaWrittenAt))
+            {
+                _fade.alpha = _alpha;
+                _alphaWrittenAt = now;
+            }
             if (_fade.blocksRaycasts != want) _fade.blocksRaycasts = want;
             if (want) return;
             if (_alpha > 0f)

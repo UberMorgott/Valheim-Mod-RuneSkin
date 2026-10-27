@@ -10,6 +10,15 @@ namespace RuneSkin.Restyle
 
         public static bool Concealed(float alpha) => !(alpha > FadeFloor);
 
+        // A big fade group (InventoryGui: ~2600 objects, every CanvasGroup write broadcasts OnCanvasGroupChanged to all of
+        // them, inactive ones included; rp-open-hitch run 20261027-194038: 0.42 ms per write) takes intermediate alpha
+        // values at most at 60 Hz: at or under 60 fps every frame still gets its value, faster frames hold the last value
+        // for under one 60 Hz period. The end values (0 = parked, 1 = shown) are written the frame they are reached.
+        public const float FadeWriteInterval = 1f / 60f;
+
+        public static bool FadeWrite(float written, float next, float target, float sinceWrite) =>
+            System.Math.Abs(next - written) > 1e-5f && (next == target || sinceWrite >= FadeWriteInterval);
+
         // Inner rect (x0, y0, x1, y1 with x0 <= x1, y0 <= y1) lies fully inside outer, with tol px of slack.
         public static bool Inside(float outerLeft, float outerBottom, float outerRight, float outerTop, float innerLeft, float innerBottom, float innerRight, float innerTop, float tol) =>
             innerLeft >= outerLeft - tol && innerBottom >= outerBottom - tol && innerRight <= outerRight + tol && innerTop <= outerTop + tol;
