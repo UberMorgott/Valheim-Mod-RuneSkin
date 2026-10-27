@@ -57,7 +57,7 @@ namespace RuneSkin.Restyle
 
         // Last Arrange (header-local units): the title's width at the header's one size, the frame keep-outs; band width of
         // the last Place (canvas units).
-        private float _natural, _keepL, _keepR, _bandW;
+        private float _natural, _keepL, _keepR, _bandW, _plinthAux;
 
         // Band width (canvas units) this placed header needs to show its current title in full at the fitted title size
         // (WindowHeaderMath.BandForTitle with the keep-outs measured on it); 0 before the first placement / without a title.
@@ -65,7 +65,7 @@ namespace RuneSkin.Restyle
         {
             var r = ((RectTransform)transform).rect;
             if (!(_bandW > 0f) || !(r.width > 0f) || !(r.height > 0f) || !(_natural > 0f)) return 0f;
-            var need = WindowHeaderMath.BandForTitle(_natural, r.height, _hasIcon, _auxShare * r.height, _keepL, _keepR);
+            var need = WindowHeaderMath.BandForTitle(_natural, r.height, _hasIcon, Mathf.Max(_auxShare * r.height, _plinthAux), _keepL, _keepR);
             return need * _bandW / r.width;
         }
 
@@ -383,6 +383,8 @@ namespace RuneSkin.Restyle
                 tl = Mathf.Max(tl, clear);
                 tr = Mathf.Max(tr, clear);
             }
+            // TitleBandNeed: the plinth counts as an aux slot as wide as its title reserve (TitleSide = clear).
+            _plinthAux = plinth.IsEmpty ? 0f : Mathf.Max(0f, r.width - plinth.CapLeftX - r.height * WindowHeaderMath.InsetShare);
             if (Plate)
             {
                 var plateSprite = ThemeTokens.GetSprite(plinth.IsEmpty ? "sprite.plaque.header" : "sprite.plaque.header.open") ?? ThemeTokens.GetSprite("sprite.plaque.header");
@@ -411,7 +413,8 @@ namespace RuneSkin.Restyle
                 var at = Title.fontSize > 0.5f ? Title.fontSize : fontSize;
                 var natural = Title.GetPreferredValues(Title.text, 100000f, 100000f).x * fontSize / at;
                 _natural = natural;
-                WindowHeaderMath.FreeEmptySide(r.width, r.height, pl, pr, _hasIcon, _auxShare > 0f, natural, ref tl, ref tr);
+                // The plinth side is slotted: its reserve never gives way (the title must not run into the plinth).
+                WindowHeaderMath.FreeEmptySide(r.width, r.height, pl, pr, _hasIcon, _auxShare > 0f || !plinth.IsEmpty, natural, ref tl, ref tr);
                 var room = Mathf.Max(0f, r.width - tl - tr);
                 // a zero / negative room is still a cut title (the 3-column AB backpack before 0.25.9 had -18 units and
                 // drew at full size, unmeasured): step down whenever it does not fit

@@ -202,6 +202,22 @@ namespace RuneSkin.Tests
             Assert.Equal(0f, WindowHeaderMath.TitleClearOfPlinth(400f, default, 5f));
         }
 
+        // 0.25.10 title band (BandForTitle / FreeEmptySide) with a plinth: the plinth reserve counts as the aux slot, so the
+        // band sized for a title keeps it at the readable floor (TitleMinShare) left of the plinth.
+        [Fact]
+        public void Plinth_BandForTitleKeepsTheTitleAtTheFloor()
+        {
+            const float h = 30f, natural = 200f;
+            var probe = WindowHeaderMath.PlinthLayout(1000f, 0f, h, 3, 1.32f, 2f, 0.81f, 0.37f, 0.86f, 0.48f);
+            var aux = 1000f - probe.CapLeftX - h * WindowHeaderMath.InsetShare; // RuneWindowHeader._plinthAux
+            var w = WindowHeaderMath.BandForTitle(natural, h, false, aux, 0f, 0f);
+            var p = WindowHeaderMath.PlinthLayout(w, 0f, h, 3, 1.32f, 2f, 0.81f, 0.37f, 0.86f, 0.48f);
+            var tr = WindowHeaderMath.TitleClearOfPlinth(w, p, h * WindowHeaderMath.GapShare);
+            var tl = tr; // centred
+            WindowHeaderMath.FreeEmptySide(w, h, h * WindowHeaderMath.PlateInsetShare, w - p.PlateEnd, false, true, natural, ref tl, ref tr);
+            Assert.True(w - tl - tr >= natural * WindowHeaderMath.TitleMinShare - 0.01f);
+            Assert.True(w - tr <= p.CapLeftX); // never into the plinth
+        }
         [Fact]
         public void Plinth_TitleClearsTheWholePlinth()
         {
