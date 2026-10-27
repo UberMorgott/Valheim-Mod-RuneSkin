@@ -1,0 +1,7 @@
+Generate ONE PNG image, 512x512, background solid flat pure magenta #FF00FF everywhere (it will be chroma-keyed; no gradients/shadows on the background, no magenta inside the sprite).
+Content: ONE small game-UI sprite centered, about 360x360 px, nothing else (no text, no labels): an "empty magazine pip".
+Reference: dots_ref.png in the current directory. Its LEFT sprite is the approved FILLED pip, its RIGHT sprite the old EMPTY pip.
+Make the new empty pip: the exact same round blackened-iron socket as the reference (same size, same silhouette, same rim width), empty dark recessed hollow (#0b0e11) with a faint engraved rune, NO glow inside.
+Change vs the old empty pip: the RIM must be clearly BRIGHTER so the empty socket reads on a dark slate background at 12-16 px: a light steel/silver rim (#8a98a3 to #b8c4cc highlights, thin crisp bevel), still no cyan, no glow. Strong silhouette, high contrast rim vs hollow.
+Style: God of War Norse stone-rune UI matching the reference. Front-facing flat orthographic, no perspective, no drop shadow.
+Save the result exactly to the -To path.

@@ -9727,6 +9727,75 @@
       "fillCenter": true,
       "token": "craft.bar.trough",
       "notes": "Craft progress trough (approved mockup): very dark recessed groove with faint rune etching, opaque"
+    },
+    {
+      "name": "pip_magazine_full",
+      "file": "pip_magazine_full.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.pip.full",
+      "notes": "Crossbow magazine dot, loaded (approved mockups ammo-hud f1/f2 varA, kit ammo_pips.png left): iron socket with a glowing cyan rune gem; colour baked (tint white); item icon cells + ammo plate",
+      "atlas": "strip"
+    },
+    {
+      "name": "pip_magazine_empty",
+      "file": "pip_magazine_empty.png",
+      "size": [
+        48,
+        48
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.pip.empty",
+      "notes": "Crossbow magazine dot, empty (user 2026-10-27: brighter rim than the mockup's): same socket as pip_magazine_full, bright steel rim, dark hollow; colour baked (tint white)",
+      "atlas": "strip"
+    },
+    {
+      "name": "ammo_plate",
+      "file": "ammo_plate.png",
+      "size": [
+        576,
+        138
+      ],
+      "border": {
+        "left": 0,
+        "bottom": 0,
+        "right": 0,
+        "top": 0
+      },
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "imageType": "Simple",
+      "fillCenter": true,
+      "token": "hud.ammo.plate",
+      "notes": "Ammo nameplate (approved mockup ammo-hud f1-varA): iron frame, smoky glass, cyan hairline + rune diamonds at the ends; rebuilt to the fixed plate aspect 576 x 138 (144 x 34.5 units x 2 x 2: AmmoFrame size.hud.ammo.plate.w / .h) so it is drawn Simple, unstretched; flat left end butts against the ammo tile",
+      "atlas": "strip"
     }
   ]
 }

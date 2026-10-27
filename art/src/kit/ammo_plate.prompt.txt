@@ -1,0 +1,5 @@
+Generate ONE PNG image, 1536x512, background solid flat pure magenta #FF00FF everywhere (chroma-keyed later; no magenta inside the sprite).
+Content: a single horizontal game-HUD nameplate bar, about 1400x260 px, centered, nothing else, NO text.
+Design: thin dark iron frame (2-3% of height thick, #2a3036 with subtle Norse knot-scratch texture), interior near-black translucent smoky glass (#0d1114 to #151b20, slightly lighter at top), small cyan #4FE0E6 rune diamond accents at the left and right ends only, a very thin cyan hairline along the inner top edge. Center area must be plain and empty (it will hold text). Left end is flat/square so it can butt against a square item tile.
+Style must match the reference files header_plaque.png and socket_hotbar.png in the current directory (God of War Norse stone-rune look). Front-facing, flat, no perspective, no drop shadow.
+Save the result exactly to the -To path.

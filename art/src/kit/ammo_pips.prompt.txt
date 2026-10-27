@@ -1,0 +1,6 @@
+Generate ONE PNG image, 1024x512, background solid flat pure magenta #FF00FF everywhere (it will be chroma-keyed; no gradients/shadows on the background, no magenta inside the sprites).
+Content: two small game-UI sprites side by side, each centered in its own half, each about 360x360 px, nothing else (no text, no labels).
+LEFT sprite "filled magazine pip": a small round socket of dark blackened iron (thin rim, #2a3036 to #12161a), holding a polished gem engraved with a single Norse rune, glowing bright cyan #4FE0E6 with a soft cyan inner glow and a faint cyan halo that stays inside a tight radius. 
+RIGHT sprite "empty magazine pip": the exact same iron socket, same size and rim, but empty: a dark recessed hollow (#0b0e11), faint engraved rune barely visible, no glow at all.
+Style: God of War Norse stone-rune UI, matching the reference files socket_hotbar.png and header_plaque.png in the current directory (dark slate/iron, thin frames, small cyan rune accents, crisp, readable at 12-16 px after downscale -> strong silhouette, high contrast between filled and empty). Front-facing flat orthographic, no perspective.
+Save the result exactly to the -To path.
