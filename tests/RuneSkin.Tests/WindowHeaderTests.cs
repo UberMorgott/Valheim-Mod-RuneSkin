@@ -47,6 +47,41 @@ namespace RuneSkin.Tests
             Assert.Equal(30f, tl, 3);
         }
 
+        // AB 3-column backpack (window 316 = size.inv.backpack.min, band 316 - 2 x 12 pad = 292, header 40, frame keep-out
+        // 82 a side -> plate 128 as drawn in run 20261027-144717, header glyph left, no aux): the centred title room was 8
+        // units -> '…' at 60 %. Its title ("Рюкзак" ~72 units at size 20) must keep a readable box at 720p and 1440p
+        // (canvas scale 0.667 / 1.333): >= 16 screen px wide and fitted above the 60 % floor.
+        [Theory]
+        [InlineData(0.6667f)]
+        [InlineData(1.3333f)]
+        public void BackpackHeaderTitle_KeepsAReadableBox(float canvasScale)
+        {
+            const float w = 292f, h = 40f, keep = 82f, natural = 72f;
+            WindowHeaderMath.LocalSlots(w, h, true, 0f, out var inset, out var titleL, out var titleR, out var font);
+            WindowHeaderMath.PlateInFrame(inset, titleL, titleR, keep, keep, out var pl, out var pr, out var tl, out var tr);
+            Assert.Equal(128f, w - pl - pr, 3);
+            Assert.True(w - tl - tr < 16f); // the symmetric reserve alone left no room (the regression)
+            WindowHeaderMath.FreeEmptySide(w, h, pl, pr, true, false, natural, ref tl, ref tr);
+            Assert.Equal(titleL + keep - inset, tl, 3); // the icon side keeps its slot
+            Assert.Equal(pr + h * (WindowHeaderMath.InsetShare - WindowHeaderMath.PlateInsetShare), tr, 3); // empty side down to its edge inset
+            var room = w - tl - tr;
+            Assert.True(room * canvasScale >= 16f, $"title box {room * canvasScale:0.#} px");
+            Assert.True(WindowHeaderMath.FitFont(font, natural, room, 0.6f) > font * 0.6f + 0.5f);
+        }
+
+        [Fact]
+        public void FreeEmptySide_KeepsAFittingTitleCentredAndSlottedSidesFixed()
+        {
+            float tl = 62f, tr = 62f;
+            WindowHeaderMath.FreeEmptySide(400f, 40f, 2f, 2f, true, false, 100f, ref tl, ref tr);
+            Assert.Equal(62f, tr, 3); // fits: centred, untouched
+            WindowHeaderMath.FreeEmptySide(200f, 40f, 2f, 2f, true, true, 500f, ref tl, ref tr);
+            Assert.Equal(62f, tl, 3); // both sides hold a slot: nothing given up
+            Assert.Equal(62f, tr, 3);
+            WindowHeaderMath.FreeEmptySide(200f, 40f, 2f, 2f, true, false, 86f, ref tl, ref tr);
+            Assert.Equal(52f, tr, 3); // gives just the 10 missing units
+        }
+
         [Fact]
         public void FitFont_StepsDownOnlyWhenTooWide()
         {

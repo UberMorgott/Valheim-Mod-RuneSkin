@@ -368,18 +368,22 @@ namespace RuneSkin.Restyle
             }
             else AuxLocal = default;
             if (!Title) return;
-            Inside(Title.rectTransform, tl, tr, ft, 0f);
             if (Title.alignment != TextAlignmentOptions.Center) Title.alignment = TextAlignmentOptions.Center;
             if (Title.enableAutoSizing) Title.enableAutoSizing = false;
-            // One size on every header; only a title wider than its narrowed plate steps down (never below 60 %).
-            var room = Mathf.Max(0f, r.width - tl - tr);
+            // One size on every header; only a title wider than its room steps down (never below 60 %), after the empty
+            // side's centring reserve gave up what it can (WindowHeaderMath.FreeEmptySide).
             var want = fontSize;
-            if (room > 0f && !string.IsNullOrEmpty(Title.text))
+            if (!string.IsNullOrEmpty(Title.text))
             {
                 var at = Title.fontSize > 0.5f ? Title.fontSize : fontSize;
                 var natural = Title.GetPreferredValues(Title.text, 100000f, 100000f).x * fontSize / at;
+                WindowHeaderMath.FreeEmptySide(r.width, r.height, pl, pr, _hasIcon, _auxShare > 0f, natural, ref tl, ref tr);
+                var room = Mathf.Max(0f, r.width - tl - tr);
+                // a zero / negative room is still a cut title (the 3-column AB backpack before 0.25.9 had -18 units and
+                // drew at full size, unmeasured): step down whenever it does not fit
                 want = WindowHeaderMath.FitFont(fontSize, natural, room, 0.6f); // long chest names (run 20261026-182632: "Сундук из че…" at 75 %)
             }
+            Inside(Title.rectTransform, tl, tr, ft, 0f);
             if (Mathf.Abs(Title.fontSize - want) > 0.05f) Title.fontSize = want;
             _ = _iconShare;
         }

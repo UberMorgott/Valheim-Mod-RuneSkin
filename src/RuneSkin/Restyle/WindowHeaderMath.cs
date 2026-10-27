@@ -59,6 +59,26 @@ namespace RuneSkin.Restyle
             titleL = titleR = t;
         }
 
+        // Title insets when the centred title does not fit: the symmetric reserve on a side without a slot (no icon left /
+        // no aux right) exists only to keep the title centred, so it gives up just the missing width, down to the plain
+        // edge inset inside the plate (plate side + InsetShare - PlateInsetShare of the height). A narrow window with a
+        // wide frame keep-out and an icon (AB 3-column backpack: plate 128 units, symmetric title room 8 -> '…' at 60 %,
+        // run 20261027-144717) keeps its title readable; a title that fits stays centred.
+        public static void FreeEmptySide(float width, float h, float plateLeft, float plateRight, bool leftSlot, bool rightSlot,
+            float natural, ref float titleLeft, ref float titleRight)
+        {
+            var deficit = natural - (width - titleLeft - titleRight);
+            if (!(deficit > 0f)) return;
+            var edge = h * (InsetShare - PlateInsetShare);
+            if (!rightSlot)
+            {
+                var give = Math.Min(deficit, Math.Max(0f, titleRight - (plateRight + edge)));
+                titleRight -= give;
+                deficit -= give;
+            }
+            if (!leftSlot && deficit > 0f) titleLeft -= Math.Min(deficit, Math.Max(0f, titleLeft - (plateLeft + edge)));
+        }
+
         // Title size: the header's one size, stepped down only when the title is wider than its room (never below
         // minShare of it).
         public static float FitFont(float size, float naturalWidth, float room, float minShare)
