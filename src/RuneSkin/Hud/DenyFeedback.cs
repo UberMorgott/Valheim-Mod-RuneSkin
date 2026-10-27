@@ -54,7 +54,8 @@ namespace RuneSkin.PlayerHud
             Sounds++;
         }
 
-        // First sound-only prefab of a station's craft-fail effects, else of a door's locked effects.
+        // First sound-only object (a ZSFX with no renderers / lights under it) of a station's craft-fail
+        // effects, else of a door's locked effects.
         private static void Find()
         {
             var scene = ZNetScene.instance;
@@ -76,8 +77,19 @@ namespace RuneSkin.PlayerHud
             {
                 var p = e?.m_prefab;
                 if (!p || !e.m_enabled) continue;
-                if (!p.GetComponentInChildren<ZSFX>(true)) continue; // a sound prefab (ZSFX drives its AudioSource)
-                _sound = p;
+                var sfx = p.GetComponentInChildren<ZSFX>(true); // ZSFX drives the AudioSource
+                if (!sfx) continue;
+                // Only the ZSFX's own object, and only if it carries no visuals: a composite fx prefab (vanilla
+                // fx_UpgradeStation_Fail = red spark burst + sound) instantiated whole at the head drew a red lightning on
+                // the player at every empty-bar refusal.
+                var go = sfx.gameObject;
+                // (Renderer covers particles too: every ParticleSystem draws through its ParticleSystemRenderer)
+                if (go.GetComponentInChildren<Renderer>(true) || go.GetComponentInChildren<Light>(true))
+                {
+                    Plugin.Log.LogInfo($"[RuneSkin] deny sound: skip {p.name} (carries visuals)");
+                    continue;
+                }
+                _sound = go;
                 return true;
             }
             return false;
