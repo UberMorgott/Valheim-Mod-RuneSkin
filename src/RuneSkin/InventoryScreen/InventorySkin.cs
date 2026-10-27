@@ -707,12 +707,15 @@ namespace RuneSkin.InventoryScreen
             var player = Player.m_localPlayer;
             var screen = Hud.instance ? Hud.instance.m_loadingScreen : null;
             var cover = screen && screen.gameObject.activeInHierarchy ? screen.alpha : 0f;
-            var blocked = player && (player.IsDead() || player.InCutscene() || player.IsTeleporting());
-            switch (GhostOpenMath.Next(_ghost, _ghostHeld, player, blocked, _gui.m_animator.GetBool(AnimVisible), cover))
+            var blocked = player && (player.IsDead() || player.IsTeleporting());
+            var cutscene = player && player.InCutscene();
+            if (_ghost && cutscene) _ghostSawCutscene = true;
+            switch (GhostOpenMath.Next(_ghost, _ghostHeld, player, blocked, _gui.m_animator.GetBool(AnimVisible), cover, cutscene, _ghostSawCutscene))
             {
                 case GhostStep.Open:
                     _ghost = true;
                     _ghostHeld = 0;
+                    _ghostSawCutscene = false;
                     _ghostHiddenBy = null;
                     _ghostT0 = System.Diagnostics.Stopwatch.GetTimestamp();
                     Silence();
@@ -748,7 +751,19 @@ namespace RuneSkin.InventoryScreen
         // screen, InventoryGui.cs:513-516; Player.UpdateStations :4331/:4358; mods) must not play the close sound either
         // (run 20261028-003856: "hidden by the game" before the 4-frame close).
         private EffectList _openFx, _closeFx;
-        private bool _silenced, _ghostClosing;
+        private bool _silenced, _ghostClosing, _ghostSawCutscene;
+
+        // InventoryGui.Update prefix (InventoryAdapter.Update_Prefix): true = skip vanilla's Update this frame. Only while
+        // the ghost is open (fade alpha 0, raycasts off, effects silenced) and the spawn's wakeup cutscene is the sole
+        // close reason (GhostOpenMath.HoldsCutscene): vanilla would Hide and return (InventoryGui.cs:513-516) - its
+        // visible branch does not run on those frames either way; skipping keeps the screen shown without firing Hide's
+        // side effects (its own and every mod's Hide patch). Dead / teleporting / no player still reach vanilla's close.
+        public bool GhostHoldsCutscene()
+        {
+            if (!_ghost || !_gui || !_gui.m_animator) return false;
+            var p = Player.m_localPlayer;
+            return GhostOpenMath.HoldsCutscene(_ghost, _gui.m_animator.GetBool(AnimVisible), p, p && (p.IsDead() || p.IsTeleporting()), p && p.InCutscene());
+        }
         private string _ghostHiddenBy;
 
         private void Silence()
@@ -2198,7 +2213,8 @@ namespace RuneSkin.InventoryScreen
         private void UpdateActions()
         {
             var selected = UnityEngine.EventSystems.EventSystem.current ? UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject : null;
-            var typing = Chat.instance && Chat.instance.HasFocus() || global::Console.IsVisible() || TextInput.IsVisible() ||
+            // The hidden first open takes no input (GhostOpen; Codex review: raycasts off does not stop the hotkeys).
+            var typing = _ghost || Chat.instance && Chat.instance.HasFocus() || global::Console.IsVisible() || TextInput.IsVisible() ||
                          _gui.m_splitDialog && _gui.m_splitDialog.IsActive || selected && (selected.GetComponent<TMP_InputField>() || selected.GetComponent<InputField>());
             // Hotkeys go to one panel: the one under the pointer, else the player panel (one consumer per press).
             ActionBar focused = null;

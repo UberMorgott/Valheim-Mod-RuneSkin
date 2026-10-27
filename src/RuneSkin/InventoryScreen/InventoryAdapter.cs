@@ -4,7 +4,8 @@ using RuneSkin.Compat;
 
 namespace RuneSkin.InventoryScreen
 {
-    // Family "Inventory" hooks (installed only while RuneSkin owns it). No transpilers, no skipped originals:
+    // Family "Inventory" hooks (installed only while RuneSkin owns it). No transpilers, no skipped originals (one scoped
+    // exception: Update_Prefix, the hidden first open's frames during the spawn's wakeup cutscene):
     // InventoryGui.Awake (InventoryGui.cs:353) builds the skin after every other Awake postfix; InventoryGui.Update
     // (:501) and InventoryGrid.UpdateGui (InventoryGrid.cs:245) postfixes run after EquipmentAndQuickSlots (which
     // re-places its cells / backgrounds in both every frame) and ValheimPlus (container scrollbar layout prefix).
@@ -25,6 +26,18 @@ namespace RuneSkin.InventoryScreen
         {
             try { InventorySkin.Attach(__instance); }
             catch (System.Exception e) { Plugin.Log.LogError($"[RuneSkin] inventory skin build failed (vanilla layout stays): {e}"); }
+        }
+
+        // Hidden first open only (InventorySkin.GhostHoldsCutscene): vanilla's cutscene close skipped while the spawn's
+        // wakeup animation plays under the transparent, input-less ghost. Every other frame: vanilla runs untouched.
+        [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Update))]
+        [HarmonyPrefix]
+        [HarmonyPriority(Priority.First)]
+        private static bool Update_Prefix()
+        {
+            var skin = InventorySkin.Instance;
+            try { return !(skin && skin.GhostHoldsCutscene()); }
+            catch (System.Exception e) { Fault(e); return true; }
         }
 
         [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Update))]
