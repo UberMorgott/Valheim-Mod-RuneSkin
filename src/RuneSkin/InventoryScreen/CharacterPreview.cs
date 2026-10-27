@@ -90,6 +90,7 @@ namespace RuneSkin.InventoryScreen
         // Runtime materials created while this component built / refreshed the clone (destroyed on teardown).
         private readonly List<Material> _owned = new List<Material>();
         private readonly List<Mesh> _ownedMeshes = new List<Mesh>();
+        private readonly PreviewOwnership _ownership = new PreviewOwnership();
         private static bool _ownedLogged;
         private static readonly int VisibleHash = Animator.StringToHash("visible");
         private static bool _opaqueClear;
@@ -272,6 +273,7 @@ namespace RuneSkin.InventoryScreen
                 return false;
             }
             var before = MaterialIds();
+            _ownership.SetBaseline(before);
             try
             {
                 _player = player;
@@ -396,7 +398,7 @@ namespace RuneSkin.InventoryScreen
             FreeTexture();
             if (_clone)
             {
-                CollectRuntimeMaterials(_clone);
+                ClaimClone(_clone);
                 LiveClones--;
             }
             foreach (var m in _owned)
@@ -405,6 +407,7 @@ namespace RuneSkin.InventoryScreen
             foreach (var m in _ownedMeshes)
                 if (m) Destroy(m);
             _ownedMeshes.Clear();
+            _ownership.Reset();
             if (_rig) Destroy(_rig);
             _rig = _clone = null;
             _vis = null;
@@ -415,25 +418,30 @@ namespace RuneSkin.InventoryScreen
             _applied = -1;
         }
 
-        // Materials instantiated on the clone's renderers (VisEquipment touches m_bodyModel.material(s); item scripts
-        // may call Renderer.material): Unity does not free them with the GameObject. A " (Instance)" material that
-        // the real player's renderers also use is shared, not ours, and is kept.
-        private void CollectRuntimeMaterials(GameObject root)
+        // Runtime materials / meshes on the clone's renderers (PreviewOwnership: not in the pre-build baseline) are the
+        // clone's: Renderer.material(s) copies of VisEquipment (m_bodyModel, VisEquipment.cs:636-700, :1025-1125) and of
+        // item scripts, new Material(...) copies under any name, MeshFilter.mesh / skinned mesh instances. Unity never
+        // frees them with the GameObject. Claimed before and after every refresh (an item replaced by the refresh had its
+        // late-made copies claimed first) and at teardown, then destroyed there.
+        private void ClaimClone(GameObject root)
         {
-            var shared = new HashSet<Material>();
-            var player = Player.m_localPlayer;
-            if (player)
-                foreach (var r in player.GetComponentsInChildren<Renderer>(true))
-                    foreach (var m in r.sharedMaterials)
-                        if (m) shared.Add(m);
-            var mine = new HashSet<Material>();
+            if (!root || !_ownership.HasBaseline) return;
             foreach (var r in root.GetComponentsInChildren<Renderer>(true))
+            {
                 foreach (var m in r.sharedMaterials)
-                    if (m && m.name.EndsWith(" (Instance)", StringComparison.Ordinal) && !shared.Contains(m)) mine.Add(m);
-            foreach (var m in mine)
-                if (!_owned.Contains(m)) _owned.Add(m); // destroyed with the adopted ones (Teardown)
+                    if (m && _ownership.Claim(m.GetInstanceID(), Internal(m))) _owned.Add(m);
+                if (r is SkinnedMeshRenderer s) ClaimMesh(s.sharedMesh);
+            }
+            foreach (var f in root.GetComponentsInChildren<MeshFilter>(true))
+                ClaimMesh(f.sharedMesh);
         }
 
+        private void ClaimMesh(Mesh m)
+        {
+            if (m && _ownership.Claim(m.GetInstanceID(), Internal(m))) _ownedMeshes.Add(m);
+        }
+
+        private static bool Internal(UnityEngine.Object o) => (o.hideFlags & HideFlags.DontSave) != HideFlags.None;
         private void Fail(string why)
         {
             _failed = true;
@@ -448,6 +456,7 @@ namespace RuneSkin.InventoryScreen
         {
             _applied = _revision;
             if (!_vis || !_player) return;
+            ClaimClone(_clone);
             try
             {
                 _player.SetupVisEquipment(_vis, false);
@@ -455,11 +464,9 @@ namespace RuneSkin.InventoryScreen
                 Strip(_clone, build: false);
                 SetLayer(_clone.transform, _layer);
             }
-            // The body materials were instanced at Build (VisEquipment's Renderer.material(s) getters reuse them,
-            // VisEquipment.cs:636-700, :1025-1125); what a refresh can add are the new item instances' Renderer.material
-            // copies ("(Instance)", on the clone): collected from it, no scene-wide FindObjectsOfTypeAll window (four full
-            // object-table scans on every open after an equipment change).
-            finally { CollectRuntimeMaterials(_clone); }
+            // Claimed from the clone (ClaimClone), no scene-wide FindObjectsOfTypeAll window: four full object-table
+            // scans on every open after an equipment change.
+            finally { ClaimClone(_clone); }
             Refreshes++;
         }
 
@@ -486,6 +493,7 @@ namespace RuneSkin.InventoryScreen
             foreach (var m in Resources.FindObjectsOfTypeAll<Material>())
                 if (m && !before.Contains(m.GetInstanceID()) && (m.hideFlags & HideFlags.DontSave) == HideFlags.None)
                 {
+                    _ownership.Claim(m.GetInstanceID(), false);
                     _owned.Add(m);
                     added++;
                     if (names.Count < 8) names.Add(m.name);
@@ -493,6 +501,7 @@ namespace RuneSkin.InventoryScreen
             foreach (var m in Resources.FindObjectsOfTypeAll<Mesh>())
                 if (m && !before.Contains(m.GetInstanceID()) && (m.hideFlags & HideFlags.DontSave) == HideFlags.None && !_ownedMeshes.Contains(m))
                 {
+                    _ownership.Claim(m.GetInstanceID(), false);
                     _ownedMeshes.Add(m);
                     added++;
                     if (names.Count < 8) names.Add("mesh " + m.name);
