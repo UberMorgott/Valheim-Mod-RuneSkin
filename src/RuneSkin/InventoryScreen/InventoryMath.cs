@@ -32,6 +32,9 @@ namespace RuneSkin.InventoryScreen
         // Gap between the player grid window and the HUD strip's reserved top.
         public float StripGap = 8f;
         public float CraftW = 576f, MinCraftW = 456f;
+        // Smallest backpack window width (size.inv.backpack.min): the AB 3-column window (289.6) + 26 units, so its weight
+        // plate holds "12.5/40" at the 1280x720 body-floor font (24 units) left of the three action glyphs.
+        public float BackpackMinW = 316f;
         public float PanelActionsH = 48f;
         // Doll window header band: character name (window header) + the info tab row.
         public float HeaderH = 104f;
@@ -70,13 +73,15 @@ namespace RuneSkin.InventoryScreen
         public static float ActionLift(InventoryTokens t, float k) => Math.Max(0f, t.PanelCapInset - t.PanelPad * k / 2f);
 
         // Action row of a dock panel: right-aligned, at least the cap keep-out from the bottom and right edges.
-        // Width of a dock stat plate (StatPlate layout: round socket as wide as the plate is tall, 4 units gap, value text,
-        // 12 units right margin): the token width, grown until the value text fits at its font size, never past the room
-        // left of the action glyphs. The value font has a screen-px floor, so at small canvas scales the fixed token width
-        // alone cut "12.5/40" to "1…" (run 20261027-105618, AB backpack panel next to a chest at 1280x720).
+        // Width of a dock stat plate (StatPlate layout: round socket as wide as the plate is tall, value box = plate width -
+        // socket - 12): the token width, grown until the value text fits at its font size, never past the room left of the
+        // action glyphs. The value font has a screen-px floor, so at small canvas scales the fixed token width alone cut
+        // "12.5/40" to "1…" (run 20261027-105618, AB backpack panel next to a chest at 1280x720).
+        public static float StatValueBoxW(float plateW, float plateH) => Math.Max(1f, plateW - plateH - 12f);
+
         public static float StatPlateWidth(float tokenW, float plateH, float textW, float room)
         {
-            var need = plateH + 4f + textW + 12f;
+            var need = plateH + textW + 12f;
             return Math.Max(0f, Math.Min(Math.Max(tokenW, need), room));
         }
 

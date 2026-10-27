@@ -343,7 +343,9 @@ namespace RuneSkin.InventoryScreen
             if (hasPack)
             {
                 o.BackpackGrid = Grid(i.BackpackW, i.BackpackH, packRows, roomW, h, t, k);
-                var w = ContainerW(o.BackpackGrid.VisibleColumns, h.Pitch, h.Gap, o.BackpackGrid.ScrollV, t, k);
+                // at least the backpack minimum (its weight plate's room, never past the column's room), grown leftwards:
+                // the right edge stays on the centre column, the cells centre in the wider view (ContainerGridView)
+                var w = Math.Max(ContainerW(o.BackpackGrid.VisibleColumns, h.Pitch, h.Gap, o.BackpackGrid.ScrollV, t, k), Math.Min(t.BackpackMinW * k, roomW));
                 var ph = H(o.BackpackGrid.VisibleRows);
                 o.Backpack = new Box(roomRight - w, y - ph, w, ph);
             }

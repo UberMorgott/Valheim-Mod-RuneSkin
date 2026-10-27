@@ -829,6 +829,7 @@
     { "token": "size.inv.name.plaque", "value": 560 },
     { "token": "share.inv.name.knot", "value": 0.2 },
     { "token": "size.inv.plate.weight.dock", "value": 110 },
+    { "token": "size.inv.backpack.min", "value": 316 },
     { "token": "size.inv.panel.header", "value": 56 },
     { "token": "size.inv.panel.pad", "value": 12 },
     { "token": "size.slot", "value": 70 },

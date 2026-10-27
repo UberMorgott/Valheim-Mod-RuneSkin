@@ -182,6 +182,7 @@ namespace RuneSkin.InventoryScreen
             var t = _tokens;
             t.Margin = F("size.inv.margin", t.Margin); t.Gap = F("size.inv.gap", t.Gap); t.StripGap = F("size.inv.strip.gap", t.StripGap);
             t.CraftW = F("size.inv.craft", t.CraftW); t.MinCraftW = F("size.inv.craft.min", t.MinCraftW);
+            t.BackpackMinW = F("size.inv.backpack.min", t.BackpackMinW);
             t.InnerGap = F("size.inv.inner.gap", t.InnerGap); t.PanelActionsH = F("size.inv.panel.actions", t.PanelActionsH);
             t.HeaderH = F("size.inv.doll.header", t.HeaderH); t.FooterH = F("size.inv.footer", t.FooterH);
             t.PanelHeaderH = F("size.inv.panel.header", t.PanelHeaderH); t.PanelPad = F("size.inv.panel.pad", t.PanelPad);
@@ -982,7 +983,7 @@ namespace RuneSkin.InventoryScreen
                 else if (part.EndsWith("_icon", StringComparison.Ordinal)) Geo.Place(_canvas, rt, Inset(new Box(box.X, box.Y, socket, box.H), socket * 0.2f, socket * 0.2f));
                 else if (child.TryGetComponent<TMP_Text>(out var text))
                 {
-                    Geo.Place(_canvas, rt, new Box(box.X + socket + 4f, box.Y, Mathf.Max(1f, box.W - socket - 12f), box.H));
+                    Geo.Place(_canvas, rt, new Box(box.X + socket + 4f, box.Y, InventoryMath.StatValueBoxW(box.W, socket), box.H));
                     if (text.alignment != TextAlignmentOptions.MidlineLeft) text.alignment = TextAlignmentOptions.MidlineLeft;
                     if (text.textWrappingMode != TextWrappingModes.NoWrap) text.textWrappingMode = TextWrappingModes.NoWrap;
                     if (text.overflowMode != TextOverflowModes.Ellipsis) text.overflowMode = TextOverflowModes.Ellipsis;
@@ -1007,21 +1008,6 @@ namespace RuneSkin.InventoryScreen
             var size = StatValueSize(plateH);
             var w = text.GetPreferredValues(probe, float.PositiveInfinity, float.PositiveInfinity).x;
             return text.fontSize > 0.01f ? w * size / text.fontSize : w;
-        }
-
-        // Diagnostic (AB weight cut to '1…' at 1280x720): one line per panel whenever the dock weight plate's inputs change.
-        private readonly Dictionary<RectTransform, string> _plateFitLog = new Dictionary<RectTransform, string>();
-        private void LogPlateFit(RectTransform panel, RectTransform plate, float tokenW, float room, float textW, float ph, float pw,
-            float panelW, float actionsRowW, float actionsW)
-        {
-            var text = plate.GetComponentInChildren<TMP_Text>(true);
-            var line = string.Format(System.Globalization.CultureInfo.InvariantCulture,
-                "[RuneSkin] dock weight plate {0}: text '{1}' size {2:0.#} pref {3:0.#} box {4:0.#} | pw {5:0.#} token {6:0.#} room {7:0.#} ph {8:0.#} | panel {9:0.#} actions {10:0.#} glyphs {11:0.#} cap {12:0.#} scale {13:0.###}",
-                panel.name, text ? text.text : "", text ? text.fontSize : 0f, textW, text ? text.rectTransform.rect.width : 0f,
-                pw, tokenW, room, ph, panelW, actionsRowW, actionsW, _tokens.PanelCapInset, _rootCanvas.scaleFactor);
-            if (_plateFitLog.TryGetValue(panel, out var last) && last == line) return;
-            _plateFitLog[panel] = line;
-            Plugin.Log.LogInfo(line);
         }
 
         // Chest / backpack window: the window's one header (RuneWindowHeader: glyph in the icon slot, the container name
@@ -1064,7 +1050,6 @@ namespace RuneSkin.InventoryScreen
                 var textW = StatValueWidth(weightPlate, ph);
                 var pw = InventoryMath.StatPlateWidth(tokenW, ph, textW, room);
                 StatPlate(weightPlate, new Box(actions.X, actions.Y + (actions.H - ph) / 2f, pw, ph));
-                LogPlateFit(panel, weightPlate, tokenW, room, textW, ph, pw, box.W, actions.W, actionsW);
             }
             var head = RuneWindowHeader.Ensure(panel, backpack ? WindowMove.Backpack : WindowMove.Chest);
             if (!head) return;

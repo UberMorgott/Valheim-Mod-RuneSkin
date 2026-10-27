@@ -21,6 +21,7 @@ namespace RuneSkin.Tests
             StripGap = F("size.inv.strip.gap"),
             CraftW = F("size.inv.craft"),
             MinCraftW = F("size.inv.craft.min"),
+            BackpackMinW = F("size.inv.backpack.min"),
             PanelActionsH = F("size.inv.panel.actions"),
             HeaderH = F("size.inv.doll.header"),
             PanelHeaderH = F("size.inv.panel.header"),
@@ -594,32 +595,61 @@ namespace RuneSkin.Tests
             }
         }
 
-        // Dock weight plate (run 20261027-105618: AB weight text "1…" at 1280x720): the token width grows until the value fits,
-        // never past the action row's room; a roomy token stays as it is.
+        // Dock weight plate (run 20261027-105618: AB weight text "1…" at 1280x720): the token width grows until the value fits
+        // (value box = plate - socket - 12, StatPlate), never past the action row's room; a roomy token stays as it is.
         [Fact]
         public void StatPlateWidth_GrowsToFitTheValue_WithinTheRoom()
         {
             Assert.Equal(110f, InventoryMath.StatPlateWidth(110f, 24f, 40f, 300f));
-            Assert.Equal(24f + 4f + 90f + 12f, InventoryMath.StatPlateWidth(73f, 24f, 90f, 300f));
+            Assert.Equal(24f + 90f + 12f, InventoryMath.StatPlateWidth(73f, 24f, 90f, 300f));
+            Assert.Equal(90f, InventoryMath.StatValueBoxW(InventoryMath.StatPlateWidth(73f, 24f, 90f, 300f), 24f), 3);
             Assert.Equal(100f, InventoryMath.StatPlateWidth(73f, 24f, 90f, 100f));
             Assert.Equal(0f, InventoryMath.StatPlateWidth(73f, 24f, 90f, -5f));
         }
 
         // Offline sim of the AB backpack panel (run 20261027-111356 log: backpack (269.9,205.1,289.6,223.8), 3 columns, the
-        // same canvas box at every resolution; skin scale 1, three 38.4 glyph actions at gap 8): the room left of the actions
-        // is under the 110 token, so the plate is room-capped and 80c9cb6's growth cannot change it. The value box (room -
-        // socket 32 - 12) holds 58.4 units: "12.5/40" at the 720p body floor (16 px / 0.667 = 24 units) needs ~3.5 em.
+        // same canvas box at every resolution; skin scale 1, three 38.4 glyph actions at gap 8). Before: room 102.4 left of
+        // the actions, value box 58.4 - "12.5/40" cut to "1…". Now the window is at least size.inv.backpack.min (316 =
+        // 289.6 + 26) wide, grown leftwards: room 128.8, value box 84.8. Widths are PT Sans Bold advances (art/fonts, em):
+        // the probe "00.0/00" = 3.489 em, "000.0/000" = 4.623 em; body floor 16 px = 24 units at 720p, 16 units at 1080p+.
         [Fact]
-        public void AbBackpackDock_WeightPlate_IsRoomLimited()
+        public void AbBackpackDock_WeightPlate_FitsAtTheMinimumWidth()
         {
             var t = new InventoryTokens();
-            var actions = InventoryMath.ActionRow(new Box(269.9f, 205.1f, 289.6f, 223.8f), t, 1f);
+            Assert.Equal(316f, t.BackpackMinW);
+            Assert.Equal(316f, F("size.inv.backpack.min"));
+            var right = 269.9f + 289.6f;
+            var actions = InventoryMath.ActionRow(new Box(right - t.BackpackMinW, 205.1f, t.BackpackMinW, 223.8f), t, 1f);
             var glyphs = 3f * t.FooterH * 0.8f + 2f * (t.Gap / 2f);
             var room = actions.W - glyphs - t.Gap;
-            Assert.Equal(102.4f, room, 1);
-            Assert.Equal(room, InventoryMath.StatPlateWidth(110f, 32f, 84f, room), 3);
-            Assert.True(room - 32f - 12f < 3.5f * 24f);
-            Assert.True(room - 32f - 12f >= 3.5f * 16f);
+            Assert.Equal(128.8f, room, 1);
+            const float ph = 32f;
+            float Box(float textW) => InventoryMath.StatValueBoxW(InventoryMath.StatPlateWidth(110f, ph, textW, room), ph);
+            var small720 = 3.489f * 24f;  // "12.5/40" at 1280x720
+            var big1080 = 4.623f * 16f;   // "999.9/999" at 1920x1080 and up
+            Assert.True(Box(small720) >= small720, $"{Box(small720)} < {small720}");
+            Assert.True(Box(big1080) >= big1080, $"{Box(big1080)} < {big1080}");
+            // "999.9/999" at 720p (111 units) still needs ~27 more units: ellipsis there (out of option A's scope)
+            Assert.True(Box(4.623f * 24f) < 4.623f * 24f);
+        }
+
+        // The backpack minimum grows the window leftwards only: right edge on the centre column, never past the room.
+        [Theory]
+        [MemberData(nameof(Screens))]
+        public void BackpackMinimumWidthGrowsLeftwards(float w, float h, float gui)
+        {
+            var t = Theme();
+            var sc = At(w, h, gui);
+            foreach (var (cw, ch) in new[] { (0, 0), (5, 2), (8, 4) })
+                foreach (var (pw, ph) in new[] { (2, 2), (3, 2), (3, 4), (6, 3) })
+                {
+                    var o = Run(sc, cw, ch, pw, ph, t: t);
+                    if (o.BackpackFolded) continue;
+                    var roomW = o.Inventory.X - t.Gap - (t.Margin);
+                    Assert.Equal(o.Inventory.X - t.Gap, o.Backpack.Right, 2);
+                    Assert.True(o.Backpack.W >= Math.Min(t.BackpackMinW, roomW) - 0.01f, $"{w}x{h}@{gui} pack {pw}x{ph}: {o.Backpack}");
+                    Assert.True(o.Backpack.X >= t.Margin - 0.01f, $"{w}x{h}@{gui} pack {pw}x{ph}: {o.Backpack}");
+                }
         }
     }
 }
