@@ -89,6 +89,8 @@ namespace RuneSkin.InventoryScreen
         {
             public float Pitch = -1f, Width = -1f, Scale = -1f;
             public int Elements = -1, OverlayRevision = -1, ThemeRevision = -1, First;
+            // Cell set (count, first cell's instance id) the last RestyleCells styled.
+            public int StyledElements = -1, StyledFirst;
             public Inventory Inventory;
             public float WantPitch, WantScale, WantCell;
             public int Visible = int.MaxValue;
@@ -390,6 +392,7 @@ namespace RuneSkin.InventoryScreen
         {
             Fade();
             if (_preview) _preview.Prewarm(); // closed: the doll's clone built ahead of the first open (CharacterPreview)
+            if (_gui && _gui.m_animator) PrewarmGrid(); // closed: the player grid's cells built + styled ahead of the first open
             if (!_frameReady || _layout == null) return;
             _frameReady = false;
             if (!InventoryGui.IsVisible()) return;
@@ -413,10 +416,23 @@ namespace RuneSkin.InventoryScreen
         // while IsVisible() already turned false, so LateUpdate stopped re-placing them: the panels jumped to the
         // vanilla spots and slid out. Now the screen fades in place (CanvasGroup on the InventoryGui object, Layout.PanelFade
         // seconds, 0 = instant), the RuneSkin layout is re-applied over the clip during the fade-out, and once fully
-        // transparent the panels are deactivated (nothing hidden keeps drawing) until InventoryGui.Show (Unpark prefix).
+        // transparent the panels are PARKED until InventoryGui.Show (Unpark prefix): not drawn and RuneSkin's per-frame
+        // components under them idle.
+        // Parking keeps the panels active, as vanilla does (InventoryGui.Awake activates m_player / m_crafting / m_info,
+        // InventoryGui.cs:357-360; Hide only clears the animator's "visible", :1055-1061, and the close clip moves them
+        // off screen). Deactivating them (the old park) made every open re-enable ~2000 graphics: OnEnable -> SetAllDirty
+        // -> a full layout + mesh rebuild of every Image and TMP text in the open frame (rp-open-hitch run 20261027-152339:
+        // Show_Prefix 2.24 ms + the unattributed canvas rebuild of frame #0). Now: a RenderGate (disabled Canvas: no
+        // batching, no draw, geometry kept) and the RuneSkin behaviours with frame callbacks under the panels disabled
+        // (CellFit, TextInset, PlateLabelFit, ...: exactly the OnDisable / OnEnable they got from the deactivation, so a
+        // closed inventory still costs no per-frame RuneSkin work). Input stays blocked by the fade group.
         private CanvasGroup _fade;
         private float _alpha;
+        private const string ParkOwner = "inventory.parked";
         private readonly List<GameObject> _parked = new List<GameObject>(4);
+        private readonly List<Behaviour> _idled = new List<Behaviour>(256);
+        private static readonly List<MonoBehaviour> ParkScratch = new List<MonoBehaviour>(1024);
+        private static readonly Dictionary<Type, bool> FrameTypes = new Dictionary<Type, bool>();
         private static readonly int AnimVisible = Animator.StringToHash("visible");
 
         private void Fade()
@@ -444,9 +460,22 @@ namespace RuneSkin.InventoryScreen
             foreach (var t in new Transform[] { _gui.m_player, _gui.m_crafting, _gui.m_container, _gui.m_info })
                 if (t && t.gameObject.activeSelf)
                 {
-                    t.gameObject.SetActive(false);
+                    RenderGate.Set(t.gameObject, ParkOwner, true);
                     _parked.Add(t.gameObject);
+                    Idle(t);
                 }
+        }
+
+        private void Idle(Transform root)
+        {
+            root.GetComponentsInChildren(false, ParkScratch); // active objects only: inactive ones run nothing anyway
+            foreach (var b in ParkScratch)
+                if (b && b.enabled && Idles(b))
+                {
+                    b.enabled = false;
+                    _idled.Add(b);
+                }
+            ParkScratch.Clear();
         }
 
         // InventoryGui.Show prefix (and any frame the animator wants the screen): the parked panels come back before
@@ -454,8 +483,40 @@ namespace RuneSkin.InventoryScreen
         public void Unpark()
         {
             foreach (var go in _parked)
-                if (go) go.SetActive(true);
+                if (go) RenderGate.Set(go, ParkOwner, false);
             _parked.Clear();
+            foreach (var b in _idled)
+                if (b) b.enabled = true;
+            _idled.Clear();
+        }
+
+        // A RuneSkin behaviour with a frame or state callback idles while parked (frame work stops; registries such as
+        // PanelDecor.All / FrameOrnament.All see the same OnDisable / OnEnable the deactivation gave them). Plain data
+        // components (SkinMark ...) are left alone; Graphics never (a disabled Graphic is a rebuild on enable); the doll's
+        // preview keeps its own lifecycle (Prewarm / Close while closed).
+        private static readonly string[] StateCallbacks = { "LateUpdate", "Update", "FixedUpdate", "OnEnable", "OnDisable", "OnRectTransformDimensionsChange" };
+
+        private static bool Idles(MonoBehaviour b)
+        {
+            if (b is Graphic || b is CharacterPreview) return false;
+            var type = b.GetType();
+            if (FrameTypes.TryGetValue(type, out var idles)) return idles;
+            idles = false;
+            if (type.Assembly == typeof(InventorySkin).Assembly)
+                for (var t = type; t != null && t != typeof(MonoBehaviour); t = t.BaseType)
+                {
+                    const System.Reflection.BindingFlags Any = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public |
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.DeclaredOnly;
+                    foreach (var callback in StateCallbacks)
+                        if (t.GetMethod(callback, Any, null, Type.EmptyTypes, null) != null)
+                        {
+                            idles = true;
+                            break;
+                        }
+                    if (idles) break;
+                }
+            FrameTypes[type] = idles;
+            return idles;
         }
 
         // Drag visual on top of everything (user defect 2026-10-23: the icon slid under the strip): lifted onto the shared
@@ -1203,6 +1264,41 @@ namespace RuneSkin.InventoryScreen
             }
         }
 
+        // Cells vanilla (re)built: InventoryGrid.UpdateGui destroys and re-instantiates every cell when the inventory size
+        // changes (InventoryGrid.cs:258-274: the first open, every chest / backpack of another size). Only those cells get
+        // the root's classification pass (same context, same exclusions as ScreenRegistry.Restyle(root)): the full pass over
+        // m_player (run 20261027-152339: "diag Inventory: graphics=804" in the first open frame) restyled the doll, footer,
+        // container and headers again although nothing but the cells was new. Same roles, same look.
+        private static void RestyleCells(InventoryGrid grid, GridState s)
+        {
+            var first = grid.m_elements.Count > 0 && grid.m_elements[0] ? grid.m_elements[0].GetInstanceID() : 0;
+            if (s.StyledElements == grid.m_elements.Count && s.StyledFirst == first) return;
+            var owner = ScreenRegistry.RootOf(grid.transform);
+            var ctx = ScreenRegistry.ContextOf(owner);
+            if (ctx == null) return;
+            s.StyledElements = grid.m_elements.Count;
+            s.StyledFirst = first;
+            Restyler.RestyleSubtree(grid.transform, owner, ctx);
+        }
+
+        // Closed, first frame with a live local player (behind the spawn's loading screen, like the doll's preview clone,
+        // CharacterPreview.Prewarm): the player grid's cells built and styled ahead of the first open. The build is
+        // vanilla's own first-open call, InventoryGui.UpdateInventory -> m_playerGrid.UpdateInventory(inventory, player,
+        // dragItem) (InventoryGui.cs:688-691; no drag exists while closed), which instantiates the cells when the size
+        // changed (InventoryGrid.cs:258-274) with every UpdateGui patch (EAQS, V+) as usual; the first Tab then only
+        // re-places them (AfterGrid sees the styled cell set). Once per inventory: a no-op afterwards.
+        private void PrewarmGrid()
+        {
+            var grid = _gui.m_playerGrid;
+            var player = Player.m_localPlayer;
+            if (!grid || !player || player.IsDead() || _gui.m_animator.GetBool(AnimVisible)) return;
+            var inv = player.GetInventory();
+            if (inv == null || grid.GetInventory() == inv) return;
+            grid.UpdateInventory(inv, player, null);
+            RestyleCells(grid, State(grid));
+            if (_parked.Count > 0) Idle(grid.transform); // the new cells' frame components idle like the rest
+        }
+
         // InventoryGrid.UpdateGui postfix (after EAQS and V+).
         public void AfterGrid(InventoryGrid grid)
         {
@@ -1226,11 +1322,7 @@ namespace RuneSkin.InventoryScreen
                 grid.m_elementSpace = s.Pitch;
                 s.Visible = visibleCount;
                 s.NeedsReposition = true; // LateUpdate, after the panel animation
-                if (rebuilt)
-                {
-                    var owner = ScreenRegistry.RootOf(grid.transform);
-                    if (owner) ScreenRegistry.Restyle(owner);
-                }
+                if (rebuilt) RestyleCells(grid, s);
             }
             // Gamepad: the selected cell scrolls into the shown range (vanilla moves m_selected over the whole grid).
             if (ZInput.IsGamepadActive() && grid.m_selected.x >= 0)
