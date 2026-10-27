@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
@@ -105,6 +106,118 @@ namespace RuneSkin.Compat
             if (holder) pool.SetParent(holder, false);
         }
 
+        // ---- vanilla dialogs -----------------------------------------------------------------------------------------
+        // InventoryGui's own on-demand dialogs (root/Achievements, SplitDialog, Skills, Trophies, Texts: ~270 objects,
+        // inactive until opened; rp-open-hitch run 20261027-234026: fade group 1514 objects, one alpha write
+        // 0.327 ms) wait in the same holder while hidden. Vanilla keeps them by field (InventoryGui.m_*), never by path, and
+        // shows each through one call: InventoryGui.ShowSplitDialog -> SplitDialog.SetActive(true) (InventoryGui.cs:2264),
+        // SkillsDialog.Setup (SkillsDialog.cs:114), TextsDialog.Setup (TextsDialog.cs:65), InventoryGui.OnOpenTrophies
+        // (:2352), OnOpenAchievements (:2370). A prefix on each moves the
+        // dialog home (parent + sibling index: draw order) before it activates; InventorySkin also homes any parked dialog
+        // that someone else activated (Sweep, every open frame). Parked again with the screen (InventorySkin.Park).
+        // VariantDialog (26 objects) stays: Epic Loot clones m_variantDialog for its augment / craft-result dialogs
+        // (ElDialogs), and a clone placed beside a parked source would land in the inactive holder.
+        private static bool _vanillaTried;
+        // Parked dialog -> home parent + sibling index. Keyed by the dialog itself, not a component on it: a clone of a
+        // dialog (Instantiate copies components) must never inherit a home and be moved into the vanilla root.
+        private static readonly Dictionary<Transform, (Transform Parent, int Index)> Homes = new Dictionary<Transform, (Transform, int)>();
+
+        private static InventoryGui _dialogsOf;
+        private static Transform[] _dialogs;
+
+        // Cached per InventoryGui (Sweep runs every open frame: no allocation).
+        private static Transform[] VanillaDialogs(InventoryGui gui)
+        {
+            if (_dialogsOf != gui || _dialogs == null)
+            {
+                _dialogsOf = gui;
+                _dialogs = Collect(gui);
+            }
+            return _dialogs;
+        }
+
+        private static Transform[] Collect(InventoryGui gui) => new[]
+        {
+            gui.m_splitDialog ? gui.m_splitDialog.transform : null, gui.m_skillsDialog ? gui.m_skillsDialog.transform : null,
+            gui.m_textsDialog ? gui.m_textsDialog.transform : null, gui.m_trophiesPanel ? gui.m_trophiesPanel.transform : null,
+            gui.m_achievementsPanel ? gui.m_achievementsPanel.transform : null,
+        };
+
+        // InventorySkin.Park (the screen faded out): every hidden vanilla dialog out of the fade group.
+        public static void ParkVanilla(InventoryGui gui)
+        {
+            if (!gui) return;
+            EnsureVanillaPatched();
+            foreach (var t in VanillaDialogs(gui))
+            {
+                if (!t) continue;
+                var parent = Homes.TryGetValue(t, out var h) && h.Parent ? h.Parent : t.parent;
+                if (!parent || FadeParkMath.Decide(t.gameObject.activeSelf, t.parent == parent, parent.IsChildOf(gui.transform)) != FadeParkMove.Park) continue;
+                var holder = Holder(gui);
+                if (!holder) return;
+                if (Homes.Count > 32) Homes.Clear(); // a previous GUI's dead keys (logout); live ones are re-added here
+                Homes[t] = (parent, t.GetSiblingIndex());
+                t.SetParent(holder, false);
+            }
+        }
+
+        // Inventory open: a parked dialog activated by a path without a prefix (another mod's SetActive) goes home.
+        public static void SweepVanilla(InventoryGui gui)
+        {
+            if (!gui) return;
+            foreach (var t in VanillaDialogs(gui))
+                if (t && t.gameObject.activeSelf) Home(t);
+        }
+
+        private static void Home(Transform t)
+        {
+            if (!t || !Homes.TryGetValue(t, out var home) || !home.Parent || t.parent == home.Parent) return;
+            t.SetParent(home.Parent, false);
+            if (home.Index >= 0 && home.Index < home.Parent.childCount) t.SetSiblingIndex(home.Index);
+        }
+
+        private static void EnsureVanillaPatched()
+        {
+            if (_vanillaTried || Harmony == null) return;
+            _vanillaTried = true;
+            var prefix = new HarmonyMethod(typeof(FadePark), nameof(DialogShow_Prefix)) { priority = Priority.First };
+            var guiPrefix = new HarmonyMethod(typeof(FadePark), nameof(GuiShow_Prefix)) { priority = Priority.First };
+            var targets = new (MethodBase m, HarmonyMethod p)[]
+            {
+                (AccessTools.Method(typeof(SplitDialog), nameof(SplitDialog.SetActive), new[] { typeof(bool) }), prefix),
+                (AccessTools.Method(typeof(SkillsDialog), nameof(SkillsDialog.Setup)), prefix),
+                (AccessTools.Method(typeof(TextsDialog), nameof(TextsDialog.Setup)), prefix),
+
+                (AccessTools.Method(typeof(InventoryGui), nameof(InventoryGui.OnOpenTrophies)), guiPrefix),
+                (AccessTools.Method(typeof(InventoryGui), nameof(InventoryGui.OnOpenAchievements)), guiPrefix),
+            };
+            foreach (var (m, p) in targets)
+            {
+                if (m == null) continue;
+                try { Harmony.Patch(m, prefix: p); }
+                catch (Exception e) { Plugin.Log.LogWarning($"[RuneSkin] fade park: {m.DeclaringType?.Name}.{m.Name} patch failed (homed one frame late): {e.Message}"); }
+            }
+        }
+
+        // SplitDialog.SetActive(false) passes too: homing a hidden dialog is harmless (parked again with the screen).
+        private static void DialogShow_Prefix(Component __instance)
+        {
+            try { Home(__instance ? __instance.transform : null); }
+            catch (Exception e) { Plugin.Log.LogWarning($"[RuneSkin] fade park home: {e.Message}"); }
+        }
+
+        private static void GuiShow_Prefix(InventoryGui __instance, MethodBase __originalMethod)
+        {
+            try
+            {
+                if (!__instance) return;
+                Home(__originalMethod.Name == nameof(InventoryGui.OnOpenTrophies)
+                    ? (__instance.m_trophiesPanel ? __instance.m_trophiesPanel.transform : null)
+                    : (__instance.m_achievementsPanel ? __instance.m_achievementsPanel.transform : null));
+            }
+            catch (Exception e) { Plugin.Log.LogWarning($"[RuneSkin] fade park home: {e.Message}"); }
+        }
+
         // One inactive holder per InventoryGui, its sibling: same canvas and lifetime (destroyed with the GUI on logout),
         // outside the fade group.
         private static Transform Holder(InventoryGui gui)
@@ -119,6 +232,7 @@ namespace RuneSkin.Compat
             return go.transform;
         }
     }
+
 
     // On VNEI's BaseUI while its browser is parked: the home sibling index, and the browser destroyed with BaseUI, as it
     // would be as its child.

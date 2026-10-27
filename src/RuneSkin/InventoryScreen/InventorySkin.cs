@@ -461,7 +461,11 @@ namespace RuneSkin.InventoryScreen
                 _alphaWrittenAt = now;
             }
             if (_fade.blocksRaycasts != want) _fade.blocksRaycasts = want;
-            if (want) return;
+            if (want)
+            {
+                Compat.FadePark.SweepVanilla(_gui); // a parked dialog someone activated goes home (FadePark)
+                return;
+            }
             if (_alpha > 0f)
             {
                 if (_layout != null) ApplyPanels(); // pin over the vanilla close clip while fading out
@@ -481,6 +485,7 @@ namespace RuneSkin.InventoryScreen
                     Idle(t);
                 }
             Compat.FadePark.ParkEaqsPool(_gui); // EAQS's unused-cell pool out of the fade group (FadePark)
+            Compat.FadePark.ParkVanilla(_gui); // InventoryGui's hidden on-demand dialogs too
         }
 
         private void Idle(Transform root)
