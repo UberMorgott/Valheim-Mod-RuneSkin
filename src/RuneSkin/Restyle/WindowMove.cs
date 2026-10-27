@@ -236,14 +236,7 @@ namespace RuneSkin.Restyle
                 go.AddComponent<LayoutElement>().ignoreLayout = true;
                 drag = go.AddComponent<WindowDrag>();
                 // Own graphic: never re-classified by a restyle pass (no role art: it draws nothing).
-                var mark = go.AddComponent<SkinMark>();
-                mark.Internal = true;
-                mark.Role = "content";
-                mark.Reason = "window drag band (draws nothing)";
-                mark.Outcome = Outcome.Content;
-                mark.ThemeRevision = -1;
-                mark.BoundInstance = go.GetInstanceID();
-                mark.hideFlags = HideFlags.HideInInspector;
+                SkinMark.Own(go, "content", "window drag band (draws nothing)").ThemeRevision = -1;
             }
             if (!drag) return null;
             drag.Id = id;

@@ -123,11 +123,7 @@ namespace RuneSkin.Screens
             var image = go.AddComponent<Image>();
             image.raycastTarget = false;
             image.enabled = false;
-            var mark = go.AddComponent<SkinMark>();
-            mark.Internal = true;
-            mark.Role = "tooltip.bare";
-            mark.Reason = "RuneSkin frame for a box-less tooltip";
-            mark.BoundInstance = go.GetInstanceID();
+            var mark = SkinMark.Own(go, "tooltip.bare", "RuneSkin frame for a box-less tooltip");
             mark.ThemeRevision = -1; // applied by the root pass
             var frame = go.AddComponent<TooltipFrame>();
             frame._text = text;

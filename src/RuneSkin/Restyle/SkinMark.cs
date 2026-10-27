@@ -1,3 +1,4 @@
+using RuneSkin.Theme;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -51,6 +52,27 @@ namespace RuneSkin.Restyle
         public Selectable.Transition OrigTransition;
 
         public bool IsOwnMark => BoundInstance == gameObject.GetInstanceID();
+
+        // The single owner of a RuneSkin-created graphic's mark (MarkMath): get-or-add, idempotent, so a caller may mark
+        // the same object again (role change, relayout) and always gets the one mark back. A kept mark keeps its journal
+        // (Restyler.Apply reverts it before writing the role, so re-applying never stacks); the caller applies the role.
+        // A copied mark (Rebind) is adopted with its template's originals. role "content" = explained as is.
+        public static SkinMark Own(GameObject go, string role, string reason)
+        {
+            var mark = go.GetComponent<SkinMark>();
+            var step = MarkMath.Plan(mark, mark && mark.IsOwnMark);
+            if (step == MarkStep.Add)
+            {
+                mark = go.AddComponent<SkinMark>();
+                mark.hideFlags = HideFlags.HideInInspector;
+            }
+            mark.Internal = true;
+            mark.Role = role;
+            mark.Reason = reason;
+            mark.BoundInstance = go.GetInstanceID();
+            if (role == "content") { mark.Outcome = Outcome.Content; mark.ThemeRevision = ThemeTokens.Revision; }
+            return mark;
+        }
 
         public void ClearJournal()
         {

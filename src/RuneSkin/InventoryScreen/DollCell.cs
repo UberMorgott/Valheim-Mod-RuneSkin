@@ -94,17 +94,8 @@ namespace RuneSkin.InventoryScreen
             return image;
         }
 
-        public static SkinMark Mark(Graphic g, string role, string reason)
-        {
-            var mark = g.gameObject.AddComponent<SkinMark>();
-            mark.Internal = true;
-            mark.Role = role;
-            mark.Reason = reason;
-            mark.BoundInstance = g.gameObject.GetInstanceID();
-            mark.hideFlags = HideFlags.HideInInspector;
-            if (role == "content") { mark.Outcome = Outcome.Content; mark.ThemeRevision = ThemeTokens.Revision; }
-            return mark;
-        }
+        // Get-or-add (SkinMark.Own): marking the same graphic again returns its one mark.
+        public static SkinMark Mark(Graphic g, string role, string reason) => SkinMark.Own(g.gameObject, role, reason);
 
         private static void Stretch(RectTransform rt, RectTransform parent, float inset)
         {

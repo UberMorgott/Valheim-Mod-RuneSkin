@@ -57,13 +57,7 @@ namespace RuneSkin.GameScreens
             go.AddComponent<LayoutElement>().ignoreLayout = true;
             var img = go.GetComponent<Image>();
             img.raycastTarget = false;
-            var mark = go.AddComponent<SkinMark>();
-            mark.Internal = true;
-            mark.Role = role;
-            mark.Reason = reason;
-            mark.ThemeRevision = -1;
-            mark.BoundInstance = go.GetInstanceID();
-            mark.hideFlags = HideFlags.HideInInspector;
+            SkinMark.Own(go, role, reason).ThemeRevision = -1;
             return img;
         }
 

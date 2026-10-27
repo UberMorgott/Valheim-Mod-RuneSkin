@@ -315,12 +315,7 @@ namespace RuneSkin.Restyle
             rect.SetParent(parent, false);
             var image = go.AddComponent<Image>();
             image.raycastTarget = false;
-            var mark = go.AddComponent<SkinMark>();
-            mark.Internal = true;
-            mark.Role = role;
-            mark.Reason = "RuneSkin panel stack layer";
-            mark.BoundInstance = go.GetInstanceID();
-            mark.hideFlags = HideFlags.HideInInspector;
+            var mark = SkinMark.Own(go, role, "RuneSkin panel stack layer");
             // Applied now (corners need their sprite for the native size); the root pass then finds it current.
             mark.Outcome = Restyler.Apply(image, mark, ThemeTokens.Role(role)) ? Outcome.Styled : Outcome.Degraded;
             image.enabled = mark.Outcome == Outcome.Styled; // missing art draws nothing, never a white box

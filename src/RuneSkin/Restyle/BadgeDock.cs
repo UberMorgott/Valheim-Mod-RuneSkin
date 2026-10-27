@@ -124,12 +124,7 @@ namespace RuneSkin.Restyle
             _plate.sprite = sprite;
             _plate.preserveAspect = true;
             _plate.raycastTarget = false;
-            var mark = go.AddComponent<SkinMark>();
-            mark.Internal = true;
-            mark.Role = "content";
-            mark.Reason = "RuneSkin badge plate";
-            mark.BoundInstance = go.GetInstanceID();
-            mark.ThemeRevision = -1;
+            SkinMark.Own(go, "content", "RuneSkin badge plate").ThemeRevision = -1;
         }
 
         private void OnDisable()
