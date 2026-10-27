@@ -1344,6 +1344,7 @@ namespace RuneSkin.InventoryScreen
                 if (Mathf.Abs(sd.x - want) > 0.01f) grid.m_gridRoot.sizeDelta = new Vector2(want, sd.y);
             }
             for (var i = 0; i < grid.m_elements.Count; i++) CellMarks(grid.m_elements[i]);
+            Magazines(grid);
             // EAQS cells right after EAQS put them back on its own panel spots (its UpdateGui postfix, every frame): placed
             // only in LateUpdate they sat over the crafting window for the rest of the Update phase, where the input module
             // and InventoryGrid.GetHoveredElement raycast (run 20261026-230323 tips-eaqs-utility: Megingjord's Utility
@@ -1421,6 +1422,37 @@ namespace RuneSkin.InventoryScreen
                     magic.pivot = new Vector2(0.5f, 0.5f);
                     magic.offsetMin = magic.offsetMax = Vector2.zero;
                 }
+            }
+        }
+
+        // Crossbow magazine dots (PlayerHud.MagazinePips) on every cell of this grid that holds a magazine crossbow: player
+        // grid incl. its EAQS cells (real inventory coordinates), containers, backpacks. The grid's items are scanned once
+        // (usually none or one crossbow); every other cell only hides pips it may still show.
+        private static readonly List<ItemDrop.ItemData> MagazineItems = new List<ItemDrop.ItemData>();
+
+        private static void Magazines(InventoryGrid grid)
+        {
+            var inv = grid.GetInventory();
+            MagazineItems.Clear();
+            if (inv != null)
+                foreach (var item in inv.GetAllItems())
+                    if (PlayerHud.MagazinePips.IsCandidate(item)) MagazineItems.Add(item);
+            var tokens = GridCellLook.Tokens;
+            for (var i = 0; i < grid.m_elements.Count; i++)
+            {
+                var e = grid.m_elements[i];
+                if (!e) continue;
+                ItemDrop.ItemData item = null;
+                foreach (var m in MagazineItems)
+                    if (m.m_gridPos == e.Position) { item = m; break; }
+                if (item == null)
+                {
+                    PlayerHud.MagazinePips.Hide(e);
+                    continue;
+                }
+                var cell = (RectTransform)e.transform;
+                var dur = InventoryMath.Cell(cell.rect.width, cell.rect.height, tokens).Durability;
+                PlayerHud.MagazinePips.Apply(e, item, dur.X, dur.Y, Mathf.Abs(cell.lossyScale.y));
             }
         }
 

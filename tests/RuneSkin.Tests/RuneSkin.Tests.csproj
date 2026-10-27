@@ -35,6 +35,8 @@
     <Compile Include="..\..\src\RuneSkin\Hud\BarFxState.cs" Link="Linked\BarFxState.cs" />
     <Compile Include="..\..\src\RuneSkin\Hud\BarFill.cs" Link="Linked\BarFill.cs" />
     <Compile Include="..\..\src\RuneSkin\Hud\DenyFlash.cs" Link="Linked\DenyFlash.cs" />
+    <Compile Include="..\..\src\RuneSkin\Hud\AmmoMath.cs" Link="Linked\AmmoMath.cs" />
+    <Compile Include="..\..\src\RuneSkin\Hud\MagazineContract.cs" Link="Linked\MagazineContract.cs" />
     <Compile Include="..\..\src\RuneSkin\Restyle\PanelMath.cs" Link="Linked\PanelMath.cs" />
     <Compile Include="..\..\src\RuneSkin\Restyle\LabelFit.cs" Link="Linked\LabelFit.cs" />
     <Compile Include="..\..\src\RuneSkin\Restyle\LayoutMath.cs" Link="Linked\LayoutMath.cs" />

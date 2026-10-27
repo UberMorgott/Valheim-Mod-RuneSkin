@@ -312,7 +312,13 @@ namespace RuneSkin.WorldHud
         {
             if (!_plate || !(_plate.rectTransform.parent is RectTransform parent)) return;
             var gridBottom = float.NaN;
+            // the party frame grid and / or the ammo plate below it (same top-left slot): the lower bottom edge
             var shown = SummonFrames.GridScreenBottom(out var screenY);
+            if (AmmoFrame.ScreenBottom(out var ammoY))
+            {
+                screenY = shown ? Mathf.Min(screenY, ammoY) : ammoY;
+                shown = true;
+            }
             if (shown)
             {
                 var canvas = parent.GetComponentInParent<Canvas>();

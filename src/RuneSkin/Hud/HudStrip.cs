@@ -458,9 +458,11 @@ namespace RuneSkin.PlayerHud
                 c.Rim(false, default);
                 c.Mark(false);
                 c.Durability(-1f, false);
+                MagazinePips.Hide(c.Root);
                 return;
             }
             c.Icon(item.GetIcon(), Color.white);
+            Magazine(c, item);
             c.Count(item.m_shared.m_maxStackSize > 1 ? item.m_stack : 0);
             // Selection = teal glow outside the cell: equipped / queued for equip, or the gamepad's hotbar cursor.
             c.Glow(selected || item.m_equipped || p.IsEquipActionQueued(item));
@@ -474,6 +476,20 @@ namespace RuneSkin.PlayerHud
             c.Mark(c.RaritySet);
             var dur = item.m_shared.m_useDurability && item.m_durability < item.GetMaxDurability();
             c.Durability(dur ? item.GetDurabilityPercentage() : -1f, dur && item.m_durability <= 0f);
+        }
+
+        // Crossbow magazine dots (MagazinePips): the strip's durability pill hangs under the cell, so the row sits where an
+        // inventory cell of this size has its pill (InventoryMath.Cell, the grid's own tokens) - same look in both places.
+        private static void Magazine(StripCell c, ItemDrop.ItemData item)
+        {
+            if (!MagazinePips.IsCandidate(item))
+            {
+                MagazinePips.Hide(c.Root);
+                return;
+            }
+            var r = c.Root.rect;
+            var dur = InventoryScreen.InventoryMath.Cell(r.width, r.height, InventoryScreen.GridCellLook.Tokens).Durability;
+            MagazinePips.Apply(c.Root, item, dur.X, dur.Y, Mathf.Abs(c.Root.lossyScale.y));
         }
 
         private void FoodCells(Player p)
