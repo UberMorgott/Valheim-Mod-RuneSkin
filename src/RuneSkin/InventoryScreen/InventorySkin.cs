@@ -560,6 +560,7 @@ namespace RuneSkin.InventoryScreen
 
         public void OnHide()
         {
+            if (_ghost && !_ghostClosing) _ghostHiddenBy = Caller();
             if (_preview) _preview.Close();
             RestoreQuickBar();
             ClearBand();
@@ -683,7 +684,7 @@ namespace RuneSkin.InventoryScreen
         // the first frames after the spawn while Hud's loading screen still covers the view, held GhostOpenMath.Frames
         // frames and closed with InventoryGui.Hide (:1055-1083), as a Tab press would. Differences from a user open: the
         // fade group stays at alpha 0 with raycasts off (Fade), no open / close sound (the two EffectLists swapped for an
-        // empty one around the calls), no tutorial (InventoryGui.Update's ShowTutorial path is not taken), no container.
+        // empty one for the whole ghost window, Silence), no tutorial (InventoryGui.Update's ShowTutorial path is not taken), no container.
         // Vanilla's visible-branch Update runs as usual (no input reaches it under the loading screen). Once per InventoryGui.
         private bool _ghost, _ghostDone;
         private int _ghostHeld;
@@ -711,18 +712,22 @@ namespace RuneSkin.InventoryScreen
                 case GhostStep.Open:
                     _ghost = true;
                     _ghostHeld = 0;
+                    _ghostHiddenBy = null;
                     _ghostT0 = System.Diagnostics.Stopwatch.GetTimestamp();
-                    Silently(() => _gui.Show(null, 1));
+                    Silence();
+                    _gui.Show(null, 1);
                     break;
                 case GhostStep.Hold:
                     _ghostHeld++;
                     break;
                 case GhostStep.Close:
-                    Silently(_gui.Hide);
+                    _ghostClosing = true;
+                    try { _gui.Hide(); }
+                    finally { _ghostClosing = false; }
                     EndGhost($"closed after {_ghostHeld + 1} frames");
                     break;
                 case GhostStep.Done:
-                    EndGhost(_ghost ? "hidden by the game" : "skipped (loading screen gone or opened first)");
+                    EndGhost(_ghost ? $"hidden after {_ghostHeld + 1} frames by {_ghostHiddenBy ?? "an animator write"}" : "skipped (loading screen gone or opened first)");
                     break;
             }
         }
@@ -730,24 +735,57 @@ namespace RuneSkin.InventoryScreen
         private void EndGhost(string why)
         {
             var ms = _ghost ? (System.Diagnostics.Stopwatch.GetTimestamp() - _ghostT0) * 1000.0 / System.Diagnostics.Stopwatch.Frequency : 0.0;
+            Unsilence();
             _ghostCursor = _ghost;
             _ghost = false;
             _ghostDone = true;
             Plugin.Log.LogInfo($"[RuneSkin] inventory first open behind the loading screen: {why}, {ms:0} ms wall");
         }
 
-        private void Silently(Action call)
+        // The open / close EffectLists stay empty for the whole ghost window, not only around RuneSkin's own Show / Hide:
+        // another caller's Hide in between (vanilla InventoryGui.Update for a player it considers unable to use the
+        // screen, InventoryGui.cs:513-516; Player.UpdateStations :4331/:4358; mods) must not play the close sound either
+        // (run 20261028-003856: "hidden by the game" before the 4-frame close).
+        private EffectList _openFx, _closeFx;
+        private bool _silenced, _ghostClosing;
+        private string _ghostHiddenBy;
+
+        private void Silence()
         {
-            var open = _gui.m_openInventoryEffects;
-            var close = _gui.m_closeInventoryEffects;
+            if (_silenced) return;
+            _openFx = _gui.m_openInventoryEffects;
+            _closeFx = _gui.m_closeInventoryEffects;
             _gui.m_openInventoryEffects = NoEffects;
             _gui.m_closeInventoryEffects = NoEffects;
-            try { call(); }
-            finally
+            _silenced = true;
+        }
+
+        private void Unsilence()
+        {
+            if (!_silenced) return;
+            if (_gui)
             {
-                _gui.m_openInventoryEffects = open;
-                _gui.m_closeInventoryEffects = close;
+                _gui.m_openInventoryEffects = _openFx;
+                _gui.m_closeInventoryEffects = _closeFx;
             }
+            _silenced = false;
+        }
+
+        // Who hid the ghost open (log only): the first stack frames above InventoryGui.Hide outside Harmony / RuneSkin.
+        private static string Caller()
+        {
+            var frames = new System.Diagnostics.StackTrace(1, false).GetFrames();
+            if (frames == null) return null;
+            var names = new List<string>(3);
+            foreach (var f in frames)
+            {
+                var m = f.GetMethod();
+                var t = m?.DeclaringType;
+                if (t == null || t.Assembly == typeof(InventorySkin).Assembly || t.Namespace == "HarmonyLib" || m.Name.Contains("Hide")) continue;
+                names.Add($"{t.Name}.{m.Name}");
+                if (names.Count == 3) break;
+            }
+            return names.Count > 0 ? string.Join(" < ", names) : null;
         }
 
         private void RefreshEaqs()
