@@ -250,6 +250,12 @@ namespace RuneSkin.PlayerHud
         public static float SlotPx(float slotUnits, float skinScale, float canvasScale) =>
             Math.Max(0f, slotUnits) * Math.Max(0.5f, Math.Min(2f, skinScale)) * Math.Max(0f, canvasScale);
 
+        // Strip hotbar cell in screen px: the shared slot x the strip's design scale (theme scale.hud.strip, 0.8 since
+        // 2026-10-27: the strip 20 % smaller than the size.slot design) x the user's Hud.Scale. The inventory grid
+        // takes its cell from the strip hotbar (InventoryWindowsMath.FromStrip), so both stay equal.
+        public static float StripSlotPx(float slotPx, float designScale, float hudScale) =>
+            Math.Max(0f, slotPx) * Math.Max(0.5f, Math.Min(1.5f, designScale)) * HudMath.HudScale(hudScale);
+
         // Strip scale (screen px per strip unit): the hotbar cell's design width (size.hud.strip.cell) maps onto the
         // slot; every other strip piece keeps its mockup proportion to that cell.
         public static float UnitPx(float slotPx, float cellUnits) => cellUnits > 0f && slotPx > 0f ? slotPx / cellUnits : 1f;

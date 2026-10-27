@@ -604,7 +604,7 @@ namespace RuneSkin.WorldHud
             if (!(unit > 0f)) return;
             var safe = Responsive.ResponsiveContext.SafeArea;
             HudMath.HudBox(safe.x, safe.width, safe.height, Plugin.UltrawideBox?.Value ?? true, ThemeTokens.GetFloat("ratio.hud.ultrawide", 2.2f), out var boxX, out var boxW);
-            var s = Responsive.ResponsiveContext.GuiFactor;
+            var s = HudMath.FrameScale(Responsive.ResponsiveContext.GuiFactor, Plugin.HudScale?.Value ?? 1f); // = the strip's gaps
             var margin = ThemeTokens.GetFloat("size.hud.margin", 24f) * s;
             if (!Footprint(out var fp)) fp = new Rect(boxX + boxW - margin, safe.yMax - margin, 0f, 0f);
             var strip = HudCluster.Instance ? HudCluster.Instance.StripTopPx : 0f;

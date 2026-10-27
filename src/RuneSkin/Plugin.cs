@@ -161,8 +161,8 @@ namespace RuneSkin
             _ownCharacterStats = Config.Bind("Ownership", "CharacterStats", true,
                 "RuneSkin adds the character stats window (5th button of the inventory info row, or Hud.StatsKey): pools and regeneration per second, resistances, movement and weight, defense, food, rest, combat modifiers, MorgottTweaks shield and slots (needs Inventory). Read once at startup (restart to change).");
             HudScale = Config.Bind("Hud", "Scale", 1f, new ConfigDescription(
-                "Scale of the minimap ring and the HUD margins on top of the game's UI scale (the bottom strip follows the inventory slot size instead; fonts never go below the readable floor).",
-                new AcceptableValueRange<float>(0.75f, 1.5f)));
+                "Scale of the bottom strip (its cells, frames and gaps; the inventory grid shares the strip's cell), the minimap ring and the HUD margins on top of the game's UI scale. Fonts never go below the readable floor.",
+                new AcceptableValueRange<float>(PlayerHud.HudMath.HudScaleMin, PlayerHud.HudMath.HudScaleMax)));
             MinimapScale = Config.Bind("Hud", "MinimapScale", 1f, new ConfigDescription(
                 "Minimap ring size on top of the theme size (size.minimap.ring) and Hud.Scale; its height cap (share.minimap.ring.h) scales with it. Applied live.",
                 new AcceptableValueRange<float>(0.6f, 1.6f)));

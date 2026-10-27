@@ -58,7 +58,7 @@ namespace RuneSkin.Tests
         private static Screen At(float w, float h, float gui = 1f, int abilities = 1, int potions = 4, int food = 3)
         {
             var s = Math.Min(w / 1920f, h / 1080f) * gui;
-            var slotPx = StripMath.SlotPx(F("size.slot"), 1f, s);
+            var slotPx = StripMath.StripSlotPx(StripMath.SlotPx(F("size.slot"), 1f, s), F("scale.hud.strip"), 1f);
             var ppu = StripMath.UnitPx(slotPx, F("size.hud.strip.cell"));
             HudMath.HudBox(0f, w, h, true, F("ratio.hud.ultrawide"), out var boxX, out var boxW);
             var widthPx = StripMath.WidthPx(boxW, 1f);
@@ -289,10 +289,12 @@ namespace RuneSkin.Tests
         [Fact]
         public void WideChestScrollsSidewaysAtSixteenNine()
         {
-            var o = Run(At(1920f, 1080f), 8, 4);
-            // left room ~540 units: 6 of 8 columns at the hotbar pitch, the rest scroll; never narrower cells
+            // strip cell = 0.8 slot (scale.hud.strip, 2026-10-27): an 8-column chest fits the 16:9 left room, a
+            // 12-column one scrolls at the hotbar pitch; never narrower cells
+            Assert.False(Run(At(1920f, 1080f), 8, 4).ChestGrid.ScrollH);
+            var o = Run(At(1920f, 1080f), 12, 4);
             Assert.True(o.ChestGrid.ScrollH);
-            Assert.True(o.ChestGrid.VisibleColumns >= 5 && o.ChestGrid.VisibleColumns < 8);
+            Assert.True(o.ChestGrid.VisibleColumns >= 8 && o.ChestGrid.VisibleColumns < 12, $"visible {o.ChestGrid.VisibleColumns}");
             Assert.True(o.Chest.Right <= o.Inventory.X - 15.99f);
             // 21:9: the whole chest fits
             var wide = Run(At(2560f, 1080f), 8, 4);
@@ -458,11 +460,11 @@ namespace RuneSkin.Tests
             }
         }
 
-        // The 16:9 numbers behind 6-of-8 chest columns (canvas units, 1920x1080 and 2560x1440 share the 1920x1080 canvas):
-        // the left column has 527.5, an 8-column chest at the slot pitch needs 678.5 (614.5 cells + 2 x 32 cap keep-out);
-        // even with no gap, no margin and no keep-out the 8 cells (614.5) exceed the 575.5 left of the grid window frame.
+        // The 16:9 numbers behind the 8-column chest (canvas units, 1920x1080 and 2560x1440 share the 1920x1080 canvas;
+        // strip cell = 0.8 slot since 2026-10-27, before it 527.5 room vs 678.5 need = 6 of 8 columns): the left column
+        // has 598, an 8-column chest at the hotbar pitch needs 555.6 (cells + 2 x 32 cap keep-out).
         [Fact]
-        public void EightColumnsCannotFitAtSixteenNine()
+        public void EightColumnsFitAtSixteenNine()
         {
             var t = Theme();
             foreach (var (w, h) in new[] { (1920f, 1080f), (2560f, 1440f) })
@@ -470,9 +472,9 @@ namespace RuneSkin.Tests
                 var o = Run(At(w, h), 8, 4, t: t);
                 var room = o.Inventory.X - t.Gap - t.Margin;
                 var need = InventoryWindowsMath.ContainerW(8, o.Player.Pitch, o.Player.Pitch - o.Player.Cell, false, t, 1f);
-                Assert.Equal(527.5f, room, 1);
-                Assert.Equal(678.5f, need, 1);
-                Assert.True(8 * o.Player.Pitch - (o.Player.Pitch - o.Player.Cell) > o.Inventory.X); // cells alone > all room
+                Assert.Equal(598f, room, 1);
+                Assert.Equal(555.6f, need, 1);
+                Assert.True(need <= room);
             }
         }
 

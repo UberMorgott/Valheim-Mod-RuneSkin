@@ -643,13 +643,16 @@ namespace RuneSkin.PlayerHud
             // over the natural one; the width is a share of the box in screen px, converted to strip units.
             var safe = ResponsiveContext.SafeArea;
             HudMath.HudBox(safe.x, safe.width, safe.height, Plugin.UltrawideBox?.Value ?? true, ThemeTokens.GetFloat("ratio.hud.ultrawide", 2.2f), out var boxX, out var boxW);
-            var s = HudMath.ClusterScale(ResponsiveContext.GuiFactor, Plugin.HudScale?.Value ?? 1f, 0f, 0f, 0f, 0f, 0f, 0f,
-                ThemeTokens.GetFloat("size.hud.font.number", 16f), ThemeTokens.GetFloat("floor.text.number.px", 14f),
-                ThemeTokens.GetFloat("size.hud.font.timer", 13f), ThemeTokens.GetFloat("floor.text.timer.px", 12f));
+            // frames, gaps, margins: GUI factor x Hud.Scale, no font floor (texts carry their own floors, TextFloor)
+            var hudScale = Plugin.HudScale?.Value ?? 1f;
+            var s = HudMath.FrameScale(ResponsiveContext.GuiFactor, hudScale);
             // User call 2026-10-23: the hotbar cell IS an inventory grid cell (one token size.slot, the inventory's skin
-            // scale and the GUI canvas scale), every other piece keeps its mockup proportion to that cell (uniform scale);
-            // the width is HudStrip.Width of the box (the space budget the wings may grow into).
-            var slotPx = StripMath.SlotPx(ThemeTokens.GetFloat("size.slot", 70f), ResponsiveContext.SkinScale, SlotCanvasScale());
+            // scale and the GUI canvas scale; the inventory grid takes its cell from this hotbar), every other piece
+            // keeps its mockup proportion to that cell (uniform scale); the width is HudStrip.Width of the box (the
+            // space budget the wings may grow into). Design scale scale.hud.strip (0.8: the strip 20 % smaller, user
+            // 2026-10-27) and Hud.Scale shrink / grow the whole strip; its texts keep their readable floors.
+            var slotPx = StripMath.StripSlotPx(StripMath.SlotPx(ThemeTokens.GetFloat("size.slot", 70f), ResponsiveContext.SkinScale, SlotCanvasScale()),
+                ThemeTokens.GetFloat("scale.hud.strip", 0.8f), hudScale);
             _pxPerUnit = StripMath.UnitPx(slotPx, ThemeTokens.GetFloat("size.hud.strip.cell", 85f));
             var widthPx = StripMath.WidthPx(boxW, Plugin.StripWidth?.Value ?? 1f);
             var input = _hudStrip.Input(widthPx / _pxPerUnit);

@@ -914,6 +914,7 @@
     { "token": "size.hud.font.timer", "value": 13 },
     { "token": "size.hud.food.cell", "value": 56 },
     { "token": "size.hud.strip.cell", "value": 85 },
+    { "token": "scale.hud.strip", "value": 0.8 },
     { "token": "size.hud.strip.shield.line", "value": 6 },
     { "token": "size.hud.strip.shield.gap", "value": 1 },
     { "token": "size.hud.strip.dur", "value": 10 },

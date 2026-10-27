@@ -215,29 +215,20 @@ namespace RuneSkin.Tests
     {
         [Fact]
         public void HudScaleMultipliesGuiFactor() =>
-            Assert.Equal(1.25f, HudMath.ClusterScale(1f, 1.25f, 300f, 200f, 1920f, 1080f, 0.34f, 0.3f, 16f, 14f, 13f, 12f), 3);
+            Assert.Equal(1.25f, HudMath.FrameScale(1f, 1.25f), 3);
 
         [Fact]
         public void HudScaleClampedToRange()
         {
-            Assert.Equal(1.5f, HudMath.ClusterScale(1f, 9f, 10f, 10f, 1920f, 1080f, 1f, 1f, 16f, 14f, 13f, 12f), 3);
-            Assert.Equal(0.9230769f, HudMath.ClusterScale(1f, 0.1f, 10f, 10f, 1920f, 1080f, 1f, 1f, 16f, 14f, 13f, 12f), 4); // floor 12/13
+            Assert.Equal(1.5f, HudMath.FrameScale(1f, 9f), 3);
+            Assert.Equal(0.75f, HudMath.FrameScale(1f, 0.1f), 3);
         }
 
+        // Frames / gaps carry no font floor (2026-10-27 RCA: the old ClusterScale floored at 12/13 = 0.923 where the
+        // 720p guiFactor is 0.667, gaps +38 %); the readable floors live on the texts.
         [Fact]
-        public void ClusterShrinksToItsScreenShare()
-        {
-            // 800 x 324 cluster: 34 % of 1920 = 652.8 -> 0.816; 30 % of 1080 = 324 -> 1.0.
-            Assert.Equal(0.923f, HudMath.ClusterScale(1f, 1f, 800f, 324f, 1920f, 1080f, 0.34f, 0.3f, 16f, 14f, 13f, 12f), 3);
-        }
-
-        [Fact]
-        public void FontFloorWinsOverShrink()
-        {
-            // 720p guiFactor 0.667: numbers 16 ref px would be 10.7 px (floor 14 -> 0.875), timers 13 ref px
-            // would be 8.7 px (floor 12 -> 0.923): the stricter floor wins.
-            Assert.Equal(0.923f, HudMath.ClusterScale(0.6667f, 1f, 400f, 300f, 1280f, 720f, 0.34f, 0.3f, 16f, 14f, 13f, 12f), 3);
-        }
+        public void FrameScaleHasNoFontFloor() =>
+            Assert.Equal(0.6667f, HudMath.FrameScale(0.6667f, 1f), 4);
 
         [Fact]
         public void UltrawideUsesCentredBox()

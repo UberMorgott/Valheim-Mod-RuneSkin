@@ -330,11 +330,13 @@ namespace RuneSkin.Tests
         public void HotbarCellIsTheInventorySlotAtEveryResolution(int w, int h)
         {
             var canvas = Math.Min(w / 1920f, h / 1080f);
-            var slot = StripMath.SlotPx(70f, 1f, canvas);
+            var design = Floats["scale.hud.strip"];
+            var slot = StripMath.StripSlotPx(StripMath.SlotPx(70f, 1f, canvas), design, 1f);
             var unit = StripMath.UnitPx(slot, 85f);
-            Assert.Equal(70f * canvas, 85f * unit, 3); // hotbar cell px = inventory grid cell px (InventoryMath: GridCell x k)
-            // 1:1 with the mockup at 1080: one art px = one screen px
-            if (h == 1080) Assert.Equal(1f, P("unit") * unit, 3);
+            // hotbar cell px = the strip design share of the slot (the inventory grid takes this cell, FromStrip)
+            Assert.Equal(70f * canvas * design, 85f * unit, 3);
+            // at 1080 one art px = design scale screen px (0.8: the art drawn 20 % smaller than the mockup)
+            if (h == 1080) Assert.Equal(design, P("unit") * unit, 3);
         }
 
         [Fact]

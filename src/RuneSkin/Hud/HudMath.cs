@@ -256,21 +256,16 @@ namespace RuneSkin.PlayerHud
 
         // ---- scale and safe box (hud-resource-states §4) ---------------------------------------------------------
 
-        // Physical px per reference px of the HUD cluster. guiFactor = min(W/1920, H/1080) x GuiScale (the canvas
-        // scale, GuiScaler.cs:54-58). The cluster shrinks (only itself) to fit maxW/maxH of the safe area, but the
-        // font floors win: numbers >= floorNumberPx, timers >= floorTimerPx physical px.
-        public static float ClusterScale(float guiFactor, float hudScale, float clusterW, float clusterH,
-            float safeWPx, float safeHPx, float maxWShare, float maxHShare,
-            float numberFont, float floorNumberPx, float timerFont, float floorTimerPx)
-        {
-            var s = guiFactor * Clamp(hudScale, 0.75f, 1.5f);
-            if (clusterW > 0f && clusterH > 0f)
-                s = Math.Min(s, Math.Min(maxWShare * safeWPx / clusterW, maxHShare * safeHPx / clusterH));
-            var floor = 0f;
-            if (numberFont > 0f) floor = Math.Max(floor, floorNumberPx / numberFont);
-            if (timerFont > 0f) floor = Math.Max(floor, floorTimerPx / timerFont);
-            return Math.Max(s, floor);
-        }
+        // Hud.Scale config range (user multiplier on top of the game's UI scale).
+        public const float HudScaleMin = 0.75f, HudScaleMax = 1.5f;
+
+        public static float HudScale(float hudScale) => Clamp(hudScale, HudScaleMin, HudScaleMax);
+
+        // Screen px per reference px of HUD frames, gaps and margins: guiFactor = min(W/1920, H/1080) x GuiScale (the
+        // canvas scale, GuiScaler.cs:54-58) x Hud.Scale. No font floor here: the readable floors apply to texts only
+        // (TextFloor); flooring the frame scale (old ClusterScale: 0.923 at 720 where guiFactor is 0.667) blew the
+        // strip gaps up by 38 % on small screens.
+        public static float FrameScale(float guiFactor, float hudScale) => Math.Max(0f, guiFactor) * HudScale(hudScale);
 
         // Horizontal span the HUD corners use: on screens wider than ultraRatio (21:9 and up) with the box on, a
         // centred 16:9 box of the safe height; else the safe area.
