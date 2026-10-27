@@ -704,12 +704,14 @@ namespace RuneSkin.PlayerHud
         private readonly StripClear _clear = new StripClear();
 
         // GUI canvas scale the inventory grid is drawn with (InventorySkin: its root canvas scaleFactor); the HUD's own
-        // root canvas before the inventory exists (both live under the same GuiScaler).
+        // root canvas before the inventory exists or while it is closed (both live under the same GuiScaler). A closed
+        // inventory's canvas keeps a stale scaleFactor (run 20261027-184426: 1.0 at 720 / 1440 -> strip cell 56 px
+        // instead of 37.3 / 74.7 until the inventory opened), so only an active one is read.
         private float SlotCanvasScale()
         {
             var gui = InventoryGui.instance;
             var c = gui && gui.m_playerGrid ? gui.m_playerGrid.GetComponentInParent<Canvas>(true) : null;
-            if (c && c.rootCanvas && c.rootCanvas.scaleFactor > 0f) return c.rootCanvas.scaleFactor;
+            if (c && c.isActiveAndEnabled && c.rootCanvas && c.rootCanvas.isActiveAndEnabled && c.rootCanvas.scaleFactor > 0f) return c.rootCanvas.scaleFactor;
             return _canvas && _canvas.rootCanvas && _canvas.rootCanvas.scaleFactor > 0f ? _canvas.rootCanvas.scaleFactor : ResponsiveContext.GuiFactor;
         }
 
