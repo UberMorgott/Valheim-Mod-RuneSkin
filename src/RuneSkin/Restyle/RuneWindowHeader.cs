@@ -569,23 +569,23 @@ namespace RuneSkin.Restyle
                 bestRect = WorldRect(ownFrame.rectTransform);
             }
             else foreach (var d in PanelDecor.All)
-                {
-                    var f = d ? d.Frame : null;
-                    if (!f || !f.enabled || !f.sprite || !f.isActiveAndEnabled || f.canvas == null || f.canvas.rootCanvas != root) continue;
-                    // Only a stack of this window (inside it, or on a host it lies in): never an unrelated window's frame.
-                    var host = d.transform.parent;
-                    if (window && host && !(host.IsChildOf(window) || window.IsChildOf(host))) continue;
-                    var fr = WorldRect(f.rectTransform);
-                    if (!fr.Contains(centre)) continue;
-                    var ow = Mathf.Min(fr.xMax, win.xMax) - Mathf.Max(fr.xMin, win.xMin);
-                    var oh = Mathf.Min(fr.yMax, win.yMax) - Mathf.Max(fr.yMin, win.yMin);
-                    var overlap = ow > 0f && oh > 0f ? ow * oh : 0f;
-                    if (overlap < bestOverlap || overlap <= 0f || overlap == bestOverlap && best && fr.width * fr.height >= bestRect.width * bestRect.height) continue;
-                    bestDecor = d;
-                    best = f;
-                    bestRect = fr;
-                    bestOverlap = overlap;
-                }
+            {
+                var f = d ? d.Frame : null;
+                if (!f || !f.enabled || !f.sprite || !f.isActiveAndEnabled || f.canvas == null || f.canvas.rootCanvas != root) continue;
+                // Only a stack of this window (inside it, or on a host it lies in): never an unrelated window's frame.
+                var host = d.transform.parent;
+                if (window && host && !(host.IsChildOf(window) || window.IsChildOf(host))) continue;
+                var fr = WorldRect(f.rectTransform);
+                if (!fr.Contains(centre)) continue;
+                var ow = Mathf.Min(fr.xMax, win.xMax) - Mathf.Max(fr.xMin, win.xMin);
+                var oh = Mathf.Min(fr.yMax, win.yMax) - Mathf.Max(fr.yMin, win.yMin);
+                var overlap = ow > 0f && oh > 0f ? ow * oh : 0f;
+                if (overlap < bestOverlap || overlap <= 0f || overlap == bestOverlap && best && fr.width * fr.height >= bestRect.width * bestRect.height) continue;
+                bestDecor = d;
+                best = f;
+                bestRect = fr;
+                bestOverlap = overlap;
+            }
             if (!best) return;
             var b = best.sprite.border; // x left, y bottom, z right, w top (sprite px)
             var ppu = Mathf.Max(best.pixelsPerUnit * best.pixelsPerUnitMultiplier, 1e-4f); // Image.multipliedPixelsPerUnit (internal)
