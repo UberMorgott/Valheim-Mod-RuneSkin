@@ -14,7 +14,10 @@ namespace RuneSkin.Restyle
     public static class CoverCull
     {
         public const string Owner = "cover";
-        private const int MaxDepth = 4;
+        // Levels searched below a partly covered candidate. 6: the small minimap's player marker sits at HUD (0) / hudroot /
+        // MiniMap / small / RuneSkin_MapMask / map / player_marker (6) - with 4 it stayed drawn fully under the crafting
+        // panel (run 20261027-184426 overdraw covered=1) while the minimap disc only partly overlaps it.
+        private const int MaxDepth = 6;
         private const float Tol = 0.5f;
 
         private static readonly HashSet<GameObject> Covered = new HashSet<GameObject>();
