@@ -226,6 +226,11 @@ namespace RuneSkin.InventoryScreen
             if (Instance == this) Instance = null;
         }
 
+        // The hidden first open (InventorySkin.GhostOpen) lasts ~1 shown frame (vanilla hides it when the spawn's "wakeup"
+        // animation enters its cutscene tag): InventorySkin calls this after placing the doll in that frame, so the first
+        // render + CheckAlpha readback happen behind the loading screen even when this LateUpdate already ran unplaced.
+        public void RenderNow() => LateUpdate();
+
         private void LateUpdate()
         {
             var player = Player.m_localPlayer;

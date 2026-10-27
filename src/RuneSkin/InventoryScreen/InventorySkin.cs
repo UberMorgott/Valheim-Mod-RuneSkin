@@ -410,6 +410,7 @@ namespace RuneSkin.InventoryScreen
                 Reposition(pair.Key, s.Visible, s.Scale, s.WantPitch > 0f ? Mathf.Clamp01((s.WantPitch - s.WantCell) / s.WantPitch) : 0f);
             }
             if (_gui.m_playerGrid && _grids.TryGetValue(_gui.m_playerGrid, out var ps)) PlaceEaqsCells(_gui.m_playerGrid, ps.Scale);
+            if (_ghost && _preview) _preview.RenderNow(); // hidden first open: the doll's first render in the frame it is placed
             if (_logPlacement > 0 && --_logPlacement == 0) StartCoroutine(LogAtEndOfFrame());
         }
 
