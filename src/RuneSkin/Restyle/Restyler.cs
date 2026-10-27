@@ -41,6 +41,26 @@ namespace RuneSkin.Restyle
             return report;
         }
 
+        // One subtree of a registered root (rows a family rebuilt, e.g. the recipe rows vanilla re-instantiates on every
+        // InventoryGui.Show): the same exclusion + Style pass as RestyleRoot over `sub` only. The root's screen report
+        // stays the last full pass (the subtree's graphics carry their SkinMark outcome for coverage).
+        public static int RestyleSubtree(Transform sub, Transform root, ScreenContext ctx)
+        {
+            if (!sub || !root || ctx == null) return 0;
+            ThemeTokens.EnsureFontFallbacks();
+            Buffer.Clear();
+            sub.GetComponentsInChildren(true, Buffer);
+            var styled = 0;
+            foreach (var g in Buffer)
+            {
+                if (!g || ExcludedBy(g.transform, root, ctx) != null) continue;
+                Style(g, ctx);
+                styled++;
+            }
+            Buffer.Clear();
+            return styled;
+        }
+
         public static void RevertRoot(Transform root)
         {
             if (!root) return;

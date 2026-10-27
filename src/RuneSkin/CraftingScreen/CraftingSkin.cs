@@ -990,11 +990,24 @@ namespace RuneSkin.CraftingScreen
             }
             if (_gui.m_recipeListRoot)
                 _gui.m_recipeListRoot.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, Mathf.Max(_gui.m_recipeListBaseSize, rows.Count * pitch));
-            if (rebuilt) ScreenRegistry.Restyle(_crafting); // per-row role (craftable / unavailable)
+            // Per-row role (craftable / unavailable) on the new rows only: vanilla re-instantiates every row on each Show
+            // (InventoryGui.UpdateRecipeList), and a full pass over the crafting root (~870 graphics, run 20261027-151010:
+            // 22 full passes logged over the open / close cycles) ran in the open frame.
+            if (rebuilt) RestyleRows(rows);
             // Content bounds changed after vanilla SetRecipe may have centred the selection: reveal it once more.
             var sel = _gui.GetSelectedRecipeIndex();
             if (_gui.m_recipeEnsureVisible && sel >= 0 && sel < rows.Count && rows[sel].InterfaceElement)
                 _gui.m_recipeEnsureVisible.CenterOnItem((RectTransform)rows[sel].InterfaceElement.transform);
+        }
+
+        // InventoryGui.UpdateRecipeList (InventoryGui.cs:1150-1157) destroys and re-instantiates every row: only those get
+        // the root's classification pass (same context, same exclusions as ScreenRegistry.Restyle(_crafting)).
+        private void RestyleRows(List<InventoryGui.RecipeDataPair> rows)
+        {
+            var ctx = ScreenRegistry.ContextOf(_crafting);
+            if (ctx == null) return;
+            for (var n = 0; n < rows.Count; n++)
+                if (rows[n].InterfaceElement) Restyler.RestyleSubtree(rows[n].InterfaceElement.transform, _crafting, ctx);
         }
 
         private void StyleRow(RectTransform row, float pitch)
