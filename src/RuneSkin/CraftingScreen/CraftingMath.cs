@@ -287,6 +287,11 @@ namespace RuneSkin.CraftingScreen
             return f;
         }
 
+        // VNEI's tab is up = its docked panel exists and its browser (BaseUI.root) is shown (BaseUI.SetVisibility); the
+        // panel VNEI(Clone) stays active on every tab. A VNEI without that field: the panel alone decides.
+        public static bool VneiUp(bool panelActive, bool browserKnown, bool browserShown) =>
+            panelActive && (!browserKnown || browserShown);
+
         // VNEI item grid (BaseUI.RebuildSize: root = x*50+10 by y*50+100 VNEI units) that fits a box of w x h canvas
         // units, `unit` canvas units per VNEI unit; at least 1 x 1.
         public static (int X, int Y) VneiCells(float w, float h, float unit)

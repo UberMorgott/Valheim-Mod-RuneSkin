@@ -713,7 +713,11 @@ namespace RuneSkin.CraftingScreen
             WellShown(_listWell, !recipeList || recipeList.gameObject.activeSelf);
             WellShown(_detailWell, !detailRoot || detailRoot.gameObject.activeSelf);
             var vnei = _crafting.Find(ModCompat.VneiPanel) as RectTransform;
-            var vneiUp = vnei && vnei.gameObject.activeSelf;
+            // VNEI's tab is up while its browser (BaseUI.root) is shown: VNEI(Clone) itself stays active on every tab,
+            // BaseUI.SetVisibility toggles root (MainVneiHandler.SetTabActive / SetTabInactive). The old activeSelf test
+            // of VNEI(Clone) kept the VNEI well drawn on the craft tab too.
+            var browser = vnei ? VneiBrowser(vnei, out _) : null;
+            var vneiUp = CraftingMath.VneiUp(vnei && vnei.gameObject.activeSelf, _vneiRoot != null, browser && browser.gameObject.activeInHierarchy);
             // Docked, VNEI switches its own woodpanel off (MainVneiHandler.CreateBaseUI) and the two wells are hidden
             // above, so only the panel glass (fill_glass, alpha 0.9) was left behind its grid: the world showed through.
             // One opaque well spans VNEI's whole body instead, like the list/detail wells on the craft tab.
@@ -745,7 +749,7 @@ namespace RuneSkin.CraftingScreen
         private Component _vneiUi;
         private (int x, int y) _vneiCells;
 
-        private void VneiFit(RectTransform vnei, Box area)
+        private static void VneiLookup()
         {
             if (!_vneiLooked)
             {
@@ -761,16 +765,25 @@ namespace RuneSkin.CraftingScreen
                 if (_vneiSetSize == null || _vneiRoot == null || _vneiX == null || _vneiY == null)
                     Plugin.Log.LogInfo("[RuneSkin] VNEI BaseUI.SetSize/root not found: its grid keeps its own size");
             }
+        }
+
+        // VNEI's browser (BaseUI.root) of the docked panel, null without VNEI / that field.
+        private static RectTransform VneiBrowser(RectTransform vnei, out Component ui)
+        {
+            VneiLookup();
+            ui = _vneiType != null ? vnei.GetComponent(_vneiType) : null;
+            return ui && _vneiRoot != null ? _vneiRoot.GetValue(ui) as RectTransform : null;
+        }
+
+        // Called only while VNEI's browser is up (Apply: VneiUp). Hidden (or parked out of the fade group, FadePark) its
+        // grid size is not seen: fitted when the browser shows. Fitting it every crafting frame (VNEI(Clone) stays active
+        // on every tab) re-ran SetSize -> RebuildSize -> SearchUI.RebuildCells (destroys and instantiates all X x Y item
+        // cells) whenever the open frames gave the body another whole-cell count.
+        private void VneiFit(RectTransform vnei, Box area)
+        {
             if (_vneiSetSize == null) return;
-            var ui = vnei.GetComponent(_vneiType);
-            if (!ui) return;
-            // VNEI(Clone) itself stays active on every tab; its browser is `root`, shown and hidden by BaseUI.SetVisibility
-            // (MainVneiHandler.SetTabActive / SetTabInactive). Hidden (or parked out of the fade group, FadePark) its grid
-            // size is not seen: fitted when the browser shows. Fitting it every crafting frame re-ran SetSize -> RebuildSize
-            // -> SearchUI.RebuildCells (destroys and instantiates all X x Y item cells) whenever the open frames gave the
-            // body another whole-cell count.
-            var browser = _vneiRoot.GetValue(ui) as RectTransform;
-            if (!browser || !browser.gameObject.activeInHierarchy) return;
+            var browser = VneiBrowser(vnei, out var ui);
+            if (!ui || !browser || !browser.gameObject.activeInHierarchy) return;
             // Canvas units per VNEI local unit (its own scale chain).
             var u = vnei.lossyScale.x / Mathf.Max(Geo.WorldPerUnit(_canvas), 1e-6f);
             if (u <= 0f) return;
