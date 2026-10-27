@@ -41,6 +41,32 @@ namespace RuneSkin.Tests
             Assert.True(s.ScrollHeight >= 80f);
         }
 
+        // Choice width: the 380 frame between its drawn side borders + row pad, never under Epic Loot's 300 (runs
+        // 20261027-165655: 300 truncated; 20261027-170958: the description-view width came out narrower).
+        [Theory]
+        [InlineData(380f, 14f, 14f, 352f)] // rune frame border 8 + pad 6 each side
+        [InlineData(380f, 10f, 10f, 360f)] // no panel stack: Epic Loot's own 10 inset
+        [InlineData(380f, 60f, 60f, 300f)] // a thick border never makes them narrower than before
+        [InlineData(380f, -4f, 0f, 380f)]
+        public void ChoicesTakeTheFrameInnerWidth(float frame, float left, float right, float want)
+        {
+            var w = ElDialogMath.InnerWidth(frame, left, right);
+            Assert.Equal(want, w, 3);
+            Assert.True(w >= ElDialogMath.ElWidth);
+        }
+
+        // The longest real label wraps into the wider button at the floor and fits without clipping: needed text height
+        // (two lines at 12, ~28.8) plus the padding stays inside the button it gets.
+        [Theory]
+        [InlineData(352f, 28.8f)]
+        [InlineData(300f, 43.2f)] // narrower fallback: three lines, the button grows
+        public void LongestLabelFits(float width, float need)
+        {
+            Assert.True(ElDialogMath.InnerWidth(380f, (380f - width) / 2f, (380f - width) / 2f) >= ElDialogMath.ElWidth);
+            var h = ElDialogMath.ButtonHeight(ElDialogMath.ElHeight, need, 3f);
+            Assert.True(h - 2f * 3f >= need - 0.001f);
+        }
+
         [Fact]
         public void GrownButtonsPushTheStackUp()
         {

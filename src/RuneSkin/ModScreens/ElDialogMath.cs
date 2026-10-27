@@ -34,6 +34,14 @@ namespace RuneSkin.ModScreens
             return s;
         }
 
+        // Epic Loot's choice button width (AugmentHelper.cs:88).
+        public const float ElWidth = 300f;
+
+        // Choice button width above the corner caps: the frame between its drawn side borders (left / right inset, frame
+        // units, border + row pad), never narrower than Epic Loot's 300.
+        public static float InnerWidth(float frameWidth, float left, float right) =>
+            Math.Max(ElWidth, frameWidth - Math.Max(0f, left) - Math.Max(0f, right));
+
         // Button height for a label that needs textNeeded (at the readable floor, wrapped in the button's text width):
         // Epic Loot's height, or the label plus its vertical padding when it needs more (no clipping).
         public static float ButtonHeight(float baseHeight, float textNeeded, float vpad) =>

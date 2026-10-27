@@ -32,8 +32,9 @@ namespace RuneSkin.ModScreens
     //      AugmentHelper.cs:88) kept Jotunn's brown plates and Epic Loot's font, truncated at 300 wide. The stale mark
     //      leaves; the dialog is part of its window's unit and gets the variant dialog's roles there (ForeignRoles.Precise).
     //   3. The choice stack (after the unit pass: the panel stack's corner caps exist then) moves above the bottom corner
-    //      caps and takes Epic Loot's content column width (its description scroll view: 360 of the 380 frame, 300 before;
-    //      run 20261027-165655 truncated "(сохранить) Урон по оглушенному врагу +7,5% [3,5-10,5]" at 300); each label
+    //      caps and takes the frame's inner width between its drawn side borders (ElDialogMath.InnerWidth, never under
+    //      Epic Loot's 300; run 20261027-165655 truncated "(сохранить) Урон по оглушенному врагу +7,5% [3,5-10,5]" at
+    //      300, run 20261027-170958 sized them to the description view, which measured narrower than 300); each label
     //      fills its button, wraps, auto-sizes to the readable floor and grows its button past two lines
     //      (ElDialogMath.Stack / ButtonHeight); the description view gives up that height (it scrolls).
     public static class ElDialogs
@@ -175,8 +176,7 @@ namespace RuneSkin.ModScreens
         private static readonly List<RectTransform> Active = new List<RectTransform>(8);
         private static readonly Vector3[] Corners4 = new Vector3[4];
 
-        // The choice stack: as wide as Epic Loot's own content column (the description scroll view), above the bottom
-        // corner caps; each label fills its button (inset by the plate's 9-slice border), wraps, auto-sizes down to the
+        // The choice stack: the frame's inner width between its drawn side borders, above the bottom corner caps; each label fills its button (inset by the plate's 9-slice border), wraps, auto-sizes down to the
         // readable floor, and its button grows when two lines at the floor still need more; the description view gives
         // up the height the stack takes.
         private static void Choices(Transform dialog, List<Button> buttons)
@@ -194,7 +194,13 @@ namespace RuneSkin.ModScreens
             if (!scroll) return;
             var fr = frame.rect;
             var col = RectIn(scroll, frame);
-            var width = col.width;
+            // Above the caps the row runs between the frame art's drawn side borders (+ row pad): the whole inner width.
+            SideInsets(frame, dialog, out var left, out var right);
+            var width = ElDialogMath.InnerWidth(fr.width, left, right);
+            var centre = fr.center.x + (left - right) * 0.5f;
+            if (Logged.Add(dialog.GetInstanceID()))
+                Plugin.Log.LogInfo($"[RuneSkin] el dialog {dialog.name}: frame {fr.width:0.#}x{fr.height:0.#} scale {frame.lossyScale.x:0.###}, description view {col.width:0.#} wide " +
+                                   $"(anchors {scroll.anchorMin}-{scroll.anchorMax} sizeDelta {scroll.sizeDelta}), side insets {left:0.#}/{right:0.#} -> choices {width:0.#}");
             var floor = ThemeTokens.GetFloat("size.text.fit.min", 12f);
             var vpad = ChoiceVPad;
             var heights = new float[Active.Count];
@@ -208,12 +214,32 @@ namespace RuneSkin.ModScreens
                 if (Mathf.Abs(rt.rect.width - width) > 0.5f) rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
                 if (Mathf.Abs(rt.rect.height - h) > 0.5f) rt.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, h);
                 // Pivot position in the frame's space (anchor-agnostic): column centre, the stack's bottom edge.
-                var p = new Vector3(col.center.x + (rt.pivot.x - 0.5f) * width, fr.yMin + stack.Bottoms[i] + rt.pivot.y * h, rt.localPosition.z);
+                var p = new Vector3(centre + (rt.pivot.x - 0.5f) * width, fr.yMin + stack.Bottoms[i] + rt.pivot.y * h, rt.localPosition.z);
                 if ((rt.localPosition - p).sqrMagnitude > 0.01f) rt.localPosition = p;
             }
             if (Mathf.Abs(scroll.rect.height - stack.ScrollHeight) > 0.5f)
                 scroll.SetInsetAndSizeFromParentEdge(RectTransform.Edge.Top, fr.yMax - col.yMax, stack.ScrollHeight);
             Active.Clear();
+        }
+
+        private static readonly HashSet<int> Logged = new HashSet<int>();
+
+        // Left / right inset of the row from the frame edges (frame units): the panel stack's frame art edge + its
+        // 9-slice side border + size.row.cap.pad; without a stack Epic Loot's own content inset (10, its scroll view).
+        private static void SideInsets(RectTransform frame, Transform dialog, out float left, out float right)
+        {
+            var fr = frame.rect;
+            var art = Decor(frame, dialog)?.Frame;
+            if (!art || !art.enabled)
+            {
+                left = right = 10f;
+                return;
+            }
+            var pad = ThemeTokens.GetFloat("size.row.cap.pad", 6f);
+            var a = RectIn(art.rectTransform, frame);
+            var border = TextInset.SliceBorderIn(art, frame);
+            left = Mathf.Max(0f, a.xMin + border.x - fr.xMin) + pad;
+            right = Mathf.Max(0f, fr.xMax - (a.xMax - border.z)) + pad;
         }
 
         // Epic Loot's description scroll view (CraftSuccessDialog.ConvertToScrollingDescription under the frame).
