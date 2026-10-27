@@ -142,6 +142,21 @@ namespace RuneSkin.Tests
             Assert.Equal(MagazineMode.None, AmmoMath.PlateRow(x, 24f, 0, 0, 7.5f, 1.5f, 4.5f).Mode);
         }
 
+        // Content-sized plate (mockup f1-varA: bow ~110, crossbow 3/5 ~131, 17/20 ~154 units): longer line + pad,
+        // clamped to [min, max].
+        [Fact]
+        public void PlateWidthFollowsTheLongerLine()
+        {
+            const float pad = 11.25f, min = 96f, max = 160f;
+            Assert.Equal(110f + pad, AmmoMath.PlateWidth(110f, 40f, pad, min, max), 3);   // name longer (bow)
+            Assert.Equal(125f + pad, AmmoMath.PlateWidth(90f, 125f, pad, min, max), 3);   // readout longer (crossbow)
+            Assert.Equal(min, AmmoMath.PlateWidth(30f, 20f, pad, min, max), 3);           // short content: minimum
+            Assert.Equal(max, AmmoMath.PlateWidth(400f, 20f, pad, min, max), 3);          // long name: capped (autoshrink)
+            Assert.Equal(min, AmmoMath.PlateWidth(-5f, -5f, pad, min, max), 3);
+            Assert.Equal(min, AmmoMath.PlateWidth(500f, 0f, pad, min, 50f), 3);           // max below min: min wins
+            Assert.True(AmmoMath.PlateWidth(120f, 40f, pad, min, max) > AmmoMath.PlateWidth(100f, 40f, pad, min, max));
+        }
+
         // ---- MorgottTweaks read contract
 
         public static class FakeMagazine

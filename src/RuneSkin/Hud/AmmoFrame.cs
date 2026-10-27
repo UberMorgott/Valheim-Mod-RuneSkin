@@ -11,7 +11,7 @@ namespace RuneSkin.PlayerHud
     // Ammo plate (user decision 2026-10-27 "1A", mockup docs\mockups\ammo-hud\f1-varA-plate-zoom.png): while the current
     // weapon is a bow or crossbow, the screen's top-left corner (the party frame's slot: its origin / scale tokens; the
     // party frame shows only with a summoning weapon, and if both ever show, this plate moves below its grid) holds a rune
-    // tile with the icon of the ammo vanilla would fire next and a fixed-width nameplate: localized ammo name over
+    // tile with the icon of the ammo vanilla would fire next and a content-sized nameplate (FitPlate): localized ammo name over
     // "×<total>" (accent). Crossbow (MorgottTweaks magazine): the second line adds the magazine readout, up to 7 dots +
     // "n/N", larger magazines one dot + "n/N" (AmmoMath.PlateRow). No ammo: the weapon's ammo type name + "×0", dimmed.
     // Ammo = Attack.FindAmmo's choice (AmmoMath.SelectAmmo), total = that prefab's stacks in the player's inventory
@@ -29,7 +29,7 @@ namespace RuneSkin.PlayerHud
         private RectTransform _rt, _plateRt, _readout;
         private Image _socket, _icon, _plate;
         private TMP_Text _name, _count, _mag;
-        private float _timer;
+        private float _timer, _pw, _magRight;
         private int _revision = int.MinValue;
         private bool _shown;
 
@@ -153,7 +153,7 @@ namespace RuneSkin.PlayerHud
             _socket = _art.Image("Socket", _rt, "sprite.hud.socket.hotbar", "color.frame", Image.Type.Simple);
             _icon = _art.Image("Icon", _rt, null, "color.frame", Image.Type.Simple);
             _icon.preserveAspect = true;
-            _plate = _art.Image("Plate", _rt, "sprite.hud.ammo.plate", "color.frame", Image.Type.Simple);
+            _plate = _art.Image("Plate", _rt, "sprite.hud.ammo.plate", "color.frame", Image.Type.Sliced);
             _plateRt = _plate.rectTransform;
             _name = _art.Text("Name", _plateRt, "font.body.bold", "color.hud.text", F("size.hud.ammo.name", 10f), TextAlignmentOptions.Left);
             _name.overflowMode = TextOverflowModes.Ellipsis;
@@ -175,20 +175,40 @@ namespace RuneSkin.PlayerHud
             MagazinePips.Place(_socket.rectTransform, 0f, 0f, tile, tile);
             var inset = Mathf.Round(tile * F("share.hud.ammo.icon.inset", 0.125f));
             MagazinePips.Place(_icon.rectTransform, inset, inset, tile - 2f * inset, tile - 2f * inset);
-            var pw = F("size.hud.ammo.plate.w", 144f);
-            var ph = F("size.hud.ammo.plate.h", 34.5f);
-            MagazinePips.Place(_plateRt, tile + F("size.hud.ammo.gap", 1.5f), F("size.hud.ammo.plate.y", 3.75f), pw, ph);
-            var pad = F("size.hud.ammo.pad", 11.25f);
             var nameSize = F("size.hud.ammo.name", 10f);
             _name.fontSizeMax = nameSize;
             _name.fontSizeMin = nameSize * F("share.hud.ammo.name.min", 0.7f);
-            MagazinePips.Place(_name.rectTransform, pad, F("size.hud.ammo.name.y", 3f), pw - 2f * pad, nameSize * 1.3f);
+            MagazinePips.Place(_readout, 0f, 0f, 0f, 0f);
+            _pw = -1f;
+            SetPlateWidth(F("size.hud.ammo.plate.w", 160f));
+        }
+
+        // Plate width (Sliced sprite: the knotwork ends keep their size) + the boxes that depend on it.
+        private void SetPlateWidth(float pw)
+        {
+            if (Mathf.Approximately(pw, _pw)) return;
+            _pw = pw;
+            var tile = F("size.hud.ammo.tile", 42f);
+            var pad = F("size.hud.ammo.pad", 11.25f);
+            MagazinePips.Place(_plateRt, tile + F("size.hud.ammo.gap", 1.5f), F("size.hud.ammo.plate.y", 3.75f), pw, F("size.hud.ammo.plate.h", 34.5f));
+            var nameSize = F("size.hud.ammo.name", 10f);
+            MagazinePips.Place(_name.rectTransform, pad, F("size.hud.ammo.name.y", 3f), Mathf.Max(1f, pw - 2f * pad), nameSize * 1.3f);
             var line = F("size.hud.ammo.line.y", 24f); // second line centre
             var countSize = F("size.hud.ammo.count", 12f);
-            MagazinePips.Place(_count.rectTransform, pad, line - countSize * 0.65f, pw / 2f, countSize * 1.3f);
-            MagazinePips.Place(_readout, 0f, 0f, 0f, 0f);
+            MagazinePips.Place(_count.rectTransform, pad, line - countSize * 0.65f, Mathf.Max(1f, pw - 2f * pad), countSize * 1.3f);
             var s = new Vector2(tile + F("size.hud.ammo.gap", 1.5f) + pw, tile);
             if (_rt.sizeDelta != s) _rt.sizeDelta = s;
+        }
+
+        // Content-sized plate (mockup f1-varA): the longer of the name (at full size; TMP measures an autosized text at
+        // fontSizeMax) and the second line (count + magazine readout), plus the side padding, within [w.min, w].
+        private void FitPlate()
+        {
+            var pad = F("size.hud.ammo.pad", 11.25f);
+            var nameRight = pad + _name.GetPreferredValues(_nameText).x;
+            var lineRight = pad + _count.GetPreferredValues(_countText).x;
+            if (_readout.gameObject.activeSelf) lineRight = Mathf.Max(lineRight, _magRight);
+            SetPlateWidth(AmmoMath.PlateWidth(nameRight, lineRight, pad, F("size.hud.ammo.plate.w.min", 96f), F("size.hud.ammo.plate.w", 160f)));
         }
 
         private void Fill(ItemDrop.ItemData weapon, ItemDrop.ItemData ammo, int total, int loaded, int capacity)
@@ -222,6 +242,7 @@ namespace RuneSkin.PlayerHud
             if (_countText != count) _count.text = _countText = count;
             _count.color = empty ? inert : ThemeTokens.GetColor("color.text.accent", Color.cyan);
             Readout();
+            FitPlate();
         }
 
         // Magazine readout right of the count, on the second line.
@@ -238,7 +259,9 @@ namespace RuneSkin.PlayerHud
             MagazinePips.Fill(_dots, _readout, r, "RuneSkin ammo plate magazine dot");
             _mag.text = AmmoMath.MagazineText(_loaded, _capacity);
             var size = F("size.hud.ammo.mag", 9f);
-            MagazinePips.Place(_mag.rectTransform, r.TextX, r.Y + r.Dot / 2f - size * 0.65f, Mathf.Max(1f, F("size.hud.ammo.plate.w", 144f) - r.TextX - pad * 0.5f), size * 1.3f);
+            var magW = _mag.GetPreferredValues(_mag.text).x;
+            _magRight = r.TextX + magW;
+            MagazinePips.Place(_mag.rectTransform, r.TextX, r.Y + r.Dot / 2f - size * 0.65f, Mathf.Max(1f, magW + pad * 0.5f), size * 1.3f);
         }
 
         private static void Outline(TMP_Text t)
@@ -313,7 +336,7 @@ namespace RuneSkin.PlayerHud
                 foreach (var d in f._dots)
                     if (d.gameObject.activeInHierarchy) { on++; if (d.sprite && d.sprite == full) filled++; }
                 sb.Append($" dots={on}({filled}) magText='{(f._mag.gameObject.activeInHierarchy ? f._mag.text : "")}'");
-                sb.Append($" tile={Rect(f, f._socket.rectTransform)} plate={Rect(f, f._plateRt)}");
+                sb.Append($" tile={Rect(f, f._socket.rectTransform)} plate={Rect(f, f._plateRt)} platew={f._pw:0.##}");
                 return sb.ToString();
             }
             finally { thread.CurrentCulture = culture; }

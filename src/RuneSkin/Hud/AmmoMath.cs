@@ -133,6 +133,16 @@ namespace RuneSkin.PlayerHud
             return r;
         }
 
+        // Plate width fitted to its content (approved mockup f1-varA: each plate is as wide as its longer line plus the
+        // side padding): `nameRight` / `lineRight` = the right edge of the name and of the second line (count, magazine
+        // readout) from the plate's left edge; + `pad`, clamped to [min, max] (above max the name autoshrinks / ellipsizes).
+        public static float PlateWidth(float nameRight, float lineRight, float pad, float min, float max)
+        {
+            var w = Math.Max(Math.Max(0f, nameRight), Math.Max(0f, lineRight)) + pad;
+            if (max < min) max = min;
+            return w < min ? min : w > max ? max : w;
+        }
+
         private static int Clamp(int v, int lo, int hi) => v < lo ? lo : v > hi ? hi : v;
     }
 }

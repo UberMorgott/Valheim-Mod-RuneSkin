@@ -9782,19 +9782,19 @@
         138
       ],
       "border": {
-        "left": 0,
+        "left": 50,
         "bottom": 0,
-        "right": 0,
+        "right": 50,
         "top": 0
       },
       "pivot": [
         0.5,
         0.5
       ],
-      "imageType": "Simple",
+      "imageType": "Sliced",
       "fillCenter": true,
       "token": "hud.ammo.plate",
-      "notes": "Ammo nameplate (approved mockup ammo-hud f1-varA): iron frame, smoky glass, cyan hairline + rune diamonds at the ends; rebuilt to the fixed plate aspect 576 x 138 (144 x 34.5 units x 2 x 2: AmmoFrame size.hud.ammo.plate.w / .h) so it is drawn Simple, unstretched; flat left end butts against the ammo tile",
+      "notes": "Ammo nameplate (approved mockup ammo-hud f1-varA): iron frame, smoky glass, cyan hairline + rune diamonds at the ends; rebuilt to 576 x 138 (144 x 34.5 units x 2 x 2); drawn Sliced (knotwork ends 50 px kept, glass + hairline stretch) because AmmoFrame sizes the plate to its content like the mockup (size.hud.ammo.plate.w.min .. .w); flat left end butts against the ammo tile",
       "atlas": "strip"
     }
   ]
