@@ -395,6 +395,7 @@ namespace RuneSkin.InventoryScreen
             if (_gui && _gui.m_animator) PrewarmGrid(); // closed: the player grid's cells built + styled ahead of the first open
             if (_gui && _gui.m_animator) PrewarmBackpack(); // closed: the backpack panel restyled ahead of the first open
             if (_gui && _gui.m_animator) PrewarmHeaders(); // closed: the window headers built ahead of the first open
+            if (_gui && _gui.m_animator) GhostOpen(); // the session's first open, hidden behind the spawn's loading screen
             if (!_frameReady || _layout == null) return;
             _frameReady = false;
             if (!InventoryGui.IsVisible()) return;
@@ -449,7 +450,7 @@ namespace RuneSkin.InventoryScreen
             var want = _gui.m_animator.GetBool(AnimVisible);
             if (want && _parked.Count > 0) Unpark();
             var dur = Mathf.Max(0f, Plugin.PanelFade?.Value ?? 0.15f);
-            var target = want ? 1f : 0f;
+            var target = want && !_ghost ? 1f : 0f; // the hidden first open stays fully transparent (GhostOpen)
             _alpha = dur <= 0f ? target : Mathf.MoveTowards(_alpha, target, Time.unscaledDeltaTime / dur);
             // Every CanvasGroup property write broadcasts OnCanvasGroupChanged to every component under InventoryGui,
             // inactive ones included (Unity 6000.0.75 probe: ~0.25 ms per 1000 Images per write), and Selectable's handler
@@ -462,7 +463,8 @@ namespace RuneSkin.InventoryScreen
                 _fade.alpha = _alpha;
                 _alphaWrittenAt = now;
             }
-            if (_fade.blocksRaycasts != want) _fade.blocksRaycasts = want;
+            var blocks = want && !_ghost;
+            if (_fade.blocksRaycasts != blocks) _fade.blocksRaycasts = blocks;
             if (want)
             {
                 Compat.FadePark.SweepVanilla(_gui); // a parked dialog someone activated goes home (FadePark)
@@ -671,6 +673,81 @@ namespace RuneSkin.InventoryScreen
             if (_parked.Count > 0)
                 foreach (var go in _parked)
                     if (go) Idle(go.transform);
+        }
+
+        // Hidden first open (GhostOpenMath): the prewarms above build pieces while closed, but the open path itself - first
+        // canvas build of the shown panels, TMP mesh / glyph generation, layout passes, CraftingSkin.Apply's first restyle,
+        // the doll's first render + alpha readback (CharacterPreview.CheckAlpha), vanilla Show / UpdateCraftingPanel and
+        // other mods' Show patches - only runs shown (rp-open-cold run 20261028-002303: 214 ms, RuneSkin 61 ms on the first
+        // Tab). So the session's first open is the vanilla one, InventoryGui.Show(null) (InventoryGui.cs:1034-1053), issued
+        // the first frames after the spawn while Hud's loading screen still covers the view, held GhostOpenMath.Frames
+        // frames and closed with InventoryGui.Hide (:1055-1083), as a Tab press would. Differences from a user open: the
+        // fade group stays at alpha 0 with raycasts off (Fade), no open / close sound (the two EffectLists swapped for an
+        // empty one around the calls), no tutorial (InventoryGui.Update's ShowTutorial path is not taken), no container.
+        // Vanilla's visible-branch Update runs as usual (no input reaches it under the loading screen). Once per InventoryGui.
+        private bool _ghost, _ghostDone;
+        private int _ghostHeld;
+        private long _ghostT0;
+        private static readonly EffectList NoEffects = new EffectList();
+
+        // Mouse kept captured (InventoryAdapter.UpdateMouseCapture_Postfix) while shown and until IsVisible turns false
+        // (it lags Hide by a frame, InventoryGui.cs:1019).
+        public bool GhostCursor => _ghost || _ghostCursor;
+        private bool _ghostCursor;
+
+        private void GhostOpen()
+        {
+            if (_ghostDone)
+            {
+                if (_ghostCursor && !InventoryGui.IsVisible()) _ghostCursor = false;
+                return;
+            }
+            var player = Player.m_localPlayer;
+            var screen = Hud.instance ? Hud.instance.m_loadingScreen : null;
+            var cover = screen && screen.gameObject.activeInHierarchy ? screen.alpha : 0f;
+            var blocked = player && (player.IsDead() || player.InCutscene() || player.IsTeleporting());
+            switch (GhostOpenMath.Next(_ghost, _ghostHeld, player, blocked, _gui.m_animator.GetBool(AnimVisible), cover))
+            {
+                case GhostStep.Open:
+                    _ghost = true;
+                    _ghostHeld = 0;
+                    _ghostT0 = System.Diagnostics.Stopwatch.GetTimestamp();
+                    Silently(() => _gui.Show(null, 1));
+                    break;
+                case GhostStep.Hold:
+                    _ghostHeld++;
+                    break;
+                case GhostStep.Close:
+                    Silently(_gui.Hide);
+                    EndGhost($"closed after {_ghostHeld + 1} frames");
+                    break;
+                case GhostStep.Done:
+                    EndGhost(_ghost ? "hidden by the game" : "skipped (loading screen gone or opened first)");
+                    break;
+            }
+        }
+
+        private void EndGhost(string why)
+        {
+            var ms = _ghost ? (System.Diagnostics.Stopwatch.GetTimestamp() - _ghostT0) * 1000.0 / System.Diagnostics.Stopwatch.Frequency : 0.0;
+            _ghostCursor = _ghost;
+            _ghost = false;
+            _ghostDone = true;
+            Plugin.Log.LogInfo($"[RuneSkin] inventory first open behind the loading screen: {why}, {ms:0} ms wall");
+        }
+
+        private void Silently(Action call)
+        {
+            var open = _gui.m_openInventoryEffects;
+            var close = _gui.m_closeInventoryEffects;
+            _gui.m_openInventoryEffects = NoEffects;
+            _gui.m_closeInventoryEffects = NoEffects;
+            try { call(); }
+            finally
+            {
+                _gui.m_openInventoryEffects = open;
+                _gui.m_closeInventoryEffects = close;
+            }
         }
 
         private void RefreshEaqs()

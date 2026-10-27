@@ -72,6 +72,22 @@ namespace RuneSkin.InventoryScreen
         [HarmonyPriority(Priority.First)]
         private static void Show_Prefix() => InventorySkin.Instance?.Unpark();
 
+        // Hidden first open (InventorySkin.GhostOpen): while it is shown (and the one frame IsVisible lags behind Hide),
+        // the mouse stays captured as if the inventory were closed - the vanilla capture branch of
+        // GameCamera.UpdateMouseCapture (GameCamera.cs, !InventoryGui.IsVisible()), so no cursor appears over the
+        // loading screen. Other screens (menu, radial, popups) are untouched: only the branch vanilla would have taken.
+        [HarmonyPatch(typeof(GameCamera), nameof(GameCamera.UpdateMouseCapture))]
+        [HarmonyPostfix]
+        private static void UpdateMouseCapture_Postfix(bool ___m_mouseCapture)
+        {
+            var skin = InventorySkin.Instance;
+            if (!skin || !skin.GhostCursor || !___m_mouseCapture || Hud.InRadial() || TextInput.IsVisible() || Menu.IsActive() ||
+                Minimap.IsOpen() || StoreGui.IsVisible() || Hud.IsPieceSelectionVisible() || PlayerCustomizaton.BarberBlocksLook() ||
+                UnifiedPopup.IsVisible() || ZNet.IsPasswordDialogShowing()) return;
+            ZCursor.LockState = UnityEngine.CursorLockMode.Locked;
+            ZCursor.Hide();
+        }
+
         // Character preview refresh events (CharacterPreview.MarkDirty), local player only: every equipment change
         // ends in Humanoid.SetupEquipment -> Player.SetupVisEquipment(m_visEquipment, false) (equip, unequip, hide /
         // show hand items, SetHair / SetBeard; Humanoid.cs:1428-1432, :1957); model and colours change through
