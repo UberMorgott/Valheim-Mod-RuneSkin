@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using RuneSkin.PlayerHud;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace RuneSkin.Tests
 {

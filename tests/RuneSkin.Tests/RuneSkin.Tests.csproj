@@ -4,6 +4,9 @@
        net10.0 because the game's Unity 6 assemblies target netstandard2.1 (not loadable on .NET Framework);
        the tested sources are compiled in directly (they are managed-only by design). -->
   <PropertyGroup>
+    <!-- xUnit v3 on Microsoft Testing Platform (build\Valheim.Build.props tests layer). -->
+    <OutputType>Exe</OutputType>
+    <ValheimTests>true</ValheimTests>
     <TargetFramework>net10.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
@@ -12,12 +15,6 @@
          uint.Parse (CA1846) do not exist; these net10-only suggestions cannot be applied to them. -->
     <NoWarn>$(NoWarn);CA1510;CA1846</NoWarn>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.0" />
-    <PackageReference Include="xunit" Version="2.9.3" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" PrivateAssets="all" />
-  </ItemGroup>
 
   <ItemGroup>
     <Compile Include="..\..\src\RuneSkin.API\Skin.cs" Link="Linked\Skin.cs" />
