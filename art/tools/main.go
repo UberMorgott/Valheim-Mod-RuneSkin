@@ -59,6 +59,8 @@ func main() {
 		cmdCompareM6()
 	case "compare-m7":
 		cmdCompareM7()
+	case "compare-tabs":
+		cmdCompareTabs()
 	case "compare-eb":
 		cmdCompareEB()
 	case "compare-stats":

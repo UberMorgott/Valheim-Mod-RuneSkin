@@ -357,13 +357,13 @@
       "name": "tab_normal",
       "file": "tab_normal.png",
       "size": [
-        256,
+        252,
         52
       ],
       "border": {
-        "left": 14,
+        "left": 30,
         "bottom": 14,
-        "right": 14,
+        "right": 30,
         "top": 14
       },
       "pivot": [
@@ -373,19 +373,19 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "tab.normal",
-      "notes": "NEW: tab plaque (craft/upgrade tabs), thin stone rim, chamfered corners, strong thin bevel; text text_body"
+      "notes": "w29 tabs C (glass rune, Codex pick): steel-slate plaque, chamfered ends with small open knots, no gold, dark glass (sheet tabs-wide.png); text text_body"
     },
     {
       "name": "tab_hover",
       "file": "tab_hover.png",
       "size": [
-        256,
+        252,
         52
       ],
       "border": {
-        "left": 14,
+        "left": 30,
         "bottom": 14,
-        "right": 14,
+        "right": 30,
         "top": 14
       },
       "pivot": [
@@ -395,19 +395,19 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "tab.hover",
-      "notes": "NEW: tab plaque, lighter rim"
+      "notes": "w29 tabs C: hover = thin gold top inner line + thin cyan bottom inner line"
     },
     {
       "name": "tab_selected",
       "file": "tab_selected.png",
       "size": [
-        256,
+        252,
         52
       ],
       "border": {
-        "left": 14,
+        "left": 30,
         "bottom": 14,
-        "right": 14,
+        "right": 30,
         "top": 14
       },
       "pivot": [
@@ -417,7 +417,7 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "tab.selected",
-      "notes": "NEW: active tab, glowing gold rim; text text_active"
+      "notes": "w29 tabs C: selected = cyan glowing inner rim + wide cyan bottom rim, teal glass, gold end accents; text text_active"
     },
     {
       "name": "frame_small",
@@ -2777,14 +2777,14 @@
       "name": "tab_square_normal",
       "file": "tab_square_normal.png",
       "size": [
-        99,
-        95
+        98,
+        92
       ],
       "border": {
-        "left": 16,
-        "bottom": 16,
-        "right": 16,
-        "top": 16
+        "left": 30,
+        "bottom": 30,
+        "right": 30,
+        "top": 30
       },
       "pivot": [
         0.5,
@@ -2793,20 +2793,20 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "tab.square.normal",
-      "notes": "M3 square glyph tab (crafting category filter, EpicLoot icon tabs), thin rim: glyph text_body ~62% of the tab"
+      "notes": "w29 tabs C: square glyph tab (crafting category filter, EpicLoot icon tabs), steel rim, knot corners: glyph text_body ~62% of the tab"
     },
     {
       "name": "tab_square_hover",
       "file": "tab_square_hover.png",
       "size": [
-        100,
-        97
+        98,
+        92
       ],
       "border": {
-        "left": 16,
-        "bottom": 16,
-        "right": 16,
-        "top": 16
+        "left": 30,
+        "bottom": 30,
+        "right": 30,
+        "top": 30
       },
       "pivot": [
         0.5,
@@ -2815,20 +2815,20 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "tab.square.hover",
-      "notes": "M3 square glyph tab hover: thin cyan inner line; glyph rune_glow"
+      "notes": "w29 tabs C: square hover = thin cyan inner line; glyph rune_glow"
     },
     {
       "name": "tab_square_selected",
       "file": "tab_square_selected.png",
       "size": [
-        100,
-        97
+        98,
+        92
       ],
       "border": {
-        "left": 16,
-        "bottom": 16,
-        "right": 16,
-        "top": 16
+        "left": 30,
+        "bottom": 30,
+        "right": 30,
+        "top": 30
       },
       "pivot": [
         0.5,
@@ -2837,7 +2837,7 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "tab.square.selected",
-      "notes": "M3 square glyph tab selected: thin gold rim; glyph text_active"
+      "notes": "w29 tabs C: square selected = strong cyan inner rim, lighter glass; glyph text_active"
     },
     {
       "name": "field_search",
@@ -2957,10 +2957,10 @@
         112
       ],
       "border": {
-        "left": 24,
-        "bottom": 24,
-        "right": 24,
-        "top": 24
+        "left": 30,
+        "bottom": 30,
+        "right": 30,
+        "top": 30
       },
       "pivot": [
         0.5,
