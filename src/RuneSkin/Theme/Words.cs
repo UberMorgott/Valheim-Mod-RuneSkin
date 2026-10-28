@@ -25,6 +25,10 @@ namespace RuneSkin.Theme
             { "runeskin_action_stack_all", new[] { "Stack matching", "Сложить похожее" } },
             { "runeskin_eitr_to_hp", new[] { "EITR → HP", "ЭЙТР → ЗДОРОВЬЕ" } },
             { "runeskin_eitr_to_shield", new[] { "EITR → SHIELD", "ЭЙТР → ЩИТ" } },
+            // Reserve tooltip on the HUD bars + stats breakdown lines (auras / summons hold part of the pool).
+            { "runeskin_reserve_available", new[] { "Available", "Доступно" } },
+            { "runeskin_reserve_auras", new[] { "Reserved by auras", "Резерв аур" } },
+            { "runeskin_reserve_summons", new[] { "Reserved by summons", "Резерв призывов" } },
             // Large map legend (mockup m4-map-a). Pin types = Minimap.PinType (Minimap.cs enum).
             { "runeskin_map_pins", new[] { "Pins", "Метки" } },
             { "runeskin_map_players", new[] { "Players", "Игроки" } },

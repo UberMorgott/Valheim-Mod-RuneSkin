@@ -8,7 +8,7 @@ namespace RuneSkin.PlayerHud
     // Raycast-only layer of the strip (coordinator decision 2026-10-23): the strip's visuals keep the HUD's sort, so every
     // window, info box, TopOverlay and ModalLayer renders above them; while the inventory is open this sibling of the
     // strip (same parent, mirrored transform) sorts above the GUI canvas with one invisible hit area per hotbar / potion
-    // cell (hotbar / potion / food / ability; hover = frame + tooltip), so a press, drop or hover on a strip cell still reaches StripInput (forwarded by StripHit) instead of InventoryGui's
+    // cell (hotbar / potion / food / ability; hover = frame + tooltip) and per HP / stamina / eitr bar (hover = reserve tooltip), so a press, drop or hover on a strip cell still reaches StripInput (forwarded by StripHit) instead of InventoryGui's
     // full-screen root/dropButton (run 20261022-194551). Nothing is drawn: HitArea builds no mesh and is fully clear.
     internal sealed class StripHits
     {
@@ -44,13 +44,17 @@ namespace RuneSkin.PlayerHud
                 _inputs.Clear();
                 strip.GetComponentsInChildren(false, _inputs);
                 for (var i = _inputs.Count - 1; i >= 0; i--)
-                    if (_inputs[i].Hotbar < 0 && _inputs[i].Potion < 0 && _inputs[i].Food < 0 && _inputs[i].Ability < 0) _inputs.RemoveAt(i);
+                    if (_inputs[i].Hotbar < 0 && _inputs[i].Potion < 0 && _inputs[i].Food < 0 && _inputs[i].Ability < 0 && _inputs[i].Pool == null) _inputs.RemoveAt(i);
             }
+            // A carried item (InventoryGui drag) released over a bar drops on the ground as vanilla (m_dropButton under it):
+            // bar hit areas (reserve tooltip only) stand aside while something is carried.
+            var gui = InventoryGui.instance;
+            var carrying = gui && gui.m_dragGo;
             for (var i = 0; i < _inputs.Count; i++)
             {
                 var src = _inputs[i];
                 var hit = Hit(i);
-                if (!src || !src.isActiveAndEnabled || !(src.transform is RectTransform cell))
+                if (!src || !src.isActiveAndEnabled || (carrying && src.Pool != null) || !(src.transform is RectTransform cell))
                 {
                     if (hit.gameObject.activeSelf) hit.gameObject.SetActive(false);
                     continue;

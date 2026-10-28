@@ -91,6 +91,16 @@ namespace RuneSkin.InfoScreens
                 sum += v;
             }
             var game = which == 0 ? p.GetMaxHealth() : which == 1 ? p.GetMaxStamina() : p.GetMaxEitr();
+            // Reservations (MorgottTweaks auras / summons through the resource providers) lower the game's max: own lines,
+            // the same parts the HUD bar's reserve tooltip shows (Codex call 2026-10-28: gamepad reads them here).
+            var pool = which == 0 ? API.ResourcePools.Health : which == 1 ? API.ResourcePools.Stamina : API.ResourcePools.Eitr;
+            if (Api.Providers.TryResource(pool, p, false, out var s) && Mathf.Abs(s.Available - game) <= 0.5f + 0.01f * game &&
+                PlayerHud.HudMath.ReserveShown(s.ReservedAuras, s.ReservedSummons))
+            {
+                bd.Add(Loc("$runeskin_reserve_auras"), null, -s.ReservedAuras, true);
+                bd.Add(Loc("$runeskin_reserve_summons"), null, -s.ReservedSummons, true);
+                sum -= s.ReservedAuras + s.ReservedSummons;
+            }
             Residual(bd, game, sum, true);
             bd.Result(Total, game);
         }

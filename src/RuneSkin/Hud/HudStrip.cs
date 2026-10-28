@@ -391,6 +391,10 @@ namespace RuneSkin.PlayerHud
         // so the strip tooltip is the same instance kind TooltipAdapter restyles and lifts.
         private static GameObject _tooltipPrefab;
 
+        // A bar hit area's tooltip (StripInput.Pool), made on its first hover: same prefab as the cells, no gamepad focus object
+        // (the gamepad reads the same reserve parts in the stats window breakdown).
+        public static void EnsurePoolTooltip(StripInput input) => EnsureTooltip(input, null);
+
         private static void EnsureTooltip(StripInput input, StripCell c)
         {
             if (input.Tooltip) return;
@@ -403,7 +407,7 @@ namespace RuneSkin.PlayerHud
             }
             var tip = input.gameObject.AddComponent<UITooltip>();
             tip.m_tooltipPrefab = _tooltipPrefab;
-            tip.m_gamepadFocusObject = c.HoverObject; // gamepad: shown while the cell's hover frame is (UITooltip.LateUpdate)
+            if (c != null) tip.m_gamepadFocusObject = c.HoverObject; // gamepad: shown while the cell's hover frame is (UITooltip.LateUpdate)
             input.Tooltip = tip;
         }
 
@@ -414,6 +418,12 @@ namespace RuneSkin.PlayerHud
             var tip = input.Tooltip;
             if (!tip) return false;
             string topic = "", text = "";
+            if (p && input.Pool != null)
+            {
+                ReserveTooltip(p, input.Pool, ref topic, ref text);
+                tip.Set(topic, text);
+                return text.Length > 0;
+            }
             if (p)
             {
                 ItemDrop.ItemData item = null;
@@ -444,6 +454,20 @@ namespace RuneSkin.PlayerHud
             tip.Set(topic, text);
             return topic.Length > 0 || text.Length > 0;
         }
+        // Reserve parts of a pool (ResourceState from the providers, MorgottTweaks auras / summons): nothing (empty text)
+        // while nothing is reserved or the provider's state is stale (its Available off the game's current max).
+        private static void ReserveTooltip(Player p, string pool, ref string topic, ref string text)
+        {
+            if (!Providers.TryResource(pool, p, false, out var s) || !HudMath.ReserveShown(s.ReservedAuras, s.ReservedSummons)) return;
+            var gameMax = pool == ResourcePools.Health ? p.GetMaxHealth() : pool == ResourcePools.Stamina ? p.GetMaxStamina() : p.GetMaxEitr();
+            if (Mathf.Abs(s.Available - gameMax) > 0.5f + 0.01f * gameMax) return;
+            var loc = Localization.instance;
+            string L(string key) => loc != null ? loc.Localize(key) : key;
+            topic = L(pool == ResourcePools.Health ? "$runeskin_stats_health" : pool == ResourcePools.Stamina ? "$runeskin_stats_stamina" : "$runeskin_stats_eitr");
+            text = HudMath.ReserveText(s.Available, s.Max, s.ReservedAuras, s.ReservedSummons,
+                L("$runeskin_reserve_available"), L("$runeskin_reserve_auras"), L("$runeskin_reserve_summons"));
+        }
+
         private static readonly string[] Digits = { "1", "2", "3", "4", "5", "6", "7", "8" };
         private static string KeyLabel(int i) => i < Digits.Length ? Digits[i] : null;
 

@@ -145,6 +145,14 @@ namespace RuneSkin.PlayerHud
             _row[0] = _stamina;
             _row[1] = _eitr;
             _row[2] = _adrenaline;
+            // Reserve tooltip on hover while the inventory is open (Codex call 2026-10-28, TASKS M1): the bars stay Plain (no
+            // hatch, approved mockups); StripHits gives each bar root a hit area forwarding to this input.
+            _barInputs[0] = _health.Root.gameObject.AddComponent<StripInput>();
+            _barInputs[0].Pool = ResourcePools.Health;
+            _barInputs[1] = _stamina.Root.gameObject.AddComponent<StripInput>();
+            _barInputs[1].Pool = ResourcePools.Stamina;
+            _barInputs[2] = _eitr.Root.gameObject.AddComponent<StripInput>();
+            _barInputs[2].Pool = ResourcePools.Eitr;
             _plaque = HudArt.Rect("ConversionPlaque", _root);
             var seal = _art.Image("Seal", _plaque, "sprite.hud.plaque.seal", "color.frame", Image.Type.Sliced);
             seal.rectTransform.anchorMin = Vector2.zero;
@@ -328,6 +336,30 @@ namespace RuneSkin.PlayerHud
                 layer = top ? top.sortingLayerID : 0;
             }
             _hits.Tick(_root, want, order, layer);
+            if (want) RefreshPoolTips();
+        }
+
+        // Reserve tooltips of the hovered bar follow the reservation (Codex review 2026-10-28): refilled 4x a second while
+        // hovered, hidden when nothing is reserved any more, started when a reservation appears under a resting pointer.
+        private readonly StripInput[] _barInputs = new StripInput[3];
+        private float _poolTipAt;
+
+        private void RefreshPoolTips()
+        {
+            if (Time.unscaledTime < _poolTipAt) return;
+            _poolTipAt = Time.unscaledTime + 0.25f;
+            for (var i = 0; i < _barInputs.Length; i++)
+            {
+                var input = _barInputs[i];
+                if (!input || !input.Hovered || StripInput.FillTooltip == null) continue;
+                if (!input.Tooltip) HudStrip.EnsurePoolTooltip(input);
+                var tip = input.Tooltip;
+                if (!tip) continue;
+                var shown = UITooltip.m_current == tip;
+                var has = StripInput.FillTooltip(input);
+                if (!has && shown) UITooltip.HideTooltip();
+                else if (has && !shown && input.HoverTarget && !ZInput.IsTouchActive()) tip.OnHoverStart(input.HoverTarget);
+            }
         }
 
         // Raycast-only layer of the strip (harness: hit areas over the cells while the inventory is open).

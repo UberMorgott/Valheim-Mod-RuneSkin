@@ -26,6 +26,8 @@ namespace RuneSkin.PlayerHud
         public int Ability = -1;
         public int Potion = -1;
         public int Food = -1;
+        // Bar hit area (HP / stamina / eitr, ResourcePools id): hover shows the reserve tooltip (auras / summons), no press.
+        public string Pool;
 
         // Pointer over this cell (directly or through its StripHit while the inventory is open).
         public bool Hovered { get; private set; }
@@ -77,12 +79,17 @@ namespace RuneSkin.PlayerHud
                 RuneSkin.Api.Providers.ActivateAbility(Ability, player);
         }
 
+        // The object the pointer entered (this cell or its StripHit): the hover target a live tooltip refresh restarts on.
+        public GameObject HoverTarget { get; private set; }
+
         public void OnPointerEnter(PointerEventData eventData)
         {
             Hovered = true;
+            HoverTarget = eventData != null && eventData.pointerEnter ? eventData.pointerEnter : gameObject;
+            if (!Tooltip && Pool != null) HudStrip.EnsurePoolTooltip(this);
             if (!Tooltip || ZInput.IsTouchActive()) return;
             // text first, then the hover start (UITooltip.OnHoverStart shows nothing for an empty topic / text)
-            if (FillTooltip != null && FillTooltip(this)) Tooltip.OnHoverStart(eventData.pointerEnter ? eventData.pointerEnter : gameObject);
+            if (FillTooltip != null && FillTooltip(this)) Tooltip.OnHoverStart(HoverTarget);
         }
 
         public void OnPointerExit(PointerEventData eventData)

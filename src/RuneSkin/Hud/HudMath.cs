@@ -162,6 +162,23 @@ namespace RuneSkin.PlayerHud
             width = barPx - start;
         }
 
+        // Reserve tooltip of a strip bar (TASKS M1 reserve item, Codex call 2026-10-28: hover on the bar while the inventory
+        // is open, same parts in the stats window): shown only when something is reserved (>= half a point in total).
+        public static bool ReserveShown(float auras, float summons) =>
+            !float.IsNaN(auras) && !float.IsNaN(summons) && Math.Max(0f, auras) + Math.Max(0f, summons) >= 0.5f;
+
+        // Tooltip body: "available / max" line, then one line per non-zero reservation (whole points, rounded).
+        public static string ReserveText(float available, float max, float auras, float summons, string availableLabel, string aurasLabel, string summonsLabel)
+        {
+            var sb = new System.Text.StringBuilder(96);
+            sb.Append(availableLabel).Append(": ").Append(Round(available)).Append(" / ").Append(Round(max));
+            if (auras >= 0.5f) sb.Append('\n').Append(aurasLabel).Append(": ").Append(Round(auras));
+            if (summons >= 0.5f) sb.Append('\n').Append(summonsLabel).Append(": ").Append(Round(summons));
+            return sb.ToString();
+        }
+
+        private static string Round(float v) => ((int)Math.Round(Math.Max(0f, v), MidpointRounding.AwayFromZero)).ToString(System.Globalization.CultureInfo.InvariantCulture);
+
         // ---- flow layout (ui-skin-engine-plan §8a) -------------------------------------------------------------
 
         public struct Flow
