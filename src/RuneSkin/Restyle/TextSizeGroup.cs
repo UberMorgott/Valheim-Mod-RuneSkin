@@ -58,6 +58,7 @@ namespace RuneSkin.Restyle
                 Prune();
                 Groups[key] = list = new List<TextSizeGroup>(4);
             }
+            else list.RemoveAll(m => !m); // a reused key (screen string) keeps no members of a destroyed GUI
             list.Add(g);
         }
 
