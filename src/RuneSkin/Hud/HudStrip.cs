@@ -605,8 +605,11 @@ namespace RuneSkin.PlayerHud
             c.Timer(_cell.Active ? _cell.ActiveRemaining : -1f, true);
             c.SweepTint(ThemeTokens.GetColor("color.hud.belt.cooldown", new Color(0.35f, 0.39f, 0.42f, 0.65f)));
             c.Sweep(BeltMath.Cooldown(_cell.CooldownRemaining, _cell.CooldownTotal));
-            c.Glow(_cell.Auto && !blocked);
-            c.Pip(_cell.Auto);
+            // auto marks only on a cell with something in it (run 20261029-025439: food auto defaults ON, so every empty
+            // food socket glowed with an "A"; mockup A marks the stocked auto cell only)
+            var stocked = _cell.Count > 0 || _cell.Active;
+            c.Glow(_cell.Auto && stocked && !blocked);
+            c.Pip(_cell.Auto && stocked);
             c.Gem(_cell.GearGranted && _cell.Unlocked);
         }
         // Gamepad focus of the belt row (BeltPad) on cell (kind, i).

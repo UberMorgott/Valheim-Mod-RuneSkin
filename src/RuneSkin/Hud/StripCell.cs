@@ -199,6 +199,7 @@ namespace RuneSkin.PlayerHud
             _hasDur = durBand > 0f;
             _shownDurFill = -1f;
             PlaceBeltMarks();
+            BeltText();
         }
 
         private float _h = -1f;
@@ -307,6 +308,22 @@ namespace RuneSkin.PlayerHud
             if (on == _timerSuffix) return;
             _timerSuffix = on;
             _shownSeconds = int.MinValue;
+            BeltText();
+        }
+
+        // Belt cells (run 20261029-025439: "Alt+1" and "10m" covered a narrow potion cell's icon): the key label shrinks
+        // to the cell width, a square cell's timer sits in its bottom strip (share 0.32) instead of over the icon.
+        private void BeltText()
+        {
+            if (!_timerSuffix || _side <= 0f) return;
+            foreach (var txt in new[] { _key, _timer })
+            {
+                if (txt.enableAutoSizing) continue;
+                txt.enableAutoSizing = true;
+                txt.fontSizeMax = txt.fontSize;
+                txt.fontSizeMin = txt.fontSize * 0.4f;
+            }
+            if (!_round) Box(_timer.rectTransform, 0f, 0f, _side, _h * 0.32f);
         }
 
         public void Glow(bool on)
