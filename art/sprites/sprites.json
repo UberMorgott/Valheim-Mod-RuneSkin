@@ -357,13 +357,13 @@
       "name": "tab_normal",
       "file": "tab_normal.png",
       "size": [
-        252,
+        208,
         52
       ],
       "border": {
-        "left": 30,
+        "left": 26,
         "bottom": 14,
-        "right": 30,
+        "right": 26,
         "top": 14
       },
       "pivot": [
@@ -373,19 +373,19 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "tab.normal",
-      "notes": "w29 tabs C (glass rune, Codex pick): steel-slate plaque, chamfered ends with small open knots, no gold, dark glass (sheet tabs-wide.png); text text_body"
+      "notes": "w29 tabs C (glass rune, Codex pick): steel-slate plaque, mockup-crop redraw, chamfered ends with compact knots, gold end brackets, dark glass; text text_body"
     },
     {
       "name": "tab_hover",
       "file": "tab_hover.png",
       "size": [
-        252,
+        208,
         52
       ],
       "border": {
-        "left": 30,
+        "left": 26,
         "bottom": 14,
-        "right": 30,
+        "right": 26,
         "top": 14
       },
       "pivot": [
@@ -395,19 +395,19 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "tab.hover",
-      "notes": "w29 tabs C: hover = thin gold top inner line + thin cyan bottom inner line"
+      "notes": "w29 tabs C: hover = gold top inner line + cyan bottom inner line (mockup-crop redraw)"
     },
     {
       "name": "tab_selected",
       "file": "tab_selected.png",
       "size": [
-        252,
+        208,
         52
       ],
       "border": {
-        "left": 30,
+        "left": 26,
         "bottom": 14,
-        "right": 30,
+        "right": 26,
         "top": 14
       },
       "pivot": [
@@ -417,7 +417,7 @@
       "imageType": "Sliced",
       "fillCenter": true,
       "token": "tab.selected",
-      "notes": "w29 tabs C: selected = cyan glowing inner rim + wide cyan bottom rim, teal glass, gold end accents; text text_active"
+      "notes": "w29 tabs C: selected = cyan rim, glow on the bottom rim, dark centre (mockup-crop redraw); text text_active"
     },
     {
       "name": "frame_small",
@@ -2778,13 +2778,13 @@
       "file": "tab_square_normal.png",
       "size": [
         98,
-        92
+        94
       ],
       "border": {
-        "left": 30,
-        "bottom": 30,
-        "right": 30,
-        "top": 30
+        "left": 26,
+        "bottom": 26,
+        "right": 26,
+        "top": 26
       },
       "pivot": [
         0.5,
@@ -2800,13 +2800,13 @@
       "file": "tab_square_hover.png",
       "size": [
         98,
-        92
+        94
       ],
       "border": {
-        "left": 30,
-        "bottom": 30,
-        "right": 30,
-        "top": 30
+        "left": 26,
+        "bottom": 26,
+        "right": 26,
+        "top": 26
       },
       "pivot": [
         0.5,
@@ -2822,13 +2822,13 @@
       "file": "tab_square_selected.png",
       "size": [
         98,
-        92
+        94
       ],
       "border": {
-        "left": 30,
-        "bottom": 30,
-        "right": 30,
-        "top": 30
+        "left": 26,
+        "bottom": 26,
+        "right": 26,
+        "top": 26
       },
       "pivot": [
         0.5,
