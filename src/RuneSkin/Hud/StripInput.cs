@@ -50,6 +50,15 @@ namespace RuneSkin.PlayerHud
             return Potion >= 0 && HasCell;
         }
 
+        // MorgottTweaks belt on: potion / food cell i = belt cell (kind, i); every press goes to Belt.HandleClick, which
+        // owns the rules (drop the carried stack, pick up / split / move, RMB auto, Alt+RMB use now; docs\belt-api.md 4).
+        private bool BeltCell(out int kind, out int index)
+        {
+            kind = Potion >= 0 ? BeltMath.Potion : BeltMath.Food;
+            index = Potion >= 0 ? Potion : Food;
+            return index >= 0 && BeltBridge.On;
+        }
+
         private static InventoryGrid OpenGrid(Player player)
         {
             var gui = InventoryGui.instance;
@@ -61,6 +70,13 @@ namespace RuneSkin.PlayerHud
         {
             var player = Player.m_localPlayer;
             if (!player || player.IsDead()) return;
+            if (BeltCell(out var kind, out var index))
+            {
+                if (!OpenGrid(player)) return; // closed inventory: the HUD cells take no presses (keys use them)
+                var button = eventData.button == PointerEventData.InputButton.Left ? 0 : eventData.button == PointerEventData.InputButton.Right ? 1 : -1;
+                if (button >= 0) BeltBridge.Click(kind, index, button);
+                return;
+            }
             if (TryPos(out var pos))
             {
                 var grid = OpenGrid(player);
@@ -111,8 +127,15 @@ namespace RuneSkin.PlayerHud
         // drop it here as a second press would. A drag that started on this very cell already ran its press here.
         public void OnDrop(PointerEventData eventData)
         {
-            if (eventData.button != PointerEventData.InputButton.Left || !TryPos(out var pos)) return;
+            if (eventData.button != PointerEventData.InputButton.Left) return;
             if (Of(eventData.pointerPress) == this) return;
+            if (BeltCell(out var kind, out var index))
+            {
+                var gui = InventoryGui.instance;
+                if (OpenGrid(Player.m_localPlayer) && gui.m_dragGo && gui.m_dragItem != null) BeltBridge.DropDragged(kind, index);
+                return;
+            }
+            if (!TryPos(out var pos)) return;
             DropCarried(OpenGrid(Player.m_localPlayer), pos);
         }
 
@@ -125,7 +148,8 @@ namespace RuneSkin.PlayerHud
         // it in OnDrop, which runs first, so nothing is carried any more).
         public void OnEndDrag(PointerEventData eventData)
         {
-            if (eventData.button != PointerEventData.InputButton.Left || !TryPos(out _)) return;
+            // a belt cell's press started a vanilla drag (Belt.BeginDrag via HandleClick): the release drops it like a cell
+            if (eventData.button != PointerEventData.InputButton.Left || !(TryPos(out _) || BeltCell(out _, out _))) return;
             var playerGrid = OpenGrid(Player.m_localPlayer);
             if (!playerGrid) return;
             var hit = eventData.pointerCurrentRaycast.gameObject;

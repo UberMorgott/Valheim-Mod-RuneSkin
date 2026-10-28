@@ -101,7 +101,11 @@ namespace RuneSkin.PlayerHud
             // correction: 0 eaten = 3 empty sockets, never a vanished wing). Capacity = the "food" capacity list
             // (MorgottTweaks FoodSlots.Max: 4th slot gem), else MorgottTweaks FoodSlots.Max read directly, else vanilla
             // Player.m_maxFoods 3 (Player.cs:330); never fewer cells than eaten foods.
-            FoodCount = StripMath.WingSlots(FoodCapacity(p), p.GetFoods().Count);
+            // MorgottTweaks belt on (BeltBridge): both wings = its cells (Belt.Capacity, food cells = the food cap, so the
+            // eaten foods always fit); EAQS quick slots are off then (belt replaces them, Codex 2026-10-29).
+            _belt = BeltBridge.On;
+            FoodCount = _belt ? StripMath.WingSlots(BeltBridge.Capacity(p, BeltMath.Food), p.GetFoods().Count)
+                : StripMath.WingSlots(FoodCapacity(p), p.GetFoods().Count);
             if (Time.unscaledTime >= _quickReadAt)
             {
                 _quickReadAt = Time.unscaledTime + 2f; // EAQS slot set changes only with its config / equipment
@@ -111,7 +115,8 @@ namespace RuneSkin.PlayerHud
             }
             // Potion cells = MorgottTweaks PotionSlotCount (capacity list "potions"), clamped to EAQS's quick cells; without
             // the provider, EAQS's own quick slot count.
-            PotionCount = Providers.TryCapacity("potions", p, out var pc) && pc.Valid ? Mathf.Clamp(pc.Count, 0, _quick.Count > 0 ? _quick.Count : 6) : ActiveQuick();
+            PotionCount = _belt ? BeltBridge.Capacity(p, BeltMath.Potion)
+                : Providers.TryCapacity("potions", p, out var pc) && pc.Valid ? Mathf.Clamp(pc.Count, 0, _quick.Count > 0 ? _quick.Count : 6) : ActiveQuick();
             // 1..2 ability cells (mockup hud-4M3): the guardian power and the equipped Epic Loot set skill; only valid
             // slots take a cell, the block closes its width around them.
             var max = Mathf.Clamp((int)ThemeTokens.GetFloat("count.hud.ability.max", 2f), 0, _abilityIndex.Length);
@@ -344,7 +349,18 @@ namespace RuneSkin.PlayerHud
                 c.Key(pad ? null : KeyLabel(i));
                 ItemCell(c, p, item, i == selected);
             }
-            var quickSel = pad && quickBar ? quickBar.m_selected : -1;
+            var quickSel = pad && quickBar && !_belt ? quickBar.m_selected : -1;
+            if (_belt) BeltPotions(p, pad);
+            else QuickPotions(p, inv, quickSel);
+            if (_belt) BeltFood(p);
+            else FoodCells(p);
+            for (var i = 0; i < AbilityCount; i++) AbilityFill(_abilities[i], _abilityState[i]);
+            Hovers(pad, selected, quickSel);
+        }
+
+        // Potion cells = EAQS quick cells (no MorgottTweaks belt).
+        private void QuickPotions(Player p, Inventory inv, int quickSel)
+        {
             for (var i = 0; i < L.PotionShown && i < _potions.Count; i++)
             {
                 var item = i < _quick.Count ? inv.GetItemAt(_quick[i].Pos.x, _quick[i].Pos.y) : null;
@@ -358,9 +374,6 @@ namespace RuneSkin.PlayerHud
                 ItemCell(_potions[i], p, item, i == quickSel);
                 _potions[i].Durability(-1f, false);
             }
-            FoodCells(p);
-            for (var i = 0; i < AbilityCount; i++) AbilityFill(_abilities[i], _abilityState[i]);
-            Hovers(pad, selected, quickSel);
         }
 
         // ---- hover: frame + item tooltip ---------------------------------------------------------------------
@@ -372,8 +385,10 @@ namespace RuneSkin.PlayerHud
         {
             var open = InventoryGui.IsVisible();
             for (var i = 0; i < HotbarCells; i++) Hover(_hotbar[i], pad && open && i == selected);
-            for (var i = 0; i < _potions.Count && i < L.PotionShown; i++) Hover(_potions[i], pad && open && i == quickSel);
-            for (var i = 0; i < _food.Count && i < L.FoodShown; i++) Hover(_food[i], false);
+            var p = _belt && pad && open ? Player.m_localPlayer : null;
+            for (var i = 0; i < _potions.Count && i < L.PotionShown; i++)
+                Hover(_potions[i], pad && open && (p ? BeltFocus(p, BeltMath.Potion, i) : !_belt && i == quickSel));
+            for (var i = 0; i < _food.Count && i < L.FoodShown; i++) Hover(_food[i], p && BeltFocus(p, BeltMath.Food, i));
             for (var i = 0; i < _abilities.Count && i < AbilityCount; i++) Hover(_abilities[i], false);
         }
 
@@ -423,6 +438,16 @@ namespace RuneSkin.PlayerHud
                 ReserveTooltip(p, input.Pool, ref topic, ref text);
                 tip.Set(topic, text);
                 return text.Length > 0;
+            }
+            if (p && _belt && (input.Potion >= 0 || input.Food >= 0))
+            {
+                // Belt cell: MT's own localized tooltip (name x count, auto state, mouse help, key, auto rule).
+                var kind = input.Potion >= 0 ? BeltMath.Potion : BeltMath.Food;
+                var index = input.Potion >= 0 ? input.Potion : input.Food;
+                topic = BeltBridge.TryGet(p, kind, index, out var cell) ? cell.ItemName ?? "" : "";
+                text = BeltBridge.Tooltip(kind, index);
+                tip.Set(topic, text);
+                return topic.Length > 0 || text.Length > 0;
             }
             if (p)
             {
@@ -515,6 +540,59 @@ namespace RuneSkin.PlayerHud
             var dur = InventoryScreen.InventoryMath.Cell(r.width, r.height, InventoryScreen.GridCellLook.Tokens).Durability;
             MagazinePips.Apply(c.Root, item, dur.X, dur.Y, Mathf.Abs(c.Root.lossyScale.y));
         }
+
+        // ---- belt cells (MorgottTweaks Belt, BeltBridge): data only; the state visuals (auto ring + A pip, cooldown
+        // wedge, blocked dim, gear-gem inlay, active icon + xN) wait for the approved mockup (docs\mockups\belt) ----
+
+        private bool _belt;
+        private BeltCell _cell;
+
+        private void BeltPotions(Player p, bool pad)
+        {
+            for (var i = 0; i < L.PotionShown && i < _potions.Count; i++)
+            {
+                var c = _potions[i];
+                var has = BeltBridge.TryGet(p, BeltMath.Potion, i, out _cell);
+                if (_potionInput.Length < _potions.Count) System.Array.Resize(ref _potionInput, _potions.Count);
+                var input = _potionInput[i] ? _potionInput[i] : _potionInput[i] = c.Root.GetComponent<StripInput>();
+                if (input) input.HasCell = false; // presses go to the belt (StripInput.BeltCell), never to a grid cell
+                ItemCell(c, p, has ? _cell.Item : null, false);
+                c.Durability(-1f, false);
+                c.Key(pad || !has ? null : _cell.HotkeyLabel);
+                if (!has || !_cell.Active)
+                {
+                    c.Ring(-1f, default);
+                    c.Timer(-1f, false);
+                    continue;
+                }
+                c.Ring(BeltMath.Fraction(_cell.ActiveRemaining, _cell.ActiveTotal), ThemeTokens.GetColor("color.hud.glyph", Color.cyan));
+                c.Timer(_cell.ActiveRemaining, false);
+            }
+        }
+
+        private void BeltFood(Player p)
+        {
+            var ring = ThemeTokens.GetColor("color.hud.strip.food.ring", Color.white);
+            for (var i = 0; i < L.FoodShown && i < _food.Count; i++)
+            {
+                var c = _food[i];
+                var has = BeltBridge.TryGet(p, BeltMath.Food, i, out _cell);
+                var icon = has ? _cell.Active && _cell.ActiveIcon ? _cell.ActiveIcon : _cell.Icon : null;
+                c.Empty(!icon);
+                c.Icon(icon, Color.white);
+                if (!has || !_cell.Active)
+                {
+                    c.Ring(-1f, ring);
+                    c.Timer(-1f, true);
+                    continue;
+                }
+                c.Ring(Mathf.Max(0f, BeltMath.Fraction(_cell.ActiveRemaining, _cell.ActiveTotal)), ring);
+                c.Timer(_cell.ActiveRemaining, true);
+            }
+        }
+
+        // Gamepad focus of the belt row (BeltPad) on cell (kind, i).
+        private static bool BeltFocus(Player p, int kind, int i) => BeltPad.Cell(p, out var k, out var n) && k == kind && n == i;
 
         private void FoodCells(Player p)
         {
