@@ -609,15 +609,21 @@ namespace RuneSkin.Restyle
         // What the face must draw over: the window's panel stack, else a screen dim leading the window (role scrim: the
         // stats window's own backdrop; at index 0 under it the face drew BELOW the 86 % dim - faint plate and title, run
         // 20261024-202818 info-CharacterStats).
+        // A window whose stack sits one level down (TextsDialog Texts_frame/bkg/RuneSkinPanel): after that backing child -
+        // at index 0 the compendium face drew under bkg's opaque Backing (run 20261028-205114 overdraw-texts: title / plate
+        // under Texts_frame/bkg/RuneSkinPanel/Backing).
         private static Transform Backdrop(Transform parent)
         {
             var stack = parent.Find(PanelDecor.ChildName);
             if (stack) return stack;
+            var first = true;
             for (var i = 0; i < parent.childCount; i++)
             {
                 var c = parent.GetChild(i);
-                if (c.name == FaceName) continue;
-                return c.TryGetComponent<SkinMark>(out var m) && m.Role == "scrim" ? c : null;
+                if (c.name == FaceName || c.name == ObjectName) continue;
+                if (first && c.TryGetComponent<SkinMark>(out var m) && m.Role == "scrim") return c;
+                first = false;
+                if (PanelDecor.Of(c)) return c;
             }
             return null;
         }

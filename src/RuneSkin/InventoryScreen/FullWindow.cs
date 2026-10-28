@@ -121,11 +121,18 @@ namespace RuneSkin.InventoryScreen
             CoverWindows.Clear();
             CoverRects.Clear();
             foreach (var w in Open)
-                if (w && Opaque.TryGetValue(w, out var f) && f != null)
+            {
+                if (!w) continue;
+                if (Opaque.TryGetValue(w, out var f) && f != null)
                 {
                     CoverWindows.Add(w);
                     CoverRects.Add(f());
                 }
+                // A full window without its own opaque area (the compendium, Almanac): its drawn panel backings cover what
+                // lies under them, as the standing inventory windows do (run 20261028-205114 overdraw-texts: the HUD
+                // crosshair / hover name drew under Texts_frame/bkg/RuneSkinPanel/Backing).
+                else AddStanding(w);
+            }
             if (_standing && gui) AddStanding(gui.m_inventoryRoot);
             CoverCull.Refresh(CoverWindows, CoverRects);
         }
