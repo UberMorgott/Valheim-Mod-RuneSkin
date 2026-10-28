@@ -181,7 +181,9 @@ namespace RuneSkin.PlayerHud
             // key label in the upper half: top inset 0.4 x (run 20261023-191817: the 27-unit glyph box, ~38 units with its
             // outline, ran 1.5 px below the cell centre from the full inset)
             Box(_key.rectTransform, inset, h * 0.5f, w - 2f * inset, h * 0.5f - inset * 0.4f);
-            Box(_count.rectTransform, inset, inset * 0.8f, w - 2f * inset, h * 0.5f);
+            // round cell with its timer band: the count sits above the band (bottom-right of the disc), never on the timer
+            var countY = _round && timerBelow ? band : inset * 0.8f;
+            Box(_count.rectTransform, inset, countY, w - 2f * inset, h * 0.5f);
             if (timerBelow) // food: in the band under the disc (never over the ring)
                 Box(_timer.rectTransform, 0f, 0f, w, band > 0f ? band : ThemeTokens.GetFloat("size.hud.strip.timer", 18f));
             else // cooldowns: the lower 70 % of the cell, clear of the key label (top-left)

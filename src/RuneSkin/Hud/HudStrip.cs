@@ -352,7 +352,7 @@ namespace RuneSkin.PlayerHud
             var quickSel = pad && quickBar && !_belt ? quickBar.m_selected : -1;
             if (_belt) BeltPotions(p, pad);
             else QuickPotions(p, inv, quickSel);
-            if (_belt) BeltFood(p);
+            if (_belt) BeltFood(p, pad);
             else FoodCells(p);
             for (var i = 0; i < AbilityCount; i++) AbilityFill(_abilities[i], _abilityState[i]);
             Hovers(pad, selected, quickSel);
@@ -566,14 +566,14 @@ namespace RuneSkin.PlayerHud
             }
         }
 
-        private void BeltFood(Player p)
+        private void BeltFood(Player p, bool pad)
         {
             for (var i = 0; i < L.FoodShown && i < _food.Count; i++)
             {
                 var c = _food[i];
                 var has = BeltBridge.TryGet(p, BeltMath.Food, i, out _cell);
                 c.Empty(!has || (!_cell.Icon && !_cell.ActiveIcon));
-                c.Key(null);
+                c.Key(pad || !has ? null : _cell.HotkeyLabel); // FoodKey1..5 (unbound by default = "")
                 c.Count(has ? _cell.Count : 0);
                 BeltState(c, has, "color.hud.belt.ring.food");
             }
