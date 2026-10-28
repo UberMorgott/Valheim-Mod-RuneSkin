@@ -152,6 +152,7 @@ namespace RuneSkin.PlayerHud
                     if (s.x > right) right = s.x;
                 }
             }
+            _graphics.Clear(); // scratch: pins no Graphic past this measure
             return bottom != float.MaxValue;
         }
 
