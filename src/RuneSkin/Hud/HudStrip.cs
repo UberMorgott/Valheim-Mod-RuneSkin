@@ -541,8 +541,11 @@ namespace RuneSkin.PlayerHud
             MagazinePips.Apply(c.Root, item, dur.X, dur.Y, Mathf.Abs(c.Root.lossyScale.y));
         }
 
-        // ---- belt cells (MorgottTweaks Belt, BeltBridge): data only; the state visuals (auto ring + A pip, cooldown
-        // wedge, blocked dim, gear-gem inlay, active icon + xN) wait for the approved mockup (docs\mockups\belt) ----
+        // ---- belt cells (MorgottTweaks Belt, BeltBridge), user-delegated pick with Codex 2026-10-29: mockup
+        // docs\mockups\belt\a-wings-extended.png (A 8/10 vs B 5/10). Per cell: stored icon + count; Active = draining ring
+        // (food gold, potion teal) + "12m" / "45s" timer, a different active item in the centre with the stack as "xN";
+        // Auto = soft teal glow + "A" pip top-right (the glow never replaces the ring); cooldown = grey sector; Blocked =
+        // icon alpha 0.45, ring / glow off, pip kept; GearGranted = gem at 12 o'clock; potion key top-left ("Alt+1"). ----
 
         private bool _belt;
         private BeltCell _cell;
@@ -559,38 +562,53 @@ namespace RuneSkin.PlayerHud
                 ItemCell(c, p, has ? _cell.Item : null, false);
                 c.Durability(-1f, false);
                 c.Key(pad || !has ? null : _cell.HotkeyLabel);
-                if (!has || !_cell.Active)
-                {
-                    c.Ring(-1f, default);
-                    c.Timer(-1f, false);
-                    continue;
-                }
-                c.Ring(BeltMath.Fraction(_cell.ActiveRemaining, _cell.ActiveTotal), ThemeTokens.GetColor("color.hud.glyph", Color.cyan));
-                c.Timer(_cell.ActiveRemaining, false);
+                BeltState(c, has, "color.hud.belt.ring.potion");
             }
         }
 
         private void BeltFood(Player p)
         {
-            var ring = ThemeTokens.GetColor("color.hud.strip.food.ring", Color.white);
             for (var i = 0; i < L.FoodShown && i < _food.Count; i++)
             {
                 var c = _food[i];
                 var has = BeltBridge.TryGet(p, BeltMath.Food, i, out _cell);
-                var icon = has ? _cell.Active && _cell.ActiveIcon ? _cell.ActiveIcon : _cell.Icon : null;
-                c.Empty(!icon);
-                c.Icon(icon, Color.white);
-                if (!has || !_cell.Active)
-                {
-                    c.Ring(-1f, ring);
-                    c.Timer(-1f, true);
-                    continue;
-                }
-                c.Ring(Mathf.Max(0f, BeltMath.Fraction(_cell.ActiveRemaining, _cell.ActiveTotal)), ring);
-                c.Timer(_cell.ActiveRemaining, true);
+                c.Empty(!has || (!_cell.Icon && !_cell.ActiveIcon));
+                c.Key(null);
+                c.Count(has ? _cell.Count : 0);
+                BeltState(c, has, "color.hud.belt.ring.food");
             }
         }
 
+        // The shared state layer of a belt cell (_cell = its snapshot).
+        private void BeltState(StripCell c, bool has, string ringToken)
+        {
+            c.TimerSuffix(true);
+            if (!has)
+            {
+                c.Icon(null, Color.white);
+                c.Ring(-1f, default);
+                c.Timer(-1f, true);
+                c.Sweep(0f);
+                c.Glow(false);
+                c.Pip(false);
+                c.Gem(false);
+                return;
+            }
+            var other = _cell.Active && _cell.ActiveIcon && _cell.ActiveIcon != _cell.Icon;
+            var icon = other || !_cell.Icon ? _cell.ActiveIcon : _cell.Icon;
+            var blocked = _cell.Blocked;
+            c.Icon(icon, blocked ? ThemeTokens.GetColor("color.hud.belt.blocked", new Color(1f, 1f, 1f, 0.45f)) : Color.white);
+            if (other) c.Count(_cell.Count, true);
+            var active = _cell.Active && !blocked;
+            c.Ring(active ? Mathf.Max(0f, BeltMath.Fraction(_cell.ActiveRemaining, _cell.ActiveTotal)) : -1f,
+                ThemeTokens.GetColor(ringToken, Color.cyan));
+            c.Timer(_cell.Active ? _cell.ActiveRemaining : -1f, true);
+            c.SweepTint(ThemeTokens.GetColor("color.hud.belt.cooldown", new Color(0.35f, 0.39f, 0.42f, 0.65f)));
+            c.Sweep(BeltMath.Cooldown(_cell.CooldownRemaining, _cell.CooldownTotal));
+            c.Glow(_cell.Auto && !blocked);
+            c.Pip(_cell.Auto);
+            c.Gem(_cell.GearGranted && _cell.Unlocked);
+        }
         // Gamepad focus of the belt row (BeltPad) on cell (kind, i).
         private static bool BeltFocus(Player p, int kind, int i) => BeltPad.Cell(p, out var k, out var n) && k == kind && n == i;
 

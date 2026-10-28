@@ -18,6 +18,12 @@ namespace RuneSkin.PlayerHud
         public readonly Image Bowl;
         private readonly Image _shadow, _glow, _select, _rim, _hover, _icon, _sweep, _ring, _mark, _durTrack, _durFill;
         private readonly TMP_Text _key, _count, _timer;
+        // Belt cells only (MorgottTweaks belt, approved mockup docs\mockups\belt\a-wings-extended.png): auto-use "A" pip
+        // top-right, gear-granted gem at 12 o'clock on the rim. Made on first use.
+        private TMP_Text _pip;
+        private Image _gem;
+        private HudArt _art;
+        private bool _shownPip, _shownGem, _countTimes, _timerSuffix;
         private readonly bool _round;
         private float _side = -1f, _dur = -1f;
         private Sprite _shownIcon;
@@ -45,6 +51,7 @@ namespace RuneSkin.PlayerHud
         {
             var round = kind == CellKind.Food;
             _round = round;
+            _art = art;
             var socket = kind == CellKind.Food ? "sprite.hud.strip4.socket.round" : kind == CellKind.Potion ? "sprite.hud.strip4.socket.square" : "sprite.hud.strip4.cell";
             Root = HudArt.Rect(name, parent);
             // Dark seat around the cell (mockup hud-3: cells sunk into the plate).
@@ -189,6 +196,7 @@ namespace RuneSkin.PlayerHud
             fr.anchoredPosition = Vector2.zero;
             _hasDur = durBand > 0f;
             _shownDurFill = -1f;
+            PlaceBeltMarks();
         }
 
         private float _h = -1f;
@@ -223,14 +231,80 @@ namespace RuneSkin.PlayerHud
             if (on) _key.text = text;
         }
 
-        // Stack count (<= 0 hides).
-        public void Count(int n)
+        // Stack count (<= 0 hides); times = "xN" (belt: the stored stack queued behind a different active item).
+        public void Count(int n, bool times = false)
         {
-            if (n == _shownCount) return;
+            if (n == _shownCount && times == _countTimes) return;
             _shownCount = n;
+            _countTimes = times;
             var on = n > 0;
             if (_count.gameObject.activeSelf != on) _count.gameObject.SetActive(on);
-            if (on) _count.SetText("{0}", n);
+            if (on) _count.SetText(times ? "x{0}" : "{0}", n);
+        }
+
+        // Belt auto-use pip: "A" top-right, share.hud.belt.pip of the cell side.
+        public void Pip(bool on)
+        {
+            if (on == _shownPip) return;
+            _shownPip = on;
+            if (on && !_pip)
+            {
+                _pip = Text(_art, "AutoPip", "size.hud.strip.key.font", "color.hud.belt.pip", TextAlignmentOptions.Center);
+                _pip.text = "A";
+                PlaceBeltMarks();
+            }
+            if (_pip) _pip.gameObject.SetActive(on);
+        }
+
+        // Belt gear-granted cell: the gem at 12 o'clock on the rim (sprite.gem.rarity), share.hud.belt.gem of the side.
+        public void Gem(bool on)
+        {
+            if (on == _shownGem) return;
+            _shownGem = on;
+            if (on && !_gem)
+            {
+                _gem = _art.Image("BeltGem", Root, "sprite.gem.rarity", "color.hud.belt.gem", Image.Type.Simple);
+                _gem.preserveAspect = true;
+                PlaceBeltMarks();
+            }
+            if (_gem) _gem.gameObject.SetActive(on && _gem.sprite);
+        }
+
+        private void PlaceBeltMarks()
+        {
+            if (_side <= 0f) return;
+            var band = _round ? Mathf.Clamp(ThemeTokens.GetFloat("share.hud.strip.timer.band", 0.27f), 0f, 0.5f) * _h : 0f;
+            var bw = _round ? Mathf.Min(_side, _h - band) : _side;
+            var top = _round ? (_h + bw) / 2f + band / 2f : _h; // the disc top (round) / the cell top
+            if (_pip)
+            {
+                var s = Mathf.Max(1f, bw * ThemeTokens.GetFloat("share.hud.belt.pip", 0.16f));
+                var r = _pip.rectTransform;
+                r.anchorMin = r.anchorMax = Vector2.zero;
+                r.pivot = new Vector2(1f, 1f);
+                r.sizeDelta = new Vector2(s * 1.6f, s * 1.6f);
+                r.anchoredPosition = new Vector2((_side + bw) / 2f, top);
+                _pip.enableAutoSizing = true;
+                _pip.fontSizeMin = 1f;
+                _pip.fontSizeMax = s * 1.6f;
+            }
+            if (_gem)
+            {
+                var g = Mathf.Max(1f, bw * ThemeTokens.GetFloat("share.hud.belt.gem", 0.12f));
+                var r = _gem.rectTransform;
+                r.anchorMin = r.anchorMax = Vector2.zero;
+                r.pivot = new Vector2(0.5f, 0.5f);
+                r.sizeDelta = new Vector2(g, g);
+                r.anchoredPosition = new Vector2(_side / 2f, top);
+            }
+        }
+
+        // Timer unit suffix (belt: "45s" / "12m", mockup A) instead of the bare seconds.
+        public void TimerSuffix(bool on)
+        {
+            if (on == _timerSuffix) return;
+            _timerSuffix = on;
+            _shownSeconds = int.MinValue;
         }
 
         public void Glow(bool on)
@@ -291,6 +365,12 @@ namespace RuneSkin.PlayerHud
             if (on && Mathf.Abs(_sweep.fillAmount - fraction) > 0.002f) _sweep.fillAmount = fraction;
         }
 
+        // Sweep colour (belt: the grey cooldown sector, color.hud.belt.cooldown; default color.hud.strip.cooldown).
+        public void SweepTint(Color c)
+        {
+            if (_sweep.color != c) _sweep.color = c;
+        }
+
         // Radial ring (food time left / active ability), < 0 hides; colour token per state.
         public void Ring(float fraction, Color c)
         {
@@ -310,7 +390,7 @@ namespace RuneSkin.PlayerHud
             var on = s > 0;
             if (_timer.gameObject.activeSelf != on) _timer.gameObject.SetActive(on);
             if (!on) return;
-            if (s < 60) _timer.SetText("{0}", s);
+            if (s < 60) _timer.SetText(_timerSuffix ? "{0}s" : "{0}", s);
             else if (minutesOnly || s >= 3600) _timer.SetText("{0}m", Mathf.CeilToInt(s / 60f));
             else _timer.SetText("{0}:{1:00}", s / 60, s % 60);
         }
