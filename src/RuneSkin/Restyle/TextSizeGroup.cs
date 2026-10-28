@@ -53,8 +53,37 @@ namespace RuneSkin.Restyle
             if (Equals(g._key, key)) return;
             g.Leave();
             g._key = key;
-            if (!Groups.TryGetValue(key, out var list)) Groups[key] = list = new List<TextSizeGroup>(4);
+            if (!Groups.TryGetValue(key, out var list))
+            {
+                Prune();
+                Groups[key] = list = new List<TextSizeGroup>(4);
+            }
             list.Add(g);
+        }
+
+        // Members on objects that never ran (inactive templates, a logged-out GUI destroyed whole) get no OnDestroy, so their
+        // groups stayed (run 20261028-200801 rp-relog: Groups 579 -> 1155 over 5 relogs, 278 under dead keys). Whenever the
+        // table doubled since the last prune: dead members out, groups under a destroyed key or without members dropped.
+        private static int _pruneAt = Diagnostics.Bounded.MinPrune;
+        private static readonly List<object> DeadKeys = new List<object>();
+
+        private static void Prune()
+        {
+            if (Groups.Count < _pruneAt) return;
+            foreach (var pair in Groups)
+            {
+                pair.Value.RemoveAll(m => !m);
+                if (pair.Value.Count == 0 || (pair.Key is Object o && !o)) DeadKeys.Add(pair.Key);
+            }
+            foreach (var key in DeadKeys)
+            {
+                Groups.Remove(key);
+                Next.Remove(key);
+            }
+            DeadKeys.Clear();
+            foreach (var key in new List<object>(Next.Keys))
+                if (!Groups.ContainsKey(key)) Next.Remove(key);
+            _pruneAt = System.Math.Max(Diagnostics.Bounded.MinPrune, Groups.Count * 2);
         }
 
         private void Leave()
