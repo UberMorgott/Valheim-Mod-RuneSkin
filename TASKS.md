@@ -900,7 +900,7 @@ Generic checks `<prefix>-text-min` (visible text >= 16 px at 1080p, token `size.
 - [ ] Pre-existing FAIL (also on unchanged code, run 20261026-102357): m4-bar-caps-1920x1080 / -2560x1440 problems=[bars=Stamina,Health] layout=strip-0.16 (run 20261026-171856).
 - [ ] Pre-existing FAIL: m4-maphint-inset-1920x1080 / -2560x1440 "no large-map UITooltip with text" (run 20261026-171856).
 - [ ] Pre-existing FAIL: overdraw-stats (1920x1080 + 2560x1440, the window covers the HUD it hides behind; run 20261026-171856).
-- [ ] Pre-existing FAIL: overdraw-texts (compendium: HUD keys / crosshair under the Texts_frame backing, active-effects socket under the tooltip; run 20261026-171856).
+- [x] overdraw-texts (0.25.29): the compendium header face sat at index 0 of Texts_frame, under bkg's opaque Backing (RuneWindowHeader.Backdrop now also takes the first child hosting a panel stack); full windows without an opaque area (compendium, Almanac) cover with their drawn panel backings (FullWindow.Cull -> AddStanding), so the HUD crosshair / hover name under it are gated. PASS in run 20261028-215615.
 - [ ] Pre-existing FAIL: overdraw-map (1920x1080 + 2560x1440, also runs 20261023-161531 / 20261026-102357; run 20261026-171856).
 - [ ] Pre-existing FAIL: m5-text-min settings stepper value 14.9 px (CommonSettings/InputLayout/GUIStepper/Value/Text; run 20261026-171058, passed in 20261026-171856).
 
@@ -920,7 +920,7 @@ Open, ours (windows-v2):
 - corner-clear-<res> / -info-*: one label, an InventoryElement "binding" key label inside RuneSkinInventory_Center's bottom-right cap reach (dx 39 / dy 8 / C 43.5 at 1080p).
 - winmove-inventory-chest-2560x1440-handle: PASS in 182632, FAIL in 184538 after the dock header was top-aligned (raycast at the header centre lands on dropButton) - find what blocks the band.
 - m2-layout truncated chest header title ('Сундук из че…' at the 12 px floor): the corner keep-out narrows the dock header plate; needs a title room rule (smaller slot shift or two-line).
-- stats-back-esc / stats-back-key (then winmove-compendium-handle hit ChromeTR, stats-compendium-restored): Escape leaves the stats window open in both runs; main passed them in 20261026-171856. The 41d theory is refuted (41d restored: timer -1 in 182632). Not yet explained.
+- [x] stats-back-esc / -key / -esc-backpack: harness defect, not RuneSkin. CfKey queued keyboard events without IgnoreFocus / keyboard enable; unfocused runs dropped Escape (nothing reacted, no RuneSkin log). Fixed tools 8fd213a + de3ea79 (focus-independent press, never DisableDevice after: Codex review). PASS focused=False in run 20261028-215615.
 Pre-existing / foreign (not windows-v2):
 - craft row field-align / button-skew (m2 / m3 / info layout, 0.23.5 row): the amount field is ActionRow-scaled (k = 0.4 W / need = 0.82 at craft W ~ 300; on main W ~ 328 -> k 0.90, field 48.9 -> gap 19 > want 12: fails wider); the CRAFT glyph is clamped at b.X + 0.3 H on both (free x = (W - textW)/2 - 0.75 H = 2 here, 10 on main) so the label group stays off-centre. Route to the craft-row owner.
 - icon-alpha-* VT_Fox_head (opaque edge 0,44): Vaettir icon art. Route to Vaettir.
@@ -946,3 +946,6 @@ Pre-existing / foreign (not windows-v2):
 - [ ] Art: Codex style references (mockup-1 provenance) cannot be recorded - the files are gone; tab_* redraw blocked on a re-approved reference (M7 art note).
 - [x] Verified: run 20261028-205114 (changed checks: tips-reserve, tips sweeps / bottom / wheel / cleared, world-not-brighter, trophies with Almanac parked, stats breakdown, vnei-body, menufix, centermsg) PASS; perf 20261028-211432 rp-scene-* 5/5 PASS (heap-meter excess). Published 0.25.28 (tag v0.25.28, VPS = build).
 - [ ] rp-relog still FAILs on bounded holders the census cannot split into live / dead: RenderGate.Ledger._owners 324 -> 438 (keys forgotten with RenderGate.Entries' prune-when-doubled), CharacterPreview._ownership._baseline (material id snapshot, rebuilt per refresh), CellFit._moved / _sized (per-cell state), CharacterPreview.Events (capped 24). Harness follow-up: dead split for nested ledgers + an allow-list for capped / snapshot sets.
+
+## 0.25.29 (2026-10-28, w28 runeskin2)
+- Compendium header face drawn after its bkg backing; full windows without an opaque rect cover with their panel backings (overdraw-texts). Harness CfKey focus-independent (stats-back-*). Run 20261028-215615 ui-runeskin-stats PASS 60/0 (Checks stats-back-esc, stats-back-key, stats-back-esc-backpack, *overdraw-texts).
