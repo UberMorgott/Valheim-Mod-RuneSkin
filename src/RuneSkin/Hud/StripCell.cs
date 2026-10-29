@@ -313,7 +313,7 @@ namespace RuneSkin.PlayerHud
 
         // Belt cells (runs 20261029-025439 / -033941, Codex compare 4/10: "Alt+1", "A", "x1", "10m" and the glow filled a
         // 35 x 40 px potion cell): a square cell = icon 0.63 of the side at the top centre, a bottom row of 0.28 of the
-        // height with the timer left and the count right; texts autosize down; the auto halo at a quarter of its alpha.
+        // height with the timer left and the count right; texts autosize down; auto = contour only (Glow).
         private void BeltText()
         {
             if (!_timerSuffix || _side <= 0f) return;
@@ -324,11 +324,16 @@ namespace RuneSkin.PlayerHud
                 txt.fontSizeMax = txt.fontSize;
                 txt.fontSizeMin = txt.fontSize * 0.35f;
             }
-            var halo = _glow.color;
-            if (halo.a > 0.3f) _glow.color = new Color(halo.r, halo.g, halo.b, halo.a * 0.25f);
-            if (_round) return;
-            var row = _h * 0.28f;
-            var icon = Mathf.Min(_side, _h - row) * 0.63f / 0.72f * ThemeTokens.GetFloat("share.hud.strip.icon", 0.72f);
+            if (_round)
+            {
+                // food: the timer stays inside its band under the disc (Codex re-score 6/10: "20m" ran onto the item)
+                var band = Mathf.Clamp(ThemeTokens.GetFloat("share.hud.strip.timer.band", 0.27f), 0f, 0.5f) * _h;
+                _timer.fontSizeMax = Mathf.Min(_timer.fontSizeMax, band * 1.05f);
+                _timer.fontSizeMin = Mathf.Min(_timer.fontSizeMin, _timer.fontSizeMax);
+                return;
+            }
+            var row = _h * 0.30f;
+            var icon = Mathf.Min(_side, _h - row) * 0.58f;
             var ir = _icon.rectTransform;
             ir.anchorMin = ir.anchorMax = ir.pivot = new Vector2(0.5f, 0.5f);
             ir.sizeDelta = new Vector2(icon, icon);
@@ -346,7 +351,8 @@ namespace RuneSkin.PlayerHud
         {
             if (on == _shownGlow) return;
             _shownGlow = on;
-            _glow.gameObject.SetActive(on && _glow.sprite);
+            // belt cells (auto-use): the crisp contour only, no halo (Codex re-score: the teal fill drowned the item)
+            _glow.gameObject.SetActive(on && _glow.sprite && !_timerSuffix);
             _select.gameObject.SetActive(on && _select.sprite);
         }
 
