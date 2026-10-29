@@ -1,0 +1,18 @@
+Game UI mockup for a Valheim UI skin called RuneSkin. Look at these style references on disk FIRST and match them exactly (same frame, palette, line weight, glass, font look):
+- E:\DEV\Valheim\RuneSkin\art\src\kit\mockup-hud4m3.png  (THE approved bottom HUD: dark slate carved stone strip with interlaced Norse knotwork, thin cyan glow lines, cyan triquetra medallions, 3 round food sockets on the LEFT wing, square potion cells on the RIGHT wing, HP bar centre, stamina/eitr bars below, hotbar above)
+- E:\DEV\Valheim\RuneSkin\art\src\kit\strip7_socket_round.png and E:\DEV\Valheim\RuneSkin\art\src\kit\strip7_cell.png (the exact food socket and potion cell art)
+Palette: stone #2a343b, blocks #222b31, grooves #05080a / #5c6d78, rune glow cyan/teal #4fe0e6, inner glass near-black #0b1419, glyph silver #e3e6e8. No gold frames.
+
+Task: redraw that same bottom HUD (1920x1080, same scene background, same composition) with the new FOOD + POTION BELT, candidate A "wings extended":
+- LEFT wing: 5 round food sockets, index 1 nearest the centre, growing outward to the left. RIGHT wing: 5 square potion cells, index 1 nearest the centre, growing outward to the right. The wings lengthen with the same knotwork segments; cells 4 and 5 on each side have a small cyan gem inlaid in the rim (cells granted by gear).
+- Each cell shows a STORED stack: item icon + stack count bottom-right (e.g. food: cooked meat 12, sausages 8, honey glazed chicken 4, bread 6, empty; potions: red health mead 7, yellow stamina mead 3, blue frost resist 2, purple eitr mead 5, empty).
+- Show one cell per state so the states read clearly:
+  food 1: ACTIVE - a thin draining arc around the socket rim (about 60% left) and small timer text "12m" under the socket;
+  food 2: AUTO ON - a soft teal rune ring glow around the rim plus a tiny "A" pip at the top-right;
+  food 3: ACTIVE + QUEUED - draining arc + "7m", the active food icon in the centre and "x4" for the stored stack;
+  food 4: BLOCKED - icon dimmed grey, no ring;
+  food 5: EMPTY - bare engraved socket with a faint fork-and-knife glyph.
+  potion 1: ACTIVE draining arc + "45s"; potion 2: AUTO ON teal glow + "A" pip; potion 3: COOLDOWN - a grey clock wedge over the icon; potion 4: plain stored stack; potion 5: EMPTY engraved cell with a faint flask glyph.
+- Potion hotkey labels small in the top-left corner of each potion cell, Latin letters: "Alt+1", "Alt+2", "Alt+3", "Alt+4", "Alt+5". Food cells have no key labels.
+- Keep the hotbar 1-8, HP/stamina/eitr bars, minimap and medallions as in the reference. Clean, readable at 1080p, painterly but crisp UI. No other text, no watermark.
+Output: ONE image 1920x1080 PNG.

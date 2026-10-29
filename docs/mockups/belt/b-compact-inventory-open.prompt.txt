@@ -1,0 +1,16 @@
+Game UI mockup for a Valheim UI skin called RuneSkin. Look at these style references on disk FIRST and match them exactly (same frame, palette, line weight, glass, font look):
+- E:\DEV\Valheim\RuneSkin\art\src\kit\mockup-hud4m3.png  (THE approved bottom HUD: dark slate carved stone strip with interlaced Norse knotwork, thin cyan glow lines, cyan triquetra medallions, round food sockets LEFT, square potion cells RIGHT, HP bar centre, stamina/eitr bars below, hotbar above)
+- E:\DEV\Valheim\RuneSkin\art\src\kit\strip7_socket_round.png and E:\DEV\Valheim\RuneSkin\art\src\kit\strip7_cell.png
+Palette: stone #2a343b, blocks #222b31, grooves #05080a / #5c6d78, rune glow cyan/teal #4fe0e6, inner glass near-black #0b1419, glyph silver #e3e6e8. No gold frames.
+
+Task: candidate B "compact belt + inventory open". ONE image 1920x1080 split in two halves side by side, same scene background:
+LEFT HALF (HUD, inventory closed): the same bottom strip, but the belt cells are SMALLER and tighter so 5 food + 5 potion fit without widening the strip: the left wing holds 5 small round food sockets in one row, the right wing 5 small square potion cells, index 1 nearest the centre. Timers are NOT text under the cells: each active cell has a thin cyan arc around its rim draining clockwise; a cell with auto-use ON has a teal knot-ring glow and a tiny "A" rune pip; a cell on cooldown has a grey wedge; a blocked cell is dimmed; empty cells are bare engraved sockets; cells 4-5 on each side have a small cyan gem in the rim (gear-granted). Stack counts bottom-right small. Potion key labels top-left tiny Latin: "Alt+1".."Alt+5".
+RIGHT HALF (zoomed 2x, inventory OPEN): the same belt sockets are shown enlarged, above the RuneSkin inventory grid edge (dark glass grid, thin cyan frame), the mouse cursor hovering potion cell 2 with a RuneSkin tooltip panel (dark translucent glass, thin cyan rune corners, silver text) reading:
+"Mead of Minor Healing x7"
+"Auto-use: ON"
+"Right-click: toggle auto-use"
+"Alt+Right-click: use now"
+"Key: Alt+2"
+and a dragged food item icon riding the cursor towards food socket 5 with that socket highlighted cyan as a drop target.
+Readable, crisp UI, painterly but clean. No other text, no watermark.
+Output: ONE image 1920x1080 PNG.
