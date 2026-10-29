@@ -80,10 +80,12 @@ namespace RuneSkin.Tests
             };
         }
 
-        private static WindowsLayout Run(Screen sc, int chestW = 0, int chestH = 0, int packW = 0, int packH = 0, int gridW = 8, int gridH = 3, int doll = 9, int plates = 4, InventoryTokens t = null, float packHeaderW = 0f) =>
+        private static WindowsLayout Run(Screen sc, int chestW = 0, int chestH = 0, int packW = 0, int packH = 0, int gridW = 8, int gridH = 3, int doll = 9, int plates = 4, InventoryTokens t = null, float packHeaderW = 0f, int sockets = 0, float socketsHeaderW = 0f) =>
             InventoryWindowsMath.Compute(new WindowsInput
             {
                 BackpackHeaderW = packHeaderW,
+                SocketsW = sockets,
+                SocketsHeaderW = socketsHeaderW,
                 CanvasW = sc.W / sc.S,
                 CanvasH = sc.H / sc.S,
                 PhysPerUnit = sc.S,
@@ -458,6 +460,64 @@ namespace RuneSkin.Tests
                     Assert.Equal(InventoryWindowsMath.ContainerH(g.VisibleRows, g.Pitch, t, 1f), box.H, 2);
                 }
             }
+        }
+
+        // Epic Loot 0.15.4 shard slot window: on top of the left column (chest, backpack under it), the slot cell, one row,
+        // as tall as SocketsH (no action row), never overlapping a window, on screen and above the strip; the containers
+        // keep their places below it whenever they fit with it.
+        [Theory]
+        [MemberData(nameof(Screens))]
+        public void ShardSlotsTopTheLeftColumn(float w, float h, float gui)
+        {
+            var sc = At(w, h, gui);
+            var t = Theme();
+            var cw = sc.W / sc.S;
+            foreach (var sockets in new[] { 1, 2, 4 })
+                foreach (var (cW, cH, pW, pH) in new[] { (0, 0, 0, 0), (5, 2, 0, 0), (0, 0, 6, 3), (5, 2, 6, 3), (8, 4, 6, 3) })
+                {
+                    var o = Run(sc, cW, cH, pW, pH, t: t, sockets: sockets);
+                    var s = o.Sockets;
+                    Assert.False(s.IsEmpty, $"{w}x{h}@{gui} no sockets window");
+                    Assert.Equal(sockets, o.SocketsGrid.Columns);
+                    Assert.Equal(1, o.SocketsGrid.VisibleRows);
+                    Assert.InRange(o.SocketsGrid.Cell * sc.S - sc.CellPx, -1f, 1f);
+                    Assert.Equal(InventoryWindowsMath.SocketsH(o.Hotbar.Cell, t, 1f), s.H, 2);
+                    Assert.True(s.Right <= o.Inventory.X + 0.01f, $"{s} not left of the centre column {o.Inventory}");
+                    var lowest = new[] { o.Chest, o.Backpack };
+                    foreach (var b in lowest)
+                        if (!b.IsEmpty) Assert.True(s.Bottom <= b.Y + 0.01f, $"{w}x{h}@{gui} sockets {s} not above {b}");
+                    if (o.Chest.IsEmpty && o.Backpack.IsEmpty) Assert.Equal(o.Inventory.Bottom, s.Bottom, 2);
+                    var view = InventoryMath.SocketsGridView(s, o.SocketsGrid.Fit, t, 1f);
+                    Assert.True(view.Y >= s.Y && view.Bottom <= s.Bottom + 0.01f, $"{view} outside {s}");
+                    var wins = o.Windows;
+                    for (var a = 0; a < wins.Length; a++)
+                    {
+                        if (wins[a].IsEmpty) continue;
+                        Assert.True(wins[a].X >= -0.01f && wins[a].Right <= cw + 0.01f && wins[a].Y >= -0.01f, $"{a} {wins[a]} off canvas {cw}");
+                        Assert.True(wins[a].Bottom <= o.Hotbar.Top + 0.01f);
+                        for (var b = a + 1; b < wins.Length; b++)
+                            Assert.False(wins[a].Overlaps(wins[b]), $"{w}x{h}@{gui} sockets {sockets} chest {cW}x{cH} pack {pW}x{pH}: {a} {wins[a]} overlaps {b} {wins[b]}");
+                    }
+                    // the inventory never moves with the sockets
+                    Assert.Equal(Run(sc).Inventory.ToString(), o.Inventory.ToString());
+                }
+        }
+
+        // Its header asks for the full title's width (like the backpack's), never past the column's room; without
+        // sockets nothing changes.
+        [Fact]
+        public void ShardSlotsWidthFollowsTheTitleAndNothingWithout()
+        {
+            var sc = At(1920f, 1080f);
+            var narrow = Run(sc, sockets: 2);
+            var wide = Run(sc, sockets: 2, socketsHeaderW: 400f);
+            Assert.True(wide.Sockets.W > narrow.Sockets.W);
+            Assert.Equal(400f, wide.Sockets.W, 2);
+            Assert.Equal(narrow.Sockets.Right, wide.Sockets.Right, 2);
+            var huge = Run(sc, sockets: 2, socketsHeaderW: 5000f);
+            Assert.True(huge.Sockets.X >= -0.01f);
+            Assert.True(Run(sc).Sockets.IsEmpty);
+            Assert.Equal(Run(sc, 8, 4, 6, 3).Chest.ToString(), Run(sc, 8, 4, 6, 3, sockets: 0).Chest.ToString());
         }
 
         // The 16:9 numbers behind the 8-column chest (canvas units, 1920x1080 and 2560x1440 share the 1920x1080 canvas;

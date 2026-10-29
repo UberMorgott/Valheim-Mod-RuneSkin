@@ -24,7 +24,9 @@ namespace RuneSkin.ModScreens
     //   at Hildir): list rows = recipe rows, board tabs with glyph_board_*.
     // - ModHud: other plugins' parts under the HUD root (Epic Loot AbilityBar / DebugText, level texts): texts in the
     //   theme faces, slots as HUD sockets.
-    // - ModUi: the rest (Jotunn windows, Epic Loot socket panel and popups, main menu lines of other mods).
+    // - ModUi: the rest (Jotunn windows, Epic Loot popups, main menu lines of other mods). Epic Loot 0.15.4's shard slot
+    //   panel carries only game components inside the inventory root: a window of family Inventory (InventorySkin
+    //   .ArrangeSockets, Compat\EpicLootShardSlots).
     public static class ForeignRoles
     {
         // Component type (full name) -> precise family. These start a unit even inside a vanilla family root (Epic
@@ -36,7 +38,6 @@ namespace RuneSkin.ModScreens
             [ModCompat.EpicLootTemperPanel] = OwnershipRegistry.EpicLootTemper,
             [ModCompat.EpicLootAbilityBar] = OwnershipRegistry.ModHud,
             [ModCompat.EpicLootDebugText] = OwnershipRegistry.ModHud,
-            [ModCompat.EpicLootSocketsUi] = OwnershipRegistry.ModUi,
             // VNEI attaches its window to the crafting panel (a Crafting family root).
             [ModCompat.VneiBaseUi] = OwnershipRegistry.ModUi,
         };

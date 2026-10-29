@@ -5,7 +5,9 @@ using UnityEngine.UI;
 
 namespace RuneSkin.Compat
 {
-    // Epic Loot 0.15 item tooltips (no reference; EpicLoot.dll decompile 2026-10-24): PatchOnHoverFix wraps Topic + Text
+    // Epic Loot 0.15 item tooltips (no reference; 0.15.0 decompile 2026-10-24, re-checked against the 0.15.4 source
+    // EpicLoot\src\Tooltip\TooltipBox.cs 2026-10-29: same TooltipBox.Fit / LayOut(float, float), hierarchy and names):
+    // TooltipBoxPatches.AddScrollbar (0.15.0 PatchOnHoverFix) wraps Topic + Text
     // in a Jotunn scroll view whose root carries EpicLoot.TooltipBox; every TooltipBox.Fit (UITooltip.LateUpdate postfix,
     // on a text or limit change) calls LayOut(width, rightPadding), which sets the box width and then overwrites the
     // content's VerticalLayoutGroup padding with (10, rightPadding, 5, 5). That wiped RuneSkin's corner-cap keep-out

@@ -975,3 +975,17 @@ Pre-existing / foreign (not windows-v2):
 - [x] Verified: run 20261029-041404 (tools 3e24f5f, RuneSkin build = this fix on 0210cf9, src since = version only) rp-relog PASS, RuneSkin holders grown []. Same run, outside this track: rp-relog-attrib FAIL (vanilla owner +96 MB/cycle, RuneSkin flat 5 MB = memleak track); patches FAIL RuneSkin.PlayerHud.BeltBridge.Build IL_00d3 T::Invoke type not found (belt code, MT Belt not in the pack yet).
 - [x] Look (user-delegated, Codex 2026-10-29): mockup A a-wings-extended picked (A 8/10, B 5/10: B shortens the bars, no timers). Implemented: ring food gold / potion teal, 12m/45s timers, auto glow + A pip (StripCell.Pip), grey cooldown sector (SweepTint), blocked alpha 0.45, gear gem at 12 o'clock (StripCell.Gem, sprite.gem.rarity), active icon + xN; tokens color.hud.belt.* / share.hud.belt.*.
 - [x] Belt row shipped 0.25.33 (2026-10-29): runs 20261029-082922 (belt-* 10/10) + 20261029-105805 (visual, Codex belt cells 8/10 vs mockup A). Inert until MorgottTweaks ships its Belt (joint MT release with magic5).
+
+## Epic Loot 0.15.4 compat (0.25.34, w28-epicloot-rs)
+
+- [x] EL 0.15.4 replaced SocketsUI (sockets in m_container) with its own ShardSlotPanel ("EpicLoot_ShardSlots", sibling of
+      m_player). Codex decision 2026-10-29 (chat bc0a8f0b): a dock window "inventory.sockets" topmost in the left column
+      (chest, backpack below; never folds), root placed by InventorySkin.ArrangeSockets in LateUpdate; EL's
+      ShardSlotPanel.Place stands down via prefix while the skin lays it out (moving the root after Place / children only
+      leaves the hit test a frame behind on drag). Adoption only when the patch applied.
+- [x] Tooltip: TooltipBox Fit / LayOut(float, float), "Canvas"/"ComparisonCanvas"/"Scroll View"/"Content"/"Topic"/"Text",
+      ScrollWheelHandler unchanged in 0.15.4 (PatchOnHoverFix -> TooltipBoxPatches): comments only.
+- [ ] Gamepad group focus indicator for dock windows (selected_frame hidden on every panel, sockets included).
+- [ ] Gamepad right-stick tooltip scroll: TooltipPlacer disables EL ScrollWheelHandler (which also runs GamepadScroll).
+- [ ] Sockets header glyph: no socket art in the bundle (header shows the title only).
+- [ ] Harness 97u-socket-use reads EpicLoot.ShardStones.SocketsUI.OpenEquipment / m_container: dead on 0.15.4.

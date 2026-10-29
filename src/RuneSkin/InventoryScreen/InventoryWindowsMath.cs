@@ -64,6 +64,11 @@ namespace RuneSkin.InventoryScreen
         // Backpack window width its header needs for the current backpack's full title at the fitted (smallest) title size
         // (RuneWindowHeader.TitleBandNeed + the panel pads, canvas units); 0 = not measured yet.
         public float BackpackHeaderW;
+        // Epic Loot 0.15.4 shard slot panel (ShardSlotPanel: one row, a cell per socket of the item whose slots are open);
+        // 0 = not open. SocketsHeaderW: the width its header needs for the full title ("<item> - Shard Slots"), like
+        // BackpackHeaderW; 0 = not measured yet.
+        public int SocketsW;
+        public float SocketsHeaderW;
         // Equipment cells of the doll per side (InventoryWindowsMath.DollSide: armour left, jewellery / light / mods right).
         public int DollLeft = 5, DollRight = 4;
         // Side column entries (trash, armour, weight, coins: whatever is present).
@@ -82,9 +87,9 @@ namespace RuneSkin.InventoryScreen
         public Box Doll, DollHeader, DollContent, DollFigure, DollPreview;
         public float DollLeftX, DollRightX, DollCellsY;
         public WindowGrid DollGrid; // Columns = 2 (left, right), Rows = cells per column
-        // Left column: backpack above chest.
-        public Box Backpack, Chest;
-        public WindowGrid BackpackGrid, ChestGrid;
+        // Left column: backpack above chest, Epic Loot's shard slots on top.
+        public Box Backpack, Chest, Sockets;
+        public WindowGrid BackpackGrid, ChestGrid, SocketsGrid;
         public bool BackpackFolded, DockOverflow;
         public Box Crafting;
         public bool CraftingTight;
@@ -94,8 +99,8 @@ namespace RuneSkin.InventoryScreen
         public float PlayerCellY(int row) => PlayerView.Y + row * Player.Pitch;
         public Box SidePlate(int i) => new Box(Side.X, Side.Y + i * SidePitch, Side.W, SidePlateH);
 
-        // Every window box (empty ones included), in a fixed order: inventory, doll, backpack, chest, crafting.
-        public Box[] Windows => new[] { Inventory, Doll, Backpack, Chest, Crafting };
+        // Every window box (empty ones included), in a fixed order: inventory, doll, backpack, chest, crafting, sockets.
+        public Box[] Windows => new[] { Inventory, Doll, Backpack, Chest, Crafting, Sockets };
     }
 
     // Pure geometry of the windowed inventory screen (mockup inv-layout-A, user 2026-10-26; no Unity types: unit-tested on
@@ -107,7 +112,9 @@ namespace RuneSkin.InventoryScreen
     //   Equipment cells (the slot again) in a left and a right column, overflow scrolls inside; the figure alcove
     //   between them, the live preview a smaller portrait box centred in it.
     // - Left of the centre column: backpack above chest, right-aligned against it, bottom on the grid window's bottom,
-    //   content-sized; cells = the slot (columns past the room scroll sideways, rows past it scroll down).
+    //   content-sized; cells = the slot (columns past the room scroll sideways, rows past it scroll down). Epic Loot's
+    //   shard slot window (one row) on top of that stack: opened on purpose, it never folds; chest and backpack share
+    //   what is left.
     // - Right of it: crafting, top margin to the grid window's bottom.
     // Every window then gets its own user offset (WindowMove); this is the default ("reset") layout.
     public static class InventoryWindowsMath
@@ -281,15 +288,38 @@ namespace RuneSkin.InventoryScreen
         public static float ContainerW(int visibleCols, float pitch, float gap, bool scrollV, InventoryTokens t, float k) =>
             2f * InventoryMath.DockSide(t, k) + Math.Max(0f, visibleCols * pitch - gap) + (scrollV ? t.ScrollbarW * k : 0f);
 
+        // Shard slot window height (one row of cells: header row, pad, the cells, the bottom cap keep-out; no action row).
+        public static float SocketsH(float cell, InventoryTokens t, float k)
+        {
+            var pad = t.PanelPad * k;
+            return t.PanelHeaderH * k + pad + Math.Max(0f, cell) + Math.Max(pad, t.PanelCapInset);
+        }
+
         private static void LayoutDock(WindowsInput i, InventoryTokens t, float k, float roomLeft, float roomRight, float top, float bottom, WindowsLayout o)
         {
             var h = o.Hotbar;
             var gap = t.Gap * k;
             var hasChest = i.ChestW > 0 && i.ChestH > 0;
             var hasPack = i.BackpackW > 0 && i.BackpackH > 0;
-            if (!hasChest && !hasPack) return;
+            var hasSockets = i.SocketsW > 0;
+            if (!hasChest && !hasPack && !hasSockets) return;
             var roomW = Math.Max(0f, roomRight - roomLeft);
-            var avail = Math.Max(0f, bottom - top);
+            var sockH = hasSockets ? SocketsH(h.Cell, t, k) : 0f;
+            // the shard slots keep their window: the containers below share the rest of the column
+            var avail = Math.Max(0f, bottom - top - (hasSockets ? sockH + (hasChest || hasPack ? gap : 0f) : 0f));
+            var y = bottom;
+            if (hasChest || hasPack) y = LayoutContainers(i, t, k, h, gap, roomW, roomRight, avail, bottom, hasChest, hasPack, o);
+            if (!hasSockets) return;
+            o.SocketsGrid = Grid(i.SocketsW, 1, 1, roomW, h, t, k);
+            // at least the width its header needs for the full title (like the backpack), never past the column's room
+            var sw = Math.Max(ContainerW(o.SocketsGrid.VisibleColumns, h.Pitch, h.Gap, false, t, k), Math.Min(i.SocketsHeaderW, roomW));
+            o.Sockets = new Box(roomRight - sw, y - sockH, sw, sockH);
+        }
+
+        // Chest at the bottom, backpack above it; returns the top of the stack minus the gap (where the next window ends).
+        private static float LayoutContainers(WindowsInput i, InventoryTokens t, float k, HotbarRow h, float gap, float roomW, float roomRight, float avail, float bottom,
+            bool hasChest, bool hasPack, WindowsLayout o)
+        {
             int chestRows = hasChest ? i.ChestH : 0, packRows = hasPack ? i.BackpackH : 0;
             float H(int r) => ContainerH(r, h.Pitch, t, k);
             var chestH = hasChest ? H(chestRows) : 0f;
@@ -354,7 +384,9 @@ namespace RuneSkin.InventoryScreen
                     Math.Min(Math.Max(t.BackpackMinW * k, i.BackpackHeaderW), roomW));
                 var ph = H(o.BackpackGrid.VisibleRows);
                 o.Backpack = new Box(roomRight - w, y - ph, w, ph);
+                y = o.Backpack.Y - gap;
             }
+            return y;
         }
 
         // A container grid at the hotbar cell / pitch: visible rows as given, columns as many as the room holds (the

@@ -13,7 +13,7 @@ namespace RuneSkin.Screens
     //  - top overlay sort (TopOverlay): above the GUI root and the HUD strip, never covered;
     //  - never raycastable (user bug 2026-10-23: moving the pointer up a column showed no tooltips - the previous
     //    tooltip's texts / Jotunn scroll view (own Canvas + GraphicRaycaster + CanvasGroup ignoreParentGroups, Epic Loot
-    //    PatchOnHoverFix.AddScrollbar) took the pointer, so the next cell never got OnPointerEnter);
+    //    TooltipBoxPatches.AddScrollbar, 0.15.0 PatchOnHoverFix) took the pointer, so the next cell never got OnPointerEnter);
     //  - height capped to the space above the strip; overflowing scroll views scroll with the wheel while the item is
     //    hovered (one wheel path, ZInput; Epic Loot's own ScrollWheelHandler is disabled) and the
     //    wheel is withheld from every other ScrollRect (TooltipAdapter.OnScroll_Prefix) so the list behind stays put;
@@ -55,8 +55,8 @@ namespace RuneSkin.Screens
 
         private void OnEnable()
         {
-            // Epic Loot's comparison tooltip is an Instantiate of the whole tooltip under it (PatchOnHoverFix
-            // .AddComparisonTooltip): the copied placer stands down, the outer one drives both.
+            // Epic Loot's comparison tooltip is an Instantiate of the tooltip's box under it (TooltipBoxPatches
+            // .AddComparisonTooltip, 0.15.4): the copied placer stands down, the outer one drives both.
             _nested = transform.parent && transform.parent.GetComponentInParent<TooltipPlacer>(true);
             if (_nested) { enabled = false; return; }
             Live = this;

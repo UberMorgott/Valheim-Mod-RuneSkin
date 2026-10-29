@@ -27,9 +27,11 @@ namespace RuneSkin.Restyle
         public const string Chest = "inventory.chest";
         public const string Backpack = "inventory.backpack";
         public const string Crafting = "crafting";
+        // Epic Loot's shard slot panel (Compat\EpicLootShardSlots).
+        public const string Sockets = "inventory.sockets";
 
         // Every window of the inventory screen (the reset-layout action puts them all back on their defaults).
-        public static readonly string[] InventoryWindows = { InventoryGrid, Doll, Chest, Backpack, Crafting, Skills, Trophies, Achievements };
+        public static readonly string[] InventoryWindows = { InventoryGrid, Doll, Chest, Backpack, Sockets, Crafting, Skills, Trophies, Achievements };
         public const string Skills = "skills";
         public const string Trophies = "trophies";
         public const string Achievements = "achievements";

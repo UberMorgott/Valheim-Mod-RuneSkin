@@ -22,7 +22,7 @@ namespace RuneSkin
     [BepInProcess("valheim.exe")]
     public sealed class Plugin : BaseUnityPlugin
     {
-        public const string Version = "0.25.33";
+        public const string Version = "0.25.34";
 
         public static ManualLogSource Log { get; private set; }
         public static ConfigEntry<float> SkinScale { get; private set; }
@@ -298,6 +298,7 @@ namespace RuneSkin
             Screens.TooltipAdapter.Harmony = _harmony;
             ModScreens.ElDialogs.Harmony = _harmony;
             Compat.FadePark.Harmony = _harmony;
+            Compat.EpicLootShardSlots.Harmony = _harmony;
             ModScreens.ForeignUi.Init(gameObject, _harmony, _modUiOptOut.Value);
             ModScreens.JotunnHook.Init(_harmony);
             ModScreens.ImguiFonts.Init(gameObject, _harmony);

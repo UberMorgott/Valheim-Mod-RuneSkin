@@ -4,7 +4,7 @@ using UnityEngine.UI;
 namespace RuneSkin.Screens
 {
     // A live tooltip instance never takes the pointer (user bug 2026-10-23: the previous tooltip's texts / Epic Loot's
-    // scroll view - own Canvas + GraphicRaycaster + CanvasGroup, PatchOnHoverFix.AddScrollbar - sat over the next cell or
+    // scroll view - own Canvas + GraphicRaycaster + CanvasGroup, TooltipBoxPatches.AddScrollbar - sat over the next cell or
     // footer plate: no OnPointerEnter there, the trash plate got no click, a drag picked the tooltip's Viewport). Every
     // CanvasGroup stops blocking, every GraphicRaycaster is off and every Graphic is no raycast target; swept on attach,
     // on enable and whenever children change (Epic Loot adds its scroll view after OnHoverStart). Same sweep as branch

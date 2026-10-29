@@ -48,7 +48,7 @@ namespace RuneSkin.InventoryScreen
         private InventoryGui _gui;
         private RectTransform _canvas;
         private Canvas _rootCanvas;
-        private RectTransform _decor, _invHost, _dollHost, _chestHost, _packHost, _doll, _backdrop, _silhouette;
+        private RectTransform _decor, _invHost, _dollHost, _chestHost, _packHost, _sockHost, _doll, _backdrop, _silhouette;
         private CharacterPreview _preview;
         private readonly InventoryTokens _tokens = new InventoryTokens();
         private readonly WindowsInput _input = new WindowsInput();
@@ -57,8 +57,8 @@ namespace RuneSkin.InventoryScreen
         private WindowsLayout _layout;
         private int _layoutHash;
         // Shown window boxes and their offsets from the defaults (canvas units).
-        private Box _invBox, _dollBox, _chestBox, _packBox;
-        private Vector2 _invOff, _dollOff, _chestOff, _packOff;
+        private Box _invBox, _dollBox, _chestBox, _packBox, _sockBox;
+        private Vector2 _invOff, _dollOff, _chestOff, _packOff, _sockOff;
         // Scroll offsets: player grid rows, chest / backpack columns (rows scroll in vanilla's ScrollRect), doll rows.
         private int _gridScroll;
         private GameObject _tooltipPrefab;
@@ -74,6 +74,13 @@ namespace RuneSkin.InventoryScreen
         private RectTransform _packPanel;
         private InventoryGrid _packGrid;
         private Inventory _packInventory;
+
+        // Epic Loot shard slot panel (Compat\EpicLootShardSlots): root, its grid and title, the socket count shown.
+        private RectTransform _sockPanel;
+        private InventoryGrid _sockGrid;
+        private TMP_Text _sockTitle;
+        private int _sockCount;
+        private float _sockHeaderNeed;
 
         // Actions
         private readonly Dictionary<RectTransform, ActionBar> _bars = new Dictionary<RectTransform, ActionBar>();
@@ -135,6 +142,8 @@ namespace RuneSkin.InventoryScreen
             BuildDoll();
             HideVanillaBackgrounds();
             RegisterResetAction();
+            EpicLootShardSlots.SkinPlaces = SkinPlacesShardSlots;
+            EpicLootShardSlots.EnsurePatched();
             foreach (var root in OwnedRoots())
             {
                 var r = root;
@@ -212,6 +221,7 @@ namespace RuneSkin.InventoryScreen
             _invHost = Host("Inventory");
             _chestHost = Host("Chest");
             _packHost = Host("Backpack");
+            _sockHost = Host("Sockets");
         }
 
         private RectTransform Host(string name)
@@ -308,7 +318,7 @@ namespace RuneSkin.InventoryScreen
                 else if (t.name == "Checked" && t.parent && t.parent.parent == _gui.m_info) ctx.Role(image, "content", "PVP toggle state icon");
                 else if (sprite.StartsWith("BraidLine", StringComparison.Ordinal)) ctx.Role(image, "divider", "vanilla braid divider (" + sprite + ")");
             }
-            foreach (var panel in new[] { _gui.m_player, _gui.m_container, _gui.m_info, _packPanel })
+            foreach (var panel in new[] { _gui.m_player, _gui.m_container, _gui.m_info, _packPanel, _sockPanel })
             {
                 if (!panel) continue;
                 if (panel.TryGetComponent<Image>(out var own)) ctx.Role(own, "skip", "vanilla panel background (replaced by RuneSkin panel stack)");
@@ -363,6 +373,7 @@ namespace RuneSkin.InventoryScreen
                 return;
             }
             FindBackpack();
+            FindShardSlots();
             var hash = InputHash();
             if (hash != _layoutHash || _layout == null)
             {
@@ -582,6 +593,7 @@ namespace RuneSkin.InventoryScreen
                 h = h * 31 + (ContainerIsBackpack() ? 7 : 0);
                 h = h * 31 + (_packInventory != null ? _packInventory.GetHashCode() ^ (_packInventory.GetWidth() * 101 + _packInventory.GetHeight()) : 0);
                 h = h * 31 + _packHeaderNeed.GetHashCode();
+                h = h * 31 + _sockCount * 101 + (_sockCount > 0 ? _sockHeaderNeed.GetHashCode() : 0);
                 DollSideCounts(out var dl, out var dr);
                 h = h * 31 + dl * 97 + dr;
                 h = h * 31 + SidePlateCount();
@@ -603,14 +615,53 @@ namespace RuneSkin.InventoryScreen
 
         // The inventory m_container shows: vanilla UpdateContainer (InventoryGui.cs:703-704) activates m_container and feeds
         // m_containerGrid, and that pair is the container's state, not m_currentContainer: mods show their own inventory
-        // in it with no Container (EpicLoot SocketsUI: UpdateContainer prefix fills the grid with the item's socket
-        // inventory, m_currentContainer stays null). Reading m_currentContainer sized that window 0x0 (no chest box),
-        // so the socket panel never appeared and its caption sat at its prefab spot over the hotbar (user 2026-10-27).
+        // in it with no Container (Epic Loot 0.15.0 SocketsUI did: UpdateContainer prefix filled the grid with the item's
+        // socket inventory, m_currentContainer null; reading m_currentContainer sized that window 0x0, user 2026-10-27).
+        // Epic Loot 0.15.4 shows the sockets in a panel of its own (ArrangeSockets) and keeps m_container hidden then.
         private Inventory ContainerInventory() =>
             _gui.m_container && _gui.m_container.gameObject.activeSelf && _gui.m_containerGrid ? _gui.m_containerGrid.GetInventory() : null;
 
         // AdventureBackpacks opens a worn backpack without a chest as InventoryGui.Show(player's own Container)
         // (fork PlayerExtensions.OpenBackpack): m_container then shows the backpack.
+        // ---- Epic Loot shard slot panel (Compat\EpicLootShardSlots) --------------------------------------------------
+
+        // Epic Loot's ShardSlotPanel.Place stands down while this layout has the sockets window (ArrangeSockets places the
+        // root in LateUpdate, where the next frame's hit test finds it).
+        private static bool SkinPlacesShardSlots()
+        {
+            var skin = Instance;
+            return skin && skin._sockPanel && skin._layout != null && !skin._layout.Sockets.IsEmpty && InventoryGui.IsVisible();
+        }
+
+        // The panel when Epic Loot shows it: root (built on the first open of an item's slots), its grid, the socket count
+        // (the grid's one-row inventory). Adopted as a screen of this family once per panel.
+        private void FindShardSlots()
+        {
+            if (!EpicLootShardSlots.Patched) return;
+            if (!_sockPanel) _sockPanel = EpicLootShardSlots.Find(_gui.m_player);
+            if (_sockPanel && !_sockGrid)
+            {
+                _sockGrid = EpicLootShardSlots.GridOf(_sockPanel);
+                var title = _sockPanel.Find(EpicLootShardSlots.TitleName);
+                _sockTitle = title ? title.GetComponent<TMP_Text>() : null;
+                if (_sockGrid) AdoptShardSlots(_sockPanel);
+            }
+            var inv = _sockPanel && _sockPanel.gameObject.activeSelf && _sockGrid ? _sockGrid.GetInventory() : null;
+            _sockCount = inv != null ? inv.GetWidth() : 0;
+        }
+
+        // Like the backpack panel: Epic Loot's copies of vanilla backgrounds ("Bkg", "selected_frame") off, registered and
+        // restyled (its cells are the player grid's element prefab: slot cells like every grid).
+        private void AdoptShardSlots(RectTransform panel)
+        {
+            if (ScreenRegistry.RootOf(panel) == panel) return;
+            var p = (Transform)panel;
+            foreach (var child in Children.Of(panel))
+                if (IsVanillaBackground(child) && child.TryGetComponent<Image>(out var image)) image.enabled = false;
+            ScreenRegistry.Register(p, () => Context(p, ScreenId + ".Sockets"));
+            ScreenRegistry.Restyle(p);
+        }
+
         private bool ContainerIsBackpack() =>
             _gui.m_currentContainer && Player.m_localPlayer && _gui.m_currentContainer.gameObject == Player.m_localPlayer.gameObject;
 
@@ -843,6 +894,8 @@ namespace RuneSkin.InventoryScreen
             i.BackpackW = pack?.GetWidth() ?? 0;
             i.BackpackH = pack?.GetHeight() ?? 0;
             i.BackpackHeaderW = pack != null ? _packHeaderNeed : 0f;
+            i.SocketsW = _sockCount;
+            i.SocketsHeaderW = _sockCount > 0 ? _sockHeaderNeed : 0f;
             DollSideCounts(out i.DollLeft, out i.DollRight);
             i.SidePlates = SidePlateCount();
             ReadTokens();
@@ -855,7 +908,7 @@ namespace RuneSkin.InventoryScreen
             _logPlacement = 3;
             var o = _layout;
             Plugin.Log.LogInfo($"[RuneSkin] inventory windows: hotbar c0 {o.Hotbar.C0:0.##} pitch {o.Hotbar.Pitch:0.###} cell {o.Hotbar.Cell:0.##} F {o.Hotbar.Side:0.##} top {o.Hotbar.Top:0.#}{(i.Hotbar.Valid ? "" : " (no strip)")}; " +
-                               $"grid {o.Inventory} {o.Player} doll {o.Doll} {o.DollGrid} preview {o.DollPreview} backpack {o.Backpack} {o.BackpackGrid} chest {o.Chest} {o.ChestGrid} " +
+                               $"grid {o.Inventory} {o.Player} doll {o.Doll} {o.DollGrid} preview {o.DollPreview} backpack {o.Backpack} {o.BackpackGrid} chest {o.Chest} {o.ChestGrid} sockets {o.Sockets} {o.SocketsGrid} " +
                                $"crafting {o.Crafting}{(o.CraftingTight ? " tight" : "")}{(o.DockOverflow ? " dock overflow" : "")}{(o.BackpackFolded ? " backpack folded" : "")}");
         }
 
@@ -905,10 +958,12 @@ namespace RuneSkin.InventoryScreen
             _dollOff = WindowMove.Applied(WindowMove.Doll, o.Doll, _canvas);
             _chestOff = o.Chest.IsEmpty ? Vector2.zero : WindowMove.Applied(WindowMove.Chest, o.Chest, _canvas);
             _packOff = o.Backpack.IsEmpty ? Vector2.zero : WindowMove.Applied(WindowMove.Backpack, o.Backpack, _canvas);
+            _sockOff = o.Sockets.IsEmpty ? Vector2.zero : WindowMove.Applied(WindowMove.Sockets, o.Sockets, _canvas);
             _invBox = Move(o.Inventory, _invOff);
             _dollBox = Move(o.Doll, _dollOff);
             _chestBox = Move(o.Chest, _chestOff);
             _packBox = Move(o.Backpack, _packOff);
+            _sockBox = Move(o.Sockets, _sockOff);
         }
 
         private static Box Move(Box b, Vector2 o) => WindowMoveMath.Shift(b, o.x, o.y);
@@ -916,11 +971,11 @@ namespace RuneSkin.InventoryScreen
         // Harness: default and shown window boxes (canvas units) by WindowMove id.
         public Box DefaultWindow(string id) => _layout == null ? default :
             id == WindowMove.InventoryGrid ? _layout.Inventory : id == WindowMove.Doll ? _layout.Doll :
-            id == WindowMove.Chest ? _layout.Chest : id == WindowMove.Backpack ? _layout.Backpack : id == WindowMove.Crafting ? _layout.Crafting : default;
+            id == WindowMove.Chest ? _layout.Chest : id == WindowMove.Backpack ? _layout.Backpack : id == WindowMove.Sockets ? _layout.Sockets : id == WindowMove.Crafting ? _layout.Crafting : default;
 
         public Box ShownWindow(string id) =>
             id == WindowMove.InventoryGrid ? _invBox : id == WindowMove.Doll ? _dollBox :
-            id == WindowMove.Chest ? _chestBox : id == WindowMove.Backpack ? _packBox : default;
+            id == WindowMove.Chest ? _chestBox : id == WindowMove.Backpack ? _packBox : id == WindowMove.Sockets ? _sockBox : default;
 
         // Harness: the computed layout (hotbar row, grids) of the open screen.
         public WindowsLayout Layout => _layout;
@@ -964,6 +1019,7 @@ namespace RuneSkin.InventoryScreen
                 if (_gui.m_containerGrid.m_elements.Count > 0 && _gui.m_containerGrid.m_elements[0]) sb.Append($" ccell0={Geo.BoxOf(_canvas, (RectTransform)_gui.m_containerGrid.m_elements[0].transform)}");
             }
             if (_packPanel) One("backpack", _packPanel, _packBox);
+            if (_sockPanel && !_sockBox.IsEmpty) One("sockets", _sockPanel, _sockBox);
             Plugin.Log.LogInfo(sb.ToString());
         }
 
@@ -979,6 +1035,7 @@ namespace RuneSkin.InventoryScreen
             Show(_dollHost, _dollBox);
             Show(_chestHost, containerShown && !backpackInContainer ? _chestBox : default);
             Show(_packHost, backpackInContainer || _packPanel ? _packBox : default);
+            Show(_sockHost, _sockPanel && _sockCount > 0 ? _sockBox : default);
 
             // Player grid window: m_player on its box, the grid on its cell block (columns over the hotbar cells), the
             // side column over F, the header with the player actions.
@@ -1010,6 +1067,8 @@ namespace RuneSkin.InventoryScreen
                     Twin(_gui.m_takeAllButton ? _gui.m_takeAllButton.transform : null)?.GetComponent<Button>(),
                     Twin(_gui.m_stackAllButton ? _gui.m_stackAllButton.transform : null)?.GetComponent<Button>());
             }
+
+            if (_sockPanel && _sockCount > 0) ArrangeSockets(_sockPanel, _sockGrid, _sockBox, o.SocketsGrid);
 
             // Crafting: position only when the crafting family is not owned (CraftingSkin lays the window out on
             // CraftingBox + its own offset); scaled down, never up, to stay in its box.
@@ -1361,6 +1420,44 @@ namespace RuneSkin.InventoryScreen
 
         // Backpack window width its header needs (ArrangeContainer -> WindowsInput.BackpackHeaderW), canvas units.
         private float _packHeaderNeed;
+
+        // Epic Loot's shard slot window (the chest window look 0.25.9 gave the 0.15.0 socket panel, without the action row):
+        // the root on its box (Compat\EpicLootShardSlots: Epic Loot's Place stands down meanwhile), the one-row grid under
+        // the header at the slot cell (columns past the room scroll sideways), the header adopting Epic Loot's "Title"
+        // ("<item> - Shard Slots") over the whole width; drag on it moves the window. The window is as wide as that title
+        // needs (next layout, InputHash), like the backpack's.
+        private void ArrangeSockets(RectTransform panel, InventoryGrid grid, Box box, WindowGrid g)
+        {
+            if (!panel || box.IsEmpty) return;
+            var k = _input.SkinScale;
+            var pad = _tokens.PanelPad * k;
+            var fit = g.Fit;
+            Geo.Place(_canvas, panel, box);
+            if (grid)
+            {
+                var view = InventoryMath.SocketsGridView(box, fit, _tokens, k);
+                Geo.Place(_canvas, (RectTransform)grid.transform, view);
+                Want(grid, fit.Pitch, fit.Cell);
+                var s = State(grid);
+                // First open: Epic Loot's UpdateGui ran before this grid had a state (AfterGrid skipped it), so the pitch /
+                // scale / cell styling are applied here, before the first Reposition (Codex review: scale -1 mirrored cells).
+                if (s.Scale < 0f) AfterGrid(grid);
+                Range(grid, g, false, 0, s.ColScroll, view);
+                if (g.ScrollH) _colViews.Add((grid, view, g));
+                ColumnBar(panel, view, g, s.ColScroll);
+            }
+            var head = RuneWindowHeader.Ensure(panel, WindowMove.Sockets);
+            if (!head) return;
+            head.Frame = PanelDecor.Of(_sockHost);
+            const string fallback = "$runeskin_win_sockets";
+            if (_sockTitle) head.Adopt(_sockTitle, fallback);
+            else head.Fallback(fallback).Text(fallback);
+            var row = new Box(box.X + pad, box.Y + pad / 2f, box.W - 2f * pad, _tokens.PanelHeaderH * k - pad / 2f);
+            var hh = Mathf.Min(WindowHeaderMath.HeaderHeight(ThemeTokens.GetFloat("size.win.header", 40f), k), row.H);
+            head.Place(_canvas, new Box(row.X, row.Y, row.W, hh), null);
+            var band = head.TitleBandNeed();
+            _sockHeaderNeed = band > 0f ? Mathf.Ceil((band + 2f * pad) * 2f) / 2f : 0f;
+        }
 
         // Panel header glyph (chest / backpack), one per panel, role swapped when the panel changes kind.
         private static Image HeaderGlyph(RectTransform panel, string role)

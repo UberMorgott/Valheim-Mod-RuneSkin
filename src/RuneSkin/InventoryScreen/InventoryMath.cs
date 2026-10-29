@@ -96,6 +96,17 @@ namespace RuneSkin.InventoryScreen
 
         // Grid view of a dock panel: under the title row, top-aligned, as tall as its visible rows (InventoryGrid
         // centres its root in the view, so a taller view would push short grids down), never into the action row.
+        // Grid view of the shard slot window (InventoryWindowsMath.SocketsH: no action row): under the title row, one cell
+        // tall, the cells centred across like a container's.
+        public static Box SocketsGridView(Box panel, GridFit fit, InventoryTokens t, float k)
+        {
+            var pad = t.PanelPad * k;
+            var top = panel.Y + t.PanelHeaderH * k + pad;
+            var cols = fit.VisibleColumns > 0 ? fit.VisibleColumns : fit.Columns;
+            var side = Math.Max(pad, Math.Min(DockSide(t, k), (panel.W - (cols * fit.Pitch - (fit.Pitch - fit.Cell))) / 2f));
+            return new Box(panel.X + side, top, Math.Max(0f, panel.W - 2f * side), Math.Max(0f, fit.Cell));
+        }
+
         public static Box ContainerGridView(Box panel, GridFit fit, InventoryTokens t, float k)
         {
             var pad = t.PanelPad * k;
