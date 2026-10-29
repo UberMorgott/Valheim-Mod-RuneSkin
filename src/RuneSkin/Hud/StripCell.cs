@@ -286,7 +286,8 @@ namespace RuneSkin.PlayerHud
                 r.anchorMin = r.anchorMax = Vector2.zero;
                 r.pivot = new Vector2(1f, 1f);
                 r.sizeDelta = new Vector2(s * 1.6f, s * 1.6f);
-                r.anchoredPosition = new Vector2((_side + bw) / 2f, top);
+                // inside the rim, clear of the contour / ring (Codex re-score 7/10: the "A" merged with the teal contour)
+                r.anchoredPosition = new Vector2((_side + bw) / 2f - bw * 0.08f, top - bw * 0.08f);
                 _pip.enableAutoSizing = true;
                 _pip.fontSizeMin = 1f;
                 _pip.fontSizeMax = s * 1.6f;
@@ -330,10 +331,15 @@ namespace RuneSkin.PlayerHud
                 var band = Mathf.Clamp(ThemeTokens.GetFloat("share.hud.strip.timer.band", 0.27f), 0f, 0.5f) * _h;
                 _timer.fontSizeMax = Mathf.Min(_timer.fontSizeMax, band * 1.05f);
                 _timer.fontSizeMin = Mathf.Min(_timer.fontSizeMin, _timer.fontSizeMax);
+                // the item sits in the upper disc so the timer keeps a clean strip (Codex re-score 7/10)
+                var disc = Mathf.Min(_side, _h - band);
+                var fr = _icon.rectTransform;
+                fr.sizeDelta = new Vector2(disc * 0.62f, disc * 0.62f);
+                fr.anchoredPosition = new Vector2(0f, band / 2f + disc * 0.08f);
                 return;
             }
             var row = _h * 0.30f;
-            var icon = Mathf.Min(_side, _h - row) * 0.58f;
+            var icon = Mathf.Min(_side, _h - row) * 0.80f;
             var ir = _icon.rectTransform;
             ir.anchorMin = ir.anchorMax = ir.pivot = new Vector2(0.5f, 0.5f);
             ir.sizeDelta = new Vector2(icon, icon);

@@ -1008,7 +1008,7 @@
     { "token": "share.hud.strip.select", "value": 1.05 },
     { "token": "share.hud.strip.rim.inset", "value": 0.064 },
     { "token": "share.hud.strip.mark", "value": 0.24 },
-    { "token": "share.hud.belt.pip", "value": 0.16 },
+    { "token": "share.hud.belt.pip", "value": 0.12 },
     { "token": "share.hud.belt.gem", "value": 0.12 },
     { "token": "count.hud.ability.max", "value": 2 },
     { "token": "size.hud.status.cell", "value": 42 },
