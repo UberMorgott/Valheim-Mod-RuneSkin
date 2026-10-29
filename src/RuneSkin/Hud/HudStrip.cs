@@ -496,25 +496,31 @@ namespace RuneSkin.PlayerHud
         private static readonly string[] Digits = { "1", "2", "3", "4", "5", "6", "7", "8" };
         private static string KeyLabel(int i) => i < Digits.Length ? Digits[i] : null;
 
-        private static void ItemCell(StripCell c, Player p, ItemDrop.ItemData item, bool selected)
+        private static void ItemCell(StripCell c, Player p, ItemDrop.ItemData item, bool selected, bool belt = false)
         {
             c.Empty(item == null);
             if (item == null)
             {
-                c.Icon(null, Color.white);
-                c.Count(0);
-                c.Glow(selected);
+                if (!belt)
+                {
+                    c.Icon(null, Color.white);
+                    c.Count(0);
+                    c.Glow(selected);
+                }
                 c.Rim(false, default);
                 c.Mark(false);
                 c.Durability(-1f, false);
                 MagazinePips.Hide(c.Root);
                 return;
             }
-            c.Icon(item.GetIcon(), Color.white);
             Magazine(c, item);
-            c.Count(item.m_shared.m_maxStackSize > 1 ? item.m_stack : 0);
-            // Selection = teal glow outside the cell: equipped / queued for equip, or the gamepad's hotbar cursor.
-            c.Glow(selected || item.m_equipped || p.IsEquipActionQueued(item));
+            if (!belt)
+            {
+                c.Icon(item.GetIcon(), Color.white);
+                c.Count(item.m_shared.m_maxStackSize > 1 ? item.m_stack : 0);
+                // Selection = teal glow outside the cell: equipped / queued for equip, or the gamepad's hotbar cursor.
+                c.Glow(selected || item.m_equipped || p.IsEquipActionQueued(item));
+            }
             if (!ReferenceEquals(c.RarityItem, item) || Time.unscaledTime >= c.RarityAt)
             {
                 c.RarityItem = item;
@@ -559,9 +565,10 @@ namespace RuneSkin.PlayerHud
                 if (_potionInput.Length < _potions.Count) System.Array.Resize(ref _potionInput, _potions.Count);
                 var input = _potionInput[i] ? _potionInput[i] : _potionInput[i] = c.Root.GetComponent<StripInput>();
                 if (input) input.HasCell = false; // presses go to the belt (StripInput.BeltCell), never to a grid cell
-                ItemCell(c, p, has ? _cell.Item : null, false);
+                ItemCell(c, p, has ? _cell.Item : null, false, belt: true); // count / glow: BeltState (no per-frame flip)
                 c.Durability(-1f, false);
-                c.Key(pad || !has ? null : _cell.HotkeyLabel);
+                // < 48 px wide (Codex compare): no key label in the HUD, the tooltip carries it
+                c.Key(pad || !has || c.PixelWidth < 48f ? null : _cell.HotkeyLabel);
                 BeltState(c, has, "color.hud.belt.ring.potion");
             }
         }
@@ -573,8 +580,7 @@ namespace RuneSkin.PlayerHud
                 var c = _food[i];
                 var has = BeltBridge.TryGet(p, BeltMath.Food, i, out _cell);
                 c.Empty(!has || (!_cell.Icon && !_cell.ActiveIcon));
-                c.Key(pad || !has ? null : _cell.HotkeyLabel); // FoodKey1..5 (unbound by default = "")
-                c.Count(has ? _cell.Count : 0);
+                c.Key(pad || !has || c.PixelWidth < 48f ? null : _cell.HotkeyLabel); // FoodKey1..5 (unbound by default = "")
                 BeltState(c, has, "color.hud.belt.ring.food");
             }
         }
@@ -594,11 +600,12 @@ namespace RuneSkin.PlayerHud
                 c.Gem(false);
                 return;
             }
-            var other = _cell.Active && _cell.ActiveIcon && _cell.ActiveIcon != _cell.Icon;
-            var icon = other || !_cell.Icon ? _cell.ActiveIcon : _cell.Icon;
+            // the stored item's icon while stocked; the running effect's icon only once the stack is gone (Codex compare:
+            // the status icon over a stocked cell read as a different item); count only above 1
+            var icon = _cell.Icon ? _cell.Icon : _cell.Active ? _cell.ActiveIcon : null;
             var blocked = _cell.Blocked;
             c.Icon(icon, blocked ? ThemeTokens.GetColor("color.hud.belt.blocked", new Color(1f, 1f, 1f, 0.45f)) : Color.white);
-            if (other) c.Count(_cell.Count, true);
+            c.Count(_cell.Count > 1 ? _cell.Count : 0);
             var active = _cell.Active && !blocked;
             c.Ring(active ? Mathf.Max(0f, BeltMath.Fraction(_cell.ActiveRemaining, _cell.ActiveTotal)) : -1f,
                 ThemeTokens.GetColor(ringToken, Color.cyan));

@@ -311,20 +311,36 @@ namespace RuneSkin.PlayerHud
             BeltText();
         }
 
-        // Belt cells (run 20261029-025439: "Alt+1" and "10m" covered a narrow potion cell's icon): the key label shrinks
-        // to the cell width, a square cell's timer sits in its bottom strip (share 0.32) instead of over the icon.
+        // Belt cells (runs 20261029-025439 / -033941, Codex compare 4/10: "Alt+1", "A", "x1", "10m" and the glow filled a
+        // 35 x 40 px potion cell): a square cell = icon 0.63 of the side at the top centre, a bottom row of 0.28 of the
+        // height with the timer left and the count right; texts autosize down; the auto halo at a quarter of its alpha.
         private void BeltText()
         {
             if (!_timerSuffix || _side <= 0f) return;
-            foreach (var txt in new[] { _key, _timer })
+            foreach (var txt in new[] { _key, _timer, _count })
             {
                 if (txt.enableAutoSizing) continue;
                 txt.enableAutoSizing = true;
                 txt.fontSizeMax = txt.fontSize;
-                txt.fontSizeMin = txt.fontSize * 0.4f;
+                txt.fontSizeMin = txt.fontSize * 0.35f;
             }
-            if (!_round) Box(_timer.rectTransform, 0f, 0f, _side, _h * 0.32f);
+            var halo = _glow.color;
+            if (halo.a > 0.3f) _glow.color = new Color(halo.r, halo.g, halo.b, halo.a * 0.25f);
+            if (_round) return;
+            var row = _h * 0.28f;
+            var icon = Mathf.Min(_side, _h - row) * 0.63f / 0.72f * ThemeTokens.GetFloat("share.hud.strip.icon", 0.72f);
+            var ir = _icon.rectTransform;
+            ir.anchorMin = ir.anchorMax = ir.pivot = new Vector2(0.5f, 0.5f);
+            ir.sizeDelta = new Vector2(icon, icon);
+            ir.anchoredPosition = new Vector2(0f, row / 2f);
+            var inset = _side * 0.06f;
+            Box(_timer.rectTransform, inset, 0f, _side * 0.6f - inset, row);
+            _timer.alignment = TextAlignmentOptions.BottomLeft;
+            Box(_count.rectTransform, _side * 0.5f, 0f, _side * 0.5f - inset, row);
         }
+
+        // Shown width of the cell in screen pixels (overlay canvas: world units = px).
+        public float PixelWidth => Root.rect.width * Mathf.Abs(Root.lossyScale.x);
 
         public void Glow(bool on)
         {
