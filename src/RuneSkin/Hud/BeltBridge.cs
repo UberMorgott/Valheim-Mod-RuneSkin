@@ -167,7 +167,9 @@ namespace RuneSkin.PlayerHud
                 ps[i] = Expression.Parameter(pars[i], "a" + i);
                 args[i] = i == kindAt ? Expression.Convert(ps[i], kindType) : (Expression)ps[i];
             }
-            var invoke = typeof(T).GetMethod("Invoke");
+            // the delegate's Invoke found by scanning, as StatsSources.Make does: PatchCheck cannot resolve a literal-name
+            // lookup on a generic T ("T::Invoke type not found", run 20261029-041404); no lookup runs without MT's Belt
+            var invoke = Array.Find(typeof(T).GetMethods(), mi => mi.Name == nameof(Action.Invoke));
             Expression body = Expression.Call(m, args);
             if (body.Type != invoke.ReturnType) return null;
             return Expression.Lambda<T>(body, ps).Compile();
